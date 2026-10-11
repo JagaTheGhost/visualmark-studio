@@ -1,0 +1,365 @@
+/* ==========================================================================
+   README Studio - Bottom Panel & Integrated Terminal (VS Code / Antigravity IDE)
+   ========================================================================== */
+
+.bottom-panel-drawer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--surface-low, #0d1117);
+  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  color: var(--text-primary, #e6edf3);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  z-index: 25;
+  user-select: none;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.35);
+  transition: height 0.05s ease-out;
+}
+
+/* 1. Top Resize Handle */
+.bottom-panel-resizer {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: ns-resize;
+  z-index: 50;
+  background: transparent;
+}
+.bottom-panel-resizer:hover,
+.bottom-panel-resizer.is-dragging {
+  background-color: var(--primary, #6366f1);
+  height: 3px;
+  top: -1px;
+}
+
+/* 2. Panel Header */
+.bottom-panel-header {
+  height: 35px;
+  min-height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 0 12px;
+  background-color: var(--surface-base, #161b22);
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+}
+
+.bottom-panel-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 100%;
+}
+
+.bottom-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 10px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted, #8b949e);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bottom-tab-btn:hover {
+  color: var(--text-primary, #ffffff);
+}
+
+.bottom-tab-btn.active {
+  color: var(--text-primary, #ffffff);
+  border-bottom-color: var(--primary, #6366f1);
+}
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tab-badge.error-badge {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.tab-badge.warn-badge {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.bottom-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.panel-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-muted, #8b949e);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.panel-action-btn:hover {
+  background-color: var(--surface-high, rgba(255, 255, 255, 0.08));
+  color: var(--text-primary, #ffffff);
+}
+
+.panel-select {
+  height: 22px;
+  padding: 0 6px;
+  background-color: var(--surface-low, #0d1117);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 3px;
+  color: var(--text-secondary, #cbd5e1);
+  font-size: 11px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+.panel-select:focus {
+  border-color: var(--primary, #6366f1);
+}
+
+.panel-divider {
+  width: 1px;
+  height: 14px;
+  background-color: var(--border-subtle, rgba(255, 255, 255, 0.1));
+  margin: 0 4px;
+}
+
+/* 3. Panel Body */
+.bottom-panel-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: #0d1117;
+}
+
+/* ==================== TERMINAL TAB ==================== */
+.panel-terminal-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #c9d1d9;
+  padding: 8px 12px;
+  background-color: #0d1117;
+  cursor: text;
+}
+
+.terminal-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 8px;
+  user-select: text;
+}
+
+.terminal-scroll-area::-webkit-scrollbar {
+  width: 8px;
+}
+.terminal-scroll-area::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.terminal-welcome-banner {
+  color: #58a6ff;
+  font-weight: 500;
+  margin-bottom: 8px;
+  border-bottom: 1px dashed rgba(88, 166, 255, 0.2);
+  padding-bottom: 6px;
+}
+
+.terminal-line {
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 1px 0;
+}
+
+.terminal-line.terminal-line-cmd {
+  color: #a5d6ff;
+  font-weight: 600;
+}
+
+.terminal-line.terminal-line-error {
+  color: #f85149;
+}
+
+.terminal-line.terminal-line-system {
+  color: #8b949e;
+  font-style: italic;
+}
+
+.terminal-line.terminal-line-success {
+  color: #3fb950;
+}
+
+/* Interactive Prompt Row */
+.terminal-prompt-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.terminal-prompt-label {
+  color: #38bdf8;
+  font-weight: 600;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.terminal-prompt-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  padding: 0;
+  margin: 0;
+}
+
+/* ==================== PROBLEMS TAB ==================== */
+.panel-problems-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.problems-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted, #8b949e);
+  gap: 8px;
+}
+
+.problems-empty-icon {
+  font-size: 32px;
+  color: #10b981;
+}
+
+.problems-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.problem-file-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+  padding: 4px 6px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.problem-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.problem-item-row:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.problem-icon {
+  font-size: 15px;
+}
+.problem-icon.icon-error {
+  color: #ef4444;
+}
+.problem-icon.icon-warn {
+  color: #f59e0b;
+}
+.problem-icon.icon-info {
+  color: #38bdf8;
+}
+
+.problem-message {
+  flex: 1;
+  color: var(--text-primary, #e2e8f0);
+}
+
+.problem-location {
+  color: var(--text-muted, #64748b);
+  font-family: monospace;
+  font-size: 11px;
+}
+
+/* ==================== OUTPUT TAB ==================== */
+.panel-output-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: #94a3b8;
+  background-color: #090d16;
+  user-select: text;
+}
+
+.output-log-line {
+  margin: 1px 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.output-log-line .output-time {
+  color: #475569;
+  margin-right: 8px;
+}
+
+.output-log-line .output-tag {
+  color: #6366f1;
+  font-weight: 600;
+  margin-right: 6px;
+}

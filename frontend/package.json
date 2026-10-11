@@ -1,0 +1,84 @@
+{
+  "name": "visualmark-studio",
+  "description": "VisualMark Studio - Code + Visual Markdown & Documentation IDE",
+  "author": "JagaTheGhost",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "start": "npm run electron:dev",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "sidecar:build": "python ../backend/build_sidecar.py",
+    "electron:dev": "concurrently -k \"vite\" \"wait-on tcp:3000 && electron .\"",
+    "electron:start": "electron .",
+    "electron:pack": "vite build && electron-builder --dir",
+    "electron:portable": "vite build && electron-builder --win portable",
+    "electron:manual": "powershell -ExecutionPolicy Bypass -File scripts/manual-pack.ps1",
+    "electron:dist": "vite build && electron-builder"
+  },
+  "build": {
+    "appId": "com.visualmark.studio",
+    "productName": "VisualMark Studio",
+    "copyright": "Copyright © 2026",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/backend-sidecar",
+        "to": "backend-sidecar",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "VisualMark Studio"
+    }
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "axios": "^1.6.2",
+    "file-saver": "^2.0.5",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "jszip": "^3.10.1",
+    "mermaid": "^12.1.0",
+    "prismjs": "^1.30.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0",
+    "react-simple-code-editor": "^0.14.1",
+    "react-syntax-highlighter": "^16.1.1",
+    "rehype-raw": "^7.0.0",
+    "remark-breaks": "^4.0.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@vitejs/plugin-react": "^4.2.0",
+    "concurrently": "^10.0.6",
+    "electron": "^44.7.0",
+    "electron-builder": "^26.15.3",
+    "vite": "^5.0.0",
+    "wait-on": "^9.5.1"
+  }
+}

@@ -1,0 +1,220 @@
+/* ==========================================================================
+   ANTIGRAVITY / VS CODE CUSTOM IDE TOOLTIPS
+   ========================================================================== */
+:root {
+  --tooltip-bg: #252526;
+  --tooltip-border: #454545;
+  --tooltip-text: #cccccc;
+}
+
+.theme-slate {
+  --tooltip-bg: #1e293b;
+  --tooltip-border: #334155;
+  --tooltip-text: #e2e8f0;
+}
+
+.theme-light {
+  --tooltip-bg: #f3f3f3;
+  --tooltip-border: #c8c8c8;
+  --tooltip-text: #333333;
+}
+
+.ide-tooltip-measure {
+  position: fixed;
+  visibility: hidden;
+  pointer-events: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 11.5px;
+  font-weight: 400;
+  line-height: 1.3;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.ide-tooltip {
+  position: fixed;
+  z-index: 999999;
+  background-color: var(--tooltip-bg, #252526);
+  border: 1px solid var(--tooltip-border, #454545);
+  border-radius: 4px;
+  color: var(--tooltip-text, #cccccc);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 11.5px;
+  font-weight: 400;
+  line-height: 1.3;
+  padding: 3px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  box-sizing: border-box;
+  transition: opacity 80ms ease;
+  user-select: none;
+}
+
+.ide-tooltip.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Caret pointing down (pos-top: tooltip placed above target) */
+.ide-tooltip.pos-top::before {
+  content: none;
+}
+.ide-tooltip.pos-top::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: var(--arrow-offset, 50%);
+  width: 7px;
+  height: 7px;
+  background-color: var(--tooltip-bg, #252526);
+  border-right: 1px solid var(--tooltip-border, #454545);
+  border-bottom: 1px solid var(--tooltip-border, #454545);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/* Caret pointing up (pos-bottom: tooltip placed below target) */
+.ide-tooltip.pos-bottom::before {
+  content: none;
+}
+.ide-tooltip.pos-bottom::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: var(--arrow-offset, 50%);
+  width: 7px;
+  height: 7px;
+  background-color: var(--tooltip-bg, #252526);
+  border-left: 1px solid var(--tooltip-border, #454545);
+  border-top: 1px solid var(--tooltip-border, #454545);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/* Caret pointing left (pos-right: tooltip placed to the right of target) */
+.ide-tooltip.pos-right::before {
+  content: none;
+}
+.ide-tooltip.pos-right::after {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: var(--arrow-offset, 50%);
+  width: 7px;
+  height: 7px;
+  background-color: var(--tooltip-bg, #252526);
+  border-left: 1px solid var(--tooltip-border, #454545);
+  border-bottom: 1px solid var(--tooltip-border, #454545);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+/* Status Bar item hover styling matching Antigravity IDE */
+.status-cluster-left,
+.status-cluster-right {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  gap: 2px;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 6px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background-color 80ms ease;
+  user-select: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.status-item:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff;
+}
+
+.status-item.status-diagnostics-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 6px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.status-item.status-diagnostics-btn .diag-segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  line-height: 1;
+}
+
+.status-item.status-diagnostics-btn .diag-segment.has-error {
+  color: var(--error, #f87171);
+}
+
+.status-item.status-diagnostics-btn .diag-segment.text-amber {
+  color: var(--warning, #fbbf24);
+}
+
+/* Tab Dirty Dot Indicator (VS Code style) */
+.tab-close-btn.is-dirty .tab-close-x {
+  display: none !important;
+}
+
+.tab-close-btn.is-dirty .tab-dirty-dot {
+  display: inline-block;
+  font-size: 13px;
+  line-height: 1;
+  color: #cccccc;
+  transform: translateY(-0.5px);
+}
+
+.tab-close-btn.is-dirty:hover .tab-dirty-dot,
+.editor-tab:hover .tab-close-btn.is-dirty .tab-dirty-dot {
+  display: none !important;
+}
+
+.tab-close-btn.is-dirty:hover .tab-close-x,
+.editor-tab:hover .tab-close-btn.is-dirty .tab-close-x {
+  display: inline-block !important;
+}
+
+/* Studio Tab Code-Split Loading Fallback */
+.studio-tab-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  background-color: var(--surface-base, #1e1e1e);
+  gap: 14px;
+}
+
+.studio-loading-spinner {
+  width: 26px;
+  height: 26px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--primary, #38bdf8);
+  border-radius: 50%;
+  animation: studio-spin 0.6s linear infinite;
+}
+
+.studio-loading-text {
+  font-size: 12px;
+  color: var(--text-muted, #969696);
+  font-family: var(--font-sans);
+}
+
+@keyframes studio-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

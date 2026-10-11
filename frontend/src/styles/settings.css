@@ -1,0 +1,745 @@
+/* ==========================================================================
+   SETTINGS TAB WORKSPACE (ANTIGRAVITY IDE / VS CODE NATIVE TAB STYLE)
+   ========================================================================== */
+.settings-tab-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  background-color: var(--surface-base);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.settings-tab-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: var(--surface-base);
+  padding: 20px 32px 14px;
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.settings-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.settings-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-main-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.settings-env-badge {
+  font-size: 11px;
+  background-color: var(--surface-mid);
+  border: 1px solid var(--border-color);
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+
+.settings-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--surface-mid);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 5px 11px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.settings-action-btn:hover {
+  background-color: var(--surface-high);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.settings-action-btn.danger:hover {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+.settings-search-wrapper {
+  position: relative;
+  max-width: 680px;
+}
+
+.settings-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.settings-search-input {
+  width: 100%;
+  background-color: var(--surface-lowest);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 7px 32px 7px 32px;
+  color: #ffffff;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.settings-search-input:focus {
+  border-color: #007acc;
+  box-shadow: 0 0 0 1px #007acc;
+}
+
+.settings-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+}
+.settings-search-clear:hover {
+  color: #ffffff;
+}
+
+.settings-category-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  overflow-x: auto;
+}
+
+.settings-pill {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 3px 12px;
+  border-radius: 14px;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+.settings-pill:hover {
+  color: #ffffff;
+  background-color: var(--surface-high);
+}
+.settings-pill.active {
+  background-color: #007acc;
+  border-color: #007acc;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.settings-tab-content {
+  padding: 24px 32px 48px;
+  max-width: 900px;
+}
+
+.settings-group-section {
+  margin-bottom: 28px;
+}
+
+.settings-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: #ffffff;
+}
+.settings-group-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.settings-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 12px 16px;
+  background-color: var(--surface-low);
+  border: 1px solid var(--border-subtle);
+  border-radius: 5px;
+  margin-bottom: 8px;
+  transition: border-color 0.12s ease;
+}
+.settings-card:hover {
+  border-color: var(--border-color);
+}
+
+.settings-card-info {
+  flex: 1;
+}
+
+.settings-card-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #e2e8f0;
+  margin-bottom: 2px;
+}
+
+.settings-card-sublabel {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.settings-input-select {
+  background-color: var(--surface-lowest);
+  border: 1px solid var(--border-color);
+  color: #ffffff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  outline: none;
+  min-width: 180px;
+}
+.settings-input-select:focus {
+  border-color: #007acc;
+}
+
+.settings-input-text {
+  width: 100%;
+  background-color: var(--surface-lowest);
+  border: 1px solid var(--border-color);
+  color: #ffffff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  outline: none;
+}
+.settings-input-text:focus {
+  border-color: #007acc;
+}
+
+.settings-input-with-toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.settings-input-with-toggle .settings-input-text {
+  padding-right: 28px;
+}
+.settings-eye-btn {
+  position: absolute;
+  right: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.settings-eye-btn:hover {
+  color: #ffffff;
+}
+
+.settings-val-badge {
+  font-size: 11px;
+  font-family: monospace;
+  background-color: var(--surface-high);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #38bdf8;
+}
+
+.settings-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  cursor: pointer;
+}
+.settings-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.toggle-slider {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--surface-high);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  transition: 0.15s;
+}
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #cccccc;
+  border-radius: 50%;
+  transition: 0.15s;
+}
+.settings-toggle-switch input:checked + .toggle-slider {
+  background-color: #007acc;
+  border-color: #007acc;
+}
+.settings-toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(16px);
+  background-color: #ffffff;
+}
+
+/* ==========================================================================
+   SHORTCUTS TAB WORKSPACE (ANTIGRAVITY IDE / VS CODE NATIVE TAB STYLE)
+   ========================================================================== */
+.shortcuts-tab-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  background-color: var(--surface-base);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.shortcuts-tab-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: var(--surface-base);
+  padding: 20px 32px 14px;
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.shortcuts-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.shortcuts-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shortcuts-main-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.shortcuts-count-badge {
+  font-size: 11px;
+  background-color: var(--surface-mid);
+  border: 1px solid var(--border-color);
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+
+.shortcuts-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shortcuts-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--surface-mid);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 5px 11px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.shortcuts-action-btn:hover {
+  background-color: var(--surface-high);
+}
+.shortcuts-action-btn.danger:hover {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+.shortcuts-search-wrapper {
+  position: relative;
+  max-width: 680px;
+}
+
+.shortcuts-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.shortcuts-search-input {
+  width: 100%;
+  background-color: var(--surface-lowest);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 7px 32px 7px 32px;
+  color: #ffffff;
+  font-size: 13px;
+  outline: none;
+}
+.shortcuts-search-input:focus {
+  border-color: #007acc;
+  box-shadow: 0 0 0 1px #007acc;
+}
+
+.shortcuts-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.shortcuts-category-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  overflow-x: auto;
+}
+
+.shortcuts-pill {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 3px 12px;
+  border-radius: 14px;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+.shortcuts-pill:hover {
+  color: #ffffff;
+  background-color: var(--surface-high);
+}
+.shortcuts-pill.active {
+  background-color: #007acc;
+  border-color: #007acc;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.shortcuts-table-container {
+  padding: 16px 32px 48px;
+}
+
+.shortcuts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.shortcuts-table th {
+  text-align: left;
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 12px;
+}
+
+.shortcut-table-row {
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background-color 0.1s ease;
+}
+.shortcut-table-row:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.shortcut-table-row td {
+  padding: 10px 12px;
+  vertical-align: middle;
+}
+
+.shortcut-cmd-name {
+  font-weight: 500;
+  color: #e2e8f0;
+}
+
+.shortcut-cmd-desc {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.shortcut-key-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.key-chip {
+  display: inline-block;
+  padding: 2px 7px;
+  background-color: var(--surface-mid);
+  border: 1px solid var(--border-color);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.key-plus {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.source-pill {
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.source-pill.default-source {
+  color: var(--text-muted);
+  background-color: var(--surface-high);
+}
+.source-pill.user-custom {
+  color: #38bdf8;
+  background-color: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  font-weight: 500;
+}
+
+.shortcut-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.shortcut-btn-icon {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.shortcut-btn-icon:hover {
+  background-color: var(--surface-high);
+  color: #ffffff;
+}
+.shortcut-btn-icon.reset:hover {
+  color: #f87171;
+}
+
+.shortcuts-empty-state {
+  text-align: center;
+  padding: 48px 0;
+  color: var(--text-muted);
+}
+.shortcuts-empty-state span {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+/* ==========================================================================
+   KEY RECORDER MODAL (INLINE POPUP FOR REBINDING)
+   ========================================================================== */
+.key-recorder-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.12s ease-out;
+}
+
+.key-recorder-modal {
+  background-color: #1e1e1e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+  width: 460px;
+  max-width: 90vw;
+  animation: popIn 0.15s ease-out;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.key-recorder-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.key-recorder-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  flex: 1;
+}
+.recorder-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+}
+.recorder-close-btn:hover {
+  color: #ffffff;
+}
+
+.recorder-cmd-title {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #38bdf8;
+  margin-bottom: 6px;
+}
+
+.recorder-instruction {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 16px;
+}
+
+.recorder-input-box {
+  min-height: 52px;
+  background-color: #141416;
+  border: 1.5px solid #007acc;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  outline: none;
+  cursor: pointer;
+  margin-bottom: 12px;
+  box-shadow: 0 0 10px rgba(0, 122, 204, 0.25);
+}
+
+.recorded-keys-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.recorder-kbd-chip {
+  padding: 4px 10px;
+  background-color: #252526;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.recorder-placeholder {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.recorder-conflict-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 4px;
+  padding: 6px 10px;
+  color: #f59e0b;
+  font-size: 11px;
+  margin-bottom: 16px;
+}
+.recorder-conflict-warning span {
+  font-size: 14px;
+}
+
+.key-recorder-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.btn-recorder-cancel {
+  background-color: var(--surface-mid);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.btn-recorder-cancel:hover {
+  background-color: var(--surface-high);
+}
+
+.btn-recorder-save {
+  background-color: #007acc;
+  border: 1px solid #007acc;
+  color: #ffffff;
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn-recorder-save:hover {
+  background-color: #0062a3;
+}
+.btn-recorder-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

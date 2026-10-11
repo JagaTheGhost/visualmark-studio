@@ -1,0 +1,32 @@
+/*
+ * AUTO README STUDIO — Modular Stylesheet Architecture
+ * Refactored into domain-focused sub-sheets
+ */
+
+/* Design System Tokens & Base Theme */
+@import './styles/tokens.css';
+
+/* Shell & Core Layout */
+@import './styles/layout.css';
+@import './styles/sidebar.css';
+@import './styles/editor.css';
+@import './styles/statusbar.css';
+
+/* Shared Overlays & Widgets */
+@import './styles/modals.css';
+@import './styles/widgets.css';
+@import './styles/tooltips.css';
+
+/* Native IDE Workspace Panels */
+@import './styles/explorer.css';
+@import './styles/sourceControl.css';
+@import './styles/settings.css';
+
+/* Studio Environments */
+@import './styles/studios/common.css';
+@import './styles/studios/badgeStudio.css';
+@import './styles/studios/diagramStudio.css';
+@import './styles/studios/tableStudio.css';
+@import './styles/studios/snippetStudio.css';
+@import './styles/studios/imageStudio.css';
+@import './styles/studios/extendedStudios.css';

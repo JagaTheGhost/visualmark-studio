@@ -1,0 +1,125 @@
+/* ==========================================================================
+   8. BOTTOM STATUS BAR
+   ========================================================================== */
+.ide-status-bar {
+  height: 24px;
+  min-height: 24px;
+  background-color: var(--surface-low);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  z-index: 30;
+}
+
+.status-cluster-left,
+.status-cluster-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.status-icon {
+  font-size: 13px;
+}
+
+.git-branch {
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.git-branch:hover {
+  color: var(--primary);
+}
+
+.diagnostics {
+  display: flex;
+  gap: 6px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border-subtle);
+}
+.diag-count {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.diag-count.has-error {
+  color: var(--error);
+}
+.text-amber { color: var(--amber); }
+.text-emerald { color: var(--tertiary); }
+.text-secondary { color: var(--secondary); }
+
+.format-badge {
+  color: var(--secondary);
+  font-weight: 500;
+}
+.lang-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--secondary);
+}
+
+/* Status AI Beacon */
+.status-cluster-center {
+  display: flex;
+  align-items: center;
+}
+.ai-beacon-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 8px;
+  background-color: var(--surface-mid);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  font-size: 10px;
+}
+.beacon-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.beacon-dot.ready {
+  background-color: var(--tertiary);
+  box-shadow: 0 0 6px var(--tertiary);
+}
+.beacon-dot.generating {
+  background-color: var(--primary);
+  box-shadow: 0 0 6px var(--primary);
+  animation: pulse-beacon 1s infinite;
+}
+.beacon-latency {
+  color: var(--text-muted);
+}
+
+.status-button {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 1px 3px;
+  border-radius: var(--radius-xs);
+}
+.status-button:hover {
+  color: var(--text-primary);
+  background-color: var(--surface-high);
+}
+.status-kbd {
+  font-size: 9px;
+  padding: 0 4px;
+  background-color: var(--surface-mid);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+}

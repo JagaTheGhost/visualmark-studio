@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="gradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#161b22"/>
+      <stop offset="100%" stop-color="#0d1117"/>
+    </linearGradient>
+    <linearGradient id="gradIndigo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8083ff"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="gradCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+  </defs>
+  <!-- Base Squircle -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#gradBg)" stroke="#30363d" stroke-width="2"/>
+  <!-- Glowing Border Accent -->
+  <rect x="4" y="4" width="56" height="56" rx="14" stroke="url(#gradIndigo)" stroke-width="1.5" stroke-opacity="0.6"/>
+  
+  <!-- Document Shape -->
+  <path d="M18 14C18 12.8954 18.8954 12 20 12H36L46 22V48C46 49.1046 45.1046 50 44 50H20C18.8954 50 18 49.1046 18 48V14Z" fill="#1c2026" stroke="#484f58" stroke-width="1.5"/>
+  <path d="M36 12V20C36 21.1046 36.8954 22 38 22H46" stroke="#6366f1" stroke-width="1.5" fill="none"/>
+  
+  <!-- Markdown Text Lines -->
+  <line x1="23" y1="28" x2="31" y2="28" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="23" y1="34" x2="41" y2="34" stroke="#8b949e" stroke-width="2" stroke-linecap="round"/>
+  <line x1="23" y1="40" x2="37" y2="40" stroke="#8b949e" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Sparkle / Auto-gen Star -->
+  <path d="M44 38C44 42 48 42 48 42C48 42 44 42 44 46C44 42 40 42 40 42C40 42 44 42 44 38Z" fill="url(#gradCyan)"/>
+</svg>

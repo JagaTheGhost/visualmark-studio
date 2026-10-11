@@ -1,0 +1,128 @@
+/* ==========================================================================
+   AUTO README STUDIO — IDE DESIGN SYSTEM
+   Modern Dark Developer Environment (Stitch Generated & Refined)
+   Tokens: Electric Indigo (#6366f1), Cyan (#38bdf8), Emerald (#10b981)
+   ========================================================================== */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Surface Layers (Antigravity IDE / VS Code Dark Modern Theme) */
+  --surface-base: #1e1e1e;
+  --surface-lowest: #1e1e1e;
+  --surface-low: #18181b;
+  --surface-mid: #252526;
+  --surface-high: #2d2d30;
+  --surface-highest: #37373d;
+
+  /* Outlines & Borders */
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-focus: #007acc;
+
+  /* Accents */
+  --primary: #007acc;
+  --primary-hover: #0062a3;
+  --primary-glow: rgba(0, 122, 204, 0.28);
+  --primary-gradient: linear-gradient(135deg, #007acc 0%, #005999 100%);
+  --secondary: #38bdf8;
+  --secondary-glow: rgba(56, 189, 248, 0.25);
+  --tertiary: #10b981;
+  --tertiary-glow: rgba(16, 185, 129, 0.25);
+  --amber: #f59e0b;
+  --error: #f87171;
+
+  /* Typography Colors */
+  --text-primary: #cccccc;
+  --text-secondary: #969696;
+  --text-muted: #6e7681;
+
+  /* Fonts */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+
+  /* Radius */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Transitions */
+  --transition-fast: 120ms ease;
+  --transition-smooth: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Alternate Theme: Slate Monokai */
+.theme-slate {
+  --surface-base: #1e1e1e;
+  --surface-lowest: #1e1e1e;
+  --surface-low: #18181b;
+  --surface-mid: #252526;
+  --surface-high: #2d2d30;
+  --surface-highest: #37373d;
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --text-primary: #dfe2eb;
+}
+
+/* Alternate Theme: Light */
+.theme-light {
+  --surface-base: #f8fafc;
+  --surface-lowest: #f1f5f9;
+  --surface-low: #ffffff;
+  --surface-mid: #f8fafc;
+  --surface-high: #e2e8f0;
+  --surface-highest: #cbd5e1;
+  --border-subtle: #f1f5f9;
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--surface-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Material Symbols alignment helper */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 350, 'GRAD' 0, 'opsz' 20;
+  font-size: 1.15rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+/* Custom Scrollbars */
+.custom-scrollbar::-webkit-scrollbar,
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track,
+::-webkit-scrollbar-track {
+  background: var(--surface-lowest);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb {
+  background: var(--surface-high);
+  border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:hover {
+  background: var(--surface-highest);
+}

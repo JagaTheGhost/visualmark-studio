@@ -1,0 +1,959 @@
+/* ==========================================================================
+   AUTHENTIC VS CODE / ANTIGRAVITY IDE EXPLORER TREE (Image 1 Style)
+   ========================================================================== */
+
+.drawer-body.explorer-mode {
+  padding: 0 !important;
+  gap: 0 !important;
+  overflow-x: hidden;
+  background-color: var(--surface-low, #18181b);
+}
+
+.ide-explorer-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  color: #cccccc;
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-size: 13px;
+  user-select: none;
+}
+
+/* VS Code Explorer Header */
+.ide-explorer-header {
+  height: 35px;
+  min-height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 0 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: transparent;
+}
+
+.ide-explorer-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #bbbbbb;
+}
+
+.ide-explorer-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ide-header-btn {
+  background: transparent;
+  border: none;
+  color: #858585;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 120ms ease, background-color 120ms ease;
+}
+
+.ide-header-btn:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.ide-header-btn.active {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Explorer More Actions Dropdown Menu */
+.ide-more-menu-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.ide-more-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background-color: #252526;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  min-width: 200px;
+  padding: 4px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ide-more-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #cccccc;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 100ms ease, color 100ms ease;
+  width: 100%;
+}
+
+.ide-more-menu-item:hover {
+  background-color: #04395e;
+  color: #ffffff;
+}
+
+.ide-more-menu-item .menu-item-icon {
+  font-size: 16px;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.ide-menu-divider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.08);
+  margin: 3px 0;
+}
+
+/* Empty workspace banner */
+.ide-empty-workspace-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  text-align: center;
+  gap: 8px;
+}
+
+.ide-empty-workspace-banner .empty-folder-icon {
+  font-size: 32px;
+  color: #64748b;
+}
+
+.ide-empty-workspace-banner .empty-workspace-text {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.empty-workspace-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.ide-btn-primary-sm {
+  background-color: #007acc;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.ide-btn-primary-sm:hover {
+  background-color: #0098ff;
+}
+
+.ide-btn-secondary-sm {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: #cccccc;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.ide-btn-secondary-sm:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+/* Root Project Section */
+.ide-project-root-section {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.ide-project-root-header {
+  height: 24px;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 0 6px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 11px;
+  color: #bbbbbb;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: transparent;
+}
+
+.ide-project-root-header:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.ide-root-title-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ide-root-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+  color: #cccccc;
+}
+
+.ide-root-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0.8;
+  transition: opacity 120ms ease;
+}
+
+.ide-project-root-header:hover .ide-root-actions {
+  opacity: 1;
+}
+
+.ide-root-action-btn {
+  background: transparent;
+  border: none;
+  color: #858585;
+  cursor: pointer;
+  padding: 2px 3px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 100ms ease, background-color 100ms ease;
+}
+
+.ide-root-action-btn:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Inline Create Form */
+.ide-inline-create-row {
+  display: flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px 0 24px;
+  background-color: rgba(255, 255, 255, 0.03);
+  gap: 6px;
+  border-left: 2px solid #007acc;
+}
+
+.ide-inline-input {
+  flex: 1;
+  background-color: #1e1e1e;
+  border: 1px solid #007acc;
+  color: #ffffff;
+  font-size: 12px;
+  padding: 1px 6px;
+  border-radius: 2px;
+  outline: none;
+  font-family: inherit;
+}
+
+/* Tree Rows (Pixel-Perfect VS Code) */
+.ide-tree-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.ide-tree-row {
+  height: 22px;
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  padding-right: 12px;
+  cursor: pointer;
+  color: #cccccc;
+  font-size: 13px;
+  line-height: 22px;
+  position: relative;
+  transition: background-color 80ms ease;
+}
+
+.ide-tree-row:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.ide-tree-row.active {
+  background-color: #37373d;
+  color: #ffffff;
+}
+
+.ide-tree-row.active .ide-tree-label {
+  color: #ffffff !important;
+  font-weight: 500;
+}
+
+/* Chevron & Spacers */
+.ide-tree-chevron {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #858585;
+  flex-shrink: 0;
+}
+
+.tree-spacer {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.ide-tree-icon {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.ide-tree-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: #cccccc;
+}
+
+/* VS Code Git Status Colors */
+.ide-tree-label.status-modified {
+  color: #cccccc;
+}
+
+.ide-tree-label.status-untracked {
+  color: #73c991;
+}
+
+.ide-tree-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.ide-git-tag {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono, monospace);
+  line-height: 1;
+}
+
+.ide-git-tag.status-m {
+  color: #e2c08d;
+}
+
+.ide-git-tag.status-u {
+  color: #73c991;
+}
+
+.ide-git-tag.status-a {
+  color: #73c991;
+}
+
+.ide-git-tag.status-d {
+  color: #f87171;
+}
+
+/* Folder change dot */
+.ide-tree-dot {
+  font-size: 8px;
+  color: #8c7042;
+  line-height: 1;
+  display: inline-block;
+}
+
+.ide-row-action-btn {
+  background: transparent;
+  border: none;
+  color: #6e7681;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 2px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.ide-tree-row:hover .ide-row-action-btn {
+  display: flex;
+}
+
+.ide-row-action-btn:hover {
+  color: #f87171;
+  background-color: rgba(248, 113, 113, 0.15);
+}
+
+.ide-tree-children {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Focused / Selected Row in Explorer (VS Code standard) */
+.ide-tree-row.is-selected {
+  background-color: rgba(255, 255, 255, 0.08);
+  outline: 1px solid rgba(0, 122, 204, 0.6);
+  outline-offset: -1px;
+}
+.ide-tree-row.is-selected .ide-tree-label {
+  color: #ffffff;
+}
+
+.ide-tree-row.active.is-selected {
+  background-color: #094771;
+  outline: 1px solid #007acc;
+  outline-offset: -1px;
+}
+
+/* Creating Row inside Tree */
+.ide-tree-row.is-creating-row {
+  background-color: rgba(99, 102, 241, 0.1);
+}
+
+.ide-inline-rename-input {
+  width: 100%;
+  background-color: #313131;
+  border: 1px solid #007acc;
+  border-radius: 2px;
+  color: #ffffff;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 1px 4px;
+  outline: none;
+  height: 20px;
+}
+
+/* Folder Quick Actions on Hover */
+.ide-folder-hover-actions {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+.ide-tree-row:hover .ide-folder-hover-actions {
+  display: flex;
+}
+.ide-row-quick-btn {
+  background: transparent;
+  border: none;
+  color: #858585;
+  cursor: pointer;
+  padding: 1px 3px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: color 100ms ease, background-color 100ms ease;
+}
+.ide-row-quick-btn:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Explorer Context Menu (Right-Click) */
+.ide-context-menu {
+  position: fixed;
+  z-index: 99999;
+  background: #252526;
+  border: 1px solid #454545;
+  border-radius: 4px;
+  padding: 4px 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+  font-family: inherit;
+}
+
+.ide-context-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 5px 10px;
+  background: transparent;
+  border: none;
+  color: #cccccc;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 60ms ease, color 60ms ease;
+}
+
+.ide-context-item:hover {
+  background: #094771;
+  color: #ffffff;
+}
+
+.ide-context-item.is-danger:hover {
+  background: #991b1b;
+  color: #ffffff;
+}
+
+.ide-context-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ide-context-icon {
+  font-size: 16px !important;
+  color: inherit;
+}
+
+.ide-context-shortcut {
+  font-size: 11px;
+  color: #858585;
+  margin-left: 16px;
+  font-family: var(--font-mono, monospace);
+}
+
+.ide-context-item:hover .ide-context-shortcut {
+  color: #ffffff;
+}
+
+.ide-context-separator {
+  height: 1px;
+  background: #3e3e42;
+  margin: 4px 0;
+}
+
+/* Safe Delete Confirmation Modal */
+.ide-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.ide-delete-modal-card {
+  background: #1e1e1e;
+  border: 1px solid #3c3c3c;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: ideModalPop 120ms ease-out;
+}
+
+@keyframes ideModalPop {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.ide-delete-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #f87171;
+}
+
+.ide-delete-modal-header h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.ide-delete-warn-icon {
+  font-size: 22px !important;
+  color: #f87171;
+}
+
+.ide-delete-modal-body {
+  margin: 0;
+  font-size: 13px;
+  color: #a1a1aa;
+  line-height: 1.5;
+}
+
+.ide-delete-modal-body strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.ide-delete-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.ide-btn-cancel {
+  background: #2d2d2d;
+  color: #cccccc;
+  border: 1px solid #3c3c3c;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 100ms ease;
+}
+
+.ide-btn-cancel:hover {
+  background: #3e3e3e;
+  color: #ffffff;
+}
+
+.ide-btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 100ms ease;
+}
+
+.ide-btn-danger:hover {
+  background: #ef4444;
+}
+
+/* ==========================================================================
+   Interactive Resizable Handles & Drag-and-Drop Feedback System
+   ========================================================================== */
+.sidebar-resizer-handle {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  width: 5px;
+  height: 100%;
+  cursor: col-resize;
+  background-color: transparent;
+  z-index: 50;
+  transition: background-color 0.15s, box-shadow 0.15s;
+}
+
+.sidebar-resizer-handle:hover,
+.sidebar-resizer-handle.is-dragging {
+  background-color: var(--primary, #6366f1);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+}
+
+.split-resizer-handle {
+  position: relative;
+  background-color: var(--border-color, #30363d);
+  z-index: 40;
+  transition: background-color 0.15s, box-shadow 0.15s;
+}
+
+.split-resizer-handle.vertical {
+  width: 5px;
+  height: 100%;
+  cursor: col-resize;
+  flex-shrink: 0;
+}
+
+.split-resizer-handle.horizontal {
+  width: 100%;
+  height: 5px;
+  cursor: row-resize;
+  flex-shrink: 0;
+}
+
+.split-resizer-handle:hover,
+.split-resizer-handle.is-dragging {
+  background-color: var(--primary, #6366f1);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.6);
+}
+
+/* Tab Drag-and-Drop Reordering Indicators */
+.editor-tab.is-dragging {
+  opacity: 0.35;
+  transform: scale(0.97);
+}
+
+.editor-tab.drop-target-before {
+  box-shadow: inset 3px 0 0 var(--primary, #6366f1);
+  background-color: rgba(99, 102, 241, 0.12) !important;
+}
+
+.editor-tab.drop-target-after {
+  box-shadow: inset -3px 0 0 var(--primary, #6366f1);
+  background-color: rgba(99, 102, 241, 0.12) !important;
+}
+
+.tabs-container.is-drop-active {
+  background-color: rgba(99, 102, 241, 0.04);
+}
+
+/* Explorer File Tree Drag and Drop Indicators */
+.ide-tree-row.drag-over-folder {
+  background-color: rgba(99, 102, 241, 0.2) !important;
+  outline: 1px dashed var(--primary, #6366f1);
+  border-radius: 4px;
+}
+
+.ide-tree-row.drag-target-line-top {
+  border-top: 2px solid var(--primary, #6366f1) !important;
+}
+
+.ide-tree-row.drag-target-line-bottom {
+  border-bottom: 2px solid var(--primary, #6366f1) !important;
+}
+
+/* ==================== EXPLORER CONTEXT MENU ==================== */
+.ide-context-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 200px;
+  background-color: var(--surface-low, #161b22);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  animation: contextMenuFadeIn 0.12s ease-out;
+  user-select: none;
+}
+
+@keyframes contextMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.ide-context-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary, #f0f6fc);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.1s ease, color 0.1s ease;
+  text-align: left;
+}
+
+.ide-context-item:hover {
+  background-color: var(--primary, #6366f1);
+  color: #ffffff;
+}
+
+.ide-context-item.is-danger {
+  color: #f87171;
+}
+
+.ide-context-item.is-danger:hover {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.ide-context-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ide-context-icon {
+  font-size: 15px !important;
+  color: var(--text-secondary, #8b949e);
+}
+
+.ide-context-item:hover .ide-context-icon {
+  color: #ffffff;
+}
+
+.ide-context-separator {
+  height: 1px;
+  background-color: var(--border-color, #30363d);
+  margin: 4px 6px;
+}
+
+/* ==================== SAFE DELETE CONFIRMATION DIALOG ==================== */
+.ide-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: modalFadeIn 0.15s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.ide-confirm-dialog {
+  background-color: var(--surface-lowest, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 440px;
+  padding: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: dialogScaleUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dialogScaleUp {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.ide-confirm-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.ide-confirm-icon-danger {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background-color: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+  flex-shrink: 0;
+}
+
+.ide-confirm-content {
+  flex: 1;
+}
+
+.ide-confirm-title {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #f0f6fc);
+}
+
+.ide-confirm-message {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary, #8b949e);
+}
+
+.ide-confirm-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn-danger-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #ef4444;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-danger-confirm:hover {
+  background-color: #dc2626;
+}
+
+/* Inline rename text input */
+.ide-inline-rename-input {
+  flex: 1;
+  background-color: var(--surface-highest, #1c2128);
+  border: 1px solid var(--primary, #6366f1);
+  border-radius: 3px;
+  color: var(--text-primary, #ffffff);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 1px 6px;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+}
+
+/* Toolbar undo/redo disabled state */
+.toolbar-tool-btn:disabled,
+.toolbar-tool-btn.btn-disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
