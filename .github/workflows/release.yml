@@ -53,7 +53,7 @@ jobs:
         working-directory: ./frontend
         run: |
           npm run build
-          npx electron-builder --win
+          npx electron-builder --win --publish never
 
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
