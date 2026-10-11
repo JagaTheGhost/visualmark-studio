@@ -55,7 +55,7 @@
           ]
         }
       ],
-      "icon": "public/logo.png",
+      "icon": "public/icon.ico",
       "legalTrademarks": "VisualMark Studio",
       "fileAssociations": [
         {
@@ -63,14 +63,14 @@
           "name": "Markdown Document",
           "description": "Markdown Document",
           "role": "Editor",
-          "icon": "public/logo.png"
+          "icon": "public/icon.ico"
         },
         {
           "ext": "markdown",
           "name": "Markdown Document",
           "description": "Markdown Document",
           "role": "Editor",
-          "icon": "public/logo.png"
+          "icon": "public/icon.ico"
         }
       ]
     },
@@ -82,8 +82,8 @@
       "createStartMenuShortcut": true,
       "shortcutName": "VisualMark Studio",
       "runAfterFinish": true,
-      "installerIcon": "public/logo.png",
-      "uninstallerIcon": "public/logo.png",
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico",
       "artifactName": "${productName}-Setup.${ext}",
       "include": "electron/installer.nsh",
       "deleteAppDataOnUninstall": false
