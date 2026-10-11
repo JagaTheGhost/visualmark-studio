@@ -418,10 +418,14 @@ ipcMain.handle('terminal-open-external', async (_event, { folderPath, shellType 
   try {
     if (process.platform === 'win32') {
       if (shellType === 'cmd') {
-        spawn('cmd.exe', ['/k', 'cd', '/d', cwd], { cwd, detached: true, stdio: 'ignore' }).unref()
+        spawn('cmd.exe', ['/c', 'start', 'Command Prompt', 'cmd.exe', '/k', `cd /d "${cwd}"`], {
+          cwd,
+          detached: true,
+          stdio: 'ignore'
+        }).unref()
       } else {
-        // PowerShell
-        spawn('powershell.exe', ['-NoExit', '-Command', `Set-Location -LiteralPath '${cwd.replace(/'/g, "''")}'`], {
+        // Windows PowerShell
+        spawn('cmd.exe', ['/c', 'start', 'PowerShell', 'powershell.exe', '-NoExit', '-Command', `Set-Location -LiteralPath '${cwd.replace(/'/g, "''")}'`], {
           cwd,
           detached: true,
           stdio: 'ignore'
@@ -432,7 +436,7 @@ ipcMain.handle('terminal-open-external', async (_event, { folderPath, shellType 
     } else {
       spawn('x-terminal-emulator', [], { cwd, detached: true }).unref()
     }
-    return { success: true }
+    return { success: true, cwd, shellType }
   } catch (err) {
     return { success: false, error: err.message }
   }

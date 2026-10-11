@@ -5,54 +5,80 @@ import Editor, { useMonaco } from '@monaco-editor/react'
  * Configure Custom Monaco Themes matching README Studio Design System
  */
 function defineStudioThemes(monaco) {
-  // Obsidian Dark Theme
+  // VS Code Dark+ (Authentic Default Dark Modern matching Image 2)
   monaco.editor.defineTheme('studio-dark', {
     base: 'vs-dark',
     inherit: true,
     rules: [
-      { token: 'comment', foreground: '6272a4', fontStyle: 'italic' },
-      { token: 'keyword', foreground: '818cf8', fontStyle: 'bold' },
-      { token: 'string', foreground: '34d399' },
-      { token: 'variable', foreground: '38bdf8' },
-      { token: 'type', foreground: 'f472b6' }
+      { token: '', foreground: 'd4d4d4' },
+      { token: 'comment', foreground: '6a9955', fontStyle: 'italic' },
+      { token: 'keyword', foreground: '569cd6' },
+      { token: 'keyword.json', foreground: '569cd6' },
+      { token: 'string', foreground: 'ce9178' },
+      { token: 'string.json', foreground: 'ce9178' },
+      { token: 'string.key.json', foreground: '9cdcfe' },
+      { token: 'string.value.json', foreground: 'ce9178' },
+      { token: 'number', foreground: 'b5cea8' },
+      { token: 'number.json', foreground: 'b5cea8' },
+      { token: 'type', foreground: '4ec9b0' },
+      { token: 'class', foreground: '4ec9b0' },
+      { token: 'function', foreground: 'dcdcaa' },
+      { token: 'variable', foreground: '9cdcfe' },
+      { token: 'variable.predefined', foreground: '4ec9b0' },
+      { token: 'variable.parameter', foreground: '9cdcfe' },
+      { token: 'constant', foreground: '4fc1ff' },
+      { token: 'tag', foreground: '569cd6' },
+      { token: 'tag.id', foreground: '9cdcfe' },
+      { token: 'tag.class', foreground: '9cdcfe' },
+      { token: 'attribute.name', foreground: '9cdcfe' },
+      { token: 'attribute.value', foreground: 'ce9178' },
+      { token: 'delimiter', foreground: 'd4d4d4' },
+      { token: 'delimiter.html', foreground: '808080' },
+      { token: 'metatag.html', foreground: '808080' },
+      { token: 'metatag.content.html', foreground: '9cdcfe' },
+      { token: 'keyword.md', foreground: '569cd6', fontStyle: 'bold' },
+      { token: 'string.link.md', foreground: 'ce9178' },
+      { token: 'variable.md', foreground: '9cdcfe' }
     ],
     colors: {
-      'editor.background': '#10141a',
-      'editor.foreground': '#e2e8f0',
-      'editorLineNumber.foreground': '#475569',
-      'editorLineNumber.activeForeground': '#818cf8',
-      'editor.lineHighlightBackground': '#161d27',
-      'editor.selectionBackground': '#6366f13d',
-      'editor.inactiveSelectionBackground': '#6366f122',
-      'editorCursor.foreground': '#38bdf8',
-      'editorWhitespace.foreground': '#1e293b',
-      'editorIndentGuide.background': '#1e293b',
-      'editorIndentGuide.activeBackground': '#334155',
-      'minimap.background': '#0c0f14',
-      'scrollbarSlider.background': '#33415540',
-      'scrollbarSlider.hoverBackground': '#47556980',
-      'scrollbarSlider.activeBackground': '#6366f180',
-      'editorGutter.background': '#10141a',
-      'editorOverviewRuler.border': '#161d27'
+      'editor.background': '#1e1e1e',
+      'editor.foreground': '#d4d4d4',
+      'editorLineNumber.foreground': '#858585',
+      'editorLineNumber.activeForeground': '#c6c6c6',
+      'editor.lineHighlightBackground': '#282828',
+      'editor.lineHighlightBorder': '#28282800',
+      'editor.selectionBackground': '#264f78',
+      'editor.inactiveSelectionBackground': '#3a3d41',
+      'editorCursor.foreground': '#aeafad',
+      'editorWhitespace.foreground': '#3b3a32',
+      'editorIndentGuide.background': '#404040',
+      'editorIndentGuide.activeBackground': '#707070',
+      'minimap.background': '#1e1e1e',
+      'scrollbarSlider.background': '#79797944',
+      'scrollbarSlider.hoverBackground': '#646464b3',
+      'scrollbarSlider.activeBackground': '#bfbfbf66',
+      'editorGutter.background': '#1e1e1e',
+      'editorOverviewRuler.border': '#7f7f7f4d'
     }
   })
 
-  // Slate Dark Theme
+  // Slate Dark Theme (Deep Navy/Slate variant)
   monaco.editor.defineTheme('studio-slate', {
     base: 'vs-dark',
     inherit: true,
     rules: [
       { token: 'keyword', foreground: '38bdf8', fontStyle: 'bold' },
-      { token: 'string', foreground: '10b981' }
+      { token: 'string', foreground: 'ce9178' },
+      { token: 'variable', foreground: '9cdcfe' }
     ],
     colors: {
-      'editor.background': '#0f172a',
-      'editor.foreground': '#f1f5f9',
-      'editorLineNumber.foreground': '#475569',
+      'editor.background': '#1e1e1e',
+      'editor.foreground': '#d4d4d4',
+      'editorLineNumber.foreground': '#858585',
       'editorLineNumber.activeForeground': '#38bdf8',
-      'editor.lineHighlightBackground': '#1e293b',
-      'editor.selectionBackground': '#38bdf833',
-      'minimap.background': '#0b1120'
+      'editor.lineHighlightBackground': '#282828',
+      'editor.selectionBackground': '#264f78',
+      'minimap.background': '#1e1e1e'
     }
   })
 
@@ -197,6 +223,7 @@ export default function MonacoEditorPane({
   showLineNumbers = true,
   tabSize = 2,
   themeMode = 'dark',
+  language = 'markdown',
   onCursorChange = () => {},
   onScroll = () => {},
   scrollToLine = null,
@@ -240,6 +267,46 @@ export default function MonacoEditorPane({
       }
     })
 
+    // Track active Monaco editor globally for studio commands
+    window.activeMonacoEditor = editor
+
+    // Intercept Monaco's built-in quickCommand action so clicking "Command Palette"
+    // in the right-click context menu (Image 1) opens VisualMark Studio's customizable
+    // Command Palette with configurable keybinding options (Image 3).
+    try {
+      const quickCommand = editor.getAction('editor.action.quickCommand')
+      if (quickCommand) {
+        quickCommand.run = () => {
+          window.dispatchEvent(new CustomEvent('open-command-palette'))
+          return Promise.resolve()
+        }
+      } else {
+        editor.addAction({
+          id: 'visualmark.openCommandPalette',
+          label: 'Command Palette',
+          keybindings: [
+            monaco.KeyCode.F1,
+            monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyP
+          ],
+          contextMenuGroupId: 'navigation',
+          contextMenuOrder: 1.5,
+          run: () => {
+            window.dispatchEvent(new CustomEvent('open-command-palette'))
+          }
+        })
+      }
+
+      // Explicitly bind F1 and Ctrl+Shift+P on editor instance
+      editor.addCommand(monaco.KeyCode.F1, () => {
+        window.dispatchEvent(new CustomEvent('open-command-palette'))
+      })
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyP, () => {
+        window.dispatchEvent(new CustomEvent('open-command-palette'))
+      })
+    } catch (e) {
+      console.warn('Could not intercept or register Command Palette action in Monaco:', e)
+    }
+
     // Scroll change handler
     editor.onDidScrollChange((e) => {
       if (isSyncingScrollRef.current) return
@@ -264,6 +331,18 @@ export default function MonacoEditorPane({
     }
   }, [monaco, activeTheme])
 
+  // Synchronize dynamic model language based on open file (e.g. package.json -> json, app.py -> python)
+  useEffect(() => {
+    if (localEditorRef.current && monaco) {
+      const model = localEditorRef.current.getModel()
+      if (model && language) {
+        try {
+          monaco.editor.setModelLanguage(model, language)
+        } catch {}
+      }
+    }
+  }, [language, monaco])
+
   // Scroll to requested line when prop changes
   useEffect(() => {
     if (scrollToLine && localEditorRef.current) {
@@ -275,13 +354,29 @@ export default function MonacoEditorPane({
     }
   }, [scrollToLine])
 
+  // Cleanup active editor reference on unmount
+  useEffect(() => {
+    return () => {
+      if (window.activeMonacoEditor === localEditorRef.current) {
+        window.activeMonacoEditor = null
+      }
+    }
+  }, [])
+
   const options = useMemo(() => ({
     fontSize,
-    fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace",
+    fontFamily: "'Cascadia Code', 'JetBrains Mono', Consolas, 'Fira Code', 'Courier New', monospace",
     fontLigatures: true,
     lineNumbers: showLineNumbers ? 'on' : 'off',
     wordWrap: wordWrap ? 'on' : 'off',
     tabSize,
+    bracketPairColorization: {
+      enabled: true
+    },
+    guides: {
+      bracketPairs: true,
+      indentation: true
+    },
     minimap: {
       enabled: true,
       maxColumn: 70,
@@ -296,7 +391,7 @@ export default function MonacoEditorPane({
     cursorBlinking: 'smooth',
     cursorSmoothCaretAnimation: 'on',
     padding: { top: 12, bottom: 16 },
-    renderLineHighlight: 'all',
+    renderLineHighlight: 'line',
     overviewRulerBorder: false,
     hideCursorInOverviewRuler: true,
     automaticLayout: true,
@@ -316,6 +411,7 @@ export default function MonacoEditorPane({
       <Editor
         height="100%"
         defaultLanguage="markdown"
+        language={language}
         value={value}
         onChange={(val) => onChange(val || '')}
         options={options}

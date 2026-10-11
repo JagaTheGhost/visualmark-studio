@@ -1,6 +1,7 @@
 /* =======================================================================
    VisualMark Studio - IDE Toast & Notification Center Design System
-   Matches VS Code & Antigravity IDE Sleek Monochromatic / Accented Aesthetic
+   Matches VS Code Dark+ / Dark Modern IDE Aesthetic
+   Tokens: Surface #252526, Cards #1e1e1e, Borders #454545, Accents #007acc
    ======================================================================= */
 
 /* 1. Viewport Stack (Bottom Right Fixed Anchor) */
@@ -25,35 +26,32 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  background: rgba(22, 27, 34, 0.98);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 6px;
-  box-shadow: 0 8px 24px -3px rgba(0, 0, 0, 0.75),
-              0 2px 8px rgba(0, 0, 0, 0.5),
-              inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  color: #e6edf3;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: #252526;
+  border: 1px solid #454545;
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.65),
+              0 1px 4px rgba(0, 0, 0, 0.4);
+  color: #cccccc;
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
   font-size: 12.5px;
   line-height: 1.45;
   overflow: hidden;
-  animation: ideToastSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  animation: ideToastSlideIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 .ide-toast-card:hover,
 .toast-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.85),
-              0 4px 12px rgba(0, 0, 0, 0.6),
-              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+  border-color: #555555;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.75),
+              0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
 @keyframes ideToastSlideIn {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.97);
+    transform: translateY(10px) scale(0.98);
   }
   to {
     opacity: 1;
@@ -61,45 +59,45 @@
   }
 }
 
-/* 3. Severity Left Accent Stripe & Icon Accents */
+/* 3. Severity Left Accent Stripe & Icon Accents (VS Code Color Codes) */
 .ide-toast-card.ide-toast-error,
 .toast-card.toast-error {
-  border-left: 3.5px solid #f85149;
+  border-left: 3.5px solid #f14c4c;
 }
 .ide-toast-card.ide-toast-error .ide-toast-icon {
-  color: #f85149;
+  color: #f14c4c;
 }
 
 .ide-toast-card.ide-toast-warning,
 .toast-card.toast-warning {
-  border-left: 3.5px solid #d29922;
+  border-left: 3.5px solid #cca700;
 }
 .ide-toast-card.ide-toast-warning .ide-toast-icon {
-  color: #e3b341;
+  color: #cca700;
 }
 
 .ide-toast-card.ide-toast-info,
 .toast-card.toast-info {
-  border-left: 3.5px solid #388bfd;
+  border-left: 3.5px solid #007acc;
 }
 .ide-toast-card.ide-toast-info .ide-toast-icon {
-  color: #58a6ff;
+  color: #3794ff;
 }
 
 .ide-toast-card.ide-toast-success,
 .toast-card.toast-success {
-  border-left: 3.5px solid #238636;
+  border-left: 3.5px solid #89d185;
 }
 .ide-toast-card.ide-toast-success .ide-toast-icon {
-  color: #3fb950;
+  color: #89d185;
 }
 
 .ide-toast-card.ide-toast-loading,
 .toast-card.toast-loading {
-  border-left: 3.5px solid #a371f7;
+  border-left: 3.5px solid #007acc;
 }
 .ide-toast-card.ide-toast-loading .ide-toast-icon {
-  color: #bc8cff;
+  color: #3794ff;
 }
 
 /* 4. Card Header Bar */
@@ -134,25 +132,25 @@
 
 .ide-toast-source-badge {
   font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.6px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: #8b949e;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #969696;
+  background: #2d2d30;
+  border: 1px solid #3c3c3c;
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: 2px;
   font-family: var(--font-mono, 'JetBrains Mono', Consolas, monospace);
 }
 
 .ide-toast-close-btn {
   background: transparent;
   border: none;
-  color: #8b949e;
+  color: #858585;
   cursor: pointer;
   padding: 3px;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 3px;
   display: flex;
   align-items: center;
@@ -161,8 +159,8 @@
 }
 
 .ide-toast-close-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #f0f6fc;
+  background: #37373d;
+  color: #ffffff;
 }
 
 /* 5. Card Body & Message */
@@ -171,7 +169,7 @@
 }
 
 .ide-toast-message {
-  color: #c9d1d9;
+  color: #cccccc;
   font-size: 12.5px;
   line-height: 1.45;
   word-break: break-word;
@@ -180,12 +178,12 @@
 /* Inline Code Token Chip inside notifications */
 .ide-toast-token {
   display: inline-block;
-  background: rgba(110, 118, 129, 0.2);
-  color: #79c0ff;
-  border: 1px solid rgba(121, 192, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #9cdcfe;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   padding: 0 4px;
   margin: 0 2px;
-  border-radius: 3px;
+  border-radius: 2px;
   font-family: var(--font-mono, 'JetBrains Mono', Consolas, monospace);
   font-size: 11.5px;
   line-height: 1.35;
@@ -203,11 +201,11 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: #21262d;
-  color: #c9d1d9;
-  border: 1px solid #30363d;
+  background: #3c3c3c;
+  color: #cccccc;
+  border: 1px solid #3c3c3c;
   padding: 4px 10px;
-  border-radius: 4px;
+  border-radius: 2px;
   font-size: 11.5px;
   font-weight: 500;
   cursor: pointer;
@@ -215,20 +213,20 @@
 }
 
 .ide-toast-action-btn:hover {
-  background: #30363d;
+  background: #454545;
   color: #ffffff;
-  border-color: #8b949e;
+  border-color: #555555;
 }
 
 .ide-toast-action-btn.primary {
-  background: #1f6feb;
+  background: #0e639c;
   color: #ffffff;
-  border-color: #388bfd;
+  border: 1px solid #1177bb;
 }
 
 .ide-toast-action-btn.primary:hover {
-  background: #388bfd;
-  border-color: #58a6ff;
+  background: #1177bb;
+  border-color: #2b88d8;
 }
 
 /* 7. Ultra-thin Flush Countdown Bar */
@@ -238,29 +236,29 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
   overflow: hidden;
 }
 
 .ide-toast-progress-fill {
   height: 100%;
   width: 100%;
-  background: #388bfd;
+  background: #007acc;
   transform-origin: left;
   animation: ideToastCountdown linear forwards;
 }
 
 .ide-toast-card.ide-toast-error .ide-toast-progress-fill {
-  background: #f85149;
+  background: #f14c4c;
 }
 .ide-toast-card.ide-toast-warning .ide-toast-progress-fill {
-  background: #e3b341;
+  background: #cca700;
 }
 .ide-toast-card.ide-toast-success .ide-toast-progress-fill {
-  background: #3fb950;
+  background: #89d185;
 }
 .ide-toast-card.ide-toast-info .ide-toast-progress-fill {
-  background: #58a6ff;
+  background: #3794ff;
 }
 
 .ide-toast-card:hover .ide-toast-progress-fill {
@@ -277,34 +275,34 @@
 }
 
 /* =======================================================================
-   8. IDE Notification Center Flyout Drawer (VS Code Style)
+   8. IDE Notification Center Flyout Drawer (Authentic VS Code Dark+ Style)
    ======================================================================= */
 .ide-notification-drawer,
 .notification-history-panel {
   position: fixed;
   bottom: 28px;
   right: 18px;
-  width: 440px;
+  width: 460px;
   max-width: calc(100vw - 36px);
   max-height: 520px;
-  background: rgba(18, 22, 28, 0.98);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 6px;
-  box-shadow: 0 16px 48px -4px rgba(0, 0, 0, 0.85),
-              0 4px 16px rgba(0, 0, 0, 0.6);
+  background: #252526;
+  border: 1px solid #454545;
+  border-radius: 4px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.65),
+              0 1px 3px rgba(0, 0, 0, 0.4);
   z-index: 9999;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: ideDrawerSlide 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
+  color: #cccccc;
+  animation: ideDrawerSlide 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes ideDrawerSlide {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.98);
+    transform: translateY(8px) scale(0.99);
   }
   to {
     opacity: 1;
@@ -319,8 +317,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: #252526;
+  border-bottom: 1px solid #333333;
 }
 
 .ide-drawer-header-title {
@@ -331,10 +329,10 @@
 
 .ide-drawer-title-text {
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.8px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: #f0f6fc;
+  color: #cccccc;
 }
 
 .ide-drawer-count-badge {
@@ -342,45 +340,46 @@
   font-weight: 600;
   padding: 1px 6px;
   border-radius: 10px;
-  background: rgba(56, 189, 248, 0.15);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: #007acc;
+  color: #ffffff;
+  border: none;
 }
 
 .ide-drawer-header-actions {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
 }
 
 /* Quick Filter Select inside Drawer Header */
 .ide-drawer-level-select {
-  background: #161b22;
-  border: 1px solid #30363d;
-  color: #c9d1d9;
+  background: #3c3c3c;
+  border: 1px solid #3c3c3c;
+  color: #cccccc;
   font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 2px 8px;
+  border-radius: 2px;
   outline: none;
   cursor: pointer;
   transition: all 0.12s ease;
+  font-family: inherit;
 }
 
 .ide-drawer-level-select:hover,
 .ide-drawer-level-select:focus {
-  border-color: #58a6ff;
+  border-color: #007acc;
   color: #ffffff;
 }
 
 .ide-drawer-btn-icon {
   background: transparent;
   border: none;
-  color: #8b949e;
+  color: #cccccc;
   cursor: pointer;
   padding: 4px;
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -388,8 +387,8 @@
 }
 
 .ide-drawer-btn-icon:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f0f6fc;
+  background: #37373d;
+  color: #ffffff;
 }
 
 /* Drawer Notification Rows List */
@@ -402,39 +401,40 @@
   flex-direction: column;
   gap: 4px;
   max-height: 420px;
+  background: #252526;
 }
 
 .ide-drawer-item {
   position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 9px;
+  gap: 10px;
   padding: 8px 10px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  background: #1e1e1e;
+  border: 1px solid #333333;
   font-size: 12px;
-  line-height: 1.4;
-  color: #c9d1d9;
+  line-height: 1.45;
+  color: #cccccc;
   transition: background 0.12s ease, border-color 0.12s ease;
 }
 
 .ide-drawer-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: #282828;
+  border-color: #454545;
 }
 
 .ide-drawer-item.ide-drawer-item-error {
-  border-left: 3px solid #f85149;
+  border-left: 3px solid #f14c4c;
 }
 .ide-drawer-item.ide-drawer-item-warning {
-  border-left: 3px solid #d29922;
+  border-left: 3px solid #cca700;
 }
 .ide-drawer-item.ide-drawer-item-success {
-  border-left: 3px solid #238636;
+  border-left: 3px solid #89d185;
 }
 .ide-drawer-item.ide-drawer-item-info {
-  border-left: 3px solid #388bfd;
+  border-left: 3px solid #007acc;
 }
 
 .ide-drawer-item-icon-wrap {
@@ -443,14 +443,14 @@
 }
 
 .ide-drawer-item-icon {
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1;
 }
 
-.ide-drawer-item-error .ide-drawer-item-icon { color: #f85149; }
-.ide-drawer-item-warning .ide-drawer-item-icon { color: #e3b341; }
-.ide-drawer-item-success .ide-drawer-item-icon { color: #3fb950; }
-.ide-drawer-item-info .ide-drawer-item-icon { color: #58a6ff; }
+.ide-drawer-item-error .ide-drawer-item-icon { color: #f14c4c; }
+.ide-drawer-item-warning .ide-drawer-item-icon { color: #cca700; }
+.ide-drawer-item-success .ide-drawer-item-icon { color: #89d185; }
+.ide-drawer-item-info .ide-drawer-item-icon { color: #3794ff; }
 
 .ide-drawer-item-content {
   flex: 1;
@@ -461,24 +461,25 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 
 .ide-drawer-source-tag {
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: #8b949e;
-  background: rgba(255, 255, 255, 0.06);
-  padding: 0 4px;
+  color: #969696;
+  background: #2d2d30;
+  border: 1px solid #3c3c3c;
+  padding: 1px 4px;
   border-radius: 2px;
   font-family: var(--font-mono, 'JetBrains Mono', Consolas, monospace);
 }
 
 .ide-drawer-timestamp {
-  font-size: 10.5px;
-  color: #7d8590;
+  font-size: 11px;
+  color: #858585;
 }
 
 .ide-drawer-important-pill {
@@ -486,14 +487,14 @@
   font-weight: 700;
   padding: 0 4px;
   border-radius: 2px;
-  background: rgba(248, 81, 73, 0.15);
-  color: #ff7b72;
-  border: 1px solid rgba(248, 81, 73, 0.25);
+  background: rgba(241, 76, 76, 0.15);
+  color: #f14c4c;
+  border: 1px solid rgba(241, 76, 76, 0.3);
   letter-spacing: 0.4px;
 }
 
 .ide-drawer-item-message {
-  color: #c9d1d9;
+  color: #cccccc;
   font-size: 12px;
   word-break: break-word;
 }
@@ -503,20 +504,18 @@
 }
 
 .ide-drawer-item-action-btn {
-  background: #21262d;
-  color: #58a6ff;
-  border: 1px solid #30363d;
+  background: #0e639c;
+  color: #ffffff;
+  border: 1px solid #1177bb;
   padding: 2px 8px;
-  border-radius: 3px;
+  border-radius: 2px;
   font-size: 11px;
   cursor: pointer;
   transition: all 0.12s ease;
 }
 
 .ide-drawer-item-action-btn:hover {
-  background: #30363d;
-  color: #79c0ff;
-  border-color: #58a6ff;
+  background: #1177bb;
 }
 
 /* Individual Remove Button (Visible on Hover) */
@@ -524,12 +523,12 @@
   opacity: 0;
   background: transparent;
   border: none;
-  color: #8b949e;
+  color: #858585;
   cursor: pointer;
   padding: 2px;
-  width: 16px;
-  height: 16px;
-  border-radius: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -542,8 +541,8 @@
 
 .ide-drawer-item-remove-btn:hover {
   opacity: 1 !important;
-  background: rgba(248, 81, 73, 0.15);
-  color: #f85149;
+  background: #37373d;
+  color: #ffffff;
 }
 
 /* Empty State */
@@ -553,30 +552,30 @@
   align-items: center;
   justify-content: center;
   padding: 36px 16px;
-  color: #7d8590;
+  color: #858585;
   text-align: center;
   gap: 8px;
 }
 
 .ide-drawer-empty-icon {
-  font-size: 32px;
-  color: #484f58;
+  font-size: 28px;
+  color: #555555;
 }
 
 .ide-drawer-empty-text {
   margin: 0;
   font-size: 12px;
-  color: #8b949e;
+  color: #858585;
 }
 
 /* Drawer Footer */
 .ide-drawer-footer {
   padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.02);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: #252526;
+  border-top: 1px solid #333333;
 }
 
 .ide-drawer-footer-text {
-  font-size: 10.5px;
-  color: #7d8590;
+  font-size: 11px;
+  color: #858585;
 }

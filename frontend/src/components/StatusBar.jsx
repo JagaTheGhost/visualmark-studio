@@ -210,19 +210,19 @@ export default function StatusBar({
 
         {/* Notification Center Bell */}
         <div
-          className={`status-item notification-bell-btn ${unreadCount > 0 ? 'has-unread' : ''} ${isHistoryOpen ? 'is-active' : ''}`}
+          className={`status-item notification-bell-btn ${unreadCount > 0 && !isHistoryOpen ? 'has-unread' : ''} ${isHistoryOpen ? 'is-active' : ''}`}
           onClick={toggleHistory}
-          data-tooltip={unreadCount > 0 ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'} (Click to open Notification Center)` : "Notification Center (Click to view history)"}
+          data-tooltip={unreadCount > 0 && !isHistoryOpen ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'} (Click to open Notification Center)` : "Notification Center (Click to view history)"}
           data-tooltip-pos="top"
           style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}
         >
-          <span className="material-symbols-outlined status-icon" style={{ fontSize: '14px', color: unreadCount > 0 ? '#38bdf8' : 'inherit' }}>
-            {unreadCount > 0 ? 'notifications_active' : 'notifications'}
+          <span className="material-symbols-outlined status-icon" style={{ fontSize: '14px', color: (unreadCount > 0 && !isHistoryOpen) ? '#007acc' : isHistoryOpen ? '#ffffff' : 'inherit' }}>
+            {unreadCount > 0 && !isHistoryOpen ? 'notifications_active' : 'notifications'}
           </span>
-          {unreadCount > 0 && (
+          {unreadCount > 0 && !isHistoryOpen && (
             <span className="notif-badge" style={{
-              background: '#38bdf8',
-              color: '#0f172a',
+              background: '#007acc',
+              color: '#ffffff',
               fontSize: '10px',
               fontWeight: '700',
               padding: '1px 5px',

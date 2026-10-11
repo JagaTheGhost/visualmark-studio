@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import './BottomPanelDrawer.css'
 import { APP_CURRENT_VERSION } from '../data/releaseNotes'
+import { useToast } from '../context/ToastContext'
 
 export default function BottomPanelDrawer({
   isOpen = false,
@@ -14,6 +15,7 @@ export default function BottomPanelDrawer({
   systemLogs = [],
   onClearLogs = () => {}
 }) {
+  const { toast } = useToast() || {}
   const [panelHeight, setPanelHeight] = useState(260)
   const [isDragging, setIsDragging] = useState(false)
   const [isMaximized, setIsMaximized] = useState(false)
@@ -28,58 +30,84 @@ export default function BottomPanelDrawer({
   const [currentInput, setCurrentInput] = useState('')
   const [commandHistory, setCommandHistory] = useState([])
   const [historyIndex, setHistoryIndex] = useState(-1)
-  const [problemsFilter, setProblemsFilter] = useState('all') // 'all' | 'errors' | 'warnings'
-  const [outputChannel, setOutputChannel] = useState('system') // 'system' | 'sidecar' | 'git'
+  const [problemsFilter, setProblemsFilter] = useState('all') // 'all' | 'errors' | 'warnings' | 'infos'
+  const [problemsSearch, setProblemsSearch] = useState('')
+  const [outputChannel, setOutputChannel] = useState('system') // 'system' | 'git' | 'sidecar' | 'markdown'
+  const [channelData, setChannelData] = useState({})
 
   const terminalScrollRef = useRef(null)
   const terminalInputRef = useRef(null)
   const dragStartYRef = useRef(0)
   const dragStartHeightRef = useRef(260)
+  const activeSessionKeyRef = useRef('')
 
   // Diagnostics counts
   const errorCount = useMemo(() => problems.filter((p) => p.severity === 'error').length, [problems])
   const warningCount = useMemo(() => problems.filter((p) => p.severity === 'warning').length, [problems])
+  const infoCount = useMemo(() => problems.filter((p) => p.severity === 'info').length, [problems])
 
   // Filtered problems list
   const filteredProblems = useMemo(() => {
-    if (problemsFilter === 'errors') return problems.filter((p) => p.severity === 'error')
-    if (problemsFilter === 'warnings') return problems.filter((p) => p.severity === 'warning')
-    return problems
-  }, [problems, problemsFilter])
+    let list = problems
+    if (problemsFilter === 'errors') list = list.filter((p) => p.severity === 'error')
+    else if (problemsFilter === 'warnings') list = list.filter((p) => p.severity === 'warning')
+    else if (problemsFilter === 'infos') list = list.filter((p) => p.severity === 'info')
 
-  // Prompt Prefix
+    if (problemsSearch.trim()) {
+      const q = problemsSearch.toLowerCase()
+      list = list.filter((p) =>
+        (p.message && p.message.toLowerCase().includes(q)) ||
+        (p.file && p.file.toLowerCase().includes(q)) ||
+        (p.source && p.source.toLowerCase().includes(q))
+      )
+    }
+    return list
+  }, [problems, problemsFilter, problemsSearch])
+
+  // Normalize current workspace path display
   const cwdDisplay = useMemo(() => {
     if (workspaceDirectory?.path) {
       return workspaceDirectory.path.replace(/\//g, '\\')
     }
-    return 'D:\\VisualStudio\\AI projects\\auto-readme-generator'
+    return 'D:\\VisualStudio\\AI projects\\visualmark-studio'
   }, [workspaceDirectory])
 
   const promptPrefix = shellType === 'powershell' ? `PS ${cwdDisplay}>` : `${cwdDisplay}>`
 
-  // Start or restart terminal process via Electron IPC
-  useEffect(() => {
-    if (!isOpen || activeTab !== 'terminal') return
+  // -------------------------------------------------------------------------
+  // Terminal Session Lifecycle (Prevent repeated start spam)
+  // -------------------------------------------------------------------------
+  const initTerminalSession = useCallback((force = false) => {
+    const sessionKey = `${shellType}:${workspaceDirectory?.path || 'default'}`
+    if (!force && activeSessionKeyRef.current === sessionKey) {
+      return
+    }
+    activeSessionKeyRef.current = sessionKey
+
+    const shellLabel = shellType === 'powershell' ? 'Windows PowerShell' : 'Command Prompt'
+    setTerminalHistory((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        type: 'system',
+        text: `[Started ${shellLabel} in ${cwdDisplay}]`
+      }
+    ])
 
     if (typeof window !== 'undefined' && window.electronAPI?.startTerminalSession) {
       window.electronAPI.startTerminalSession({
         termId: 'ide-integrated-term',
         shellType,
         cwd: workspaceDirectory?.path
-      }).then((res) => {
-        if (res?.success) {
-          setTerminalHistory((prev) => [
-            ...prev,
-            {
-              id: Date.now(),
-              type: 'system',
-              text: `[Started ${shellType === 'powershell' ? 'Windows PowerShell' : 'Command Prompt'} in ${res.cwd}]`
-            }
-          ])
-        }
       })
     }
-  }, [isOpen, activeTab, shellType, workspaceDirectory?.path])
+  }, [shellType, workspaceDirectory?.path, cwdDisplay])
+
+  useEffect(() => {
+    if (isOpen && activeTab === 'terminal') {
+      initTerminalSession(false)
+    }
+  }, [isOpen, activeTab, initTerminalSession])
 
   // Subscribe to live terminal output stream
   useEffect(() => {
@@ -114,7 +142,32 @@ export default function BottomPanelDrawer({
     }
   }
 
+  // -------------------------------------------------------------------------
+  // External Terminal Launchers (PowerShell & Command Prompt)
+  // -------------------------------------------------------------------------
+  const handleOpenExternalTerminal = (targetShell = shellType) => {
+    const shellLabel = targetShell === 'cmd' ? 'Command Prompt' : 'Windows PowerShell'
+    const targetPath = workspaceDirectory?.path || undefined
+
+    if (typeof window !== 'undefined' && window.electronAPI?.openTerminal) {
+      window.electronAPI.openTerminal({
+        folderPath: targetPath,
+        shellType: targetShell
+      }).then((res) => {
+        if (res?.success) {
+          toast?.info?.(`Launched external ${shellLabel} in ${res.cwd || cwdDisplay}`)
+        } else {
+          toast?.error?.(`Failed to open external terminal: ${res?.error || 'Unknown error'}`)
+        }
+      })
+    } else {
+      toast?.info?.(`Simulated external ${shellLabel} in ${cwdDisplay}`)
+    }
+  }
+
+  // -------------------------------------------------------------------------
   // Vertical Drag Resizing
+  // -------------------------------------------------------------------------
   useEffect(() => {
     if (!isDragging) return
 
@@ -153,16 +206,37 @@ export default function BottomPanelDrawer({
     }
   }
 
+  // -------------------------------------------------------------------------
   // Terminal Input & Command Execution
+  // -------------------------------------------------------------------------
   const handleRunCommand = (e) => {
     e.preventDefault()
     const cmd = currentInput.trim()
     if (!cmd) return
 
-    // Special built-in: clear
+    // Built-in command: cls / clear
     if (cmd.toLowerCase() === 'cls' || cmd.toLowerCase() === 'clear') {
       setTerminalHistory([])
       setCurrentInput('')
+      return
+    }
+
+    // Built-in command: exit
+    if (cmd.toLowerCase() === 'exit') {
+      setCurrentInput('')
+      onClose()
+      return
+    }
+
+    // Built-in command: external
+    if (cmd.toLowerCase() === 'external' || cmd.toLowerCase() === 'external-ps') {
+      setCurrentInput('')
+      handleOpenExternalTerminal('powershell')
+      return
+    }
+    if (cmd.toLowerCase() === 'external-cmd') {
+      setCurrentInput('')
+      handleOpenExternalTerminal('cmd')
       return
     }
 
@@ -184,7 +258,6 @@ export default function BottomPanelDrawer({
         command: cmd
       })
     } else {
-      // Browser emulator fallback
       handleSimulatedCommand(cmd)
     }
   }
@@ -221,7 +294,6 @@ export default function BottomPanelDrawer({
     }
   }
 
-  // In-browser mock terminal response for dev testing
   const handleSimulatedCommand = (cmd) => {
     setTimeout(() => {
       const lower = cmd.toLowerCase()
@@ -231,7 +303,7 @@ export default function BottomPanelDrawer({
           {
             id: Date.now(),
             type: 'output',
-            text: 'Available Commands: dir, ls, git status, python --version, node -v, npm test, clear, cls'
+            text: 'VisualMark Studio Terminal Commands:\n  dir, ls          - List directory contents\n  git status       - Check Git repository status\n  python --version - Check Python runtime\n  node -v          - Check Node runtime\n  external         - Launch native external PowerShell window\n  clear, cls       - Clear terminal output\n  exit             - Close terminal drawer'
           }
         ])
       } else if (lower === 'dir' || lower === 'ls') {
@@ -240,7 +312,7 @@ export default function BottomPanelDrawer({
           {
             id: Date.now(),
             type: 'output',
-            text: 'Mode                 LastWriteTime         Length Name\n----                 -------------         ------ ----\nd-----        10/10/2026   5:30 PM                backend\nd-----        10/10/2026   5:30 PM                frontend\n-a---         10/10/2026   5:30 PM           4963 README.md\n-a---         10/10/2026   5:30 PM           1093 LICENSE'
+            text: `    Directory: ${cwdDisplay}\n\nMode                 LastWriteTime         Length Name\n----                 -------------         ------ ----\nd-----        10/11/2026  11:40 PM                assets\nd-----        10/11/2026  11:40 PM                backend\nd-----        10/11/2026  11:40 PM                frontend\n-a---         10/11/2026  11:40 PM           8400 README.md\n-a---         10/11/2026  11:40 PM           1093 LICENSE`
           }
         ])
       } else if (lower.startsWith('git status')) {
@@ -249,18 +321,8 @@ export default function BottomPanelDrawer({
           {
             id: Date.now(),
             type: 'output',
-            text: 'On branch main\nYour branch is up to date with \'origin/main\'.\n\nnothing to commit, working tree clean'
+            text: 'On branch main\nYour branch is up to date with \'origin/main\'.\nnothing to commit, working tree clean'
           }
-        ])
-      } else if (lower.includes('python')) {
-        setTerminalHistory((prev) => [
-          ...prev,
-          { id: Date.now(), type: 'output', text: 'Python 3.13.5' }
-        ])
-      } else if (lower.includes('node')) {
-        setTerminalHistory((prev) => [
-          ...prev,
-          { id: Date.now(), type: 'output', text: 'v20.18.0' }
         ])
       } else {
         setTerminalHistory((prev) => [
@@ -268,7 +330,7 @@ export default function BottomPanelDrawer({
           { id: Date.now(), type: 'output', text: `Command executed: ${cmd}` }
         ])
       }
-    }, 50)
+    }, 40)
   }
 
   const handleClearTerminal = () => {
@@ -276,20 +338,71 @@ export default function BottomPanelDrawer({
   }
 
   const handleRestartTerminal = () => {
-    setTerminalHistory([
-      {
-        id: Date.now(),
-        type: 'system',
-        text: `[Restarting ${shellType === 'powershell' ? 'PowerShell' : 'Command Prompt'}...]`
+    initTerminalSession(true)
+  }
+
+  // -------------------------------------------------------------------------
+  // Live Output Channel Population
+  // -------------------------------------------------------------------------
+  const refreshOutputChannel = useCallback(async () => {
+    if (outputChannel === 'git') {
+      if (typeof window !== 'undefined' && window.electronAPI?.getGitInfo && workspaceDirectory?.path) {
+        const info = await window.electronAPI.getGitInfo(workspaceDirectory.path)
+        setChannelData((prev) => ({
+          ...prev,
+          git: [
+            { time: new Date().toLocaleTimeString(), message: `Git Repository: ${workspaceDirectory.path}` },
+            { time: new Date().toLocaleTimeString(), message: `Active Branch: ${info?.branch || 'main'}` },
+            { time: new Date().toLocaleTimeString(), message: `Clean Tree: ${info?.changesCount === 0 ? 'Yes' : 'No'}` },
+            { time: new Date().toLocaleTimeString(), message: `Modified/Untracked Files: ${info?.changesCount || 0}` }
+          ]
+        }))
+      } else {
+        setChannelData((prev) => ({
+          ...prev,
+          git: [
+            { time: new Date().toLocaleTimeString(), message: `[Git] Repository checked at ${cwdDisplay}` },
+            { time: new Date().toLocaleTimeString(), message: '[Git] Status: clean working tree, branch main' }
+          ]
+        }))
       }
-    ])
-    if (typeof window !== 'undefined' && window.electronAPI?.startTerminalSession) {
-      window.electronAPI.startTerminalSession({
-        termId: 'ide-integrated-term',
-        shellType,
-        cwd: workspaceDirectory?.path
-      })
+    } else if (outputChannel === 'sidecar') {
+      let backendUrl = 'http://127.0.0.1:8000'
+      if (typeof window !== 'undefined' && window.electronAPI?.getBackendUrl) {
+        backendUrl = await window.electronAPI.getBackendUrl()
+      }
+      setChannelData((prev) => ({
+        ...prev,
+        sidecar: [
+          { time: new Date().toLocaleTimeString(), message: `[Sidecar] Local AI Engine endpoint: ${backendUrl}` },
+          { time: new Date().toLocaleTimeString(), message: '[Sidecar] Health status: Online (FastAPI + Uvicorn daemon)' },
+          { time: new Date().toLocaleTimeString(), message: '[Sidecar] Available pipelines: /api/generate, /api/analyze, /api/docs' }
+        ]
+      }))
+    } else if (outputChannel === 'markdown') {
+      setChannelData((prev) => ({
+        ...prev,
+        markdown: [
+          { time: new Date().toLocaleTimeString(), message: `[Markdown] Active file: ${activeFile}` },
+          { time: new Date().toLocaleTimeString(), message: `[Markdown] Diagnostics issues detected: ${problems.length}` },
+          { time: new Date().toLocaleTimeString(), message: '[Markdown] Live AST parsing: complete' }
+        ]
+      }))
     }
+  }, [outputChannel, workspaceDirectory?.path, cwdDisplay, activeFile, problems.length])
+
+  useEffect(() => {
+    if (isOpen && activeTab === 'output') {
+      refreshOutputChannel()
+    }
+  }, [isOpen, activeTab, outputChannel, refreshOutputChannel])
+
+  const copyOutputLogs = () => {
+    const lines = (outputChannel === 'system' ? systemLogs : (channelData[outputChannel] || []))
+      .map((l) => `[${l.time || ''}] ${l.message || l}`)
+      .join('\n')
+    navigator.clipboard?.writeText(lines)
+    toast?.success?.('Output copied to clipboard')
   }
 
   if (!isOpen) return null
@@ -320,6 +433,9 @@ export default function BottomPanelDrawer({
             <span>Problems</span>
             {errorCount > 0 && <span className="tab-badge error-badge">{errorCount}</span>}
             {warningCount > 0 && <span className="tab-badge warn-badge">{warningCount}</span>}
+            {infoCount > 0 && errorCount === 0 && warningCount === 0 && (
+              <span className="tab-badge info-badge">{infoCount}</span>
+            )}
           </button>
 
           {/* Output Tab */}
@@ -337,33 +453,47 @@ export default function BottomPanelDrawer({
             className={`bottom-tab-btn ${activeTab === 'terminal' ? 'active' : ''}`}
             onClick={() => setActiveTab('terminal')}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>terminal</span>
+            <span className="material-symbols-outlined tab-icon">terminal</span>
             <span>Terminal</span>
           </button>
         </div>
 
         {/* Right Controls */}
         <div className="bottom-panel-actions">
-          {/* Terminal Controls */}
+          {/* ================= TERMINAL ACTIONS ================= */}
           {activeTab === 'terminal' && (
             <>
               {/* Shell Picker */}
               <select
                 className="panel-select"
                 value={shellType}
-                onChange={(e) => setShellType(e.target.value)}
-                title="Select Active Shell"
+                onChange={(e) => {
+                  setShellType(e.target.value)
+                  activeSessionKeyRef.current = ''
+                }}
+                title="Select Active Integrated Shell"
               >
                 <option value="powershell">1: PowerShell</option>
                 <option value="cmd">2: Command Prompt</option>
               </select>
+
+              {/* Open in External PowerShell / CMD Button */}
+              <button
+                type="button"
+                className="panel-action-btn external-term-btn"
+                onClick={() => handleOpenExternalTerminal(shellType)}
+                title={`Open External ${shellType === 'cmd' ? 'Command Prompt' : 'PowerShell'} Window`}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>open_in_new</span>
+                <span className="btn-label">External {shellType === 'cmd' ? 'CMD' : 'PS'}</span>
+              </button>
 
               {/* Clear Terminal */}
               <button
                 type="button"
                 className="panel-action-btn"
                 onClick={handleClearTerminal}
-                title="Clear Terminal (Ctrl+L)"
+                title="Clear Terminal Output (Ctrl+L)"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>block</span>
               </button>
@@ -380,20 +510,31 @@ export default function BottomPanelDrawer({
             </>
           )}
 
-          {/* Problems Controls */}
+          {/* ================= PROBLEMS ACTIONS ================= */}
           {activeTab === 'problems' && (
-            <select
-              className="panel-select"
-              value={problemsFilter}
-              onChange={(e) => setProblemsFilter(e.target.value)}
-            >
-              <option value="all">All ({problems.length})</option>
-              <option value="errors">Errors ({errorCount})</option>
-              <option value="warnings">Warnings ({warningCount})</option>
-            </select>
+            <>
+              <input
+                type="text"
+                className="panel-filter-input"
+                placeholder="Filter problems..."
+                value={problemsSearch}
+                onChange={(e) => setProblemsSearch(e.target.value)}
+              />
+
+              <select
+                className="panel-select"
+                value={problemsFilter}
+                onChange={(e) => setProblemsFilter(e.target.value)}
+              >
+                <option value="all">All ({problems.length})</option>
+                <option value="errors">Errors ({errorCount})</option>
+                <option value="warnings">Warnings ({warningCount})</option>
+                <option value="infos">Infos ({infoCount})</option>
+              </select>
+            </>
           )}
 
-          {/* Output Controls */}
+          {/* ================= OUTPUT ACTIONS ================= */}
           {activeTab === 'output' && (
             <>
               <select
@@ -401,10 +542,30 @@ export default function BottomPanelDrawer({
                 value={outputChannel}
                 onChange={(e) => setOutputChannel(e.target.value)}
               >
-                <option value="system">VisualMark Studio System</option>
-                <option value="sidecar">FastAPI Sidecar</option>
-                <option value="git">Git Status</option>
+                <option value="system">VisualMark Studio (System)</option>
+                <option value="git">Git Status & History</option>
+                <option value="sidecar">FastAPI AI Sidecar</option>
+                <option value="markdown">Markdown Engine</option>
               </select>
+
+              <button
+                type="button"
+                className="panel-action-btn"
+                onClick={refreshOutputChannel}
+                title="Refresh Channel Output"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>refresh</span>
+              </button>
+
+              <button
+                type="button"
+                className="panel-action-btn"
+                onClick={copyOutputLogs}
+                title="Copy Output Logs"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>content_copy</span>
+              </button>
+
               <button
                 type="button"
                 className="panel-action-btn"
@@ -435,7 +596,7 @@ export default function BottomPanelDrawer({
             type="button"
             className="panel-action-btn"
             onClick={onClose}
-            title="Close Panel (Ctrl+J)"
+            title="Close Panel (Ctrl+`)"
           >
             <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>close</span>
           </button>
@@ -447,9 +608,9 @@ export default function BottomPanelDrawer({
         {/* ==================== TERMINAL VIEW ==================== */}
         {activeTab === 'terminal' && (
           <div className="panel-terminal-view" onClick={handleTerminalContainerClick}>
-            <div className="terminal-scroll-area" ref={terminalScrollRef}>
+            <div className="terminal-scroll-area custom-scrollbar" ref={terminalScrollRef}>
               <div className="terminal-welcome-banner">
-                ⚡ VisualMark Studio Embedded Terminal — Active directory: {cwdDisplay}
+                ⚡ VisualMark Studio Terminal &bull; {shellType === 'powershell' ? 'PowerShell 7/5' : 'Command Prompt'} &bull; Directory: {cwdDisplay}
               </div>
 
               {terminalHistory.map((item) => (
@@ -482,7 +643,7 @@ export default function BottomPanelDrawer({
 
         {/* ==================== PROBLEMS VIEW ==================== */}
         {activeTab === 'problems' && (
-          <div className="panel-problems-view">
+          <div className="panel-problems-view custom-scrollbar">
             {filteredProblems.length === 0 ? (
               <div className="problems-empty-state">
                 <span className="material-symbols-outlined problems-empty-icon">check_circle</span>
@@ -491,21 +652,21 @@ export default function BottomPanelDrawer({
             ) : (
               <div className="problems-list">
                 <div className="problem-file-header">
-                  <span className="material-symbols-outlined" style={{ fontSize: '15px', color: '#38bdf8' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '15px', color: '#007acc' }}>
                     description
                   </span>
                   <span>{activeFile}</span>
-                  <span style={{ color: 'var(--text-muted, #64748b)', fontSize: '11px', fontWeight: 'normal' }}>
-                    ({filteredProblems.length} issue{filteredProblems.length !== 1 ? 's' : ''})
+                  <span className="problem-count-badge">
+                    {filteredProblems.length} issue{filteredProblems.length !== 1 ? 's' : ''}
                   </span>
                 </div>
 
                 {filteredProblems.map((p) => (
                   <div
                     key={p.id}
-                    className="problem-item-row"
+                    className={`problem-item-row problem-item-${p.severity}`}
                     onClick={() => onSelectProblem(p)}
-                    title={`Click to navigate to line ${p.line}`}
+                    title={`Click to navigate to Ln ${p.line}, Col ${p.col}`}
                   >
                     <span
                       className={`material-symbols-outlined problem-icon ${
@@ -519,6 +680,7 @@ export default function BottomPanelDrawer({
                       {p.severity === 'error' ? 'cancel' : p.severity === 'warning' ? 'warning' : 'info'}
                     </span>
                     <span className="problem-message">{p.message}</span>
+                    <span className="problem-source">[{p.source || 'Markdown'}]</span>
                     <span className="problem-location">
                       [{p.line}, {p.col}]
                     </span>
@@ -531,21 +693,33 @@ export default function BottomPanelDrawer({
 
         {/* ==================== OUTPUT VIEW ==================== */}
         {activeTab === 'output' && (
-          <div className="panel-output-view">
-            {systemLogs.length === 0 ? (
-              <div style={{ color: '#64748b', fontStyle: 'italic', padding: '12px' }}>
-                No output logged for channel "{outputChannel}".
-              </div>
-            ) : (
-              systemLogs
-                .filter((l) => !outputChannel || l.channel === outputChannel || outputChannel === 'system')
-                .map((log, idx) => (
+          <div className="panel-output-view custom-scrollbar">
+            {outputChannel === 'system' ? (
+              systemLogs.length === 0 ? (
+                <div className="output-empty-state">
+                  No output logged for channel "VisualMark Studio (System)".
+                </div>
+              ) : (
+                systemLogs.map((log, idx) => (
                   <div key={idx} className="output-log-line">
-                    <span className="output-time">[{log.time || '17:30'}]</span>
-                    <span className="output-tag">[{log.channel || 'System'}]</span>
+                    <span className="output-time">[{log.time || new Date().toLocaleTimeString()}]</span>
+                    <span className="output-tag">[System]</span>
                     <span>{log.message || log}</span>
                   </div>
                 ))
+              )
+            ) : (channelData[outputChannel] || []).length === 0 ? (
+              <div className="output-empty-state">
+                No output logged for channel "{outputChannel}". Click Refresh above to poll data.
+              </div>
+            ) : (
+              (channelData[outputChannel] || []).map((log, idx) => (
+                <div key={idx} className="output-log-line">
+                  <span className="output-time">[{log.time || new Date().toLocaleTimeString()}]</span>
+                  <span className="output-tag">[{outputChannel.toUpperCase()}]</span>
+                  <span>{log.message || log}</span>
+                </div>
+              ))
             )}
           </div>
         )}

@@ -162,6 +162,34 @@ export function NotificationHistoryPanel() {
     setToastFilterLevel
   } = useToast()
 
+  // Close Notification Center on Escape key or clicking outside
+  React.useEffect(() => {
+    if (!isHistoryOpen) return
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        toggleHistory()
+      }
+    }
+
+    const handleDocumentClick = (e) => {
+      if (!e.target.closest('.ide-notification-drawer') && !e.target.closest('.notification-bell-btn')) {
+        toggleHistory()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    const timer = setTimeout(() => {
+      window.addEventListener('mousedown', handleDocumentClick)
+    }, 50)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      clearTimeout(timer)
+      window.removeEventListener('mousedown', handleDocumentClick)
+    }
+  }, [isHistoryOpen, toggleHistory])
+
   if (!isHistoryOpen) return null
 
   const handleOpenSettings = () => {
@@ -174,13 +202,10 @@ export function NotificationHistoryPanel() {
       {/* 1. Header Bar */}
       <div className="ide-drawer-header">
         <div className="ide-drawer-header-title">
-          <span className="material-symbols-outlined" style={{ fontSize: '15px', color: '#38bdf8' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '15px', color: '#cccccc' }}>
             notifications
           </span>
           <span className="ide-drawer-title-text">NOTIFICATIONS</span>
-          {history.length > 0 && (
-            <span className="ide-drawer-count-badge">{history.length}</span>
-          )}
         </div>
 
         <div className="ide-drawer-header-actions">

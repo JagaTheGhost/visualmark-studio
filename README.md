@@ -1,15 +1,15 @@
 <p align="center">
-  <img src="frontend/src/assets/logo.png" width="128" style="border-radius: 28px;" />
+  <img src="frontend/src/assets/logo.png" width="128" style="border-radius: 28px;" alt="VisualMark Studio Logo" />
 </p>
 
 <h1 align="center">VisualMark Studio</h1>
 
 <p align="center">
-  <b>The Code + Visual Desktop IDE for Markdown (.md), Architecture Diagrams, and Documentation Suites</b>
+  <b>The Code + Visual Desktop IDE for Technical Documentation, Markdown Architecture, and Publishing Suites</b>
 </p>
 
 <p align="center">
-  <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/version-1.0.1-6366f1.svg?style=for-the-badge" alt="Version" /></a>
+  <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/version-1.0.3-6366f1.svg?style=for-the-badge" alt="Version 1.0.3" /></a>
   <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/Download-Windows_.exe-22c55e?style=for-the-badge&logo=windows&logoColor=white" alt="Download Windows" /></a>
   <a href="https://electronjs.org"><img src="https://img.shields.io/badge/Electron-44.7+-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron" /></a>
   <a href="https://fastapi.tiangolo.com"><img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" /></a>
@@ -17,131 +17,140 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="License: MIT" /></a>
 </p>
 
+<p align="center">
+  <img src="frontend/src/assets/VisualMark_Studio_IDE.gif" width="100%" alt="VisualMark Studio Desktop IDE Showcase" style="border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.5);" />
+</p>
+
 ---
 
-VisualMark Studio is a modern, high-performance **native desktop IDE** seamlessly marrying Monaco code editing with interactive visual studios. Built on **Electron**, **React**, and an embedded **FastAPI sidecar engine**, it operates 100% locally with direct disk I/O, frameless Obsidian dark styling, native terminal integration, and deep repository inspection.
+## ⚡ The Unified Documentation Experience
 
-## 💾 Download & Install for Windows
+Writing technical documentation is notoriously fragmented across disconnected browser tabs: drafting Markdown in basic text boxes, generating badges on web forms, drawing architecture diagrams on third-party whiteboards, building tables in online converters, and manually tracking release notes.
 
-Download pre-compiled Windows binaries directly from the latest [GitHub Release](https://github.com/JagaTheGhost/visualmark-studio/releases/latest):
+**VisualMark Studio** unites all of this under a single, **100% offline native desktop IDE**. It pairs the industry-standard **Monaco code editor** (the engine powering VS Code) with **10 specialized interactive visual studios**, direct local disk I/O, an integrated PowerShell/CMD terminal drawer, and automated documentation generation.
+
+| Traditional Documentation Workflow | The VisualMark Studio Experience |
+| :--- | :--- |
+| ❌ Jumping across 6+ web tabs to build badges, diagrams, and tables | ✅ **10 Integrated Visual Studios** right in the IDE workspace |
+| ❌ Generic web textareas with no multi-cursor or formatting | ✅ **Full Monaco Engine** with GFM syntax, multi-cursor, and hotkeys |
+| ❌ Manual copy-pasting into local repositories | ✅ **Direct Local Disk I/O** (`Ctrl+S`, `Ctrl+O`) and real-time File Explorer |
+| ❌ Blind guessing whether Markdown structure is complete | ✅ **README Auditor & Linter** with automated health scoring (A+ to F) |
+| ❌ Cloud data leakage and external telemetry | ✅ **100% Local-First** with zero telemetry or network tracking |
+
+---
+
+## 💾 Download for Windows
+
+Pre-compiled, standalone Windows binaries are available directly from the latest [GitHub Release](https://github.com/JagaTheGhost/visualmark-studio/releases/latest):
 
 | Package | Format | Description | Direct Download |
 | :--- | :--- | :--- | :--- |
-| **Windows Installer** | `.exe` (NSIS) | Full installer with Desktop shortcut & Explorer context menu integration | [Download Setup (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark.Studio-Setup.exe) |
+| **Windows Installer** | `.exe` (NSIS) | Complete desktop installer with Start Menu, Desktop shortcut & Explorer integration | [Download Setup (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark.Studio-Setup.exe) |
 | **Windows Portable** | `.exe` (Standalone) | Zero-installation portable binary (runs from any folder or USB drive) | [Download Portable (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark.Studio-Portable.exe) |
 
->[!IMPORTANT]
->Note for Windows Users: Because VisualMark Studio is open-source and community-distributed, Windows SmartScreen may show an "Unrecognized app" prompt on first launch. Click More info → Run anyway to install.
+> [!NOTE]
+> **Windows SmartScreen Notice**: Because VisualMark Studio is open-source and community-distributed, Windows SmartScreen may present an *"Unrecognized app"* prompt on initial launch. Click **More info → Run anyway** to proceed.
+
 ---
 
-## ✨ Desktop IDE Features
+## 🎨 10 Specialized Visual Studio Suites
 
-- 🖥️ **Full Native Desktop Shell** - Frameless Antigravity title bar with native Windows window management (minimize, maximize, close), custom menus (File, Edit, Selection, View, Go, Run, Terminal, Help), and command palette (`Ctrl+K`).
-- 📁 **Direct Disk I/O & Workspaces** - Open files (`Ctrl+O`), open project directories (`Ctrl+Shift+O`), save directly to disk (`Ctrl+S`), and save copies (`Ctrl+Shift+S`) via native OS file dialogs without browser download workarounds.
-- ⚡ **Integrated Terminal Launcher** - Launch PowerShell, Command Prompt (cmd), or reveal folders in Windows Explorer directly from the IDE menus and Explorer context menu.
-- 🌳 **Real-Time Workspace Explorer** - Live directory tree scanner with inline renaming, right-click context menu (Open, Rename, Safe Delete, Copy Path, Reveal in Explorer), drag-and-drop reorganization, and Git status badges.
-- 🎨 **Visual Studio Suite** -
-  - **Shields.io Badge Studio:** 100+ devicon presets, custom hex swatches, brand plates, and native vector SVG exports.
-  - **Mermaid Diagram Studio:** Real-time visual architecture graphs, flowchart layouts, and 2x Retina PNG / SVG export.
-  - **Table Studio:** Interactive matrix grid editor with 1-click Markdown generation.
-  - **Snippet & Asset Studio:** Visual hero banner designer with direct disk export.
-- 📑 **Multi-Tab Document Buffers** - Dynamic tab bar with untitled document creation, dirty indicator dots, undo/redo ring buffer (`Ctrl+Z` / `Ctrl+Y`), and find/replace widget (`Ctrl+F` / `Ctrl+H`).
-- 🔒 **100% Local-First** - Runs entirely on your machine with zero cloud dependency or telemetry.
+VisualMark Studio features dedicated, visual designer environments accessible as persistent IDE tabs:
+
+| Studio | Tab ID | Capabilities |
+| :--- | :--- | :--- |
+| 🛡️ **Shields.io Badges** | `badges.studio` | 100+ Devicon tech presets, custom hex pickers, styles (`for-the-badge`, `flat`), SVG download |
+| 📊 **Mermaid Architecture** | `diagrams.studio` | Visual architecture maps, flowcharts, sequence diagrams, git graphs, high-res SVG & 2x PNG export |
+| 🧮 **Visual Tables** | `tables.studio` | Interactive spreadsheet grid, column alignment, CSV import/export, 1-click Markdown generation |
+| 🧩 **Snippets & Callouts** | `snippets.studio` | GitHub alert callouts (`[!NOTE]`, `[!TIP]`, `[!WARNING]`), collapsible `<details>`, shortcut tables |
+| 🖼️ **Images & Banners** | `images.studio` | Gradient hero banners, screenshot OS window frames (macOS / Windows mockups), image optimization |
+| 🌳 **Directory Trees** | `tree.studio` | Auto-scans workspace folders into ASCII, Unicode box-drawing, or Emoji visual directory trees |
+| 🌐 **REST API & Endpoints** | `api.studio` | Interactive route matrix with HTTP verbs, request/response payloads, and automatic `curl` generator |
+| 👥 **Contributors & Team** | `contributors.studio` | All-Contributors standard grid, GitHub avatar auto-fetch, contribution role badges |
+| 📝 **Changelog & Releases** | `changelog.studio` | Keep-a-Changelog standard release notes with SemVer bumping (`Major`, `Minor`, `Patch`) |
+| 🔍 **README Auditor** | `audit.studio` | Documentation scorecard, A+ to F grade, section completeness check, 1-click boilerplate injector |
+
+👉 **For an exhaustive top-to-bottom manual of all 10 studios, consult [FEATURES.md](FEATURES.md).**
+
+---
+
+## ✨ Core Desktop IDE Highlights
+
+- 🖥️ **Monaco Editor Engine** — Multi-cursor editing, bracket matching, line numbers, soft word wrap toggle (`Alt+Z`), and full formatting.
+- ⚡ **Synchronized Split Preview** — Live GFM compilation with proportional scroll synchronization between editor and preview panes.
+- 🎯 **Universal Command Palette** — Quick input (`F1` / `Ctrl+Shift+P` / `Ctrl+K`) with live search and **`⚙ Configure Keybinding`** button on hover (or `Alt+Enter`) matching modern IDE workflows.
+- ⌨️ **Keyboard Shortcuts Tab** — Deep-linked hotkey recorder modal to inspect, customize, and persist any keybinding across the IDE.
+- 📁 **Native Disk I/O & Workspaces** — Mount local folders, save directly to disk (`Ctrl+S`), create untitled files (`Ctrl+N`), and manage files with live context menus.
+- 💻 **Integrated Bottom Panel Drawer** — Full-featured bottom panel (`Ctrl+``) housing:
+  - **Terminal**: Embedded PowerShell and Command Prompt shells with tabs, session management, and external launching.
+  - **Problems**: Real-time Markdown linter catching broken links, malformed tables, and heading skips.
+  - **Output**: Live system event logs with severity filtering and log export.
+- 🌙 **Zen / Focus Mode** — Full-screen distraction-free typography canvas (`F11`).
+- 📤 **Multi-Format Publishing** — Export directly to atomic disk files, GitHub-styled vector **PDF** (`Ctrl+P`), standalone **HTML**, or a complete documentation **ZIP** suite.
+
+---
+
+## 📚 Documentation Directory
+
+| Document | Description |
+| :--- | :--- |
+| 📖 **[FEATURES.md](FEATURES.md)** | **Complete Capabilities Tour** — Top-to-bottom master guide detailing all 10 studios, editor features, and workflows. |
+| 🛠️ **[SETUP.md](SETUP.md)** | **Developer Setup Guide** — Step-by-step instructions for running from source, prerequisites, and troubleshooting. |
+| 📦 **[DEPLOYMENT.md](DEPLOYMENT.md)** | **Packaging & Distribution** — Instructions for building standalone installers (.exe / portable) via Electron Builder. |
+| 🖥️ **[DESKTOP.md](DESKTOP.md)** | **Technical Architecture** — Electron main process, FastAPI sidecar daemon, and IPC context bridge specs. |
+
+---
+
+## ⌨️ Essential Keyboard Shortcuts
+
+| Shortcut | Command | Action |
+| :--- | :--- | :--- |
+| **`F1`** / **`Ctrl + Shift + P`** | **Command Palette** | Open quick command palette with `⚙` keybinding configuration |
+| **`Ctrl + S`** | **Quick Save** | Directly write active document buffer to disk |
+| **`Ctrl + Shift + S`** | **Save As...** | Native OS Save dialog to export to a chosen path |
+| **`Ctrl + O`** | **Open File...** | Open native file picker for Markdown / text files |
+| **`Ctrl + Shift + O`** | **Open Folder...** | Mount local repository folder into Workspace Explorer |
+| **`Ctrl + N`** | **New Document** | Open an instant untitled document buffer |
+| **`Ctrl + Shift + V`** | **Toggle View** | Cycle between Split View, Editor-Only, and Preview-Only |
+| **`Ctrl + \`** | **Split Orientation** | Toggle side-by-side vertical split vs top-and-bottom horizontal split |
+| **`Ctrl + B`** | **Toggle Sidebar** | Expand or collapse the primary activity drawer |
+| **`Ctrl + ` `** | **Toggle Terminal** | Open or close the integrated bottom panel drawer |
+| **`Ctrl + /`** | **Shortcuts Tab** | Open the interactive Keyboard Shortcuts configuration tab |
+| **`Ctrl + P`** | **Export PDF** | Generate high-fidelity GitHub-styled vector PDF |
+| **`F11`** | **Zen Mode** | Distraction-free full-screen writing canvas |
+| **`Ctrl + Alt + Up/Down`** | **Add Cursor** | Insert additional caret on the line above/below |
+| **`Ctrl + F2`** | **Change All** | Select all occurrences of current word for multi-cursor editing |
 
 ---
 
 ## 🏗️ Desktop Architecture
 
 ```
-auto-readme-generator/
+visualmark-studio/
 ├── backend/
 │   ├── app.py              # FastAPI sidecar application
-│   ├── desktop_server.py   # Frozen desktop daemon entrypoint (dynamic --port negotiation)
+│   ├── desktop_server.py   # Frozen desktop daemon entrypoint (dynamic port negotiation)
 │   ├── build_sidecar.py    # PyInstaller sidecar compilation script
-│   ├── prompts.py          # Deterministic template & documentation engine
-│   └── tests/              # Backend pytest test suite (11 test suites)
+│   └── prompts.py          # Deterministic template & documentation engine
 ├── frontend/
 │   ├── electron/
-│   │   ├── main.cjs        # Electron main process (safe execFile git, port detection, IPC)
-│   │   └── preload.cjs     # Context bridge (file dialogs, terminals, disk I/O)
+│   │   ├── main.cjs        # Electron main process (native IPC, terminal spawn, disk I/O)
+│   │   └── preload.cjs     # Context bridge (file dialogs, shell execution, window controls)
 │   ├── src/
-│   │   ├── components/     # TopMenuBar, IdeExplorerTree, TabBar, Preview, Studios
-│   │   ├── data/           # Preset templates, badge studio static packs
-│   │   ├── hooks/          # Custom hooks (useEditorPreferences, useBottomPanel)
-│   │   ├── styles/         # Modular CSS (tokens, layout, sidebar, editor, explorer, studios)
-│   │   ├── utils/          # Unified apiClient, documentExportUtils, repoCardSvgGenerators
-│   │   ├── App.jsx         # Desktop workspace state & window orchestration
-│   │   └── index.css       # Clean master CSS manifest
-│   ├── scripts/            # manual-pack.ps1 (EPERM bypass packager)
-│   ├── vite.config.js      # Optimized Rollup code-splitting & dynamic chunks
-│   └── package.json        # Electron and frontend dependencies
-├── DEPLOYMENT.md           # Standalone packaging & distribution guide
-├── DESKTOP.md              # Desktop IDE architecture and technical specifications
-├── SETUP.md                # Local development & testing setup guide
-└── README.md               # Documentation
+│   │   ├── components/     # TopMenuBar, MonacoEditorPane, TabBar, Studios, BottomPanelDrawer
+│   │   ├── data/           # Preset templates, badge packs, devicon maps
+│   │   ├── styles/         # Modular CSS (tokens, layout, monaco, modals, drawer, studios)
+│   │   ├── utils/          # keybindingManager, apiClient, documentExportUtils
+│   │   └── App.jsx         # Workspace state orchestrator & lifecycle manager
+│   └── package.json        # Electron & frontend build manifest
+├── FEATURES.md             # Exhaustive top-to-bottom capabilities & features guide
+├── SETUP.md                # Local development & setup instructions
+├── DEPLOYMENT.md           # Standalone packaging & release build guide
+└── README.md               # Master project showcase
 ```
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- **Node.js** 18+ and **npm** 9+
-- **Python** 3.9+ (optional if using pre-compiled sidecar)
-
-### Launch the Desktop IDE
-
-```bash
-cd frontend
-npm install
-npm start
-# Concurrently launches Vite + Electron Desktop IDE window
-```
-
----
-
-## ⌨️ Desktop Keyboard Shortcuts
-
-| Shortcut | Action | Description |
-| :--- | :--- | :--- |
-| **`Ctrl+S`** | **Save** | Directly writes content to the active file on disk |
-| **`Ctrl+Shift+S`** | **Save As...** | Native OS Save dialog to write to a chosen file path |
-| **`Ctrl+O`** | **Open File** | Native OS Open dialog to load any markdown document |
-| **`Ctrl+Shift+O`** | **Open Folder** | Opens a local folder and populates the workspace tree |
-| **`Ctrl+N`** | **New Document** | Creates an instant untitled buffer in the tab bar |
-| **`Ctrl+K`** | **Command Palette** | Access studios, templates, and commands instantly |
-| **`Ctrl+F`** | **Find** | Smooth in-buffer search widget |
-| **`Ctrl+H`** | **Replace** | In-buffer find and replace widget |
-| **`Ctrl+Z`** | **Undo** | Undo editor changes via local history buffer |
-| **`Ctrl+Y`** | **Redo** | Redo editor changes |
-| **`Ctrl+B`** | **Toggle Drawer** | Toggle the primary activity drawer |
-| **`Ctrl+` `** | **PowerShell** | Open external PowerShell terminal in workspace folder |
-| **`Ctrl+Shift+I`** | **DevTools** | Toggle Electron Developer Tools |
-| **`Ctrl+R`** | **Reload Window** | Reload the IDE window |
-| **`F11`** | **Zen Mode** | Toggle distraction-free full-screen editor |
-
----
-
-## 📦 Building Standalone Distribution Packages
-
-To generate a standalone Windows installer or portable `.exe` that runs without requiring Node.js or Python:
-
-```bash
-# 1. Compile the Python sidecar daemon
-cd backend
-python build_sidecar.py
-
-# 2. Package the Electron executable
-cd frontend
-npm run electron:portable   # Builds portable .exe
-npm run electron:dist       # Builds full NSIS installer
-```
-
-Binaries are output to `frontend/release/`.
 
 ---
 
 ## 📄 License
 
-Distributed under the MIT License. See [LICENSE](LICENSE) for details.
+VisualMark Studio is open-source software licensed under the **[MIT License](LICENSE)**.

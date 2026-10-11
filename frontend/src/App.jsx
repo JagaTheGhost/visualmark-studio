@@ -233,6 +233,8 @@ Distributed under the MIT License.
   const [findReplaceMode, setFindReplaceMode] = useState('find') // 'find' | 'replace'
   const [openStudioTabs, setOpenStudioTabs] = useState([]) // ['badges.studio', 'diagrams.studio', 'settings', 'shortcuts']
   const [keybindings, setKeybindings] = useState(() => loadKeybindings())
+  const [shortcutsInitialQuery, setShortcutsInitialQuery] = useState('')
+  const [shortcutsAutoEditId, setShortcutsAutoEditId] = useState(null)
   const [dirtyFiles, setDirtyFiles] = useState({}) // Tracks unsaved modifications { [fileName]: true }
   const [githubToken, setGithubToken] = useState(() => localStorage.getItem('readme_github_token') || '')
   const [recentWorkspaces, setRecentWorkspaces] = useState(() => {
@@ -261,6 +263,7 @@ Distributed under the MIT License.
   const fileScrollPositions = useRef({})
   const fileCursorPositions = useRef({})
   const lastActiveDocRef = useRef('README.md')
+  const [insertModalState, setInsertModalState] = useState({ isOpen: false, snippet: '', snippetType: '' })
   const [updateDownloaded, setUpdateDownloaded] = useState(null)
   const [updateProgress, setUpdateProgress] = useState(null)
   const [updateError, setUpdateError] = useState(null)
@@ -539,9 +542,11 @@ Distributed under the MIT License.
 
       window.dispatchEvent(new CustomEvent('workspace-tree-refresh'))
       showToast(`Loaded workspace: ${resolvedName} (${folderFiles.length} docs found)`, 'success')
+      addSystemLog?.(`Loaded workspace: ${resolvedName} (${folderFiles.length} docs found)`, 'info', 'system')
     } catch (err) {
       console.error('Error opening workspace:', err)
       showToast('Failed to open workspace directory: ' + err.message, 'error')
+      addSystemLog?.('Failed to open workspace directory: ' + err.message, 'error', 'system')
     }
   }, [addRecentWorkspace, showToast])
 
@@ -1308,10 +1313,21 @@ Distributed under the MIT License.
     setActiveFile('settings')
   }, [])
 
-  const handleOpenShortcutsTab = useCallback(() => {
+  const handleOpenShortcutsTab = useCallback((initialQuery = '', editId = null) => {
+    const queryStr = typeof initialQuery === 'string' ? initialQuery : ''
+    const idStr = typeof editId === 'string' ? editId : null
+    setShortcutsInitialQuery(queryStr)
+    setShortcutsAutoEditId(idStr)
     setOpenDocTabs((prev) => prev.filter((f) => !isStudioTabId(f)))
     setOpenStudioTabs((prev) => (prev.includes('shortcuts') ? prev : [...prev, 'shortcuts']))
     setActiveFile('shortcuts')
+  }, [])
+
+  // Listen for Monaco / global open-command-palette events
+  useEffect(() => {
+    const handleOpenPalette = () => setCommandPaletteOpen(true)
+    window.addEventListener('open-command-palette', handleOpenPalette)
+    return () => window.removeEventListener('open-command-palette', handleOpenPalette)
   }, [])
 
 
@@ -1610,6 +1626,7 @@ Distributed under the MIT License.
           setDirtyFiles((prev) => ({ ...prev, [activeFile]: false }))
           clearHotExitDraft(activeFile)
           showToast(`✓ Saved ${activeFile}`, 'success')
+          addSystemLog?.(`Saved file: ${activeFile} (${currentPath})`, 'info', 'system')
           return
         }
       }
@@ -1626,6 +1643,7 @@ Distributed under the MIT License.
         setDirtyFiles((prev) => ({ ...prev, [savedFileName]: false }))
         clearHotExitDraft(savedFileName)
         if (savedFileName !== activeFile) clearHotExitDraft(activeFile)
+        addSystemLog?.(`Saved file to disk: ${res.filePath}`, 'info', 'system')
 
         if (savedFileName !== activeFile) {
           if (activeFile === 'README.md') {
@@ -1811,7 +1829,11 @@ Distributed under the MIT License.
         handleOpenShortcutsTab()
       }
       // Command Palette
-      else if (matchesKeybinding(e, getKey('view.commandPalette') || 'Ctrl + K')) {
+      else if (
+        matchesKeybinding(e, getKey('view.commandPalette') || 'Ctrl + Shift + P') ||
+        e.key === 'F1' ||
+        ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K'))
+      ) {
         e.preventDefault()
         setCommandPaletteOpen((prev) => !prev)
       }
@@ -1875,7 +1897,7 @@ Distributed under the MIT License.
         setSidebarCollapsed(false)
       }
       // View: Cycle View Mode
-      else if (matchesKeybinding(e, getKey('view.cycleMode') || 'Ctrl + Shift + P')) {
+      else if (matchesKeybinding(e, getKey('view.cycleMode') || 'Ctrl + Shift + V')) {
         e.preventDefault()
         setViewMode((prev) => (prev === 'split' ? 'preview' : prev === 'preview' ? 'editor' : 'split'))
       }
@@ -1972,16 +1994,66 @@ Distributed under the MIT License.
     handleCreateFile
   ])
 
-  // Commands for Command Palette
+  const getBindingKey = useCallback(
+    (id, fallback = '') => keybindings.find((k) => k.id === id)?.key || fallback,
+    [keybindings]
+  )
+
+  // Commands for Command Palette (Synchronized with keybindings and shortcuts editor)
   const commands = useMemo(() => [
     {
-      id: 'create-doc',
-      title: 'Create Documentation',
+      id: 'doc.create',
+      title: 'Create: Create Documentation',
       description: 'Create documentation skeleton from configuration',
       icon: 'note_add',
-      category: 'Action',
-      shortcut: 'Ctrl+Enter',
+      category: 'Create',
+      shortcut: getBindingKey('doc.create', 'Ctrl + Enter'),
       action: () => handleGenerate()
+    },
+    {
+      id: 'file.new',
+      title: 'File: New Document',
+      description: 'Create a new markdown document tab',
+      icon: 'note_add',
+      category: 'File',
+      shortcut: getBindingKey('file.new', 'Ctrl + N'),
+      action: handleCreateUntitledFile
+    },
+    {
+      id: 'file.save',
+      title: 'File: Quick Save Document',
+      description: 'Save current active document to disk or local storage',
+      icon: 'save',
+      category: 'File',
+      shortcut: getBindingKey('file.save', 'Ctrl + S'),
+      action: handleSaveNativeFile
+    },
+    {
+      id: 'file.open',
+      title: 'File: Open File...',
+      description: 'Open native markdown or text file',
+      icon: 'file_open',
+      category: 'File',
+      shortcut: getBindingKey('file.open', 'Ctrl + O'),
+      action: handleOpenNativeFile
+    },
+    {
+      id: 'file.openFolder',
+      title: 'File: Open Folder...',
+      description: 'Open native folder directory',
+      icon: 'folder_open',
+      category: 'File',
+      shortcut: getBindingKey('file.openFolder', 'Ctrl + Shift + O'),
+      action: handleOpenNativeFolder
+    },
+    {
+      id: 'file.exportPdf',
+      title: 'File: Export as PDF',
+      description: 'High-fidelity GitHub-styled vector PDF document',
+      icon: 'picture_as_pdf',
+      category: 'File',
+      shortcut: getBindingKey('file.exportPdf', 'Ctrl + P'),
+      action: handleDownloadPdf
     },
     {
       id: 'view-split',
@@ -2041,21 +2113,12 @@ Distributed under the MIT License.
       action: handleDownloadHtml
     },
     {
-      id: 'download-pdf',
-      title: 'Export: PDF Document (.pdf)',
-      description: 'High-fidelity GitHub-styled vector PDF document',
-      icon: 'picture_as_pdf',
-      category: 'Export',
-      shortcut: 'Ctrl+P',
-      action: handleDownloadPdf
-    },
-    {
-      id: 'toggle-sidebar',
-      title: 'Toggle Primary Sidebar Drawer',
+      id: 'view.toggleSidebar',
+      title: 'View: Toggle Primary Sidebar Drawer',
       description: 'Expand or collapse the left drawer panel',
       icon: 'view_sidebar',
       category: 'Layout',
-      shortcut: 'Ctrl+B',
+      shortcut: getBindingKey('view.toggleSidebar', 'Ctrl + B'),
       action: () => setSidebarCollapsed(prev => !prev)
     },
     {
@@ -2067,73 +2130,75 @@ Distributed under the MIT License.
       action: () => setIsZenMode(prev => !prev)
     },
     {
-      id: 'toggle-split-orientation',
+      id: 'view.toggleOrientation',
       title: `Toggle Split Layout (${orientation === 'horizontal' ? 'Side-by-Side' : 'Top & Bottom'})`,
       description: 'Switch between side-by-side vertical split and top-and-bottom stacked horizontal split',
       icon: orientation === 'horizontal' ? 'view_column' : 'table_rows',
       category: 'Layout',
-      shortcut: 'Alt+Shift+0',
+      shortcut: getBindingKey('view.toggleOrientation', 'Ctrl + \\'),
       action: () => setOrientation((prev) => (prev === 'horizontal' ? 'vertical' : 'horizontal'))
     },
     {
-      id: 'open-shortcuts',
+      id: 'pref.shortcuts',
       title: 'Open Keyboard Shortcuts Tab',
       description: 'Configure and customize all IDE hotkeys and shortcuts',
       icon: 'keyboard',
       category: 'Preferences',
-      shortcut: 'Ctrl+/',
+      shortcut: getBindingKey('pref.shortcuts', 'Ctrl + /'),
       action: handleOpenShortcutsTab
     },
     {
-      id: 'open-settings',
+      id: 'pref.settings',
       title: 'Open Settings Tab',
       description: 'Configure editor, appearance, fonts, and export preferences',
       icon: 'settings',
       category: 'Preferences',
-      shortcut: 'Ctrl+,',
+      shortcut: getBindingKey('pref.settings', 'Ctrl + ,'),
       action: handleOpenSettingsTab
     },
     {
-      id: 'badge-builder',
+      id: 'studio.badges',
       title: 'Open Shields.io Badge Studio Tab',
       description: 'Interactive custom badge designer & generator',
       icon: 'shield',
       category: 'Studio',
-      shortcut: 'Ctrl+Shift+B',
+      shortcut: getBindingKey('studio.badges', 'Ctrl + Shift + B'),
       action: () => handleOpenStudioTab('badges.studio')
     },
     {
-      id: 'diagram-studio',
+      id: 'studio.diagrams',
       title: 'Open Mermaid Architecture Studio Tab',
       description: 'Visually configure architecture diagrams, pipelines, and git graphs',
       icon: 'schema',
       category: 'Studio',
-      shortcut: 'Ctrl+Shift+M',
+      shortcut: getBindingKey('studio.diagrams', 'Ctrl + Shift + M'),
       action: () => handleOpenStudioTab('diagrams.studio')
     },
     {
-      id: 'table-studio',
+      id: 'studio.tables',
       title: 'Open Visual Markdown Table Studio Tab',
       description: 'Interactive visual table builder with live preview',
       icon: 'table_chart',
       category: 'Studio',
-      shortcut: 'Ctrl+Shift+T',
+      shortcut: getBindingKey('studio.tables', 'Ctrl + Shift + T'),
       action: () => handleOpenStudioTab('tables.studio')
     },
     {
-      id: 'snippet-studio',
+      id: 'studio.snippets',
       title: 'Open Code & Callouts Snippets Studio Tab',
       description: 'GitHub alerts, multi-language code blocks, and collapsible sections',
       icon: 'code_blocks',
       category: 'Studio',
+      shortcut: getBindingKey('studio.snippets', 'Ctrl + Shift + K'),
       action: () => handleOpenStudioTab('snippets.studio')
     },
     {
-      id: 'image-studio',
+      id: 'studio.images',
       title: 'Open Image & Banner Studio Tab',
       description: 'Hero banners, screenshot window frames, and comparison grids',
       icon: 'image',
       category: 'Studio',
+      shortcut: getBindingKey('studio.images', 'Ctrl + Shift + I'),
       action: () => handleOpenStudioTab('images.studio')
     },
     {
@@ -2177,15 +2242,82 @@ Distributed under the MIT License.
       action: () => handleOpenStudioTab('changelog.studio')
     },
     {
-      id: 'find-replace',
-      title: 'Find & Replace in Buffer',
+      id: 'edit.find',
+      title: 'Edit: Find in Document',
       description: 'Search and replace text in current document',
       icon: 'find_replace',
       category: 'Editor',
-      shortcut: 'Ctrl+F',
+      shortcut: getBindingKey('edit.find', 'Ctrl + F'),
       action: () => {
         setFindReplaceMode('find')
         setFindReplaceOpen(true)
+      }
+    },
+    {
+      id: 'edit.replace',
+      title: 'Edit: Find and Replace',
+      description: 'Search and replace text in current document',
+      icon: 'find_replace',
+      category: 'Editor',
+      shortcut: getBindingKey('edit.replace', 'Ctrl + H'),
+      action: () => {
+        setFindReplaceMode('replace')
+        setFindReplaceOpen(true)
+      }
+    },
+    {
+      id: 'editor.addCursorAbove',
+      title: 'Add Cursor Above',
+      description: 'Insert additional cursor on the line above',
+      icon: 'arrow_upward',
+      category: 'Editor',
+      shortcut: getBindingKey('editor.addCursorAbove', 'Ctrl + Alt + Up'),
+      action: () => {
+        window.activeMonacoEditor?.trigger('commandPalette', 'editor.action.insertCursorAbove')
+      }
+    },
+    {
+      id: 'editor.addCursorBelow',
+      title: 'Add Cursor Below',
+      description: 'Insert additional cursor on the line below',
+      icon: 'arrow_downward',
+      category: 'Editor',
+      shortcut: getBindingKey('editor.addCursorBelow', 'Ctrl + Alt + Down'),
+      action: () => {
+        window.activeMonacoEditor?.trigger('commandPalette', 'editor.action.insertCursorBelow')
+      }
+    },
+    {
+      id: 'editor.changeAllOccurrences',
+      title: 'Change All Occurrences',
+      description: 'Select all instances of current word for multi-cursor editing',
+      icon: 'find_in_page',
+      category: 'Editor',
+      shortcut: getBindingKey('editor.changeAllOccurrences', 'Ctrl + F2'),
+      action: () => {
+        window.activeMonacoEditor?.trigger('commandPalette', 'editor.action.changeAll')
+      }
+    },
+    {
+      id: 'editor.formatDocument',
+      title: 'Format Document',
+      description: 'Format and beautify document syntax',
+      icon: 'format_align_left',
+      category: 'Editor',
+      shortcut: getBindingKey('editor.formatDocument', 'Shift + Alt + F'),
+      action: () => {
+        window.activeMonacoEditor?.trigger('commandPalette', 'editor.action.formatDocument')
+      }
+    },
+    {
+      id: 'editor.toggleWordWrap',
+      title: 'Toggle Word Wrap',
+      description: 'Toggle soft word wrap in code editor',
+      icon: 'wrap_text',
+      category: 'Editor',
+      shortcut: getBindingKey('editor.toggleWordWrap', 'Alt + Z'),
+      action: () => {
+        setWordWrap((prev) => !prev)
       }
     },
     {
@@ -2238,7 +2370,19 @@ Distributed under the MIT License.
       category: 'Help',
       action: handleCheckForUpdates
     }
-  ], [activeFile, handleCopy, handleDownloadActiveFile, handleDownloadSuite, handleDownloadHtml, handleDownloadPdf, handleToggleBottomPanel, handleCheckForUpdates, handleOpenWhatsNewTab])
+  ], [
+    activeFile,
+    keybindings,
+    getBindingKey,
+    handleCopy,
+    handleDownloadActiveFile,
+    handleDownloadSuite,
+    handleDownloadHtml,
+    handleDownloadPdf,
+    handleToggleBottomPanel,
+    handleCheckForUpdates,
+    handleOpenWhatsNewTab
+  ])
 
   return (
     <div className={`ide-app-root theme-${themeMode} ${isZenMode ? 'zen-mode' : ''}`}>
@@ -2574,6 +2718,8 @@ Distributed under the MIT License.
                       onUpdateKeybinding={handleUpdateKeybinding}
                       onResetKeybindings={handleResetKeybindings}
                       onClose={() => handleCloseStudioTab('shortcuts')}
+                      initialQuery={shortcutsInitialQuery}
+                      autoEditId={shortcutsAutoEditId}
                     />
                   </Suspense>
                 ) : (activeFile === 'whats-new' || activeFile === 'release-notes') ? (
@@ -2753,6 +2899,11 @@ Distributed under the MIT License.
                 isOpen={commandPaletteOpen}
                 onClose={() => setCommandPaletteOpen(false)}
                 commands={commands}
+                onConfigureKeybinding={(cmd) => {
+                  setCommandPaletteOpen(false)
+                  handleOpenShortcutsTab(cmd.title || '', cmd.id)
+                  showToast(`Configure shortcut for: ${cmd.title}`, 'info')
+                }}
               />
             </Suspense>
           )}

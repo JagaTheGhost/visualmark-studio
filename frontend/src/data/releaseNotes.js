@@ -2,15 +2,97 @@
  * VisualMark Studio - Release Notes & Update History Dataset
  * Powers the "What's New" modal dialog, update notifications, and in-IDE release history.
  */
-export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.2'
+export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.3'
 
 export const RELEASE_HISTORY = [
+  {
+    version: '1.0.3',
+    type: 'patch',
+    title: 'VisualMark Studio 1.0.3 — Command Palette, Terminals & Stability Overhaul',
+    date: 'October 2026',
+    isCurrent: true,
+    highlights: [
+      'Interactive Command Palette (F1 / Ctrl+Shift+P) with in-line ⚙ Keybinding Configuration and Alt+Enter trigger',
+      'Monaco right-click context menu redirection directly into VisualMark Command Palette',
+      'Integrated Bottom Panel Drawer (Ctrl+`) with PowerShell/CMD terminals, Markdown diagnostics, and system output',
+      'Deep-linked Keyboard Shortcuts tab with auto-fill and auto-open keybinding recorder modal',
+      'Notification Center & dark theme synchronization with persistent unread counters',
+      'Multi-cursor editor commands: Add Cursor Above/Below, Change All Occurrences, Format Document, and Word Wrap',
+      'Fixed React UI startup mount errors and sanitized shortcuts query event handling'
+    ],
+    sections: [
+      {
+        category: 'Command Palette & Keybindings',
+        icon: 'terminal',
+        badge: 'Major',
+        color: '#6366f1',
+        items: [
+          {
+            title: 'In-Line Keybinding Configuration (⚙️)',
+            desc: 'Every command in the Command Palette now displays a settings gear on hover/selection to configure its shortcut directly, matching VS Code workflows.'
+          },
+          {
+            title: 'Monaco Right-Click & F1 Interception',
+            desc: 'Selecting "Command Palette" from the editor context menu or pressing F1 directly opens the VisualMark palette instead of the uncustomizable Monaco popup.'
+          },
+          {
+            title: 'Shortcuts Tab Deep Linking',
+            desc: 'Clicking ⚙ on any command switches directly to the Keyboard Shortcuts tab, pre-filters the table, and pops open the Keybinding Recorder modal.'
+          },
+          {
+            title: 'Multi-Cursor Editor Commands',
+            desc: 'Added Add Cursor Above (Ctrl+Alt+Up), Add Cursor Below (Ctrl+Alt+Down), Change All Occurrences (Ctrl+F2), Format Document (Shift+Alt+F), and Word Wrap (Alt+Z).'
+          }
+        ]
+      },
+      {
+        category: 'Integrated Bottom Panel Drawer',
+        icon: 'view_agenda',
+        badge: 'New',
+        color: '#38bdf8',
+        items: [
+          {
+            title: 'Embedded PowerShell & CMD Terminals',
+            desc: 'Direct execution of local shells with session tabs, add/switch/clear controls, and external launch shortcuts.'
+          },
+          {
+            title: 'Markdown Problems & Diagnostics',
+            desc: 'Real-time document linter reporting broken links, malformed tables, and heading level skips with click-to-line navigation.'
+          },
+          {
+            title: 'System Output Telemetry',
+            desc: 'Live timestamped log viewer tracking file operations, Git actions, and IDE daemon events.'
+          }
+        ]
+      },
+      {
+        category: 'Stability & Bug Fixes',
+        icon: 'bug_report',
+        badge: 'Fix',
+        color: '#10b981',
+        items: [
+          {
+            title: 'Snippet Modal State Scope Fix',
+            desc: 'Restored insertModalState in root component, eliminating ReferenceError on launch.'
+          },
+          {
+            title: 'Shortcuts Initial Query Type Guard',
+            desc: 'Sanitized parameters in ShortcutsTab to handle event objects safely and prevent TypeError: replace is not a function.'
+          },
+          {
+            title: 'Notification Theme & Counter Fix',
+            desc: 'Synchronized notification drawer dark theme with IDE chrome and ensured accurate unread counter tracking.'
+          }
+        ]
+      }
+    ]
+  },
   {
     version: '1.0.2',
     type: 'patch',
     title: 'VisualMark Studio 1.0.2 — Live Update Progress & Security Hardening',
     date: 'October 2026',
-    isCurrent: true,
+    isCurrent: false,
     highlights: [
       'Live auto-updater progress bar with real-time transfer speed (MB/s) and percentage feedback',
       'Instant network and download failure diagnostic alerting in the Status Bar',

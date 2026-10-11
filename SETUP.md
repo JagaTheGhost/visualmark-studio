@@ -1,6 +1,6 @@
-# Setup & Installation Guide
+# VisualMark Studio — Setup & Installation Guide
 
-Complete step-by-step instructions to get Auto README Generator running locally.
+Complete step-by-step instructions to get VisualMark Studio running locally from source.
 
 ## 📋 Table of Contents
 

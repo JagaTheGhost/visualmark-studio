@@ -12,9 +12,9 @@ export const DEFAULT_KEYBINDINGS = [
   // Preferences & Workspace
   { id: 'pref.settings', title: 'Preferences: Open Settings Tab', category: 'Preferences', defaultKey: 'Ctrl + ,', desc: 'Open Editor & Application Settings tab' },
   { id: 'pref.shortcuts', title: 'Preferences: Open Keyboard Shortcuts', category: 'Preferences', defaultKey: 'Ctrl + /', desc: 'Open Keyboard Shortcuts configuration tab' },
-  { id: 'view.commandPalette', title: 'View: Open Command Palette', category: 'Navigation', defaultKey: 'Ctrl + K', desc: 'Open interactive command palette and search' },
+  { id: 'view.commandPalette', title: 'View: Open Command Palette', category: 'Navigation', defaultKey: 'Ctrl + Shift + P', desc: 'Open interactive command palette and search' },
   { id: 'view.toggleSidebar', title: 'View: Toggle Primary Sidebar', category: 'View', defaultKey: 'Ctrl + B', desc: 'Show or collapse the left activity sidebar' },
-  { id: 'view.cycleMode', title: 'View: Toggle Split / Preview Mode', category: 'View', defaultKey: 'Ctrl + Shift + P', desc: 'Cycle between Split, Editor-only, and Preview-only' },
+  { id: 'view.cycleMode', title: 'View: Toggle Split / Preview Mode', category: 'View', defaultKey: 'Ctrl + Shift + V', desc: 'Cycle between Split, Editor-only, and Preview-only' },
   { id: 'view.toggleOrientation', title: 'View: Toggle Split Orientation', category: 'View', defaultKey: 'Ctrl + \\', desc: 'Toggle between Side-by-Side and Stacked editor views' },
   { id: 'view.toggleZen', title: 'View: Toggle Zen / Full Screen Mode', category: 'View', defaultKey: 'F11', desc: 'Toggle distraction-free full-screen editor mode' },
 
@@ -26,6 +26,11 @@ export const DEFAULT_KEYBINDINGS = [
   // Editor Actions
   { id: 'edit.find', title: 'Edit: Find in Document', category: 'Editor', defaultKey: 'Ctrl + F', desc: 'Open interactive Find widget in code editor' },
   { id: 'edit.replace', title: 'Edit: Find and Replace', category: 'Editor', defaultKey: 'Ctrl + H', desc: 'Open Find and Replace widget in code editor' },
+  { id: 'editor.addCursorAbove', title: 'Add Cursor Above', category: 'Editor', defaultKey: 'Ctrl + Alt + Up', desc: 'Insert additional cursor on the line above' },
+  { id: 'editor.addCursorBelow', title: 'Add Cursor Below', category: 'Editor', defaultKey: 'Ctrl + Alt + Down', desc: 'Insert additional cursor on the line below' },
+  { id: 'editor.changeAllOccurrences', title: 'Change All Occurrences', category: 'Editor', defaultKey: 'Ctrl + F2', desc: 'Select all instances of current word for multi-cursor editing' },
+  { id: 'editor.formatDocument', title: 'Format Document', category: 'Editor', defaultKey: 'Shift + Alt + F', desc: 'Format and beautify document syntax' },
+  { id: 'editor.toggleWordWrap', title: 'Toggle Word Wrap', category: 'Editor', defaultKey: 'Alt + Z', desc: 'Toggle soft word wrap in code editor' },
 
   // Studio Tools
   { id: 'studio.badges', title: 'Studio: Open Shields.io Badges Designer', category: 'Studio', defaultKey: 'Ctrl + Shift + B', desc: 'Open interactive Badges Studio tab' },

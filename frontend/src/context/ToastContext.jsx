@@ -32,8 +32,14 @@ export function ToastProvider({ children }) {
   })
   const [unreadCount, setUnreadCount] = useState(0)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+  const isHistoryOpenRef = useRef(false)
   const activeTimers = useRef(new Map())
   const lastToastRef = useRef({ message: '', type: '', time: 0, id: null })
+
+  // Synchronize isHistoryOpenRef so showToast always has the real-time open state
+  React.useEffect(() => {
+    isHistoryOpenRef.current = isHistoryOpen
+  }, [isHistoryOpen])
 
   // Notification popup filter level: 'important' (default) | 'all' | 'errors' | 'silent'
   const [toastFilterLevel, setToastFilterLevelState] = useState(() => {
@@ -174,6 +180,7 @@ export function ToastProvider({ children }) {
 
     // Append to Notification History Log (max 60 entries)
     setHistory((prev) => {
+      const isCurrentlyOpen = isHistoryOpenRef.current
       const entry = {
         id,
         message: typeof resolvedMessage === 'string' ? resolvedMessage : 'Notification',
@@ -182,7 +189,7 @@ export function ToastProvider({ children }) {
         important: isImportant,
         time: timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         date: timestamp.toLocaleDateString(),
-        read: false,
+        read: isCurrentlyOpen ? true : false,
         action: resolvedOpts.action || null
       }
       const updated = [entry, ...prev.filter((h) => h.id !== id)].slice(0, 60)
@@ -192,7 +199,10 @@ export function ToastProvider({ children }) {
       return updated
     })
 
-    setUnreadCount((c) => c + 1)
+    // Only increment unread badge count when the notification center drawer is CLOSED
+    if (!isHistoryOpenRef.current) {
+      setUnreadCount((c) => c + 1)
+    }
 
     return id
   }, [dismissToast, toastFilterLevel])
@@ -219,6 +229,7 @@ export function ToastProvider({ children }) {
   const toggleHistory = useCallback(() => {
     setIsHistoryOpen((prev) => {
       const next = !prev
+      isHistoryOpenRef.current = next
       if (next) {
         // Clear active floating banners so they don't cover the history drawer
         clearAllToasts()

@@ -5,12 +5,46 @@ export default function ShortcutsTab({
   keybindings = [],
   onUpdateKeybinding = () => {},
   onResetKeybindings = () => {},
-  onClose = () => {}
+  onClose = () => {},
+  initialQuery = '',
+  autoEditId = null
 }) {
-  const [searchQuery, setSearchQuery] = useState('')
+  const safeInitialQuery = typeof initialQuery === 'string' ? initialQuery : ''
+  const safeAutoEditId = typeof autoEditId === 'string' ? autoEditId : null
+
+  const [searchQuery, setSearchQuery] = useState(safeInitialQuery)
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [editingItem, setEditingItem] = useState(null) // { id, title, currentKey }
   const [recordedKey, setRecordedKey] = useState('')
+
+  const lastTriggerRef = React.useRef(null)
+
+  // Automatically filter and open Keybinding Recorder if launched from Command Palette
+  React.useEffect(() => {
+    const triggerKey = `${safeInitialQuery}::${safeAutoEditId}`
+    if (!safeInitialQuery && !safeAutoEditId) return
+    if (lastTriggerRef.current === triggerKey) return
+    lastTriggerRef.current = triggerKey
+
+    if (safeInitialQuery) {
+      const cleanQ = safeInitialQuery.replace(/^(view:|file:|preferences:|edit:|studio:)\s*/i, '').trim()
+      setSearchQuery(cleanQ)
+    }
+    if (safeAutoEditId || safeInitialQuery) {
+      const match = keybindings.find((k) => {
+        if (safeAutoEditId && k.id === safeAutoEditId) return true
+        if (safeInitialQuery) {
+          const cleanQ = safeInitialQuery.toLowerCase().replace(/^(view:|file:|preferences:|edit:|studio:)\s*/i, '').trim()
+          return k.title.toLowerCase().includes(cleanQ) || k.id.toLowerCase().includes(cleanQ)
+        }
+        return false
+      })
+      if (match) {
+        setEditingItem(match)
+        setRecordedKey(match.key)
+      }
+    }
+  }, [safeInitialQuery, safeAutoEditId, keybindings])
 
   const categories = ['all', 'File', 'Preferences', 'Navigation', 'View', 'Editor', 'Create', 'Studio']
 

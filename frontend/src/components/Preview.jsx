@@ -214,6 +214,34 @@ export default function Preview({
   const lastActiveFileRef = useRef(activeFile)
   const [isEditorDragOver, setIsEditorDragOver] = useState(false)
 
+  // Map file extension to Monaco language mode
+  const editorLanguage = useMemo(() => {
+    if (!activeFile) return 'markdown'
+    const ext = activeFile.split('.').pop()?.toLowerCase()
+    switch (ext) {
+      case 'json': return 'json'
+      case 'js':
+      case 'cjs':
+      case 'mjs':
+      case 'jsx': return 'javascript'
+      case 'ts':
+      case 'tsx': return 'typescript'
+      case 'py': return 'python'
+      case 'html': return 'html'
+      case 'css': return 'css'
+      case 'yml':
+      case 'yaml': return 'yaml'
+      case 'sh':
+      case 'bash': return 'shell'
+      case 'sql': return 'sql'
+      case 'xml':
+      case 'svg': return 'xml'
+      case 'md':
+      case 'markdown':
+      default: return 'markdown'
+    }
+  }, [activeFile])
+
   // Helper to insert snippet at active editor cursor (Monaco or Textarea)
   const insertSnippetAtCursor = useCallback((snippet) => {
     if (editorEngine === 'monaco' && monacoEditorRef?.current) {
@@ -1397,6 +1425,7 @@ export default function Preview({
                 showLineNumbers={showLineNumbers}
                 tabSize={tabSize}
                 themeMode={themeMode}
+                language={editorLanguage}
                 onCursorChange={(pos) => {
                   setActiveLine(pos.line)
                   if (onCursorChange) {
