@@ -1,8 +1,9 @@
-﻿/**
+/**
  * README Studio - Electron Main Process
  * Manages desktop window lifecycle, frameless window controls, native file system, and Python sidecar.
  */
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron')
+const { autoUpdater } = require('electron-updater')
 const path = require('path')
 const fs = require('fs')
 const { spawn, execFile } = require('child_process')
@@ -14,6 +15,60 @@ let sidecarProcess = null
 const DEFAULT_BACKEND_PORT = 8000
 let activeBackendPort = DEFAULT_BACKEND_PORT
 const isDev = !app.isPackaged || process.env.NODE_ENV === 'development'
+
+// Helper to extract file or directory path from command line arguments (e.g. from Explorer context menu)
+function parsePathFromArgv(args) {
+  if (!Array.isArray(args)) return null
+  const startIndex = app.isPackaged ? 1 : 2
+  for (let i = startIndex; i < args.length; i++) {
+    const arg = args[i]
+    if (!arg || arg.startsWith('--') || arg.startsWith('-')) continue
+    try {
+      const resolved = path.resolve(arg)
+      if (fs.existsSync(resolved)) {
+        return resolved
+      }
+    } catch {}
+  }
+  return null
+}
+
+function handleOpenExternalPath(targetPath) {
+  if (!mainWindow || mainWindow.isDestroyed() || !targetPath) return
+  try {
+    const stat = fs.statSync(targetPath)
+    if (stat.isDirectory()) {
+      mainWindow.webContents.send('open-external-workspace', {
+        folderPath: targetPath,
+        folderName: path.basename(targetPath)
+      })
+    } else {
+      mainWindow.webContents.send('open-external-file', {
+        filePath: targetPath,
+        fileName: path.basename(targetPath)
+      })
+    }
+  } catch (err) {
+    console.warn('[CLI] Error handling external path:', err)
+  }
+}
+
+// Single-instance lock to ensure single IDE window and forward CLI/context-menu arguments
+const gotTheLock = app.requestSingleInstanceLock()
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (_event, commandLine) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+      const targetPath = parsePathFromArgv(commandLine)
+      if (targetPath) {
+        handleOpenExternalPath(targetPath)
+      }
+    }
+  })
+}
 
 /**
  * Check if a TCP port is currently free on localhost.
@@ -155,6 +210,25 @@ function createWindow() {
     }
     return { action: 'allow' }
   })
+
+  // Developer shortcuts & renderer error logging in development mode
+  if (isDev) {
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      if (input.control && input.shift && input.key.toLowerCase() === 'i') {
+        mainWindow.webContents.toggleDevTools()
+        event.preventDefault()
+      }
+      if (input.key === 'F5' || (input.control && input.key.toLowerCase() === 'r')) {
+        mainWindow.reload()
+        event.preventDefault()
+      }
+    })
+    mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+      if (level >= 2) {
+        console.log(`[Renderer ${level === 3 ? 'ERROR' : 'WARN'}] ${message} (${sourceId}:${line})`)
+      }
+    })
+  }
 
   // Load dev server or built bundle
   const devUrl = 'http://localhost:3000'
@@ -815,6 +889,22 @@ ipcMain.handle('file-move-direct', async (_event, { sourcePath, targetPath }) =>
   }
 })
 
+ipcMain.handle('file-copy-direct', async (_event, { sourcePath, targetPath }) => {
+  try {
+    if (!sourcePath || !fs.existsSync(sourcePath)) {
+      return { success: false, error: 'Source file does not exist' }
+    }
+    const targetDir = path.dirname(targetPath)
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true })
+    }
+    await fs.promises.copyFile(sourcePath, targetPath)
+    return { success: true, targetPath }
+  } catch (err) {
+    return { success: false, error: err.message }
+  }
+})
+
 // External link and shell helpers
 ipcMain.on('open-external-url', (_event, url) => {
   if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
@@ -844,10 +934,125 @@ ipcMain.handle('get-backend-url', () => {
   return `http://127.0.0.1:${activeBackendPort}`
 })
 
+// Default or CLI Startup Workspace resolution
+ipcMain.handle('workspace-get-default', async () => {
+  const startupPath = parsePathFromArgv(process.argv)
+  if (startupPath && fs.existsSync(startupPath)) {
+    try {
+      const stat = fs.statSync(startupPath)
+      if (stat.isDirectory()) {
+        return { rootPath: startupPath, rootName: path.basename(startupPath), isArgv: true }
+      } else {
+        return {
+          rootPath: path.dirname(startupPath),
+          rootName: path.basename(path.dirname(startupPath)),
+          initialFile: startupPath,
+          isArgv: true
+        }
+      }
+    } catch {}
+  }
+  const defaultDir = path.resolve(__dirname, '../../')
+  return { rootPath: defaultDir, rootName: path.basename(defaultDir), isArgv: false }
+})
+
+// ==================== AUTO UPDATER PIPELINE ====================
+autoUpdater.autoDownload = true
+autoUpdater.autoInstallOnAppQuit = true
+
+function initAutoUpdater() {
+  autoUpdater.on('checking-for-update', () => {
+    console.log('[AutoUpdater] Checking for updates...')
+  })
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('[AutoUpdater] Update available:', info.version)
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('app-update-available', {
+        version: info.version,
+        releaseDate: info.releaseDate,
+        releaseNotes: info.releaseNotes
+      })
+    }
+  })
+
+  autoUpdater.on('update-not-available', (info) => {
+    console.log('[AutoUpdater] Update not available. Current version is up to date.')
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('app-update-not-available', {
+        version: app.getVersion()
+      })
+    }
+  })
+
+  autoUpdater.on('download-progress', (progressObj) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('app-update-progress', {
+        percent: Math.round(progressObj.percent),
+        transferred: progressObj.transferred,
+        total: progressObj.total,
+        bytesPerSecond: progressObj.bytesPerSecond
+      })
+    }
+  })
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('[AutoUpdater] Update downloaded successfully:', info.version)
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('app-update-downloaded', {
+        version: info.version,
+        releaseNotes: info.releaseNotes
+      })
+    }
+  })
+
+  autoUpdater.on('error', (err) => {
+    console.warn('[AutoUpdater] Error checking/downloading update:', err ? (err.stack || err).toString() : 'unknown')
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('app-update-error', {
+        message: err ? err.message : 'Unknown auto-updater error'
+      })
+    }
+  })
+
+  // Check on startup after initial window stabilization
+  setTimeout(() => {
+    if (!isDev) {
+      autoUpdater.checkForUpdates().catch((err) => {
+        console.warn('[AutoUpdater] Startup update check failed:', err)
+      })
+    }
+  }, 6000)
+}
+
+ipcMain.handle('app-get-version', () => {
+  return app.getVersion()
+})
+
+ipcMain.handle('app-check-for-updates', async () => {
+  if (isDev) {
+    return {
+      status: 'dev',
+      message: 'Running in development mode (v' + app.getVersion() + '). Auto-updates run against GitHub Releases in packaged desktop builds.'
+    }
+  }
+  try {
+    const result = await autoUpdater.checkForUpdates()
+    return { status: 'ok', updateInfo: result ? result.updateInfo : null }
+  } catch (err) {
+    return { status: 'error', message: err.message }
+  }
+})
+
+ipcMain.on('app-quit-and-install', () => {
+  autoUpdater.quitAndInstall(false, true)
+})
+
 // App Lifecycle
 app.whenReady().then(async () => {
   await ensureSidecar()
   createWindow()
+  initAutoUpdater()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

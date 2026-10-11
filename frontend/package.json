@@ -3,7 +3,7 @@
   "description": "VisualMark Studio - Code + Visual Markdown & Documentation IDE",
   "author": "JagaTheGhost",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -42,20 +42,67 @@
     ],
     "win": {
       "target": [
-        "portable"
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "public/logo.png",
+      "legalTrademarks": "VisualMark Studio",
+      "fileAssociations": [
+        {
+          "ext": "md",
+          "name": "Markdown Document",
+          "description": "Markdown Document",
+          "role": "Editor",
+          "icon": "public/logo.png"
+        },
+        {
+          "ext": "markdown",
+          "name": "Markdown Document",
+          "description": "Markdown Document",
+          "role": "Editor",
+          "icon": "public/logo.png"
+        }
       ]
     },
     "nsis": {
       "oneClick": false,
+      "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
+      "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
-      "shortcutName": "VisualMark Studio"
-    }
+      "shortcutName": "VisualMark Studio",
+      "runAfterFinish": true,
+      "installerIcon": "public/logo.png",
+      "uninstallerIcon": "public/logo.png",
+      "artifactName": "${productName}-Setup.${ext}",
+      "include": "electron/installer.nsh",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable.${ext}"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "JagaTheGhost",
+        "repo": "visualmark-studio"
+      }
+    ]
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "axios": "^1.6.2",
+    "electron-updater": "^6.8.9",
     "file-saver": "^2.0.5",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",

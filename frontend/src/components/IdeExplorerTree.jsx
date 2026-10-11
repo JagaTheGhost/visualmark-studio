@@ -350,9 +350,10 @@ export default function IdeExplorerTree({
     if (!activeFile || treeData.length === 0) return
 
     const findParents = (nodes, target, currentParents = []) => {
+      // First pass: exact relative path match
       for (const node of nodes) {
         if (!node.isDirectory) {
-          if (node.name === target || node.relPath === target) {
+          if (node.relPath === target) {
             return { node, parents: currentParents }
           }
         } else if (node.children) {
@@ -363,7 +364,25 @@ export default function IdeExplorerTree({
       return null
     }
 
-    const found = findParents(treeData, activeFile)
+    let found = findParents(treeData, activeFile)
+    if (!found) {
+      // Fallback: match by base name if activeFile has no directory prefix
+      const findByName = (nodes, target, currentParents = []) => {
+        for (const node of nodes) {
+          if (!node.isDirectory) {
+            if (node.name === target) {
+              return { node, parents: currentParents }
+            }
+          } else if (node.children) {
+            const res = findByName(node.children, target, [...currentParents, node.relPath || node.name])
+            if (res) return res
+          }
+        }
+        return null
+      }
+      found = findByName(treeData, activeFile)
+    }
+
     if (found) {
       setSelectedNode(found.node)
       if (found.parents.length > 0) {
@@ -544,6 +563,49 @@ export default function IdeExplorerTree({
     refreshTree()
   }
 
+  // Handle external drag-and-drop from Windows Explorer onto tree folders or root
+  const handleExternalDrop = useCallback(async (e, targetFolder = workspaceDirectory?.path) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!targetFolder || typeof window === 'undefined' || !window.electronAPI?.copyFileDirect) return
+    const files = e.dataTransfer.files
+    if (!files || files.length === 0) return
+
+    let copiedCount = 0
+    let firstMd = null
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      if (file.path) {
+        const destPath = `${targetFolder.replace(/[\\/]+$/, '')}/${file.name}`
+        try {
+          const res = await window.electronAPI.copyFileDirect(file.path, destPath)
+          if (res?.success) {
+            copiedCount++
+            if (!firstMd && /\.(md|markdown|txt)$/i.test(file.name)) {
+              firstMd = { name: file.name, path: destPath }
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to copy external file to tree:', err)
+        }
+      }
+    }
+
+    if (copiedCount > 0) {
+      showToast(`✓ Copied ${copiedCount} file(s) into ${targetFolder.split(/[\\/]/).pop() || 'workspace'}`, 'success')
+      refreshTree()
+      if (firstMd && onSelectFile) {
+        const normWs = (workspaceDirectory?.path || '').replace(/\\/g, '/').replace(/\/+$/, '')
+        const normFile = firstMd.path.replace(/\\/g, '/')
+        const relPath = normWs && normFile.toLowerCase().startsWith(normWs.toLowerCase() + '/')
+          ? normFile.slice(normWs.length + 1)
+          : firstMd.name
+        onSelectFile(relPath, null, firstMd.path)
+      }
+    }
+  }, [workspaceDirectory, showToast, refreshTree, onSelectFile])
+
   // Flattened visible nodes list for Keyboard Navigation (Arrow keys)
   const visibleNodes = useMemo(() => {
     const list = []
@@ -630,6 +692,19 @@ export default function IdeExplorerTree({
           } ${isSelected && !isActive ? 'is-selected' : ''}`}
           style={{ paddingLeft: `${depth * 14 + 6}px` }}
           onClick={() => handleOpenFile(node)}
+          onDragOver={(e) => {
+            if (e.dataTransfer.types && (e.dataTransfer.types.includes('Files') || e.dataTransfer.files?.length > 0)) {
+              e.preventDefault()
+              e.stopPropagation()
+              e.dataTransfer.dropEffect = 'copy'
+            }
+          }}
+          onDrop={(e) => {
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+              const target = node.isDirectory ? node.path : (node.path ? node.path.replace(/[\\/][^\\/]+$/, '') : workspaceDirectory?.path)
+              handleExternalDrop(e, target)
+            }
+          }}
           onContextMenu={(e) => {
             e.preventDefault()
             e.stopPropagation()
@@ -784,6 +859,17 @@ export default function IdeExplorerTree({
       tabIndex={0}
       onKeyDown={handleKeyDown}
       onClick={() => setSelectedNode(null)}
+      onDragOver={(e) => {
+        if (e.dataTransfer.types && (e.dataTransfer.types.includes('Files') || e.dataTransfer.files?.length > 0)) {
+          e.preventDefault()
+          e.dataTransfer.dropEffect = 'copy'
+        }
+      }}
+      onDrop={(e) => {
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          handleExternalDrop(e, workspaceDirectory?.path)
+        }
+      }}
       onContextMenu={(e) => {
         if (e.target.closest('.ide-tree-row')) return
         e.preventDefault()

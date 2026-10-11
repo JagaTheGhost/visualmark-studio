@@ -201,7 +201,10 @@ export default function Preview({
   onConfirmLoadPreset = () => {},
   editorEngine = 'monaco',
   themeMode = 'dark',
-  tabSize = 2
+  tabSize = 2,
+  workspaceDirectory = null,
+  onDropExternalFile = () => {},
+  showToast = () => {}
 }) {
   const safeMarkdown = markdown || ''
   const editorScrollRef = useRef(null)
@@ -209,6 +212,96 @@ export default function Preview({
   const previewRef = useRef(null)
   const gutterRef = useRef(null)
   const lastActiveFileRef = useRef(activeFile)
+  const [isEditorDragOver, setIsEditorDragOver] = useState(false)
+
+  // Helper to insert snippet at active editor cursor (Monaco or Textarea)
+  const insertSnippetAtCursor = useCallback((snippet) => {
+    if (editorEngine === 'monaco' && monacoEditorRef?.current) {
+      const editor = monacoEditorRef.current
+      const model = editor.getModel()
+      if (model) {
+        const selection = editor.getSelection()
+        editor.executeEdits('drag-drop-insert', [{
+          range: selection,
+          text: snippet,
+          forceMoveMarkers: true
+        }])
+        return
+      }
+    }
+
+    const scrollContainer = editorScrollRef?.current
+    const textarea = scrollContainer?.querySelector ? scrollContainer.querySelector('textarea') : scrollContainer
+    const start = textarea?.selectionStart ?? safeMarkdown.length
+    const updated = safeMarkdown.substring(0, start) + snippet + safeMarkdown.substring(start)
+    onMarkdownChange(updated)
+  }, [editorEngine, safeMarkdown, onMarkdownChange])
+
+  // Drag-and-drop handling for external files on editor surface
+  const handleEditorDragOver = useCallback((e) => {
+    if (e.dataTransfer.types && (e.dataTransfer.types.includes('Files') || e.dataTransfer.files.length > 0)) {
+      e.preventDefault()
+      e.stopPropagation()
+      e.dataTransfer.dropEffect = 'copy'
+      setIsEditorDragOver(true)
+    }
+  }, [])
+
+  const handleEditorDragLeave = useCallback((e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsEditorDragOver(false)
+    }
+  }, [])
+
+  const handleEditorDrop = useCallback(async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsEditorDragOver(false)
+
+    const files = e.dataTransfer.files
+    if (!files || files.length === 0) return
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      const isImage = /\.(png|jpe?g|gif|svg|webp|bmp|avif)$/i.test(file.name)
+      if (isImage) {
+        let imported = false
+        if (typeof window !== 'undefined' && window.electronAPI?.copyFileDirect && workspaceDirectory?.path && file.path) {
+          try {
+            const assetsDir = `${workspaceDirectory.path.replace(/[\\/]+$/, '')}/assets`
+            if (window.electronAPI.createFolderDirect) {
+              await window.electronAPI.createFolderDirect(assetsDir)
+            }
+            const destPath = `${assetsDir}/${file.name}`
+            const copyRes = await window.electronAPI.copyFileDirect(file.path, destPath)
+            if (copyRes?.success) {
+              const snippet = `\n![${file.name.replace(/\.[^/.]+$/, '')}](./assets/${file.name})\n`
+              insertSnippetAtCursor(snippet)
+              window.dispatchEvent(new CustomEvent('workspace-tree-refresh'))
+              if (showToast) showToast(`✓ Imported ${file.name} to ./assets/ and inserted image`, 'success')
+              imported = true
+            }
+          } catch (err) {
+            console.warn('Error copying image to workspace assets:', err)
+          }
+        }
+        if (!imported) {
+          const reader = new FileReader()
+          reader.onload = (ev) => {
+            const folded = foldDataUris(ev.target.result)
+            const snippet = `\n![${file.name.replace(/\.[^/.]+$/, '')}](${folded})\n`
+            insertSnippetAtCursor(snippet)
+            if (showToast) showToast(`✓ Inserted image ${file.name}`, 'info')
+          }
+          reader.readAsDataURL(file)
+        }
+      } else {
+        if (onDropExternalFile) {
+          onDropExternalFile(file)
+        }
+      }
+    }
+  }, [workspaceDirectory, insertSnippetAtCursor, onDropExternalFile, showToast])
 
   // Scroll to top whenever a preset preview is triggered
   useEffect(() => {
@@ -1278,8 +1371,23 @@ export default function Preview({
             onNavigateMatch={handleNavigateMatch}
           />
 
-          {/* Editor Container with Gutter */}
-          <div className="editor-surface">
+          {/* Editor Container with Gutter & External Drag-and-Drop */}
+          <div
+            className="editor-surface"
+            onDragOver={handleEditorDragOver}
+            onDragEnter={handleEditorDragOver}
+            onDragLeave={handleEditorDragLeave}
+            onDrop={handleEditorDrop}
+          >
+            {isEditorDragOver && (
+              <div className="editor-drop-zone-overlay">
+                <div className="editor-drop-zone-box">
+                  <span className="material-symbols-outlined editor-drop-icon">cloud_upload</span>
+                  <div className="editor-drop-title">Drop to import into project</div>
+                  <div className="editor-drop-desc">Images will be copied to ./assets/ and linked in Markdown</div>
+                </div>
+              </div>
+            )}
             {editorEngine === 'monaco' ? (
               <MonacoEditorPane
                 value={safeMarkdown}

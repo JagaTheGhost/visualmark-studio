@@ -1,5 +1,5 @@
-﻿<p align="center">
-  <img src="assets/logo.png" alt="VisualMark Studio Logo" width="128" style="border-radius: 28px;" />
+<p align="center">
+  <img src="frontend/src/assets/logo.png" width="128" style="border-radius: 28px;" />
 </p>
 
 <h1 align="center">VisualMark Studio</h1>
@@ -9,7 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="#"><img src="https://img.shields.io/badge/version-1.0.0-6366f1.svg?style=for-the-badge" alt="Version" /></a>
+  <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/version-1.0.0-6366f1.svg?style=for-the-badge" alt="Version" /></a>
+  <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/Download-Windows_.exe-22c55e?style=for-the-badge&logo=windows&logoColor=white" alt="Download Windows" /></a>
   <a href="https://electronjs.org"><img src="https://img.shields.io/badge/Electron-44.7+-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron" /></a>
   <a href="https://fastapi.tiangolo.com"><img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" /></a>
   <a href="https://react.dev"><img src="https://img.shields.io/badge/React-18.2+-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" /></a>
@@ -19,6 +20,17 @@
 ---
 
 VisualMark Studio is a modern, high-performance **native desktop IDE** seamlessly marrying Monaco code editing with interactive visual studios. Built on **Electron**, **React**, and an embedded **FastAPI sidecar engine**, it operates 100% locally with direct disk I/O, frameless Obsidian dark styling, native terminal integration, and deep repository inspection.
+
+## 💾 Download & Install for Windows
+
+Download pre-compiled Windows binaries directly from the latest [GitHub Release](https://github.com/JagaTheGhost/visualmark-studio/releases/latest):
+
+| Package | Format | Description | Direct Download |
+| :--- | :--- | :--- | :--- |
+| **Windows Installer** | `.exe` (NSIS) | Full installer with Desktop shortcut & Explorer context menu integration | [Download Setup (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark%20Studio-Setup.exe) |
+| **Windows Portable** | `.exe` (Standalone) | Zero-installation portable binary (runs from any folder or USB drive) | [Download Portable (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark%20Studio-Portable.exe) |
+
+---
 
 ## ✨ Desktop IDE Features
 

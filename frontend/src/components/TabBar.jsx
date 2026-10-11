@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { validateDocFilename } from '../utils/filenameUtils'
 import { getPresetById } from '../data/presetTemplates'
 
@@ -125,6 +125,26 @@ const STUDIO_TABS_CONFIG = {
         <path d="M14 2H2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM2 3h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm1 2h2v2H3V5zm3 0h2v2H6V5zm3 0h2v2H9V5zm3 0h1v2h-1V5zM3 8h1v2H3V8zm2 0h6v2H5V8zm7 0h1v2h-1V8z"/>
       </svg>
     )
+  },
+  'whats-new': {
+    id: 'whats-new',
+    label: 'Patch Notes',
+    iconColor: '#a855f7',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/>
+      </svg>
+    )
+  },
+  'release-notes': {
+    id: 'release-notes',
+    label: 'Patch Notes',
+    iconColor: '#a855f7',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/>
+      </svg>
+    )
   }
 }
 
@@ -244,12 +264,23 @@ export default function TabBar({
   orientation,
   setOrientation,
   openPresetTabs = [],
-  onClosePresetTab = () => {}
+  onClosePresetTab = () => {},
+  onDropExternalFile = () => {}
 }) {
   const rawList = Array.isArray(openDocTabs) ? openDocTabs : Object.keys(files)
   const tabList = rawList.filter(
-    (f) => typeof f === 'string' && !f.endsWith('.studio') && f !== 'settings' && f !== 'shortcuts' && !f.startsWith('preset:')
+    (f) => typeof f === 'string' && !f.endsWith('.studio') && f !== 'settings' && f !== 'shortcuts' && f !== 'whats-new' && f !== 'release-notes' && !f.startsWith('preset:')
   )
+
+  // Track duplicate file basenames across open tabs for path disambiguation
+  const baseNameCounts = useMemo(() => {
+    const counts = {}
+    for (const f of tabList) {
+      const base = f.includes('/') || f.includes('\\') ? f.split(/[\\/]/).pop() : f
+      counts[base] = (counts[base] || 0) + 1
+    }
+    return counts
+  }, [tabList])
 
   // Drag-and-drop state for reordering tabs and receiving dragged files
   const [draggedTab, setDraggedTab] = useState(null)
@@ -264,12 +295,25 @@ export default function TabBar({
   }
 
   const isStudioTabActive =
-    activeFile && (activeFile.endsWith('.studio') || activeFile === 'settings' || activeFile === 'shortcuts')
+    activeFile && (activeFile.endsWith('.studio') || activeFile === 'settings' || activeFile === 'shortcuts' || activeFile === 'whats-new' || activeFile === 'release-notes')
 
   // Handle dropping onto a specific tab
   const handleTabDrop = (e, targetTabName) => {
     e.preventDefault()
     e.stopPropagation()
+
+    // Handle external files dropped from Windows Explorer
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      for (let i = 0; i < e.dataTransfer.files.length; i++) {
+        onDropExternalFile(e.dataTransfer.files[i])
+      }
+      setDraggedTab(null)
+      setDropTargetTab(null)
+      setDropPosition(null)
+      setIsContainerDropActive(false)
+      return
+    }
+
     const sourceTab = e.dataTransfer.getData('application/x-ide-tab-id') || draggedTab
     const droppedFileName = e.dataTransfer.getData('application/x-ide-file-name')
 
@@ -311,6 +355,19 @@ export default function TabBar({
   // Handle dropping anywhere on the tabs container strip
   const handleContainerDrop = (e) => {
     e.preventDefault()
+
+    // Handle external files dropped from Windows Explorer
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      for (let i = 0; i < e.dataTransfer.files.length; i++) {
+        onDropExternalFile(e.dataTransfer.files[i])
+      }
+      setDraggedTab(null)
+      setDropTargetTab(null)
+      setDropPosition(null)
+      setIsContainerDropActive(false)
+      return
+    }
+
     const sourceTab = e.dataTransfer.getData('application/x-ide-tab-id') || draggedTab
     const droppedFileName = e.dataTransfer.getData('application/x-ide-file-name')
 
@@ -365,6 +422,12 @@ export default function TabBar({
           const tabLabel = fileName.includes('/') || fileName.includes('\\')
             ? fileName.split(/[\\/]/).pop()
             : fileName
+          const isDuplicate = (baseNameCounts[tabLabel] || 0) > 1
+          let folderHint = null
+          if (isDuplicate) {
+            const parts = fileName.split(/[\\/]/)
+            folderHint = parts.length > 1 ? parts[parts.length - 2] : 'root'
+          }
 
           return (
             <div
@@ -410,6 +473,7 @@ export default function TabBar({
                 {iconInfo.icon}
               </span>
               <span className="tab-file-title truncate">{tabLabel}</span>
+              {folderHint && <span className="tab-folder-hint">{folderHint}</span>}
 
               {/* Close Tab Button (VS Code SVG ✕ or Dirty Dot ●) */}
               <button
@@ -441,7 +505,7 @@ export default function TabBar({
               key={tabId}
               className={`editor-tab studio-tool-tab ${isActive ? 'active' : ''}`}
               onClick={() => onSelectFile(tabId)}
-              title={`${config.label} Studio`}
+              title={tabId.endsWith('.studio') ? `${config.label} Studio` : config.label}
             >
               <span className="tab-file-icon" style={{ color: config.iconColor }}>
                 {config.icon}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import './BottomPanelDrawer.css'
+import { APP_CURRENT_VERSION } from '../data/releaseNotes'
 
 export default function BottomPanelDrawer({
   isOpen = false,
@@ -21,7 +22,7 @@ export default function BottomPanelDrawer({
     {
       id: 1,
       type: 'system',
-      text: 'VisualMark Studio Integrated Terminal [Version 1.0.0]\n(c) 2026 VisualMark Studio. All rights reserved.'
+      text: `VisualMark Studio Integrated Terminal [Version ${APP_CURRENT_VERSION}]\n(c) 2026 VisualMark Studio. All rights reserved.`
     }
   ])
   const [currentInput, setCurrentInput] = useState('')

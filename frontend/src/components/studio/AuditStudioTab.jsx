@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { useStudioSplit } from '../../utils/useResizableSplit'
 
-export const STANDARDS = [
+const STANDARDS = [
   {
     id: 'readme',
     name: 'Open-Source README Gateway',
@@ -67,7 +67,7 @@ export const STANDARDS = [
   }
 ]
 
-export function detectStandardForFile(filename) {
+function detectStandardForFile(filename) {
   if (!filename) return 'general'
   const lower = filename.toLowerCase()
 
@@ -154,7 +154,7 @@ export default function AuditStudioTab({
     const keys = Object.keys(allFiles || {})
     if (keys.length > 0) return keys
     if (openDocTabs && openDocTabs.length > 0) {
-      return openDocTabs.filter(f => !f.endsWith('.studio') && f !== 'settings')
+      return openDocTabs.filter(f => !f.endsWith('.studio') && f !== 'settings' && f !== 'shortcuts' && f !== 'whats-new' && f !== 'release-notes')
     }
     return [activeFile || initialFile || 'README.md']
   }, [allFiles, openDocTabs, activeFile, initialFile])

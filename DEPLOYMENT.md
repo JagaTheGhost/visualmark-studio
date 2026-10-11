@@ -42,21 +42,21 @@ python build_sidecar.py
 cd frontend
 npm run electron:portable
 ```
-*Output: `frontend/release/README Studio IDE 0.1.0.exe`*
+*Output: `frontend/release/VisualMark Studio-Portable.exe`*
 
 #### Complete Installer (NSIS)
 ```bash
 cd frontend
 npm run electron:dist
 ```
-*Output: `frontend/release/README Studio IDE Setup 0.1.0.exe`*
+*Output: `frontend/release/VisualMark Studio-Setup.exe`*
 
 #### Unpacked Directory (Fast Verification)
 ```bash
 cd frontend
 npm run electron:pack
 ```
-*Output: `frontend/release/win-unpacked/README Studio IDE.exe`*
+*Output: `frontend/release/win-unpacked/VisualMark Studio.exe`*
 
 ---
 

@@ -1,4 +1,6 @@
-﻿import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { APP_CURRENT_VERSION } from '../data/releaseNotes'
 
 export default function TopMenuBar({
   activeFile,
@@ -34,9 +36,17 @@ export default function TopMenuBar({
   onReplace,
   onToggleBottomPanel,
   editorEngine = 'monaco',
-  setEditorEngine = () => {}
+  setEditorEngine = () => {},
+  onOpenWhatsNew = () => {},
+  onCheckForUpdates = () => {},
+  recentWorkspaces = [],
+  onOpenRecentWorkspace = () => {},
+  onClearRecentWorkspaces = () => {},
+  onCloseTab = () => {},
+  appVersion = APP_CURRENT_VERSION
 }) {
   const [activeMenu, setActiveMenu] = useState(null)
+  const [activeSubmenu, setActiveSubmenu] = useState(null)
   const [isElectron, setIsElectron] = useState(true)
   const [isMaximized, setIsMaximized] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
@@ -59,11 +69,24 @@ export default function TopMenuBar({
     function handleClickOutside(e) {
       if (topBarRef.current && !topBarRef.current.contains(e.target)) {
         setActiveMenu(null)
+        setActiveSubmenu(null)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // Close About dialog on Escape key
+  useEffect(() => {
+    if (!aboutOpen) return
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') {
+        setAboutOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [aboutOpen])
 
   // Extract repo short name from workspace or URL if available
   const repoName = workspaceName || (repoUrl
@@ -72,16 +95,19 @@ export default function TopMenuBar({
 
   const handleMenuClick = (menuKey) => {
     setActiveMenu((prev) => (prev === menuKey ? null : menuKey))
+    setActiveSubmenu(null)
   }
 
   const handleMenuMouseEnter = (menuKey) => {
     if (activeMenu && activeMenu !== menuKey) {
       setActiveMenu(menuKey)
+      setActiveSubmenu(null)
     }
   }
 
   const handleItemClick = (action) => {
     setActiveMenu(null)
+    setActiveSubmenu(null)
     if (action) action()
   }
 
@@ -124,6 +150,52 @@ export default function TopMenuBar({
                   <span>Open Folder...</span>
                   <kbd>Ctrl+Shift+O</kbd>
                 </button>
+
+                {/* Open Recent Submenu */}
+                <div
+                  className="dropdown-item has-submenu"
+                  onMouseEnter={() => setActiveSubmenu('recent')}
+                  onMouseLeave={() => setActiveSubmenu(null)}
+                >
+                  <span className="dropdown-item-label">
+                    <span className="material-symbols-outlined dropdown-icon">history</span>
+                    <span>Open Recent</span>
+                  </span>
+                  <span className="submenu-arrow">›</span>
+                  {activeSubmenu === 'recent' && (
+                    <div className="menubar-submenu" onClick={(e) => e.stopPropagation()}>
+                      {recentWorkspaces && recentWorkspaces.length > 0 ? (
+                        <>
+                          {recentWorkspaces.map((ws) => (
+                            <button
+                              key={ws.path}
+                              type="button"
+                              className="dropdown-item recent-workspace-item"
+                              onClick={() => handleItemClick(() => onOpenRecentWorkspace && onOpenRecentWorkspace(ws.path))}
+                              title={ws.path}
+                            >
+                              <span className="recent-item-title truncate">{ws.name}</span>
+                              <span className="recent-item-path truncate">{ws.path}</span>
+                            </button>
+                          ))}
+                          <div className="dropdown-divider" />
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            onClick={() => handleItemClick(onClearRecentWorkspaces)}
+                          >
+                            <span className="dropdown-item-label">
+                              <span className="material-symbols-outlined dropdown-icon">delete_sweep</span>
+                              <span>Clear Recently Opened</span>
+                            </span>
+                          </button>
+                        </>
+                      ) : (
+                        <div className="submenu-empty-notice">No Recent Workspaces</div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <div className="dropdown-divider" />
                 <button type="button" className="dropdown-item" onClick={() => handleItemClick(() => onSaveFile && onSaveFile(false))}>
                   <span>Save</span>
@@ -149,6 +221,15 @@ export default function TopMenuBar({
                   </button>
                 )}
                 <div className="dropdown-divider" />
+                <button
+                  type="button"
+                  className="dropdown-item"
+                  onClick={() => handleItemClick(() => onCloseTab && activeFile && onCloseTab(activeFile))}
+                  disabled={!activeFile}
+                >
+                  <span>Close Tab</span>
+                  <kbd>Ctrl+W</kbd>
+                </button>
                 <button
                   type="button"
                   className="dropdown-item"
@@ -450,11 +531,27 @@ export default function TopMenuBar({
                 <button
                   type="button"
                   className="dropdown-item"
+                  onClick={() => handleItemClick(onOpenWhatsNew)}
+                >
+                  <span>Patch Notes</span>
+                </button>
+                <button
+                  type="button"
+                  className="dropdown-item"
+                  onClick={() => handleItemClick(onCheckForUpdates)}
+                >
+                  <span>Check for Updates...</span>
+                </button>
+                <div className="dropdown-divider" />
+                <button
+                  type="button"
+                  className="dropdown-item"
                   onClick={() => handleItemClick(() => {
+                    const url = 'https://github.com/JagaTheGhost/visualmark-studio'
                     if (window.electronAPI?.openExternalUrl) {
-                      window.electronAPI.openExternalUrl('https://github.com/JagaTheGhost/auto-readme-generator')
+                      window.electronAPI.openExternalUrl(url)
                     } else {
-                      window.open('https://github.com/JagaTheGhost/auto-readme-generator', '_blank')
+                      window.open(url, '_blank')
                     }
                   })}
                 >
@@ -609,30 +706,30 @@ export default function TopMenuBar({
         </button>
       </div>
 
-      {/* 5. Native About Dialog Modal */}
-      {aboutOpen && (
+      {/* 5. Native About Dialog Modal (Portaled to document.body to prevent top-bar overflow) */}
+      {aboutOpen && typeof document !== 'undefined' && createPortal(
         <div className="ide-confirm-backdrop" onClick={() => setAboutOpen(false)}>
-          <div className="ide-confirm-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+          <div className="ide-confirm-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px', width: '90%' }}>
             <div className="ide-confirm-header" style={{ alignItems: 'center' }}>
-              <div className="ide-app-icon" style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className="ide-app-icon" style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <img
                   src="/logo.png"
                   alt="VisualMark Studio"
-                  style={{ width: '32px', height: '32px', borderRadius: '6px', objectFit: 'contain' }}
+                  style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'contain' }}
                 />
               </div>
               <div className="ide-confirm-content">
-                <h4 className="ide-confirm-title" style={{ fontSize: '15px', fontWeight: '600' }}>
+                <h4 className="ide-confirm-title" style={{ fontSize: '16px', fontWeight: '600', margin: 0, color: '#ffffff' }}>
                   VisualMark Studio
                 </h4>
                 <p className="ide-confirm-message" style={{ margin: '3px 0 0 0', fontSize: '12px', color: 'var(--text-muted, #94a3b8)' }}>
-                  Version 1.0.0 (Code + Visual Markdown IDE)
+                  Version {appVersion || APP_CURRENT_VERSION} (Code + Visual Markdown IDE)
                 </p>
               </div>
             </div>
 
             <div style={{ padding: '14px 18px', fontSize: '12px', lineHeight: '1.6', color: 'var(--text-secondary, #cbd5e1)', borderTop: '1px solid var(--border-subtle, rgba(255,255,255,0.08))', borderBottom: '1px solid var(--border-subtle, rgba(255,255,255,0.08))' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '6px', fontSize: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '8px', fontSize: '12px' }}>
                 <span style={{ color: 'var(--text-muted, #64748b)' }}>Runtime:</span>
                 <span style={{ color: '#38bdf8', fontFamily: 'monospace' }}>Electron v44 (Native Desktop)</span>
                 <span style={{ color: 'var(--text-muted, #64748b)' }}>Engine:</span>
@@ -640,11 +737,11 @@ export default function TopMenuBar({
                 <span style={{ color: 'var(--text-muted, #64748b)' }}>Architecture:</span>
                 <span style={{ color: '#f59e0b', fontFamily: 'monospace' }}>100% Local-First / Zero Cloud</span>
                 <span style={{ color: 'var(--text-muted, #64748b)' }}>Platform:</span>
-                <span style={{ fontFamily: 'monospace' }}>{typeof navigator !== 'undefined' ? navigator.platform : 'win32'}</span>
+                <span style={{ fontFamily: 'monospace', color: '#cbd5e1' }}>{typeof navigator !== 'undefined' ? navigator.platform : 'win32'}</span>
               </div>
             </div>
 
-            <div className="ide-confirm-actions" style={{ justifyContent: 'flex-end', padding: '12px 18px' }}>
+            <div className="ide-confirm-actions" style={{ justifyContent: 'flex-end', padding: '12px 18px', margin: 0 }}>
               <button
                 type="button"
                 className="btn-studio-secondary"
@@ -655,7 +752,8 @@ export default function TopMenuBar({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   )

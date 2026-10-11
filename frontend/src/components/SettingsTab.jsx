@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useToast } from '../context/ToastContext'
 
 export default function SettingsTab({
   themeMode,
@@ -27,6 +28,22 @@ export default function SettingsTab({
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('all')
   const [showToken, setShowToken] = useState(false)
+
+  const {
+    toastFilterLevel,
+    setToastFilterLevel,
+    history = [],
+    clearHistory = () => {},
+    showToast = () => {}
+  } = useToast()
+
+  useEffect(() => {
+    const handleCategoryJump = (e) => {
+      if (e.detail) setActiveCategory(e.detail)
+    }
+    window.addEventListener('open-settings-tab', handleCategoryJump)
+    return () => window.removeEventListener('open-settings-tab', handleCategoryJump)
+  }, [])
 
   // Local settings state
   const [fontFamily, setFontFamily] = useState(
@@ -95,6 +112,7 @@ export default function SettingsTab({
     { id: 'editor', label: 'Text Editor' },
     { id: 'appearance', label: 'Appearance' },
     { id: 'files', label: 'Files & Export' },
+    { id: 'notifications', label: 'Notifications & Toasts' },
     { id: 'github', label: 'GitHub & Integrations' }
   ]
 
@@ -496,6 +514,115 @@ export default function SettingsTab({
                     <option value="A4">A4 (210 × 297 mm)</option>
                     <option value="Letter">US Letter (8.5 × 11 in)</option>
                   </select>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ==================== CATEGORY: NOTIFICATIONS & TOASTS ==================== */}
+        {(activeCategory === 'all' || activeCategory === 'notifications') && (
+          <section className="settings-group-section">
+            <div className="settings-group-header">
+              <span className="material-symbols-outlined">notifications</span>
+              <h3>Notifications & Toasts</h3>
+            </div>
+
+            {/* Notification Popup Level */}
+            {matchesSearch('notifications toasts popup alert warning important level popup filter') && (
+              <div className="settings-card">
+                <div className="settings-card-info">
+                  <div className="settings-card-label">Notifications: Popup Toast Level</div>
+                  <div className="settings-card-sublabel">
+                    Controls which notifications pop up as floating cards over your workspace.
+                    By default, routine file operations (closing files, switching tabs) are muted to prevent distraction. All notifications are permanently saved to the Notification Center history.
+                  </div>
+                </div>
+                <div className="settings-card-control">
+                  <select
+                    className="settings-input-select"
+                    value={toastFilterLevel}
+                    onChange={(e) => setToastFilterLevel(e.target.value)}
+                  >
+                    <option value="important">Important & Warnings Only (Default - Recommended)</option>
+                    <option value="all">All Notifications (Verbose)</option>
+                    <option value="errors">Errors Only</option>
+                    <option value="silent">Do Not Disturb (Silent - No Popups)</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Notification History Management */}
+            {matchesSearch('notifications history clear count log') && (
+              <div className="settings-card">
+                <div className="settings-card-info">
+                  <div className="settings-card-label">Notification Center History</div>
+                  <div className="settings-card-sublabel">
+                    Currently storing {history.length} notification(s). Clear history log or test notifications below.
+                  </div>
+                </div>
+                <div className="settings-card-control" style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    className="settings-action-btn"
+                    onClick={clearHistory}
+                    disabled={history.length === 0}
+                    style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>delete_sweep</span>
+                    <span>Clear History</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Test Notification Previews */}
+            {matchesSearch('test preview notification sample warning error toast') && (
+              <div className="settings-card">
+                <div className="settings-card-info">
+                  <div className="settings-card-label">Preview IDE Notification Banners</div>
+                  <div className="settings-card-sublabel">
+                    Trigger sample IDE toast cards to preview the new styling, category badges, and severity accents.
+                  </div>
+                </div>
+                <div className="settings-card-control" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  <button
+                    type="button"
+                    className="settings-action-btn"
+                    onClick={() => showToast('Git merge conflict detected in `src/App.jsx`', 'warning', { source: 'Git' })}
+                    style={{ color: '#e3b341', borderColor: 'rgba(210, 153, 34, 0.4)' }}
+                  >
+                    Test Warning
+                  </button>
+                  <button
+                    type="button"
+                    className="settings-action-btn"
+                    onClick={() => showToast('Failed to compile Markdown PDF export: exit code 1', 'error', { source: 'Compiler' })}
+                    style={{ color: '#f85149', borderColor: 'rgba(248, 81, 73, 0.4)' }}
+                  >
+                    Test Error
+                  </button>
+                  <button
+                    type="button"
+                    className="settings-action-btn"
+                    onClick={() => showToast('VisualMark Studio update ready to install', 'success', {
+                      source: 'Update',
+                      important: true,
+                      action: { label: 'Restart IDE', onClick: () => showToast('Restarting IDE...', 'info') }
+                    })}
+                    style={{ color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.4)' }}
+                  >
+                    Test Actionable
+                  </button>
+                  <button
+                    type="button"
+                    className="settings-action-btn"
+                    onClick={() => showToast('Saved file `README.md` to workspace disk', 'info', { source: 'File' })}
+                    style={{ color: '#8b949e' }}
+                  >
+                    Test Routine Info
+                  </button>
                 </div>
               </div>
             )}

@@ -16,11 +16,13 @@
 @import './styles/modals.css';
 @import './styles/widgets.css';
 @import './styles/tooltips.css';
+@import './styles/toast.css';
 
 /* Native IDE Workspace Panels */
 @import './styles/explorer.css';
 @import './styles/sourceControl.css';
 @import './styles/settings.css';
+@import './styles/whatsNew.css';
 
 /* Studio Environments */
 @import './styles/studios/common.css';

@@ -36,6 +36,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   createFolderDirect: (folderPath) => ipcRenderer.invoke('folder-create-direct', folderPath),
   deleteFileDirect: (filePath) => ipcRenderer.invoke('file-delete-direct', filePath),
   moveFileDirect: (sourcePath, targetPath) => ipcRenderer.invoke('file-move-direct', { sourcePath, targetPath }),
+  copyFileDirect: (sourcePath, targetPath) => ipcRenderer.invoke('file-copy-direct', { sourcePath, targetPath }),
 
   // System & External OS Actions
   openExternalUrl: (url) => ipcRenderer.send('open-external-url', url),
@@ -67,6 +68,48 @@ contextBridge.exposeInMainWorld('electronAPI', {
   gitInit: (folderPath) => ipcRenderer.invoke('git-init', folderPath),
 
   // Backend Sidecar Connection Info
-  getBackendUrl: () => ipcRenderer.invoke('get-backend-url')
+  getBackendUrl: () => ipcRenderer.invoke('get-backend-url'),
+
+  // In-App Auto-Updater & What's New IPC
+  getAppVersion: () => ipcRenderer.invoke('app-get-version'),
+  checkForUpdates: () => ipcRenderer.invoke('app-check-for-updates'),
+  quitAndInstallUpdate: () => ipcRenderer.send('app-quit-and-install'),
+  onUpdateAvailable: (callback) => {
+    const handler = (_event, info) => callback(info)
+    ipcRenderer.on('app-update-available', handler)
+    return () => ipcRenderer.removeListener('app-update-available', handler)
+  },
+  onUpdateProgress: (callback) => {
+    const handler = (_event, progress) => callback(progress)
+    ipcRenderer.on('app-update-progress', handler)
+    return () => ipcRenderer.removeListener('app-update-progress', handler)
+  },
+  onUpdateDownloaded: (callback) => {
+    const handler = (_event, info) => callback(info)
+    ipcRenderer.on('app-update-downloaded', handler)
+    return () => ipcRenderer.removeListener('app-update-downloaded', handler)
+  },
+  onUpdateNotAvailable: (callback) => {
+    const handler = (_event, info) => callback(info)
+    ipcRenderer.on('app-update-not-available', handler)
+    return () => ipcRenderer.removeListener('app-update-not-available', handler)
+  },
+  onUpdateError: (callback) => {
+    const handler = (_event, err) => callback(err)
+    ipcRenderer.on('app-update-error', handler)
+    return () => ipcRenderer.removeListener('app-update-error', handler)
+  },
+
+  // Windows Shell & Context Menu External Open Listeners
+  onOpenExternalWorkspace: (callback) => {
+    const handler = (_event, ws) => callback(ws)
+    ipcRenderer.on('open-external-workspace', handler)
+    return () => ipcRenderer.removeListener('open-external-workspace', handler)
+  },
+  onOpenExternalFile: (callback) => {
+    const handler = (_event, file) => callback(file)
+    ipcRenderer.on('open-external-file', handler)
+    return () => ipcRenderer.removeListener('open-external-file', handler)
+  }
 })
 

@@ -1,0 +1,87 @@
+/**
+ * VisualMark Studio - Release Notes & Update History Dataset
+ * Powers the "What's New" modal dialog, update notifications, and in-IDE release history.
+ */
+export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'
+
+export const RELEASE_HISTORY = [
+  {
+    version: '1.0.0',
+    type: 'major', // 'major' | 'minor' | 'patch'
+    title: 'Initial Release: The Code + Visual Markdown IDE',
+    date: 'October 2026',
+    isCurrent: true,
+    highlights: [
+      'Authentic VS Code Monaco Editor with minimap, code folding, and smart GFM completions',
+      'Dual-Engine Architecture: switch seamlessly between Monaco and Classic lightweight editor',
+      '10+ Built-in Visual Studio Workspaces (Mermaid Diagrams, Badges, Tables, API, Audit, and more)',
+      '100% Local-First Desktop Shell powered by Electron and embedded FastAPI Sidecar engine'
+    ],
+    sections: [
+      {
+        category: 'New Features',
+        icon: 'stars',
+        badge: 'Major',
+        color: '#6366f1',
+        items: [
+          {
+            title: 'VS Code Monaco Editor Engine',
+            desc: 'Real VS Code Monaco Editor embedded with custom Obsidian/Slate dark themes, indentation code folding, interactive minimap, smooth cursor caret, and GFM autocompletions.'
+          },
+          {
+            title: 'Synchronized Split-Pane Scrolling',
+            desc: 'Real-time bidirectional scroll synchronization between Monaco lines and the live rendered HTML preview canvas using document anchor lines.'
+          },
+          {
+            title: 'Integrated Terminal & Diagnostics Drawer',
+            desc: 'Native bottom panel (Ctrl+`) with embedded PowerShell & CMD terminal sessions, error diagnostics pipeline, and real-time output streams.'
+          },
+          {
+            title: '10+ Visual Studio Workspaces',
+            desc: 'Mermaid Architecture Studio, Shields.io Badge Studio, Table Designer, Image Banner Designer, Directory Tree Studio, API Endpoint Builder, and Documentation Quality Auditor.'
+          }
+        ]
+      },
+      {
+        category: 'Performance & Architecture',
+        icon: 'speed',
+        badge: 'Optimization',
+        color: '#10b981',
+        items: [
+          {
+            title: '78% Bundle Size Reduction',
+            desc: 'Code-split PDF export, Mermaid rendering engine, and modal workspaces, slashing initial bundle from 1.68 MB down to 395 kB.'
+          },
+          {
+            title: 'Dynamic Port Collision Resolution',
+            desc: 'FastAPI local sidecar automatically scans and resolves free ports from 8000 to 8030 to prevent network conflicts.'
+          },
+          {
+            title: 'Dual Editor Fallback',
+            desc: 'Choose between high-powered Monaco or lightweight classic editor under Settings or View menu anytime.'
+          }
+        ]
+      },
+      {
+        category: 'In-App Auto-Updates',
+        icon: 'sync',
+        badge: 'Seamless',
+        color: '#38bdf8',
+        items: [
+          {
+            title: 'Zero-Reinstall Updates',
+            desc: 'Automatic background update downloads via GitHub Releases with one-click restart to apply patches and new releases.'
+          }
+        ]
+      }
+    ]
+  }
+]
+
+export function getLatestRelease() {
+  return RELEASE_HISTORY[0] || null
+}
+
+export function getReleaseByVersion(version) {
+  return RELEASE_HISTORY.find((r) => r.version === version) || null
+}

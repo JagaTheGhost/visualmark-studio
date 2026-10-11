@@ -1,4 +1,5 @@
 import React from 'react'
+import { useToast } from '../context/ToastContext'
 
 export default function StatusBar({
   cursorPosition = { line: 1, col: 1 },
@@ -12,8 +13,20 @@ export default function StatusBar({
   gitInfo = null,
   onOpenGitTab = () => {},
   isBottomPanelOpen = false,
-  onToggleBottomPanel = () => {}
+  onToggleBottomPanel = () => {},
+  currentVersion = '1.0.0',
+  updateDownloaded = null,
+  onOpenWhatsNew = () => {},
+  onRestartToUpdate = () => {}
 }) {
+  let toastCtx = null
+  try {
+    toastCtx = useToast()
+  } catch {}
+  const unreadCount = toastCtx?.unreadCount || 0
+  const toggleHistory = toastCtx?.toggleHistory || (() => {})
+  const isHistoryOpen = toastCtx?.isHistoryOpen || false
+
   const readMinutes = Math.max(1, Math.ceil(wordCount / 200))
   const isGitRepo = gitInfo?.isRepo ?? false
   const branchName = isGitRepo ? gitInfo.branch : 'No Repo'
@@ -126,6 +139,55 @@ export default function StatusBar({
               <span className="hide-mobile">Saved</span>
             </>
           )}
+        </div>
+
+        {/* Update Downloaded Badge (Pulsing, Click to restart) */}
+        {updateDownloaded && (
+          <div
+            className="status-item update-ready-badge"
+            onClick={onRestartToUpdate}
+            data-tooltip={`Update v${updateDownloaded.version} ready. Click to restart & apply update.`}
+            data-tooltip-pos="top"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>bolt</span>
+            <span>Update v{updateDownloaded.version}</span>
+          </div>
+        )}
+
+        {/* Notification Center Bell */}
+        <div
+          className={`status-item notification-bell-btn ${unreadCount > 0 ? 'has-unread' : ''} ${isHistoryOpen ? 'is-active' : ''}`}
+          onClick={toggleHistory}
+          data-tooltip={unreadCount > 0 ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'} (Click to open Notification Center)` : "Notification Center (Click to view history)"}
+          data-tooltip-pos="top"
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}
+        >
+          <span className="material-symbols-outlined status-icon" style={{ fontSize: '14px', color: unreadCount > 0 ? '#38bdf8' : 'inherit' }}>
+            {unreadCount > 0 ? 'notifications_active' : 'notifications'}
+          </span>
+          {unreadCount > 0 && (
+            <span className="notif-badge" style={{
+              background: '#38bdf8',
+              color: '#0f172a',
+              fontSize: '10px',
+              fontWeight: '700',
+              padding: '1px 5px',
+              borderRadius: '10px',
+              lineHeight: '1'
+            }}>
+              {unreadCount}
+            </span>
+          )}
+        </div>
+
+        {/* Version Pill (Click to open Release Notes tab) */}
+        <div
+          className="status-item version-pill"
+          onClick={onOpenWhatsNew}
+          data-tooltip={`VisualMark Studio v${currentVersion} (Click to open release notes tab)`}
+          data-tooltip-pos="top"
+        >
+          <span>v{currentVersion}</span>
         </div>
       </div>
     </footer>

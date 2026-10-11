@@ -14,7 +14,8 @@ import {
   matchesKeybinding
 } from './utils/keybindingManager'
 import { initGlobalHorizontalWheelHandler } from './utils/horizontalScrollHelper'
-import Toast from './components/Toast'
+import { ToastContainer, NotificationHistoryPanel } from './components/Toast'
+import { useToast } from './context/ToastContext'
 import { useEditorPreferences } from './hooks/useEditorPreferences'
 import { useBottomPanel } from './hooks/useBottomPanel'
 import {
@@ -47,6 +48,8 @@ const SettingsTab = lazy(() => import('./components/SettingsTab'))
 const ShortcutsTab = lazy(() => import('./components/ShortcutsTab'))
 const CommandPalette = lazy(() => import('./components/CommandPalette'))
 const InsertTargetModal = lazy(() => import('./components/InsertTargetModal'))
+const WhatsNewTab = lazy(() => import('./components/WhatsNewTab'))
+import { APP_CURRENT_VERSION } from './data/releaseNotes'
 
 function StudioLoadingFallback({ title = 'Studio Tool' }) {
   return (
@@ -57,7 +60,7 @@ function StudioLoadingFallback({ title = 'Studio Tool' }) {
   )
 }
 
-export const safeSetItem = (key, value) => {
+const safeSetItem = (key, value) => {
   try {
     localStorage.setItem(key, value)
   } catch (err) {
@@ -65,10 +68,10 @@ export const safeSetItem = (key, value) => {
   }
 }
 
-export const isStudioTabId = (id) => {
+const isStudioTabId = (id) => {
   return (
     typeof id === 'string' &&
-    (id.endsWith('.studio') || id === 'settings' || id === 'shortcuts')
+    (id.endsWith('.studio') || id === 'settings' || id === 'shortcuts' || id === 'whats-new' || id === 'release-notes')
   )
 }
 
@@ -184,7 +187,6 @@ Distributed under the MIT License.
   const [hasGenerated, setHasGenerated] = useState(() => Boolean(localStorage.getItem('readme_has_generated')))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [toast, setToast] = useState({ message: '', type: 'success' })
 
   // IDE Workspace State
   const [activeActivityTab, setActiveActivityTab] = useState('explorer') // 'explorer' | 'generator' | 'outline' | 'templates'
@@ -233,6 +235,14 @@ Distributed under the MIT License.
   const [keybindings, setKeybindings] = useState(() => loadKeybindings())
   const [dirtyFiles, setDirtyFiles] = useState({}) // Tracks unsaved modifications { [fileName]: true }
   const [githubToken, setGithubToken] = useState(() => localStorage.getItem('readme_github_token') || '')
+  const [recentWorkspaces, setRecentWorkspaces] = useState(() => {
+    try {
+      const saved = localStorage.getItem('visualmark_recent_workspaces')
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
   const [openDocTabs, setOpenDocTabs] = useState(() => {
     try {
       const saved = localStorage.getItem('readme_open_doc_tabs')
@@ -240,7 +250,7 @@ Distributed under the MIT License.
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed)) {
           const filtered = parsed.filter((f) => !isStudioTabId(f) && !isPresetTabId(f))
-          return filtered.length > 0 ? filtered : ['README.md']
+          return filtered
         }
       }
     } catch {
@@ -252,6 +262,18 @@ Distributed under the MIT License.
   const fileCursorPositions = useRef({})
   const lastActiveDocRef = useRef('README.md')
   const [insertModalState, setInsertModalState] = useState({ isOpen: false, snippet: '', snippetType: '' })
+  const [updateDownloaded, setUpdateDownloaded] = useState(null)
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false)
+  const [appVersion, setAppVersion] = useState(APP_CURRENT_VERSION)
+
+  // Synchronize dynamic app version from Electron package.json if available
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.electronAPI?.getAppVersion) {
+      window.electronAPI.getAppVersion().then((ver) => {
+        if (ver) setAppVersion(ver)
+      }).catch(() => {})
+    }
+  }, [])
 
   // Integrated Bottom Panel & Diagnostics State (VS Code / Antigravity IDE)
   const {
@@ -309,9 +331,9 @@ Distributed under the MIT License.
             validDocs.includes(lastActiveDocRef.current)
             ? lastActiveDocRef.current
             : null
-          const nextDoc = validLast || (validDocs.length > 0 ? validDocs[validDocs.length - 1] : null) || (openStudioTabs.length > 0 ? openStudioTabs[0] : 'README.md')
+          const nextDoc = validLast || (validDocs.length > 0 ? validDocs[validDocs.length - 1] : null) || (openStudioTabs.length > 0 ? openStudioTabs[0] : null)
           setActiveFile(nextDoc)
-          if (!isStudioTabId(nextDoc) && !isPresetTabId(nextDoc)) {
+          if (nextDoc && !isStudioTabId(nextDoc) && !isPresetTabId(nextDoc)) {
             setOpenDocTabs((prev) => (prev.includes(nextDoc) ? prev : [...prev, nextDoc]))
           }
         }
@@ -379,61 +401,293 @@ Distributed under the MIT License.
     }
   }, [workspaceDirectory])
 
-  // Desktop: Auto-detect workspace on startup (restoring saved workspace if present)
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.electronAPI) {
-      const savedWsRaw = localStorage.getItem('readme_workspace_directory')
-      let savedWs = null
+  const { showToast: triggerToast } = useToast()
+
+  const showToast = useCallback((message, type = 'success', options = {}) => {
+    return triggerToast(message, type, options)
+  }, [triggerToast])
+
+  // Recent Workspaces Management
+  const addRecentWorkspace = useCallback((wsPath, wsName) => {
+    if (!wsPath) return
+    try {
+      const raw = localStorage.getItem('visualmark_recent_workspaces')
+      const list = raw ? JSON.parse(raw) : []
+      const name = wsName || wsPath.replace(/\\/g, '/').split('/').filter(Boolean).pop() || 'workspace'
+      const filtered = list.filter((item) => item.path.toLowerCase() !== wsPath.toLowerCase())
+      const updated = [{ name, path: wsPath, timestamp: Date.now() }, ...filtered].slice(0, 10)
+      setRecentWorkspaces(updated)
+      localStorage.setItem('visualmark_recent_workspaces', JSON.stringify(updated))
+    } catch {}
+  }, [])
+
+  const handleClearRecentWorkspaces = useCallback(() => {
+    setRecentWorkspaces([])
+    localStorage.removeItem('visualmark_recent_workspaces')
+    showToast('Cleared recently opened workspaces list', 'info')
+  }, [showToast])
+
+  // Hot Exit & Crash Resilience: cache unsaved draft edits across crashes or computer restarts
+  const updateHotExitDraft = useCallback((fileKey, content, filePath = null) => {
+    if (!fileKey || isStudioTabId(fileKey) || isPresetTabId(fileKey)) return
+    try {
+      const drafts = JSON.parse(localStorage.getItem('visualmark_hot_exit_drafts') || '{}')
+      drafts[fileKey] = {
+        content,
+        filePath: filePath || filePathsMap[fileKey] || null,
+        timestamp: Date.now(),
+        isDirty: true
+      }
+      localStorage.setItem('visualmark_hot_exit_drafts', JSON.stringify(drafts))
+    } catch {}
+  }, [filePathsMap])
+
+  const clearHotExitDraft = useCallback((fileKey) => {
+    if (!fileKey) return
+    try {
+      const drafts = JSON.parse(localStorage.getItem('visualmark_hot_exit_drafts') || '{}')
+      if (drafts[fileKey]) {
+        delete drafts[fileKey]
+        localStorage.setItem('visualmark_hot_exit_drafts', JSON.stringify(drafts))
+      }
+    } catch {}
+  }, [])
+
+  // Unified Workspace Directory Loader: sets workspace, restores session or entry doc, prevents README collision
+  const openWorkspaceDirectory = useCallback(async (folderPath, folderName = null, preScannedFiles = null) => {
+    if (!folderPath || typeof window === 'undefined') return
+    try {
+      const resolvedName = folderName || folderPath.replace(/\\/g, '/').split('/').filter(Boolean).pop() || 'workspace'
+      const wsObj = {
+        name: resolvedName,
+        path: folderPath,
+        files: []
+      }
+      setWorkspaceDirectory(wsObj)
+      safeSetItem('readme_workspace_directory', JSON.stringify({ name: wsObj.name, path: wsObj.path }))
+      addRecentWorkspace(folderPath, resolvedName)
+
+      // Fetch live Git info
+      if (window.electronAPI?.getGitInfo) {
+        const git = await window.electronAPI.getGitInfo(folderPath)
+        if (git) setGitInfo(git)
+      }
+
+      // Read workspace doc files
+      const folderFiles = preScannedFiles || (window.electronAPI?.readWorkspaceFiles ? await window.electronAPI.readWorkspaceFiles(folderPath) : [])
+      const newPathsMap = {}
+      for (const f of folderFiles) {
+        // Key by unique relPath (e.g. 'README.md', 'frontend/README.md') so multiple files never collide!
+        newPathsMap[f.relPath] = f.fullPath
+      }
+
+      // Check for saved workspace session
+      const sessionKey = 'visualmark_ws_session_' + encodeURIComponent(folderPath.toLowerCase())
+      const savedSessionRaw = localStorage.getItem(sessionKey)
+      let savedSession = null
       try {
-        if (savedWsRaw) savedWs = JSON.parse(savedWsRaw)
+        if (savedSessionRaw) savedSession = JSON.parse(savedSessionRaw)
       } catch {}
 
-      const targetPath = savedWs?.path || null
-      const fetchPromise = targetPath && window.electronAPI.readWorkspaceTree
-        ? window.electronAPI.readWorkspaceTree(targetPath)
-        : (window.electronAPI.getDefaultWorkspace ? window.electronAPI.getDefaultWorkspace() : null)
+      let tabsToOpen = []
+      let fileToActive = null
 
-      if (fetchPromise) {
-        fetchPromise.then(async (ws) => {
-          if (ws && ws.rootPath) {
-            const wsObj = {
-              name: ws.rootName || (savedWs?.name || 'workspace'),
-              path: ws.rootPath,
-              files: []
-            }
-            setWorkspaceDirectory(wsObj)
-            safeSetItem('readme_workspace_directory', JSON.stringify({ name: wsObj.name, path: wsObj.path }))
+      if (savedSession && Array.isArray(savedSession.openTabs)) {
+        tabsToOpen = savedSession.openTabs.filter((t) => newPathsMap[t] !== undefined)
+        if (savedSession.activeFile && tabsToOpen.includes(savedSession.activeFile)) {
+          fileToActive = savedSession.activeFile
+        } else if (tabsToOpen.length > 0) {
+          fileToActive = tabsToOpen[0]
+        }
+      } else {
+        // If NO saved session exists at all (first time opening this workspace), determine initial document
+        const rootReadme = folderFiles.find((f) => f.relPath.toLowerCase() === 'readme.md')
+        if (rootReadme) {
+          tabsToOpen = [rootReadme.relPath]
+          fileToActive = rootReadme.relPath
+        } else if (folderFiles.length > 0) {
+          tabsToOpen = [folderFiles[0].relPath]
+          fileToActive = folderFiles[0].relPath
+        } else {
+          tabsToOpen = []
+          fileToActive = null
+        }
+      }
 
-            // Fetch live Git info
-            if (window.electronAPI.getGitInfo) {
-              const git = await window.electronAPI.getGitInfo(ws.rootPath)
-              if (git) setGitInfo(git)
-            }
-
-            // Look for existing README.md in workspace
-            const defaultReadmePath = `${ws.rootPath.replace(/[\\/]+$/, '')}/README.md`
-            setFilePathsMap((prev) => ({
-              ...prev,
-              'README.md': defaultReadmePath
-            }))
-
-            // If README.md exists on disk, load its real content
-            const readRes = await window.electronAPI.readFile(defaultReadmePath)
-            if (readRes?.success && readRes.content && !readRes.isUnsupported) {
+      // Read content for the open tabs
+      const loadedAdditional = {}
+      for (const tabKey of tabsToOpen) {
+        const diskPath = newPathsMap[tabKey]
+        if (diskPath && window.electronAPI?.readFile) {
+          const readRes = await window.electronAPI.readFile(diskPath)
+          if (readRes?.success && !readRes.isUnsupported) {
+            if (tabKey === 'README.md') {
               setMarkdown(readRes.content)
-              setLocalFilePath(defaultReadmePath)
+            } else {
+              loadedAdditional[tabKey] = readRes.content
             }
           }
-        }).catch((err) => {
-          console.warn('Could not load workspace on startup:', err)
-        })
+        }
       }
+
+      setAdditionalFiles(loadedAdditional)
+      setFilePathsMap(newPathsMap)
+      setOpenDocTabs(tabsToOpen)
+      setActiveFile(fileToActive)
+      setLocalFilePath(fileToActive ? newPathsMap[fileToActive] || null : null)
+
+      window.dispatchEvent(new CustomEvent('workspace-tree-refresh'))
+      showToast(`Loaded workspace: ${resolvedName} (${folderFiles.length} docs found)`, 'success')
+    } catch (err) {
+      console.error('Error opening workspace:', err)
+      showToast('Failed to open workspace directory: ' + err.message, 'error')
     }
+  }, [addRecentWorkspace, showToast])
+
+  const handleOpenRecentWorkspace = useCallback(async (folderPath) => {
+    await openWorkspaceDirectory(folderPath)
+  }, [openWorkspaceDirectory])
+
+
+
+  // Hot Exit & Crash Resilience: Restore unsaved buffers and tab states on reload/restart
+  useEffect(() => {
+    try {
+      const rawDrafts = localStorage.getItem('visualmark_hot_exit_drafts')
+      if (!rawDrafts) return
+      const drafts = JSON.parse(rawDrafts)
+      const draftKeys = Object.keys(drafts)
+      if (draftKeys.length === 0) return
+
+      const restoredAdditional = {}
+      const restoredPaths = {}
+      const restoredDirty = {}
+      let hasDrafts = false
+
+      for (const key of draftKeys) {
+        const draft = drafts[key]
+        if (draft && typeof draft.content === 'string') {
+          hasDrafts = true
+          restoredDirty[key] = true
+          if (draft.filePath) restoredPaths[key] = draft.filePath
+          if (key === 'README.md') {
+            setMarkdown(draft.content)
+          } else {
+            restoredAdditional[key] = draft.content
+          }
+        }
+      }
+
+      if (hasDrafts) {
+        setAdditionalFiles((prev) => ({ ...prev, ...restoredAdditional }))
+        setFilePathsMap((prev) => ({ ...prev, ...restoredPaths }))
+        setDirtyFiles((prev) => ({ ...prev, ...restoredDirty }))
+        setOpenDocTabs((prev) => {
+          const combined = [...prev]
+          for (const k of draftKeys) {
+            if (!combined.includes(k)) combined.push(k)
+          }
+          return combined
+        })
+        showToast(`⚡ Auto-recovered ${draftKeys.length} unsaved draft(s) from previous session (Hot Exit)`, 'info')
+      }
+    } catch (err) {
+      console.warn('Failed restoring hot exit drafts:', err)
+    }
+  }, [showToast])
+
+  // Save workspace tab session state whenever openDocTabs or activeFile changes
+  useEffect(() => {
+    if (workspaceDirectory?.path) {
+      const sessionKey = 'visualmark_ws_session_' + encodeURIComponent(workspaceDirectory.path.toLowerCase())
+      const validDocs = openDocTabs.filter((f) => !isStudioTabId(f) && !isPresetTabId(f))
+      try {
+        localStorage.setItem(sessionKey, JSON.stringify({
+          openTabs: validDocs,
+          activeFile: isStudioTabId(activeFile) || isPresetTabId(activeFile) ? null : activeFile
+        }))
+      } catch {}
+    }
+  }, [openDocTabs, activeFile, workspaceDirectory])
+
+  // Open "What's New" release notes in the editor tab section
+  const handleOpenWhatsNewTab = useCallback(() => {
+    setOpenDocTabs((prev) => prev.filter((f) => !isStudioTabId(f)))
+    setOpenStudioTabs((prev) => (prev.includes('whats-new') ? prev : [...prev, 'whats-new']))
+    setActiveFile('whats-new')
   }, [])
 
-  const showToast = useCallback((message, type = 'success') => {
-    setToast({ message, type })
-  }, [])
+  // Startup version check & "What's New" release notes editor tab
+  useEffect(() => {
+    try {
+      const lastSeenVersion = localStorage.getItem('visualmark_last_seen_version')
+      const suppressAuto = localStorage.getItem('visualmark_suppress_whats_new') === 'true'
+
+      if (!lastSeenVersion) {
+        // Initial launch of VisualMark Studio: open release notes tab
+        localStorage.setItem('visualmark_last_seen_version', appVersion)
+        handleOpenWhatsNewTab()
+      } else if (lastSeenVersion !== appVersion) {
+        // App updated to a newer version!
+        localStorage.setItem('visualmark_last_seen_version', appVersion)
+        if (!suppressAuto) {
+          handleOpenWhatsNewTab()
+        } else {
+          showToast(`VisualMark Studio updated to v${appVersion}!`, 'info')
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading version from localStorage:', e)
+    }
+  }, [appVersion, showToast, handleOpenWhatsNewTab])
+
+  // Electron Auto-Updater IPC event listeners
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.electronAPI) {
+      const cleanupDownloaded = window.electronAPI.onUpdateDownloaded?.((info) => {
+        setUpdateDownloaded(info)
+        showToast(`Update v${info?.version || ''} downloaded! Click status bar to restart & install.`, 'success')
+      })
+
+      const cleanupAvailable = window.electronAPI.onUpdateAvailable?.((info) => {
+        showToast(`Downloading update v${info?.version || ''} in background...`, 'info')
+      })
+
+      return () => {
+        if (typeof cleanupDownloaded === 'function') cleanupDownloaded()
+        if (typeof cleanupAvailable === 'function') cleanupAvailable()
+      }
+    }
+  }, [showToast])
+
+  const handleCheckForUpdates = useCallback(async () => {
+    if (isCheckingUpdate) return
+    setIsCheckingUpdate(true)
+    if (typeof window !== 'undefined' && window.electronAPI?.checkForUpdates) {
+      try {
+        showToast('Checking for updates...', 'info')
+        const res = await window.electronAPI.checkForUpdates()
+        if (res?.status === 'dev') {
+          showToast('Auto-updater is active in production packaged builds.', 'info')
+        }
+      } catch {
+        showToast('Unable to check for updates right now.', 'warning')
+      } finally {
+        setTimeout(() => setIsCheckingUpdate(false), 2000)
+      }
+    } else {
+      showToast(`VisualMark Studio v${appVersion} is up to date.`, 'info')
+      setIsCheckingUpdate(false)
+    }
+  }, [appVersion, isCheckingUpdate, showToast])
+
+  const handleRestartToUpdate = useCallback(() => {
+    if (window.electronAPI?.quitAndInstallUpdate) {
+      window.electronAPI.quitAndInstallUpdate()
+    } else {
+      showToast('Restart the application to apply update.', 'info')
+    }
+  }, [showToast])
 
   // Documentation Generation
   const handleGenerate = async (url = repoUrl, desc = description, techStack = selectedTechs, options = {}) => {
@@ -645,18 +899,22 @@ Distributed under the MIT License.
     }
   }
 
-  // Active files map
-  const allFiles = useMemo(() => ({
-    'README.md': markdown,
-    ...additionalFiles
-  }), [markdown, additionalFiles])
+  // Active files map - dynamic and clean
+  const allFiles = useMemo(() => {
+    const res = { ...additionalFiles }
+    if (filePathsMap['README.md'] || openDocTabs.includes('README.md') || !workspaceDirectory) {
+      res['README.md'] = markdown
+    }
+    return res
+  }, [markdown, additionalFiles, filePathsMap, openDocTabs, workspaceDirectory])
 
   const currentContent = activeFile === 'README.md'
     ? markdown
-    : (activeFile ? (additionalFiles[activeFile] || '') : '')
+    : (activeFile ? (additionalFiles[activeFile] ?? '') : '')
 
   const handleContentChange = (newContent) => {
     setDirtyFiles((prev) => ({ ...prev, [activeFile]: true }))
+    updateHotExitDraft(activeFile, newContent, filePathsMap[activeFile] || localFilePath)
     if (activeFile === 'README.md') {
       setMarkdown(newContent)
     } else {
@@ -697,13 +955,12 @@ Distributed under the MIT License.
     setLocalFilePath(null)
     setOpenDocTabs((prev) => (prev.includes(name) ? prev : [...prev, name]))
     setActiveFile(name)
-    showToast(`Created new tab: ${name}`, 'info')
 
     setTimeout(() => {
       const textarea = document.querySelector('.editor-textarea')
       if (textarea) textarea.focus()
     }, 60)
-  }, [allFiles, openDocTabs, showToast])
+  }, [allFiles, openDocTabs])
 
   // File management
   const handleCreateFile = useCallback((rawFilename, initialContent = null, fullPath = null) => {
@@ -718,7 +975,6 @@ Distributed under the MIT License.
 
     if (allFiles[filename] !== undefined && !fullPath) {
       setActiveFile(filename)
-      showToast(`Switched to existing ${filename}`, 'info')
       return
     }
 
@@ -745,21 +1001,22 @@ Distributed under the MIT License.
   }, [allFiles, workspaceDirectory, showToast])
 
   const handleDeleteFile = (filename) => {
-    if (filename === 'README.md') {
-      showToast('Primary README.md cannot be deleted from the workspace suite.', 'error')
-      return
-    }
-
     const confirmed = window.confirm(
-      `Are you sure you want to delete "${filename}"?\n\nThis will permanently remove this file from your documentation workspace suite.`
+      `Are you sure you want to delete "${filename}"?\n\nThis will permanently remove this file.`
     )
     if (!confirmed) return
 
-    setAdditionalFiles((prev) => {
-      const next = { ...prev }
-      delete next[filename]
-      return next
-    })
+    clearHotExitDraft(filename)
+
+    if (filename === 'README.md') {
+      setMarkdown('')
+    } else {
+      setAdditionalFiles((prev) => {
+        const next = { ...prev }
+        delete next[filename]
+        return next
+      })
+    }
 
     setFilePathsMap((prev) => {
       const next = { ...prev }
@@ -767,12 +1024,17 @@ Distributed under the MIT License.
       return next
     })
 
-    setOpenDocTabs((prev) => prev.filter((f) => f !== filename))
+    const nextTabs = openDocTabs.filter((f) => f !== filename)
+    setOpenDocTabs(nextTabs)
 
     if (activeFile === filename) {
-      setActiveFile('README.md')
-      setLocalFilePath(filePathsMap['README.md'] || null)
-      setOpenDocTabs((prev) => (prev.includes('README.md') ? prev : ['README.md', ...prev]))
+      if (nextTabs.length > 0) {
+        setActiveFile(nextTabs[0])
+        setLocalFilePath(filePathsMap[nextTabs[0]] || null)
+      } else {
+        setActiveFile(null)
+        setLocalFilePath(null)
+      }
     }
     showToast(`Deleted ${filename}`, 'info')
   }
@@ -851,13 +1113,13 @@ Distributed under the MIT License.
       return next
     })
 
-    if (content !== null) {
-      if (filename.toLowerCase() === 'readme.md') {
-        setMarkdown(content)
+    if (resolvedContent !== null && resolvedContent !== undefined) {
+      if (filename === 'README.md') {
+        setMarkdown(resolvedContent)
       } else {
         setAdditionalFiles((prev) => ({
           ...prev,
-          [filename]: content
+          [filename]: resolvedContent
         }))
       }
     }
@@ -886,6 +1148,76 @@ Distributed under the MIT License.
     setTimeout(restore, 50)
     setTimeout(restore, 150)
   }, [activeFile, filePathsMap])
+
+  const openWorkspaceDirectoryRef = useRef(openWorkspaceDirectory)
+  openWorkspaceDirectoryRef.current = openWorkspaceDirectory
+  const handleSelectFileRef = useRef(handleSelectFile)
+  handleSelectFileRef.current = handleSelectFile
+  const showToastRef = useRef(showToast)
+  showToastRef.current = showToast
+  const hasInitializedStartupWs = useRef(false)
+
+  // Desktop: Auto-detect workspace on startup (runs strictly ONCE on mount)
+  useEffect(() => {
+    if (hasInitializedStartupWs.current) return
+    hasInitializedStartupWs.current = true
+
+    if (typeof window !== 'undefined' && window.electronAPI) {
+      if (window.electronAPI.getDefaultWorkspace) {
+        window.electronAPI.getDefaultWorkspace().then(async (ws) => {
+          if (ws?.isArgv && ws.rootPath) {
+            await openWorkspaceDirectoryRef.current(ws.rootPath, ws.rootName)
+            if (ws.initialFile) {
+              const normWs = ws.rootPath.replace(/\\/g, '/').replace(/\/+$/, '')
+              const normFile = ws.initialFile.replace(/\\/g, '/')
+              const rel = normFile.toLowerCase().startsWith(normWs.toLowerCase() + '/')
+                ? normFile.slice(normWs.length + 1)
+                : ws.initialFile.split(/[\\/]/).pop()
+              handleSelectFileRef.current(rel, null, ws.initialFile)
+            }
+            return
+          }
+
+          // Fallback to restored workspace session if no CLI argument
+          const savedWsRaw = localStorage.getItem('readme_workspace_directory')
+          let savedWs = null
+          try {
+            if (savedWsRaw) savedWs = JSON.parse(savedWsRaw)
+          } catch {}
+
+          if (savedWs?.path) {
+            openWorkspaceDirectoryRef.current(savedWs.path, savedWs.name)
+          } else if (ws?.rootPath) {
+            openWorkspaceDirectoryRef.current(ws.rootPath, ws.rootName)
+          }
+        }).catch((err) => {
+          console.warn('Could not load default workspace on startup:', err)
+        })
+      }
+    }
+  }, [])
+
+  // Listen for Windows Explorer "Open with VisualMark Studio" while app is already open
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.electronAPI) {
+      const cleanWs = window.electronAPI.onOpenExternalWorkspace?.(async (ws) => {
+        if (ws?.folderPath) {
+          await openWorkspaceDirectoryRef.current(ws.folderPath, ws.folderName)
+          showToastRef.current(`Opened workspace: ${ws.folderName || ws.folderPath}`, 'info')
+        }
+      })
+      const cleanFile = window.electronAPI.onOpenExternalFile?.(async (file) => {
+        if (file?.filePath) {
+          handleSelectFileRef.current(file.fileName, null, file.filePath)
+          showToastRef.current(`Opened file: ${file.fileName}`, 'info')
+        }
+      })
+      return () => {
+        if (typeof cleanWs === 'function') cleanWs()
+        if (typeof cleanFile === 'function') cleanFile()
+      }
+    }
+  }, [])
 
   const handleSelectProblem = useCallback((problem) => {
     if (!problem) return
@@ -954,6 +1286,7 @@ Distributed under the MIT License.
     setOpenStudioTabs((prev) => (prev.includes('shortcuts') ? prev : [...prev, 'shortcuts']))
     setActiveFile('shortcuts')
   }, [])
+
 
   const handleUpdateKeybinding = useCallback((commandId, newKey) => {
     saveKeybindingOverride(commandId, newKey)
@@ -1114,8 +1447,12 @@ Distributed under the MIT License.
       })
     }
 
+    clearHotExitDraft(filename)
     const nextTabs = openDocTabs.filter((f) => f !== filename)
     setOpenDocTabs(nextTabs)
+    if (lastActiveDocRef.current === filename) {
+      lastActiveDocRef.current = nextTabs[0] || null
+    }
     if (activeFile === filename) {
       if (nextTabs.length > 0) {
         const closedIdx = openDocTabs.indexOf(filename)
@@ -1129,7 +1466,6 @@ Distributed under the MIT License.
         setActiveFile(null)
       }
     }
-    showToast(`Closed ${filename}`, 'info')
   }
 
   // Clipboard & Native Desktop Export
@@ -1157,18 +1493,13 @@ Distributed under the MIT License.
     if (typeof window !== 'undefined' && window.electronAPI?.openFileDialog) {
       const res = await window.electronAPI.openFileDialog()
       if (!res.canceled && res.content !== undefined) {
-        if (res.fileName.toLowerCase() === 'readme.md') {
-          setMarkdown(res.content)
-        } else {
-          setAdditionalFiles((prev) => ({
-            ...prev,
-            [res.fileName]: res.content
-          }))
-        }
-        setFilePathsMap((prev) => ({ ...prev, [res.fileName]: res.filePath }))
-        setLocalFilePath(res.filePath)
-        setOpenDocTabs((prev) => (prev.includes(res.fileName) ? prev : [...prev, res.fileName]))
-        setActiveFile(res.fileName)
+        const normWs = (workspaceDirectory?.path || '').replace(/\\/g, '/').replace(/\/+$/, '')
+        const normFile = (res.filePath || '').replace(/\\/g, '/')
+        const relPath = normWs && normFile.toLowerCase().startsWith(normWs.toLowerCase() + '/')
+          ? normFile.slice(normWs.length + 1)
+          : res.fileName
+
+        handleSelectFile(relPath, res.content, res.filePath)
         showToast(`Opened ${res.fileName} from disk`, 'info')
       }
     } else {
@@ -1181,16 +1512,7 @@ Distributed under the MIT License.
         if (file) {
           const reader = new FileReader()
           reader.onload = (re) => {
-            if (file.name.toLowerCase() === 'readme.md') {
-              setMarkdown(re.target.result)
-            } else {
-              setAdditionalFiles((prev) => ({
-                ...prev,
-                [file.name]: re.target.result
-              }))
-            }
-            setOpenDocTabs((prev) => (prev.includes(file.name) ? prev : [...prev, file.name]))
-            setActiveFile(file.name)
+            handleSelectFile(file.name, re.target.result)
             showToast(`Loaded ${file.name}`, 'info')
           }
           reader.readAsText(file)
@@ -1198,7 +1520,7 @@ Distributed under the MIT License.
       }
       input.click()
     }
-  }, [showToast])
+  }, [workspaceDirectory, handleSelectFile, showToast])
 
   // Desktop Native Open Folder
   const handleOpenNativeFolder = useCallback(async () => {
@@ -1206,70 +1528,48 @@ Distributed under the MIT License.
       try {
         const res = await window.electronAPI.openFolderDialog()
         if (res.canceled || !res.folderPath) return
-
-        const folderFiles = res.files || []
-        const wsObj = {
-          name: res.folderName || 'workspace',
-          path: res.folderPath,
-          files: folderFiles
-        }
-        setWorkspaceDirectory(wsObj)
-        safeSetItem('readme_workspace_directory', JSON.stringify({ name: wsObj.name, path: wsObj.path }))
-
-        // Fetch live Git info for opened folder
-        if (window.electronAPI?.getGitInfo) {
-          const git = await window.electronAPI.getGitInfo(res.folderPath)
-          if (git) setGitInfo(git)
-        }
-
-        const newFiles = {}
-        const newPathsMap = {}
-        const tabsToAdd = []
-
-        if (folderFiles.length > 0) {
-          for (const f of folderFiles) {
-            newPathsMap[f.name] = f.fullPath
-            const readRes = await window.electronAPI.readFile(f.fullPath)
-            if (readRes?.success) {
-              newFiles[f.name] = readRes.content
-              tabsToAdd.push(f.name)
-            }
-          }
-        }
-
-        const readmeEntry = folderFiles.find((f) => f.name.toLowerCase() === 'readme.md')
-        if (readmeEntry && newFiles[readmeEntry.name] !== undefined) {
-          setMarkdown(newFiles[readmeEntry.name])
-          delete newFiles[readmeEntry.name]
-          setActiveFile('README.md')
-          setLocalFilePath(readmeEntry.fullPath)
-          newPathsMap['README.md'] = readmeEntry.fullPath
-          if (!tabsToAdd.includes('README.md')) tabsToAdd.unshift('README.md')
-        } else if (tabsToAdd.length > 0) {
-          const first = tabsToAdd[0]
-          setActiveFile(first)
-          setLocalFilePath(newPathsMap[first] || null)
-        } else {
-          // Empty folder or project with no docs yet: create a fresh README.md buffer in this folder
-          const folderReadmePath = `${res.folderPath.replace(/[\\/]+$/, '')}/README.md`
-          const defaultText = `# ${res.folderName || 'Project'}\n\nProject documentation for ${res.folderName || 'this workspace'}.\n`
-          setMarkdown(defaultText)
-          setActiveFile('README.md')
-          setLocalFilePath(folderReadmePath)
-          newPathsMap['README.md'] = folderReadmePath
-          tabsToAdd.push('README.md')
-        }
-
-        setAdditionalFiles(newFiles)
-        setFilePathsMap((prev) => ({ ...prev, ...newPathsMap }))
-        setOpenDocTabs(tabsToAdd.length > 0 ? tabsToAdd : ['README.md'])
-        showToast(`Loaded workspace: ${res.folderName} (${folderFiles.length} docs found)`, 'success')
+        await openWorkspaceDirectory(res.folderPath, res.folderName, res.files)
       } catch (err) {
         console.error('Error opening folder:', err)
         showToast('Failed to open workspace directory: ' + err.message, 'error')
       }
     }
-  }, [showToast])
+  }, [openWorkspaceDirectory, showToast])
+
+  // External file drop handler (TabBar, Preview, etc.)
+  const handleDropExternalFile = useCallback(async (file) => {
+    if (!file) return
+    if (typeof window !== 'undefined' && window.electronAPI?.readFile && file.path) {
+      try {
+        const readRes = await window.electronAPI.readFile(file.path)
+        if (readRes?.success) {
+          const normWs = (workspaceDirectory?.path || '').replace(/\\/g, '/').replace(/\/+$/, '')
+          const normFile = file.path.replace(/\\/g, '/')
+          const relPath = normWs && normFile.toLowerCase().startsWith(normWs.toLowerCase() + '/')
+            ? normFile.slice(normWs.length + 1)
+            : file.name
+
+          if (readRes.isUnsupported) {
+            handleSelectFile(relPath, null, file.path, readRes)
+          } else {
+            handleSelectFile(relPath, readRes.content, file.path)
+          }
+          showToast(`✓ Opened ${file.name}`, 'info')
+          return
+        }
+      } catch (err) {
+        console.warn('Failed to read external dropped file:', err)
+      }
+    }
+
+    // Web fallback
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      handleSelectFile(file.name, e.target.result)
+      showToast(`✓ Opened ${file.name}`, 'info')
+    }
+    reader.readAsText(file)
+  }, [workspaceDirectory, handleSelectFile, showToast])
 
   // Desktop Native Direct Save (or Save As)
   const handleSaveNativeFile = useCallback(async (saveAs = false) => {
@@ -1281,6 +1581,7 @@ Distributed under the MIT License.
         const res = await window.electronAPI.saveDirectFile(currentPath, content)
         if (res.success) {
           setDirtyFiles((prev) => ({ ...prev, [activeFile]: false }))
+          clearHotExitDraft(activeFile)
           showToast(`✓ Saved ${activeFile}`, 'success')
           return
         }
@@ -1296,6 +1597,8 @@ Distributed under the MIT License.
         setFilePathsMap((prev) => ({ ...prev, [savedFileName]: res.filePath }))
         setLocalFilePath(res.filePath)
         setDirtyFiles((prev) => ({ ...prev, [savedFileName]: false }))
+        clearHotExitDraft(savedFileName)
+        if (savedFileName !== activeFile) clearHotExitDraft(activeFile)
 
         if (savedFileName !== activeFile) {
           if (activeFile === 'README.md') {
@@ -1316,8 +1619,9 @@ Distributed under the MIT License.
     } else {
       handleDownloadActiveFile()
       setDirtyFiles((prev) => ({ ...prev, [activeFile]: false }))
+      clearHotExitDraft(activeFile)
     }
-  }, [currentContent, activeFile, localFilePath, filePathsMap, workspaceDirectory, handleDownloadActiveFile, showToast])
+  }, [currentContent, activeFile, localFilePath, filePathsMap, workspaceDirectory, clearHotExitDraft, handleDownloadActiveFile, showToast])
 
   const handleClear = () => {
     if (window.confirm(`Are you sure you want to reset the active markdown buffer? Any unsaved edits to ${activeFile} will be cleared.`)) {
@@ -1388,9 +1692,7 @@ Distributed under the MIT License.
         }
       }
     }
-
-    showToast(`Closed ${preset ? preset.title : 'preset'} tab`, 'info')
-  }, [activeFile, openPresetTabs, openDocTabs, openStudioTabs, showToast])
+  }, [activeFile, openPresetTabs, openDocTabs, openStudioTabs])
 
   const handleExitAllPresetPreviews = useCallback(() => {
     setOpenPresetTabs([])
@@ -1404,18 +1706,16 @@ Distributed under the MIT License.
       ? lastActiveDocRef.current
       : null
 
-    const targetDoc = validLast || (validDocs.length > 0 ? validDocs[validDocs.length - 1] : null) || (openStudioTabs.length > 0 ? openStudioTabs[0] : 'README.md')
+    const targetDoc = validLast || (validDocs.length > 0 ? validDocs[validDocs.length - 1] : null) || (openStudioTabs.length > 0 ? openStudioTabs[0] : null)
     setActiveFile(targetDoc)
 
-    if (!isStudioTabId(targetDoc) && !isPresetTabId(targetDoc)) {
+    if (targetDoc && !isStudioTabId(targetDoc) && !isPresetTabId(targetDoc)) {
       setOpenDocTabs((prevDocs) => {
         const cleaned = prevDocs.filter((f) => !isPresetTabId(f))
         return cleaned.includes(targetDoc) ? cleaned : [...cleaned, targetDoc]
       })
     }
-
-    showToast('Exited preset preview mode', 'info')
-  }, [openDocTabs, openStudioTabs, showToast])
+  }, [openDocTabs, openStudioTabs])
 
   const handleTogglePresetPreview = useCallback((template) => {
     if (!template) return
@@ -1502,6 +1802,13 @@ Distributed under the MIT License.
       else if (matchesKeybinding(e, getKey('file.new') || 'Ctrl + N')) {
         e.preventDefault()
         handleCreateUntitledFile()
+      }
+      // File: Close Active Tab (Ctrl + W)
+      else if ((e.ctrlKey || e.metaKey) && (e.key === 'w' || e.key === 'W') && !e.shiftKey && !e.altKey) {
+        e.preventDefault()
+        if (activeFile) {
+          handleCloseFile(activeFile)
+        }
       }
       // File: Open File
       else if (matchesKeybinding(e, getKey('file.open') || 'Ctrl + O')) {
@@ -1887,17 +2194,30 @@ Distributed under the MIT License.
       icon: 'list_alt',
       category: 'View',
       action: () => handleToggleBottomPanel('output')
+    },
+    {
+      id: 'whats-new',
+      title: 'Patch Notes',
+      description: 'View version patch notes, highlights, and update changelog',
+      icon: 'description',
+      category: 'Help',
+      action: handleOpenWhatsNewTab
+    },
+    {
+      id: 'check-updates',
+      title: 'Check for Updates...',
+      description: 'Check for latest application updates on GitHub',
+      icon: 'system_update',
+      category: 'Help',
+      action: handleCheckForUpdates
     }
-  ], [activeFile, handleCopy, handleDownloadActiveFile, handleDownloadSuite, handleDownloadHtml, handleDownloadPdf, handleToggleBottomPanel])
+  ], [activeFile, handleCopy, handleDownloadActiveFile, handleDownloadSuite, handleDownloadHtml, handleDownloadPdf, handleToggleBottomPanel, handleCheckForUpdates, handleOpenWhatsNewTab])
 
   return (
     <div className={`ide-app-root theme-${themeMode} ${isZenMode ? 'zen-mode' : ''}`}>
-      {/* Toast Notification */}
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ message: '', type: 'success' })}
-      />
+      {/* Stacked Toast Notification Viewport & Notification Center */}
+      <ToastContainer />
+      <NotificationHistoryPanel />
 
       {/* Top Application Bar (Hidden in Zen Mode) */}
       {!isZenMode && (
@@ -1905,6 +2225,9 @@ Distributed under the MIT License.
           activeFile={activeFile}
           repoUrl={repoUrl}
           workspaceName={workspaceDirectory?.name}
+          recentWorkspaces={recentWorkspaces}
+          onOpenRecentWorkspace={handleOpenRecentWorkspace}
+          onClearRecentWorkspaces={handleClearRecentWorkspaces}
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => setSidebarCollapsed(prev => !prev)}
           onOpenCommandPalette={() => setCommandPaletteOpen(true)}
@@ -1936,6 +2259,10 @@ Distributed under the MIT License.
           onToggleBottomPanel={handleToggleBottomPanel}
           editorEngine={editorEngine}
           setEditorEngine={setEditorEngine}
+          onOpenWhatsNew={handleOpenWhatsNewTab}
+          onCheckForUpdates={handleCheckForUpdates}
+          onCloseTab={handleCloseFile}
+          appVersion={appVersion}
         />
       )}
 
@@ -2060,6 +2387,7 @@ Distributed under the MIT License.
                 onCloseFile={handleCloseFile}
                 onCreateFile={handleCreateFile}
                 onNewUntitledFile={handleCreateUntitledFile}
+                onDropExternalFile={handleDropExternalFile}
                 openStudioTabs={openStudioTabs}
                 onOpenStudioTab={handleOpenStudioTab}
                 onCloseStudioTab={handleCloseStudioTab}
@@ -2221,6 +2549,17 @@ Distributed under the MIT License.
                       onClose={() => handleCloseStudioTab('shortcuts')}
                     />
                   </Suspense>
+                ) : (activeFile === 'whats-new' || activeFile === 'release-notes') ? (
+                  <Suspense fallback={<StudioLoadingFallback title="Release Notes" />}>
+                    <WhatsNewTab
+                      updateDownloaded={updateDownloaded}
+                      onRestartToUpdate={handleRestartToUpdate}
+                      onClose={() => handleCloseStudioTab(activeFile)}
+                      onOpenSettings={handleOpenSettingsTab}
+                      onOpenShortcuts={handleOpenShortcutsTab}
+                      onCheckForUpdates={handleCheckForUpdates}
+                    />
+                  </Suspense>
                 ) : !activeFile && !activePreset ? (
                   <div className="workspace-empty-state">
                     <div className="empty-state-card">
@@ -2236,11 +2575,14 @@ Distributed under the MIT License.
                         <button
                           type="button"
                           className="btn-empty-action btn-empty-primary"
-                          onClick={() => handleSelectFile('README.md')}
-                          title="Open or focus primary README.md"
+                          onClick={() => {
+                            const firstFile = Object.keys(filePathsMap)[0] || 'README.md'
+                            handleSelectFile(firstFile)
+                          }}
+                          title="Open or focus primary document"
                         >
                           <span className="material-symbols-outlined">description</span>
-                          <span>Open README.md</span>
+                          <span>Open Document</span>
                         </button>
                         <button
                           type="button"
@@ -2299,6 +2641,9 @@ Distributed under the MIT License.
                     markdown={currentContent}
                     onMarkdownChange={handleContentChange}
                     activeFile={activeFile || 'README.md'}
+                    workspaceDirectory={workspaceDirectory}
+                    onDropExternalFile={handleDropExternalFile}
+                    showToast={showToast}
                     viewMode={viewMode}
                     orientation={orientation}
                     zoomLevel={zoomLevel}
@@ -2361,6 +2706,10 @@ Distributed under the MIT License.
             }}
             isBottomPanelOpen={isBottomPanelOpen}
             onToggleBottomPanel={handleToggleBottomPanel}
+            currentVersion={appVersion}
+            updateDownloaded={updateDownloaded}
+            onOpenWhatsNew={handleOpenWhatsNewTab}
+            onRestartToUpdate={handleRestartToUpdate}
           />
 
           {/* Global IDE Tooltip System (Antigravity IDE / VS Code Style) */}

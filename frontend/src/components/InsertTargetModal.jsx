@@ -39,7 +39,7 @@ export default function InsertTargetModal({
 
   // Filter out any studio tab IDs just in case
   const docList = openDocTabs.filter(
-    (f) => typeof f === 'string' && !f.endsWith('.studio') && f !== 'settings' && f !== 'shortcuts'
+    (f) => typeof f === 'string' && !f.endsWith('.studio') && f !== 'settings' && f !== 'shortcuts' && f !== 'whats-new' && f !== 'release-notes'
   )
 
   useEffect(() => {

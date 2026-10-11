@@ -64,7 +64,7 @@ function decodeSvgDataUri(uri) {
 /**
  * Determines whether an image source or alt text corresponds to a status/shield badge.
  */
-export function isBadgeImage(src, alt = '', props = {}) {
+function isBadgeImage(src, alt = '', props = {}) {
   if (!src && !alt) return false
 
   // 1. If explicitly styled or given width="100%", it's a full banner/cover, never an inline badge
