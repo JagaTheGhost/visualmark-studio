@@ -30,6 +30,8 @@ Download pre-compiled Windows binaries directly from the latest [GitHub Release]
 | **Windows Installer** | `.exe` (NSIS) | Full installer with Desktop shortcut & Explorer context menu integration | [Download Setup (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark.Studio-Setup.exe) |
 | **Windows Portable** | `.exe` (Standalone) | Zero-installation portable binary (runs from any folder or USB drive) | [Download Portable (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark.Studio-Portable.exe) |
 
+>[!IMPORTANT]
+>Note for Windows Users: Because VisualMark Studio is open-source and community-distributed, Windows SmartScreen may show an "Unrecognized app" prompt on first launch. Click More info → Run anyway to install.
 ---
 
 ## ✨ Desktop IDE Features
