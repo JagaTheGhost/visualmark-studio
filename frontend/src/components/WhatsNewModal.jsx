@@ -1,5 +1,6 @@
-﻿import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { APP_CURRENT_VERSION, RELEASE_HISTORY } from '../data/releaseNotes'
+import appLogo from '../assets/logo.png'
 
 export default function WhatsNewModal({
   isOpen,
@@ -49,7 +50,7 @@ export default function WhatsNewModal({
         <div className="whats-new-header">
           <div className="whats-new-header-left">
             <div className="whats-new-logo-badge">
-              <img src="/logo.png" alt="VisualMark Studio" style={{ width: '28px', height: '28px', borderRadius: '6px' }} />
+              <img src={appLogo} alt="VisualMark Studio" style={{ width: '28px', height: '28px', borderRadius: '6px' }} />
             </div>
             <div>
               <div className="whats-new-title-row">

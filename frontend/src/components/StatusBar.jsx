@@ -14,7 +14,7 @@ export default function StatusBar({
   onOpenGitTab = () => {},
   isBottomPanelOpen = false,
   onToggleBottomPanel = () => {},
-  currentVersion = '1.0.0',
+  currentVersion = '1.0.1',
   updateDownloaded = null,
   onOpenWhatsNew = () => {},
   onRestartToUpdate = () => {}

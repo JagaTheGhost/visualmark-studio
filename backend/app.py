@@ -24,7 +24,7 @@ from prompts import (
 # Initialize FastAPI app
 app = FastAPI(
     title="README Studio API",
-    version="1.0.0",
+    version="1.0.1",
     description="Generate professional README.md files and documentation suites automatically"
 )
 

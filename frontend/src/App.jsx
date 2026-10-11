@@ -1185,6 +1185,15 @@ Distributed under the MIT License.
             if (savedWsRaw) savedWs = JSON.parse(savedWsRaw)
           } catch {}
 
+          // Sanitize: never re-open the application's own installation folder
+          if (savedWs?.path) {
+            const p = savedWs.path.toLowerCase()
+            if (p.includes('programs\\visualmark-studio') || p.includes('programs/visualmark-studio') || p.endsWith('visualmark studio')) {
+              localStorage.removeItem('readme_workspace_directory')
+              savedWs = null
+            }
+          }
+
           if (savedWs?.path) {
             openWorkspaceDirectoryRef.current(savedWs.path, savedWs.name)
           } else if (ws?.rootPath) {

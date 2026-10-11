@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { APP_CURRENT_VERSION, RELEASE_HISTORY } from '../data/releaseNotes'
+import appLogo from '../assets/logo.png'
 
 export default function WhatsNewTab({
   updateDownloaded = null, // { version, releaseNotes } if update is ready to install
@@ -95,7 +96,7 @@ export default function WhatsNewTab({
           <div className="whats-new-brand-group">
             <div className="whats-new-logo-badge">
               <img
-                src="/logo.png"
+                src={appLogo}
                 alt="VisualMark Studio"
                 className="whats-new-logo-img"
               />

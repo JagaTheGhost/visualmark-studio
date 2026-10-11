@@ -297,7 +297,7 @@ export default function IdeExplorerTree({
           ? await window.electronAPI.readWorkspaceTree(targetPath)
           : (window.electronAPI.getDefaultWorkspace ? await window.electronAPI.getDefaultWorkspace() : null)
 
-        if (res && Array.isArray(res.tree)) {
+        if (res && Array.isArray(res.tree) && (targetPath || res.rootPath)) {
           // Sort folders first, then files alphabetically (VS Code standard)
           const sortNodes = (nodes) => {
             return [...nodes].sort((a, b) => {
@@ -311,6 +311,11 @@ export default function IdeExplorerTree({
           setTreeData(sortNodes(res.tree))
           setGitStatusMap(res.gitStatus || {})
           setRootFolderName((res.rootName || workspaceDirectory?.name || 'workspace').toUpperCase())
+          return
+        } else if (!targetPath && !res?.rootPath) {
+          setTreeData([])
+          setGitStatusMap({})
+          setRootFolderName('NO FOLDER OPENED')
           return
         }
       } catch (err) {

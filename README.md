@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/version-1.0.0-6366f1.svg?style=for-the-badge" alt="Version" /></a>
+  <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/version-1.0.1-6366f1.svg?style=for-the-badge" alt="Version" /></a>
   <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/Download-Windows_.exe-22c55e?style=for-the-badge&logo=windows&logoColor=white" alt="Download Windows" /></a>
   <a href="https://electronjs.org"><img src="https://img.shields.io/badge/Electron-44.7+-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron" /></a>
   <a href="https://fastapi.tiangolo.com"><img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" /></a>

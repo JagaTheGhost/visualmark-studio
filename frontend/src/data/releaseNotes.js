@@ -2,15 +2,58 @@
  * VisualMark Studio - Release Notes & Update History Dataset
  * Powers the "What's New" modal dialog, update notifications, and in-IDE release history.
  */
-export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'
+export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.1'
 
 export const RELEASE_HISTORY = [
+  {
+    version: '1.0.1',
+    type: 'patch',
+    title: 'VisualMark Studio 1.0.1 — Maintenance & UX Fixes',
+    date: 'October 2026',
+    isCurrent: true,
+    highlights: [
+      'Fixed titlebar application logo asset rendering under file:// protocol',
+      'Prevented packaged desktop app from defaulting to installation folder on launch',
+      'Added empty workspace state ("No Folder Opened") with quick folder picker',
+      'Implemented repository security disclosure policy, CodeQL scanning, and Dependabot'
+    ],
+    sections: [
+      {
+        category: 'Desktop & Shell Fixes',
+        icon: 'build',
+        badge: 'Fix',
+        color: '#10b981',
+        items: [
+          {
+            title: 'Titlebar Logo Asset Resolution',
+            desc: 'Bundled application icon directly via Vite assets pipeline to guarantee crisp rendering in packaged desktop builds.'
+          },
+          {
+            title: 'Clean Workspace Startup',
+            desc: 'Desktop app now launches into a clean welcome state when no CLI argument is passed, rather than opening internal binaries.'
+          }
+        ]
+      },
+      {
+        category: 'Security Hardening',
+        icon: 'security',
+        badge: 'Security',
+        color: '#6366f1',
+        items: [
+          {
+            title: 'Security Policy & Scanning',
+            desc: 'Integrated SECURITY.md, CodeQL static analysis workflow, and Dependabot for continuous vulnerability tracking.'
+          }
+        ]
+      }
+    ]
+  },
   {
     version: '1.0.0',
     type: 'major', // 'major' | 'minor' | 'patch'
     title: 'Initial Release: The Code + Visual Markdown IDE',
     date: 'October 2026',
-    isCurrent: true,
+    isCurrent: false,
     highlights: [
       'Authentic VS Code Monaco Editor with minimap, code folding, and smart GFM completions',
       'Dual-Engine Architecture: switch seamlessly between Monaco and Classic lightweight editor',

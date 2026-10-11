@@ -19,12 +19,18 @@ const isDev = !app.isPackaged || process.env.NODE_ENV === 'development'
 // Helper to extract file or directory path from command line arguments (e.g. from Explorer context menu)
 function parsePathFromArgv(args) {
   if (!Array.isArray(args)) return null
+  const appExe = app.isPackaged ? app.getPath('exe') : null
+  const appDir = appExe ? path.dirname(appExe) : null
   const startIndex = app.isPackaged ? 1 : 2
   for (let i = startIndex; i < args.length; i++) {
     const arg = args[i]
     if (!arg || arg.startsWith('--') || arg.startsWith('-')) continue
     try {
       const resolved = path.resolve(arg)
+      // Never treat application's own executable or installation directory as a workspace
+      if (app.isPackaged && appDir && (resolved === appExe || resolved === appDir || resolved.startsWith(appDir + path.sep))) {
+        continue
+      }
       if (fs.existsSync(resolved)) {
         return resolved
       }
@@ -185,6 +191,9 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
+      nodeIntegrationInWorker: false,
+      webSecurity: true,
+      allowRunningInsecureContent: false,
       spellcheck: true
     }
   })
@@ -202,13 +211,34 @@ function createWindow() {
     mainWindow.webContents.send('window-maximized-state', false)
   })
 
-  // External URLs opened in user default browser
+  // External URLs opened in user default browser (strictly deny creation of secondary electron windows)
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('http:') || url.startsWith('https:')) {
-      shell.openExternal(url)
-      return { action: 'deny' }
+    try {
+      const parsed = new URL(url)
+      if (['http:', 'https:', 'mailto:'].includes(parsed.protocol)) {
+        shell.openExternal(url)
+      }
+    } catch {}
+    return { action: 'deny' }
+  })
+
+  // Prevent arbitrary top-level in-window navigation
+  mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
+    try {
+      const parsed = new URL(navigationUrl)
+      if (isDev && parsed.origin === 'http://localhost:3000') {
+        return // Allow Vite dev server reload/navigation
+      }
+      if (navigationUrl.startsWith('file://')) {
+        return // Allow local HTML navigation
+      }
+      event.preventDefault()
+      if (['http:', 'https:'].includes(parsed.protocol)) {
+        shell.openExternal(navigationUrl)
+      }
+    } catch {
+      event.preventDefault()
     }
-    return { action: 'allow' }
   })
 
   // Developer shortcuts & renderer error logging in development mode
@@ -787,8 +817,10 @@ async function getGitFullInfo(folderPath) {
 }
 
 ipcMain.handle('git-get-status', async (_event, folderPath) => {
-  const targetDir = folderPath && fs.existsSync(folderPath) ? folderPath : path.resolve(__dirname, '../../')
-  return getGitFullInfo(targetDir)
+  if (!folderPath || !fs.existsSync(folderPath)) {
+    return { isRepo: false, branch: null, hasChanges: false, changesCount: 0, changes: [], statusMap: {}, latestCommit: null, remoteUrl: null }
+  }
+  return getGitFullInfo(folderPath)
 })
 
 ipcMain.handle('git-stage-all', async (_event, folderPath) => {
@@ -812,12 +844,20 @@ ipcMain.handle('git-init', async (_event, folderPath) => {
 })
 
 ipcMain.handle('workspace-read-tree', async (_event, folderPath) => {
-  const targetDir = folderPath && fs.existsSync(folderPath) ? folderPath : path.resolve(__dirname, '../../')
-  const tree = scanFullDirectoryTree(targetDir)
-  const gitInfo = await getGitFullInfo(targetDir)
+  if (!folderPath || !fs.existsSync(folderPath)) {
+    return {
+      rootPath: null,
+      rootName: null,
+      tree: [],
+      gitStatus: {},
+      gitInfo: { isRepo: false, branch: null, hasChanges: false, changesCount: 0, changes: [], statusMap: {}, latestCommit: null, remoteUrl: null }
+    }
+  }
+  const tree = scanFullDirectoryTree(folderPath)
+  const gitInfo = await getGitFullInfo(folderPath)
   return {
-    rootPath: targetDir,
-    rootName: path.basename(targetDir),
+    rootPath: folderPath,
+    rootName: path.basename(folderPath),
     tree,
     gitStatus: gitInfo.statusMap || {},
     gitInfo
@@ -892,10 +932,16 @@ ipcMain.handle('file-copy-direct', async (_event, { sourcePath, targetPath }) =>
   }
 })
 
-// External link and shell helpers
-ipcMain.on('open-external-url', (_event, url) => {
-  if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
-    shell.openExternal(url)
+// External link and shell helpers (strictly validate allowed protocols to prevent injection)
+ipcMain.on('open-external-url', (_event, targetUrl) => {
+  if (!targetUrl || typeof targetUrl !== 'string') return
+  try {
+    const parsed = new URL(targetUrl)
+    if (['http:', 'https:', 'mailto:'].includes(parsed.protocol)) {
+      shell.openExternal(targetUrl)
+    }
+  } catch {
+    console.warn('[Security] Refused to open invalid or dangerous external URL:', targetUrl)
   }
 })
 
@@ -954,6 +1000,19 @@ ipcMain.handle('workspace-get-default', async () => {
       }
     } catch {}
   }
+  // In packaged desktop mode, if no folder CLI argument was passed, do not auto-open installation folder
+  if (app.isPackaged) {
+    return {
+      rootPath: null,
+      rootName: null,
+      isArgv: false,
+      tree: [],
+      gitStatus: {},
+      gitInfo: { isRepo: false, branch: null, hasChanges: false, changesCount: 0, changes: [], statusMap: {}, latestCommit: null, remoteUrl: null }
+    }
+  }
+
+  // Development mode only: convenient fallback to project root
   const defaultDir = path.resolve(__dirname, '../../')
   const tree = scanFullDirectoryTree(defaultDir)
   const gitInfo = await getGitFullInfo(defaultDir)

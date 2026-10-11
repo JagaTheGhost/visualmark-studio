@@ -46,9 +46,28 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Environment variables
+# Environment variables & secrets
 .env
-.env.example
+.env.*
+!.env.example
+*.token
+*.secret
+credentials.json
+
+# Certificates, Keys & Credentials
+*.pem
+*.key
+*.pfx
+*.p12
+*.cer
+*.crt
+id_rsa*
+id_ed25519*
+
+# Databases
+*.sqlite
+*.sqlite3
+*.db
 
 # Desktop App Builds
 release/
@@ -57,9 +76,11 @@ frontend/release/
 resources/backend-sidecar/
 frontend/resources/backend-sidecar/
 
-# OS
+# OS & Memory dumps
 .DS_Store
 Thumbs.db
+*.dmp
+*.dump
 
 # Agent & System Generated
 .system_generated/

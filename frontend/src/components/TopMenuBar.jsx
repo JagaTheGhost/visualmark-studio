@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { APP_CURRENT_VERSION } from '../data/releaseNotes'
+import appLogo from '../assets/logo.png'
 
 export default function TopMenuBar({
   activeFile,
@@ -118,7 +119,7 @@ export default function TopMenuBar({
         {/* App Logo Icon */}
         <div className="ide-app-icon" title="VisualMark Studio">
           <img
-            src="/logo.png"
+            src={appLogo}
             alt="VisualMark Studio"
             style={{ width: '19px', height: '19px', borderRadius: '4px', objectFit: 'contain' }}
           />
@@ -713,7 +714,7 @@ export default function TopMenuBar({
             <div className="ide-confirm-header" style={{ alignItems: 'center' }}>
               <div className="ide-app-icon" style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <img
-                  src="/logo.png"
+                  src={appLogo}
                   alt="VisualMark Studio"
                   style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'contain' }}
                 />
