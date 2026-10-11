@@ -27,8 +27,8 @@ Download pre-compiled Windows binaries directly from the latest [GitHub Release]
 
 | Package | Format | Description | Direct Download |
 | :--- | :--- | :--- | :--- |
-| **Windows Installer** | `.exe` (NSIS) | Full installer with Desktop shortcut & Explorer context menu integration | [Download Setup (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark%20Studio-Setup.exe) |
-| **Windows Portable** | `.exe` (Standalone) | Zero-installation portable binary (runs from any folder or USB drive) | [Download Portable (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark%20Studio-Portable.exe) |
+| **Windows Installer** | `.exe` (NSIS) | Full installer with Desktop shortcut & Explorer context menu integration | [Download Setup (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark.Studio-Setup.exe) |
+| **Windows Portable** | `.exe` (Standalone) | Zero-installation portable binary (runs from any folder or USB drive) | [Download Portable (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark.Studio-Portable.exe) |
 
 ---
 
