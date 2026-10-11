@@ -824,19 +824,6 @@ ipcMain.handle('workspace-read-tree', async (_event, folderPath) => {
   }
 })
 
-ipcMain.handle('workspace-get-default', async () => {
-  const targetDir = path.resolve(__dirname, '../../')
-  const tree = scanFullDirectoryTree(targetDir)
-  const gitInfo = await getGitFullInfo(targetDir)
-  return {
-    rootPath: targetDir,
-    rootName: path.basename(targetDir),
-    tree,
-    gitStatus: gitInfo.statusMap || {},
-    gitInfo
-  }
-})
-
 ipcMain.handle('file-create-direct', async (_event, { filePath, initialContent }) => {
   try {
     const dir = path.dirname(filePath)
@@ -941,19 +928,43 @@ ipcMain.handle('workspace-get-default', async () => {
     try {
       const stat = fs.statSync(startupPath)
       if (stat.isDirectory()) {
-        return { rootPath: startupPath, rootName: path.basename(startupPath), isArgv: true }
-      } else {
+        const tree = scanFullDirectoryTree(startupPath)
+        const gitInfo = await getGitFullInfo(startupPath)
         return {
-          rootPath: path.dirname(startupPath),
-          rootName: path.basename(path.dirname(startupPath)),
+          rootPath: startupPath,
+          rootName: path.basename(startupPath),
+          isArgv: true,
+          tree,
+          gitStatus: gitInfo.statusMap || {},
+          gitInfo
+        }
+      } else {
+        const rootDir = path.dirname(startupPath)
+        const tree = scanFullDirectoryTree(rootDir)
+        const gitInfo = await getGitFullInfo(rootDir)
+        return {
+          rootPath: rootDir,
+          rootName: path.basename(rootDir),
           initialFile: startupPath,
-          isArgv: true
+          isArgv: true,
+          tree,
+          gitStatus: gitInfo.statusMap || {},
+          gitInfo
         }
       }
     } catch {}
   }
   const defaultDir = path.resolve(__dirname, '../../')
-  return { rootPath: defaultDir, rootName: path.basename(defaultDir), isArgv: false }
+  const tree = scanFullDirectoryTree(defaultDir)
+  const gitInfo = await getGitFullInfo(defaultDir)
+  return {
+    rootPath: defaultDir,
+    rootName: path.basename(defaultDir),
+    isArgv: false,
+    tree,
+    gitStatus: gitInfo.statusMap || {},
+    gitInfo
+  }
 })
 
 // ==================== AUTO UPDATER PIPELINE ====================
