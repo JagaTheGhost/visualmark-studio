@@ -1,16 +1,24 @@
-# 🚀 VisualMark Studio
+﻿<p align="center">
+  <img src="assets/logo.png" alt="VisualMark Studio Logo" width="128" style="border-radius: 28px;" />
+</p>
 
-> **The Code + Visual Desktop IDE for Markdown (.md), Architecture Diagrams, and Documentation Suites**
+<h1 align="center">VisualMark Studio</h1>
 
-VisualMark Studio is a modern, high-performance **native desktop IDE** seamlessly marrying Monaco code editing with interactive visual studios. Built on **Electron**, **React**, and an embedded **FastAPI sidecar engine**, it operates 100% locally with direct disk I/O, frameless Obsidian dark styling, native terminal integration, and deep repository inspection.
+<p align="center">
+  <b>The Code + Visual Desktop IDE for Markdown (.md), Architecture Diagrams, and Documentation Suites</b>
+</p>
 
-[![Version](https://img.shields.io/badge/version-1.0.0-6366f1.svg?style=for-the-badge)](#)
-[![Electron](https://img.shields.io/badge/Electron-44.7+-47848F?style=for-the-badge&logo=electron&logoColor=white)](https://electronjs.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-18.2+-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+<p align="center">
+  <a href="#"><img src="https://img.shields.io/badge/version-1.0.0-6366f1.svg?style=for-the-badge" alt="Version" /></a>
+  <a href="https://electronjs.org"><img src="https://img.shields.io/badge/Electron-44.7+-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron" /></a>
+  <a href="https://fastapi.tiangolo.com"><img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" /></a>
+  <a href="https://react.dev"><img src="https://img.shields.io/badge/React-18.2+-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="License: MIT" /></a>
+</p>
 
 ---
+
+VisualMark Studio is a modern, high-performance **native desktop IDE** seamlessly marrying Monaco code editing with interactive visual studios. Built on **Electron**, **React**, and an embedded **FastAPI sidecar engine**, it operates 100% locally with direct disk I/O, frameless Obsidian dark styling, native terminal integration, and deep repository inspection.
 
 ## ✨ Desktop IDE Features
 

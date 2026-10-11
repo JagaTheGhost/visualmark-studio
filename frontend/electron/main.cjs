@@ -1,4 +1,4 @@
-/**
+﻿/**
  * README Studio - Electron Main Process
  * Manages desktop window lifecycle, frameless window controls, native file system, and Python sidecar.
  */
@@ -118,6 +118,7 @@ async function ensureSidecar() {
 function createWindow() {
   mainWindow = new BrowserWindow({
     title: 'VisualMark Studio',
+    icon: path.join(__dirname, '../public/icon.png'),
     width: 1440,
     height: 900,
     minWidth: 1040,

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+﻿import React, { useState, useRef, useEffect } from 'react'
 
 export default function TopMenuBar({
   activeFile,
@@ -89,19 +89,13 @@ export default function TopMenuBar({
     <header className={`ide-top-bar select-none ${isElectron ? 'is-electron-bar' : ''}`} ref={topBarRef}>
       {/* 1. Left: IDE Logo + Menu Items (File, Edit, Selection, View, Go, Run, Terminal, Help) */}
       <div className="top-bar-left">
-        {/* App Logo Icon (Antigravity Style) */}
+        {/* App Logo Icon */}
         <div className="ide-app-icon" title="VisualMark Studio">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 22H22L12 2Z" fill="url(#app-icon-grad)" />
-            <path d="M12 7L6 19H18L12 7Z" fill="#18181b" />
-            <defs>
-              <linearGradient id="app-icon-grad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#6366f1" />
-                <stop offset="0.5" stopColor="#a855f7" />
-                <stop offset="1" stopColor="#38bdf8" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <img
+            src="/logo.png"
+            alt="VisualMark Studio"
+            style={{ width: '19px', height: '19px', borderRadius: '4px', objectFit: 'contain' }}
+          />
         </div>
 
         {/* Desktop Menu Bar */}
@@ -620,11 +614,12 @@ export default function TopMenuBar({
         <div className="ide-confirm-backdrop" onClick={() => setAboutOpen(false)}>
           <div className="ide-confirm-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
             <div className="ide-confirm-header" style={{ alignItems: 'center' }}>
-              <div className="ide-app-icon" style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2L2 22H22L12 2Z" fill="url(#app-icon-grad)" />
-                  <path d="M12 7L6 19H18L12 7Z" fill="#18181b" />
-                </svg>
+              <div className="ide-app-icon" style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img
+                  src="/logo.png"
+                  alt="VisualMark Studio"
+                  style={{ width: '32px', height: '32px', borderRadius: '6px', objectFit: 'contain' }}
+                />
               </div>
               <div className="ide-confirm-content">
                 <h4 className="ide-confirm-title" style={{ fontSize: '15px', fontWeight: '600' }}>
