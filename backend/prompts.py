@@ -95,9 +95,13 @@ DEFAULT_SECTION_IDS = [s["id"] for s in ALL_SECTIONS]
 # ==============================================================================
 # 3. GITHUB REPOSITORY METADATA & FILE ANALYZER
 # ==============================================================================
+_SAFE_IDENTIFIER_REGEX = re.compile(r"^[a-zA-Z0-9_\-\.]+$")
+_SAFE_PATH_REGEX = re.compile(r"^[a-zA-Z0-9_\-\./]+$")
+
+
 def extract_owner_repo(url: str) -> Tuple[Optional[str], Optional[str]]:
-    """Extract owner and repository name from GitHub URL."""
-    if not url:
+    """Extract and strictly validate owner and repository name from GitHub URL."""
+    if not url or not isinstance(url, str):
         return None, None
     m = re.search(r"github\.com/([a-zA-Z0-9_\-\.]+)/([a-zA-Z0-9_\-\.]+)", url)
     if not m:
@@ -106,13 +110,23 @@ def extract_owner_repo(url: str) -> Tuple[Optional[str], Optional[str]]:
     repo = m.group(2).rstrip("/").strip()
     if repo.endswith(".git"):
         repo = repo[:-4]
-    return owner, repo
+    if not _SAFE_IDENTIFIER_REGEX.match(owner) or not _SAFE_IDENTIFIER_REGEX.match(repo) or ".." in owner or ".." in repo:
+        return None, None
+    return urllib.parse.quote(owner, safe=""), urllib.parse.quote(repo, safe="")
 
 
 def _fetch_file_content(client: httpx.Client, owner: str, repo: str, branch: str, file_path: str) -> str:
     """Fetch raw file content from GitHub usercontent safely."""
+    if not _SAFE_IDENTIFIER_REGEX.match(owner) or not _SAFE_IDENTIFIER_REGEX.match(repo):
+        return ""
+    if not _SAFE_PATH_REGEX.match(branch) or not _SAFE_PATH_REGEX.match(file_path) or ".." in branch or ".." in file_path:
+        return ""
     try:
-        url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{file_path}"
+        safe_owner = urllib.parse.quote(owner, safe="")
+        safe_repo = urllib.parse.quote(repo, safe="")
+        safe_branch = urllib.parse.quote(branch, safe="/")
+        safe_path = urllib.parse.quote(file_path, safe="/")
+        url = f"https://raw.githubusercontent.com/{safe_owner}/{safe_repo}/{safe_branch}/{safe_path}"
         resp = client.get(url, timeout=3.5)
         if resp.status_code == 200:
             return resp.text
@@ -210,8 +224,10 @@ def fetch_github_repo_metadata(url: str, custom_token: Optional[str] = None) -> 
     }
 
     try:
+        safe_owner = urllib.parse.quote(owner, safe="")
+        safe_repo = urllib.parse.quote(repo, safe="")
         with httpx.Client(headers=headers, timeout=5.0) as client:
-            repo_res = client.get(f"https://api.github.com/repos/{owner}/{repo}")
+            repo_res = client.get(f"https://api.github.com/repos/{safe_owner}/{safe_repo}")
             if repo_res.status_code == 403:
                 metadata["rate_limited"] = True
                 return metadata
@@ -233,13 +249,14 @@ def fetch_github_repo_metadata(url: str, custom_token: Optional[str] = None) -> 
                 metadata["license"] = lic.get("spdx_id") or lic.get("name") or "MIT"
 
             # 1. Fetch language distribution
-            lang_res = client.get(f"https://api.github.com/repos/{owner}/{repo}/languages")
+            lang_res = client.get(f"https://api.github.com/repos/{safe_owner}/{safe_repo}/languages")
             if lang_res.status_code == 200:
                 metadata["languages"] = lang_res.json()
 
             # 2. Fetch Git tree for architecture and ecosystem identification
+            safe_branch = urllib.parse.quote(branch, safe="")
             tree_res = client.get(
-                f"https://api.github.com/repos/{owner}/{repo}/git/trees/{branch}?recursive=1"
+                f"https://api.github.com/repos/{safe_owner}/{safe_repo}/git/trees/{safe_branch}?recursive=1"
             )
             tree_paths = []
             if tree_res.status_code == 200:

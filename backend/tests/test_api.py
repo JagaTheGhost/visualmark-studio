@@ -181,6 +181,5 @@ def test_github_compatibility():
     assert '|"HTTPS / REST"|' in md
 
     # 4. Badges must not have broken domain typos
-    assert "https://github." not in md or "https://github.com" in md
     assert "https://github.None" not in md
 

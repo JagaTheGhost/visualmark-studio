@@ -10,6 +10,29 @@ from typing import Optional, List
 import re
 import urllib.request
 import urllib.parse
+import ipaddress
+import socket
+
+def is_safe_public_url(target_url: str) -> bool:
+    """Validate that target URL uses HTTP/HTTPS and resolves strictly to public IP addresses."""
+    try:
+        parsed = urllib.parse.urlparse(target_url)
+        if parsed.scheme.lower() not in ("http", "https"):
+            return False
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        hostname_lower = hostname.lower()
+        if hostname_lower in ("localhost", "127.0.0.1", "0.0.0.0", "::1") or hostname_lower.endswith((".local", ".internal", ".localhost")):
+            return False
+        addr_info = socket.getaddrinfo(hostname, None)
+        for _, _, _, _, sockaddr in addr_info:
+            ip = ipaddress.ip_address(sockaddr[0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+                return False
+        return True
+    except Exception:
+        return False
 
 from prompts import (
     build_readme_from_inputs,
@@ -200,6 +223,9 @@ def resolve_image_url(url: str):
         raise HTTPException(status_code=400, detail="Missing URL parameter")
 
     clean_target = url.strip()
+    if not is_safe_public_url(clean_target):
+        raise HTTPException(status_code=400, detail="Invalid URL or access to restricted address prohibited")
+
     try:
         # Check if already a Google Image search result with imgurl
         parsed_target = urllib.parse.urlparse(clean_target)

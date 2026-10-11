@@ -10,6 +10,15 @@ import { getApiUrl } from './apiClient'
 const resolvedUrlCache = new Map()
 
 /**
+ * Strict domain comparison helper that prevents subdomain-substring spoofing.
+ */
+function isDomainMatch(hostname, targetDomain) {
+  if (!hostname || typeof hostname !== 'string') return false
+  const lower = hostname.toLowerCase()
+  return lower === targetDomain || lower.endsWith('.' + targetDomain)
+}
+
+/**
  * Perform synchronous heuristic transformations on known image hosting patterns.
  */
 export function getOptimizedImageUrl(rawUrl) {
@@ -43,7 +52,7 @@ export function getOptimizedImageUrl(rawUrl) {
     // 2. Google Drive preview / view / open links
     // Example: https://drive.google.com/file/d/1a2b3c4d5e/view?usp=sharing
     // Example: https://drive.google.com/open?id=1a2b3c4d5e
-    if (urlObj.hostname.includes('drive.google.com')) {
+    if (isDomainMatch(urlObj.hostname, 'drive.google.com')) {
       let fileId = urlObj.searchParams.get('id')
       if (!fileId) {
         const fileMatch = urlObj.pathname.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
@@ -57,7 +66,7 @@ export function getOptimizedImageUrl(rawUrl) {
 
     // 3. GitHub repository blob URLs (which return HTML view instead of raw image)
     // Example: https://github.com/user/repo/blob/main/docs/logo.png
-    if (urlObj.hostname === 'github.com' && urlObj.pathname.includes('/blob/')) {
+    if (isDomainMatch(urlObj.hostname, 'github.com') && urlObj.pathname.includes('/blob/')) {
       return trimmed
         .replace('github.com', 'raw.githubusercontent.com')
         .replace('/blob/', '/')
@@ -65,7 +74,7 @@ export function getOptimizedImageUrl(rawUrl) {
 
     // 4. Dropbox shared link
     // Example: https://www.dropbox.com/s/xyz123/banner.png?dl=0
-    if (urlObj.hostname.includes('dropbox.com')) {
+    if (isDomainMatch(urlObj.hostname, 'dropbox.com')) {
       urlObj.searchParams.set('raw', '1')
       urlObj.searchParams.delete('dl')
       return urlObj.toString()
@@ -73,7 +82,7 @@ export function getOptimizedImageUrl(rawUrl) {
 
     // 5. Imgur gallery / direct link without extension
     // Example: https://imgur.com/aBcdEf
-    if (urlObj.hostname === 'imgur.com' && !urlObj.pathname.includes('.')) {
+    if (isDomainMatch(urlObj.hostname, 'imgur.com') && !urlObj.pathname.includes('.')) {
       const id = urlObj.pathname.replace(/^\//, '')
       if (id && !id.includes('/')) {
         return `https://i.imgur.com/${id}.png`
@@ -82,7 +91,7 @@ export function getOptimizedImageUrl(rawUrl) {
 
     // 6. Giphy page URL
     // Example: https://giphy.com/gifs/cat-funny-3o7btPCcdNniyf0ArS
-    if (urlObj.hostname.includes('giphy.com') && urlObj.pathname.includes('/gifs/')) {
+    if (isDomainMatch(urlObj.hostname, 'giphy.com') && urlObj.pathname.includes('/gifs/')) {
       const parts = urlObj.pathname.split('-')
       const gifId = parts[parts.length - 1]
       if (gifId && /^[a-zA-Z0-9]+$/.test(gifId)) {
@@ -92,7 +101,7 @@ export function getOptimizedImageUrl(rawUrl) {
 
     // 7. Unsplash photo page
     // Example: https://unsplash.com/photos/abc-123
-    if (urlObj.hostname === 'unsplash.com' && urlObj.pathname.includes('/photos/')) {
+    if (isDomainMatch(urlObj.hostname, 'unsplash.com') && urlObj.pathname.includes('/photos/')) {
       const photoIdMatch = urlObj.pathname.match(/\/photos\/([a-zA-Z0-9_-]+)/)
       if (photoIdMatch) {
         return `https://images.unsplash.com/photo-${photoIdMatch[1]}?auto=format&fit=crop&w=1200&q=80`
@@ -110,14 +119,19 @@ export function getOptimizedImageUrl(rawUrl) {
  */
 export function requiresAsyncResolution(url) {
   if (!url || typeof url !== 'string' || url.startsWith('data:')) return false
-  const lower = url.toLowerCase()
-  return (
-    lower.includes('share.google') ||
-    lower.includes('bit.ly') ||
-    lower.includes('tinyurl.com') ||
-    lower.includes('t.co') ||
-    lower.includes('goo.gl')
-  )
+  try {
+    const urlObj = new URL(url)
+    const host = urlObj.hostname.toLowerCase()
+    return (
+      isDomainMatch(host, 'share.google') ||
+      isDomainMatch(host, 'bit.ly') ||
+      isDomainMatch(host, 'tinyurl.com') ||
+      isDomainMatch(host, 't.co') ||
+      isDomainMatch(host, 'goo.gl')
+    )
+  } catch {
+    return false
+  }
 }
 
 /**

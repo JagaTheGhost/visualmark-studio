@@ -2,15 +2,63 @@
  * VisualMark Studio - Release Notes & Update History Dataset
  * Powers the "What's New" modal dialog, update notifications, and in-IDE release history.
  */
-export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.1'
+export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.2'
 
 export const RELEASE_HISTORY = [
+  {
+    version: '1.0.2',
+    type: 'patch',
+    title: 'VisualMark Studio 1.0.2 — Live Update Progress & Security Hardening',
+    date: 'October 2026',
+    isCurrent: true,
+    highlights: [
+      'Live auto-updater progress bar with real-time transfer speed (MB/s) and percentage feedback',
+      'Instant network and download failure diagnostic alerting in the Status Bar',
+      'Synchronized Windows NSIS installer artifact filenames to prevent auto-updater 404 errors',
+      'SSRF defense on backend endpoints, preventing private and loopback address lookups',
+      'Strict domain matching in imageUtils to prevent host spoofing vulnerabilities'
+    ],
+    sections: [
+      {
+        category: 'Auto-Updater & Desktop UX',
+        icon: 'system_update',
+        badge: 'Feature',
+        color: '#38bdf8',
+        items: [
+          {
+            title: 'Live Download Progress Bar',
+            desc: 'Status bar and What’s New views now display live percent, transferred MB, total size, and download speed.'
+          },
+          {
+            title: 'Installer Asset Alignment',
+            desc: 'Aligned release asset naming across NSIS installer and electron-updater metadata to ensure 100% reliable updates.'
+          }
+        ]
+      },
+      {
+        category: 'Security Hardening',
+        icon: 'security',
+        badge: 'Security',
+        color: '#10b981',
+        items: [
+          {
+            title: 'SSRF & Loopback Defense',
+            desc: 'Backend image resolution rejects private, loopback (127.0.0.1, localhost), link-local, and multicast IP addresses.'
+          },
+          {
+            title: 'Strict Subdomain Sanitization',
+            desc: 'Frontend hostname checking enforces exact domain boundaries, blocking substring spoofing.'
+          }
+        ]
+      }
+    ]
+  },
   {
     version: '1.0.1',
     type: 'patch',
     title: 'VisualMark Studio 1.0.1 — Maintenance & UX Fixes',
     date: 'October 2026',
-    isCurrent: true,
+    isCurrent: false,
     highlights: [
       'Fixed titlebar application logo asset rendering under file:// protocol',
       'Prevented packaged desktop app from defaulting to installation folder on launch',

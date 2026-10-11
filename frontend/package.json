@@ -3,7 +3,7 @@
   "description": "VisualMark Studio - Code + Visual Markdown & Documentation IDE",
   "author": "JagaTheGhost",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -84,12 +84,12 @@
       "runAfterFinish": true,
       "installerIcon": "public/icon.ico",
       "uninstallerIcon": "public/icon.ico",
-      "artifactName": "${productName}-Setup.${ext}",
+      "artifactName": "VisualMark-Studio-Setup.${ext}",
       "include": "electron/installer.nsh",
       "deleteAppDataOnUninstall": false
     },
     "portable": {
-      "artifactName": "${productName}-Portable.${ext}"
+      "artifactName": "VisualMark-Studio-Portable.${ext}"
     },
     "publish": [
       {

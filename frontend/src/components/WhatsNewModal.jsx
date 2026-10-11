@@ -6,6 +6,8 @@ export default function WhatsNewModal({
   isOpen,
   onClose,
   updateDownloaded = null, // { version, releaseNotes } if update is ready to install
+  updateProgress = null,
+  updateError = null,
   onRestartToUpdate = () => {}
 }) {
   const [selectedVersion, setSelectedVersion] = useState(APP_CURRENT_VERSION)
@@ -68,6 +70,27 @@ export default function WhatsNewModal({
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
+
+        {/* Live Update Downloading Banner */}
+        {updateProgress && !updateDownloaded && (
+          <div className="whats-new-update-banner" style={{ borderColor: 'rgba(56, 189, 248, 0.4)', background: 'rgba(56, 189, 248, 0.08)' }}>
+            <div className="update-banner-info" style={{ flex: 1 }}>
+              <span className="material-symbols-outlined update-pulse-icon" style={{ color: '#38bdf8' }}>cloud_download</span>
+              <div style={{ flex: 1, marginRight: '16px' }}>
+                <strong style={{ color: '#38bdf8' }}>
+                  Downloading Update: {updateProgress.percent || 0}%
+                  {updateProgress.bytesPerSecond ? ` • ${(updateProgress.bytesPerSecond / 1048576).toFixed(1)} MB/s` : ''}
+                </strong>
+                <div style={{ background: 'rgba(255,255,255,0.1)', height: '6px', borderRadius: '3px', marginTop: '6px', overflow: 'hidden' }}>
+                  <div style={{ background: '#38bdf8', height: '100%', width: `${updateProgress.percent || 0}%`, transition: 'width 0.3s ease' }} />
+                </div>
+                <p style={{ marginTop: '4px', fontSize: '12px' }}>
+                  {Math.round((updateProgress.transferred || 0) / 1048576)} MB of {Math.round((updateProgress.total || 0) / 1048576)} MB downloaded.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Update Downloaded Ready Callout Banner */}
         {updateDownloaded && (

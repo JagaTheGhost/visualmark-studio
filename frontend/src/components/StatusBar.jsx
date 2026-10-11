@@ -16,6 +16,8 @@ export default function StatusBar({
   onToggleBottomPanel = () => {},
   currentVersion = '1.0.1',
   updateDownloaded = null,
+  updateProgress = null,
+  updateError = null,
   onOpenWhatsNew = () => {},
   onRestartToUpdate = () => {}
 }) {
@@ -140,6 +142,58 @@ export default function StatusBar({
             </>
           )}
         </div>
+
+        {/* Live Update Downloading Progress Indicator */}
+        {updateProgress && !updateDownloaded && (
+          <div
+            className="status-item update-progress-badge"
+            data-tooltip={`Downloading update: ${updateProgress.percent || 0}% (${Math.round((updateProgress.transferred || 0) / 1048576)} MB / ${Math.round((updateProgress.total || 0) / 1048576)} MB${updateProgress.bytesPerSecond ? ` • ${(updateProgress.bytesPerSecond / 1048576).toFixed(1)} MB/s` : ''})`}
+            data-tooltip-pos="top"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(56, 189, 248, 0.15)',
+              border: '1px solid rgba(56, 189, 248, 0.4)',
+              color: '#38bdf8',
+              borderRadius: '4px',
+              padding: '1px 8px',
+              fontSize: '11px',
+              fontWeight: 500
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '13px', animation: 'spin 1.5s linear infinite' }}>sync</span>
+            <span>Downloading {updateProgress.percent || 0}%</span>
+            {updateProgress.total > 0 && (
+              <span style={{ opacity: 0.75, fontSize: '10px' }}>
+                ({Math.round((updateProgress.transferred || 0) / 1048576)}/{Math.round(updateProgress.total / 1048576)}MB)
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Update Download Error Indicator */}
+        {updateError && !updateDownloaded && !updateProgress && (
+          <div
+            className="status-item update-error-badge"
+            data-tooltip={`Update error: ${updateError}`}
+            data-tooltip-pos="top"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              color: '#ef4444',
+              borderRadius: '4px',
+              padding: '1px 8px',
+              fontSize: '11px'
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>error</span>
+            <span>Update Error</span>
+          </div>
+        )}
 
         {/* Update Downloaded Badge (Pulsing, Click to restart) */}
         {updateDownloaded && (

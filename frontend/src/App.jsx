@@ -261,8 +261,9 @@ Distributed under the MIT License.
   const fileScrollPositions = useRef({})
   const fileCursorPositions = useRef({})
   const lastActiveDocRef = useRef('README.md')
-  const [insertModalState, setInsertModalState] = useState({ isOpen: false, snippet: '', snippetType: '' })
   const [updateDownloaded, setUpdateDownloaded] = useState(null)
+  const [updateProgress, setUpdateProgress] = useState(null)
+  const [updateError, setUpdateError] = useState(null)
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false)
   const [appVersion, setAppVersion] = useState(APP_CURRENT_VERSION)
 
@@ -644,18 +645,35 @@ Distributed under the MIT License.
   // Electron Auto-Updater IPC event listeners
   useEffect(() => {
     if (typeof window !== 'undefined' && window.electronAPI) {
-      const cleanupDownloaded = window.electronAPI.onUpdateDownloaded?.((info) => {
-        setUpdateDownloaded(info)
-        showToast(`Update v${info?.version || ''} downloaded! Click status bar to restart & install.`, 'success')
-      })
-
       const cleanupAvailable = window.electronAPI.onUpdateAvailable?.((info) => {
+        setUpdateProgress({ percent: 0, transferred: 0, total: 0, version: info?.version })
+        setUpdateError(null)
         showToast(`Downloading update v${info?.version || ''} in background...`, 'info')
       })
 
+      const cleanupProgress = window.electronAPI.onUpdateProgress?.((progress) => {
+        setUpdateProgress(progress)
+      })
+
+      const cleanupDownloaded = window.electronAPI.onUpdateDownloaded?.((info) => {
+        setUpdateProgress(null)
+        setUpdateDownloaded(info)
+        setUpdateError(null)
+        showToast(`Update v${info?.version || ''} downloaded! Click status bar to restart & install.`, 'success')
+      })
+
+      const cleanupError = window.electronAPI.onUpdateError?.((err) => {
+        setUpdateProgress(null)
+        const errMsg = err?.message || 'Update check/download failed'
+        setUpdateError(errMsg)
+        showToast(`Update failed: ${errMsg}`, 'warning')
+      })
+
       return () => {
-        if (typeof cleanupDownloaded === 'function') cleanupDownloaded()
         if (typeof cleanupAvailable === 'function') cleanupAvailable()
+        if (typeof cleanupProgress === 'function') cleanupProgress()
+        if (typeof cleanupDownloaded === 'function') cleanupDownloaded()
+        if (typeof cleanupError === 'function') cleanupError()
       }
     }
   }, [showToast])
@@ -2562,6 +2580,8 @@ Distributed under the MIT License.
                   <Suspense fallback={<StudioLoadingFallback title="Release Notes" />}>
                     <WhatsNewTab
                       updateDownloaded={updateDownloaded}
+                      updateProgress={updateProgress}
+                      updateError={updateError}
                       onRestartToUpdate={handleRestartToUpdate}
                       onClose={() => handleCloseStudioTab(activeFile)}
                       onOpenSettings={handleOpenSettingsTab}
@@ -2717,6 +2737,8 @@ Distributed under the MIT License.
             onToggleBottomPanel={handleToggleBottomPanel}
             currentVersion={appVersion}
             updateDownloaded={updateDownloaded}
+            updateProgress={updateProgress}
+            updateError={updateError}
             onOpenWhatsNew={handleOpenWhatsNewTab}
             onRestartToUpdate={handleRestartToUpdate}
           />

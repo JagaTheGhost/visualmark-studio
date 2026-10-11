@@ -4,6 +4,8 @@ import appLogo from '../assets/logo.png'
 
 export default function WhatsNewTab({
   updateDownloaded = null, // { version, releaseNotes } if update is ready to install
+  updateProgress = null, // { percent, transferred, total, bytesPerSecond }
+  updateError = null,
   onRestartToUpdate = () => {},
   onClose = () => {},
   onOpenSettings = () => {},
@@ -157,6 +159,27 @@ export default function WhatsNewTab({
             </button>
           </div>
         </div>
+
+        {/* Live Update Downloading Banner */}
+        {updateProgress && !updateDownloaded && (
+          <div className="whats-new-tab-update-banner" style={{ borderColor: 'rgba(56, 189, 248, 0.4)', background: 'rgba(56, 189, 248, 0.08)' }}>
+            <div className="update-banner-left" style={{ flex: 1 }}>
+              <span className="material-symbols-outlined update-banner-pulse-icon" style={{ color: '#38bdf8' }}>cloud_download</span>
+              <div style={{ flex: 1, marginRight: '16px' }}>
+                <p className="update-banner-title" style={{ color: '#38bdf8' }}>
+                  Downloading Update: {updateProgress.percent || 0}%
+                  {updateProgress.bytesPerSecond ? ` • ${(updateProgress.bytesPerSecond / 1048576).toFixed(1)} MB/s` : ''}
+                </p>
+                <div style={{ background: 'rgba(255,255,255,0.1)', height: '6px', borderRadius: '3px', marginTop: '6px', overflow: 'hidden' }}>
+                  <div style={{ background: '#38bdf8', height: '100%', width: `${updateProgress.percent || 0}%`, transition: 'width 0.3s ease' }} />
+                </div>
+                <p className="update-banner-subtitle" style={{ marginTop: '4px' }}>
+                  {Math.round((updateProgress.transferred || 0) / 1048576)} MB of {Math.round((updateProgress.total || 0) / 1048576)} MB downloaded.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Update Downloaded Ready Callout Banner */}
         {updateDownloaded && (
