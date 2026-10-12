@@ -312,68 +312,6 @@ export const GITHUB_LANG_COLORS = {
   Solidity: '#AA6746'
 }
 
-export const NATIVE_REPO_CARD_TYPES = [
-  {
-    id: 'native-classic',
-    title: 'GitHub Official Pin (Classic)',
-    tag: 'README Standard',
-    desc: 'Faithful GitHub repository pin card with folder/book icon, public badge, language dot, stars, and forks.'
-  },
-  {
-    id: 'native-bento',
-    title: 'Linear Bento Spec Matrix',
-    tag: 'Bento Grid',
-    desc: 'Apple & Linear modular bento cells with separate telemetry blocks, star counters, and language pill.'
-  },
-  {
-    id: 'native-glass',
-    title: 'Glassmorphism Frosted Acrylic',
-    tag: 'Translucent Glow',
-    desc: 'Luminous ambient border gradient with frosted acrylic backdrop and floating metric capsules.'
-  },
-  {
-    id: 'native-cyberpunk',
-    title: 'Cyberpunk HUD Telemetry Deck',
-    tag: 'HUD Wireframe',
-    desc: 'Futuristic high-contrast HUD wireframe with corner bracket reticles, git commit pulse wave, and neon accents.'
-  },
-  {
-    id: 'native-aurora',
-    title: 'Aurora Borealis Fluid Mesh',
-    tag: 'Fluid Gradient',
-    desc: 'Vibrant dual-tone mesh lighting with floating frosted acrylic pills and modern typography.'
-  },
-  {
-    id: 'native-terminal',
-    title: 'Neofetch CLI Terminal Pin',
-    tag: 'macOS Terminal',
-    desc: 'Unix terminal window with macOS traffic lights, ascii prompt box, and formatted specs list.'
-  },
-  {
-    id: 'native-minimal',
-    title: 'Minimalist Clean Spec',
-    tag: 'Ultra-Clean',
-    desc: 'Refined modern card with hairline border, high readability typography, and official language dots.'
-  },
-  {
-    id: 'native-langs-bar',
-    title: 'Top Languages (Stacked Bar)',
-    tag: 'Visual Breakdown',
-    desc: 'Proportional color-coded horizontal bar with official language chips and percentage shares.'
-  },
-  {
-    id: 'native-langs-donut',
-    title: 'Top Languages (Radial Donut)',
-    tag: 'Analytics Matrix',
-    desc: 'Circular donut breakdown chart of repository language distributions with colored legend.'
-  },
-  {
-    id: 'native-metrics-grid',
-    title: 'Project Telemetry & Health Grid',
-    tag: '4-Metric Quadrant',
-    desc: 'Dedicated 4-tile quadrant grid for Stars, Forks, Open Issues, and License SPDX specifications.'
-  }
-]
 
 // 16 Curated Tech Packs
 export const CURATED_PACKS = [

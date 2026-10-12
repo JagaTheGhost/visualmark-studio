@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/version-1.0.3-6366f1.svg?style=for-the-badge" alt="Version 1.0.3" /></a>
+  <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/version-1.1.0-6366f1.svg?style=for-the-badge" alt="Version 1.1.0" /></a>
   <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/Download-Windows_.exe-22c55e?style=for-the-badge&logo=windows&logoColor=white" alt="Download Windows" /></a>
   <a href="https://electronjs.org"><img src="https://img.shields.io/badge/Electron-44.7+-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron" /></a>
   <a href="https://fastapi.tiangolo.com"><img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" /></a>
@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <img src="frontend/src/assets/VisualMark_Studio_IDE.gif" width="100%" alt="VisualMark Studio Desktop IDE Showcase" style="border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.5);" />
+  <img src="frontend/src/assets/VisualMark Studio Banner.gif" width="100%" alt="VisualMark Studio Desktop IDE Showcase" style="border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.5);" />
 </p>
 
 ---
@@ -27,12 +27,13 @@
 
 Writing technical documentation is notoriously fragmented across disconnected browser tabs: drafting Markdown in basic text boxes, generating badges on web forms, drawing architecture diagrams on third-party whiteboards, building tables in online converters, and manually tracking release notes.
 
-**VisualMark Studio** unites all of this under a single, **100% offline native desktop IDE**. It pairs the industry-standard **Monaco code editor** (the engine powering VS Code) with **10 specialized interactive visual studios**, direct local disk I/O, an integrated PowerShell/CMD terminal drawer, and automated documentation generation.
+**VisualMark Studio** unites all of this under a single, **100% offline native desktop IDE**. It pairs the industry-standard **Monaco code editor** (the engine powering VS Code) with **11 specialized interactive visual studios**, direct local disk I/O, an integrated PowerShell/CMD terminal drawer, and automated documentation generation.
 
 | Traditional Documentation Workflow | The VisualMark Studio Experience |
 | :--- | :--- |
-| ❌ Jumping across 6+ web tabs to build badges, diagrams, and tables | ✅ **10 Integrated Visual Studios** right in the IDE workspace |
+| ❌ Jumping across 6+ web tabs to build badges, diagrams, and tables | ✅ **11 Integrated Visual Studios** right in the IDE workspace |
 | ❌ Generic web textareas with no multi-cursor or formatting | ✅ **Full Monaco Engine** with GFM syntax, multi-cursor, and hotkeys |
+| ❌ Manual formatting and hunting for syntax callouts | ✅ **Floating Selection HUD Toolbar** with live headings, callouts, and code fences |
 | ❌ Manual copy-pasting into local repositories | ✅ **Direct Local Disk I/O** (`Ctrl+S`, `Ctrl+O`) and real-time File Explorer |
 | ❌ Blind guessing whether Markdown structure is complete | ✅ **README Auditor & Linter** with automated health scoring (A+ to F) |
 | ❌ Cloud data leakage and external telemetry | ✅ **100% Local-First** with zero telemetry or network tracking |
@@ -45,15 +46,15 @@ Pre-compiled, standalone Windows binaries are available directly from the latest
 
 | Package | Format | Description | Direct Download |
 | :--- | :--- | :--- | :--- |
-| **Windows Installer** | `.exe` (NSIS) | Complete desktop installer with Start Menu, Desktop shortcut & Explorer integration | [Download Setup (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark.Studio-Setup.exe) |
-| **Windows Portable** | `.exe` (Standalone) | Zero-installation portable binary (runs from any folder or USB drive) | [Download Portable (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark.Studio-Portable.exe) |
+| **Windows Installer** | `.exe` (NSIS) | Complete desktop installer with Start Menu, Desktop shortcut & Explorer integration | [Download Setup (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark-Studio-Setup.exe) |
+| **Windows Portable** | `.exe` (Standalone) | Zero-installation portable binary (runs from any folder or USB drive) | [Download Portable (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark-Studio-Portable.exe) |
 
 > [!NOTE]
 > **Windows SmartScreen Notice**: Because VisualMark Studio is open-source and community-distributed, Windows SmartScreen may present an *"Unrecognized app"* prompt on initial launch. Click **More info → Run anyway** to proceed.
 
 ---
 
-## 🎨 10 Specialized Visual Studio Suites
+## 🎨 11 Specialized Visual Studio Suites
 
 VisualMark Studio features dedicated, visual designer environments accessible as persistent IDE tabs:
 
@@ -65,18 +66,20 @@ VisualMark Studio features dedicated, visual designer environments accessible as
 | 🧩 **Snippets & Callouts** | `snippets.studio` | GitHub alert callouts (`[!NOTE]`, `[!TIP]`, `[!WARNING]`), collapsible `<details>`, shortcut tables |
 | 🖼️ **Images & Banners** | `images.studio` | Gradient hero banners, screenshot OS window frames (macOS / Windows mockups), image optimization |
 | 🌳 **Directory Trees** | `tree.studio` | Auto-scans workspace folders into ASCII, Unicode box-drawing, or Emoji visual directory trees |
-| 🌐 **REST API & Endpoints** | `api.studio` | Interactive route matrix with HTTP verbs, request/response payloads, and automatic `curl` generator |
+| 🌐 **REST API & Endpoints** | `api.studio` | Live interactive preview (REST Blueprint card & GFM render), route matrix, request/response schemas, cURL commands |
+| 🎨 **Icons & Emojis** | `icons.studio` | Dual-mode Material Symbols & developer emojis, color wheel customizer, live catalog tinting, colored SVG download & Iconify markdown |
 | 👥 **Contributors & Team** | `contributors.studio` | All-Contributors standard grid, GitHub avatar auto-fetch, contribution role badges |
 | 📝 **Changelog & Releases** | `changelog.studio` | Keep-a-Changelog standard release notes with SemVer bumping (`Major`, `Minor`, `Patch`) |
 | 🔍 **README Auditor** | `audit.studio` | Documentation scorecard, A+ to F grade, section completeness check, 1-click boilerplate injector |
 
-👉 **For an exhaustive top-to-bottom manual of all 10 studios, consult [FEATURES.md](FEATURES.md).**
+👉 **For an exhaustive top-to-bottom manual of all 11 studios, consult [FEATURES.md](FEATURES.md).**
 
 ---
 
 ## ✨ Core Desktop IDE Highlights
 
 - 🖥️ **Monaco Editor Engine** — Multi-cursor editing, bracket matching, line numbers, soft word wrap toggle (`Alt+Z`), and full formatting.
+- 🪄 **Floating Selection HUD Toolbar** — Notion/Word-style contextual quick-actions anchored to highlighted text (Headings, Code Fences, Links, Callouts, Lists).
 - ⚡ **Synchronized Split Preview** — Live GFM compilation with proportional scroll synchronization between editor and preview panes.
 - 🎯 **Universal Command Palette** — Quick input (`F1` / `Ctrl+Shift+P` / `Ctrl+K`) with live search and **`⚙ Configure Keybinding`** button on hover (or `Alt+Enter`) matching modern IDE workflows.
 - ⌨️ **Keyboard Shortcuts Tab** — Deep-linked hotkey recorder modal to inspect, customize, and persist any keybinding across the IDE.
@@ -94,10 +97,15 @@ VisualMark Studio features dedicated, visual designer environments accessible as
 
 | Document | Description |
 | :--- | :--- |
-| 📖 **[FEATURES.md](FEATURES.md)** | **Complete Capabilities Tour** — Top-to-bottom master guide detailing all 10 studios, editor features, and workflows. |
+| 📖 **[FEATURES.md](FEATURES.md)** | **Complete Capabilities Tour** — Master guide detailing all 11 studios, Monaco ergonomics, HUD toolbar, and workflows. |
+| 📘 **[DOCUMENTATION.md](DOCUMENTATION.md)** | **System & Architecture Guide** — Exhaustive architectural breakdown, user flows, and backend FastAPI specifications. |
 | 🛠️ **[SETUP.md](SETUP.md)** | **Developer Setup Guide** — Step-by-step instructions for running from source, prerequisites, and troubleshooting. |
 | 📦 **[DEPLOYMENT.md](DEPLOYMENT.md)** | **Packaging & Distribution** — Instructions for building standalone installers (.exe / portable) via Electron Builder. |
-| 🖥️ **[DESKTOP.md](DESKTOP.md)** | **Technical Architecture** — Electron main process, FastAPI sidecar daemon, and IPC context bridge specs. |
+| 🖥️ **[DESKTOP.md](DESKTOP.md)** | **Desktop Technical Architecture** — Electron main process, FastAPI sidecar daemon, and IPC context bridge specs. |
+| 🎨 **[DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)** | **Visual Design System** — Color tokens, typography, dark/light theme tokens, and component guidelines. |
+| 🔒 **[SECURITY.md](SECURITY.md)** | **Security Policy** — SSRF protection, IPC isolation, and vulnerability disclosure policies. |
+| 🧪 **[TESTING_GUIDE.md](TESTING_GUIDE.md)** | **Quality & Test Automation** — Unit tests, integration suites, and manual verification protocols. |
+| 📋 **[CHANGELOG.md](CHANGELOG.md)** | **Version Changelog** — Detailed version history adhering to Keep a Changelog and SemVer standards. |
 
 ---
 

@@ -804,29 +804,31 @@
 
 .diagram-card-meta-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .diagram-shape-chips {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .diagram-shape-chip-btn {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  padding: 3px 6px;
+  gap: 2px;
+  padding: 2px 5px;
   background-color: var(--surface-base);
   border: 1px solid var(--border-color);
   border-radius: 3px;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 9px;
   color: var(--text-secondary);
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -846,7 +848,8 @@
 .diagram-color-swatches-mini {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  flex-shrink: 0;
 }
 
 .diagram-color-dot-btn {

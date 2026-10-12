@@ -2,15 +2,203 @@
  * VisualMark Studio - Release Notes & Update History Dataset
  * Powers the "What's New" modal dialog, update notifications, and in-IDE release history.
  */
-export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.3'
+export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.1.0'
 
 export const RELEASE_HISTORY = [
+  {
+    version: '1.1.0',
+    type: 'minor',
+    title: 'VisualMark Studio 1.1.0 — Icons & Emoji Studio, Live API Documentation Preview & UI Polish',
+    date: 'October 2026',
+    isCurrent: true,
+    highlights: [
+      '11th Specialized Visual Studio: Icons & Emoji Studio (icons.studio) with dedicated Vector Icons and Emojis tabs',
+      'Vector Icon Color Customizer with 9 preset themes, native color wheel, hex input, and live catalog tinting',
+      'Dual-flavor icon embedding: colored SVG downloads, Iconify image Markdown syntax, and direct Monaco injection',
+      'Monaco editor ":" inline autocomplete integration for both emojis and Material vector symbols',
+      'API Studio Live Documentation Preview with Live Preview, Split View, and Markdown & Code modes',
+      'Dual API render engines: interactive Swagger-style REST Blueprint and authentic GitHub GFM Render',
+      'Fluid 30 FPS animated banner GIF showcasing IDE features and visual studio workspaces',
+      'Resolved Iconify ligature underscore 404 broken images, diagram color dots overflow, and Chromium scrollbar corner glitch'
+    ],
+    sections: [
+      {
+        category: 'Added: Icons & Emoji Studio (11th Studio)',
+        icon: 'sentiment_satisfied',
+        badge: 'Added',
+        color: '#6366f1',
+        items: [
+          {
+            title: 'Dedicated Dual-Mode Studio Workspace',
+            desc: 'Cleanly partitions Vector Material Icons (Material Symbols) and Developer Emojis into dedicated sub-tabs to prevent visual clutter and workflow disruption.'
+          },
+          {
+            title: 'Vector Icon Color Customizer',
+            desc: 'Features 9 preset color swatches tailored for dark/light IDE and GitHub themes, native HTML5 color wheel, and direct HEX code input with auto-formatting.'
+          },
+          {
+            title: 'Live Catalog Tinting Toggle',
+            desc: 'Enabling the "[x] Tint catalog preview" checkbox dynamically recolors every vector icon card across the entire catalog in real time.'
+          },
+          {
+            title: 'Dual-Flavor SVG Export Engine',
+            desc: 'Exports customized icons via direct local .svg downloads with baked-in vector fills, or generates remote Iconify markdown image syntax (<img src="https://api.iconify.design/material-symbols:...svg?color=..." />).'
+          },
+          {
+            title: 'Monaco ":" Inline Autocomplete',
+            desc: 'Typing ":" directly inside the Monaco editor summons instantaneous autocompletion for both Unicode emojis and Material vector icons.'
+          }
+        ]
+      },
+      {
+        category: 'Added: API Studio Live Documentation Preview',
+        icon: 'api',
+        badge: 'Added',
+        color: '#0ea5e9',
+        items: [
+          {
+            title: 'Multi-Mode View Switcher',
+            desc: 'Switch between Live Preview (full canvas), Split View (interactive form builder alongside live documentation preview), and Markdown & Code (raw syntax view).'
+          },
+          {
+            title: 'REST Blueprint Interactive Spec Card',
+            desc: 'Swagger/Postman-style card featuring color-coded HTTP method badges (GET, POST, PUT, DELETE, PATCH), parameter matrix, JSON request body viewer, and multi-status response tabs (200 OK, 400 Bad Request, 500 Server Error).'
+          },
+          {
+            title: 'GitHub GFM Render Engine',
+            desc: 'Authentic GitHub-Flavored Markdown preview powered by ReactMarkdown, displaying the exact markdown layout that appears on GitHub repositories.'
+          },
+          {
+            title: '1-Click Insert into Active Document',
+            desc: 'Injects fully-rendered API documentation tables and specs into the active document at the current cursor line.'
+          }
+        ]
+      },
+      {
+        category: 'Added: Modular Floating Toolbar (HUD)',
+        icon: 'auto_fix_high',
+        badge: 'Major',
+        color: '#eab308',
+        items: [
+          {
+            title: 'Contextual Quick Action HUD',
+            desc: 'Highlighting text in the Monaco editor instantly summons a floating toolbar with dropdowns for Headings (H1-H4), Code Blocks (8 languages), Hyperlinks, and GitHub Callouts ([!NOTE], [!TIP], etc.).'
+          },
+          {
+            title: 'Monaco Focus Retention & Undo/Redo',
+            desc: 'Preserves native Monaco Undo/Redo stack via editor.executeEdits and prevents blur through onMouseDown event guards.'
+          },
+          {
+            title: 'Dedicated Settings Tab Category',
+            desc: 'Configure every tool under Settings > Floating Toolbar with quick bulk toggles, persistent localStorage syncing, and real-time cross-tab reactivity.'
+          }
+        ]
+      },
+      {
+        category: 'Added: Modern GitHub Repo Cards Studio',
+        icon: 'featured_play_list',
+        badge: 'Major',
+        color: '#10b981',
+        items: [
+          {
+            title: '3-Step Guided Inspector',
+            desc: 'Streamlined configuration into Target & Sync -> Card Template -> Theme & Styling. Replaced cluttered forms with an intuitive guided workflow.'
+          },
+          {
+            title: '100% Client-Side Pure Vector SVG Engine',
+            desc: 'Zero external API quotas or render servers. Auto-adapts to dark and light GitHub themes via native @media (prefers-color-scheme) CSS rules.'
+          },
+          {
+            title: '4 Modern Vector Templates',
+            desc: 'Choose between Official GitHub Pin with authentic Octicons, Linear Bento Telemetry Matrix, Proportional Languages Stacked Bar, and Minimal Compact Spec.'
+          },
+          {
+            title: 'Unified Action Bar & Offline Export',
+            desc: 'One-click "Insert into Document" saves self-hosted SVGs directly into your workspace assets/ folder, plus Copy SVG markup and Download .svg.'
+          }
+        ]
+      },
+      {
+        category: 'Added: Fluid 30 FPS Showcase Banner',
+        icon: 'animation',
+        badge: 'Added',
+        color: '#ec4899',
+        items: [
+          {
+            title: 'High-FPS Animated Banner GIF',
+            desc: 'Replaced static/legacy media with a high-fidelity 1200x600 30 FPS animated banner showcasing the workspace, editor capabilities, and studio suites.'
+          }
+        ]
+      },
+      {
+        category: 'Changed: Layout & Studio UX Refinements',
+        icon: 'tune',
+        badge: 'Changed',
+        color: '#f59e0b',
+        items: [
+          {
+            title: 'API Studio Column Proportioning',
+            desc: 'Balanced split-view builder width to 480px with a fluid documentation canvas for optimal dual-column spacing.'
+          },
+          {
+            title: 'Studio Form Overflow Hardening',
+            desc: 'Added overflow-x: hidden to .studio-form-column across studios, eliminating horizontal jitter and scrollbar artifacts during tab switches.'
+          },
+          {
+            title: 'Responsive Control Toolbars',
+            desc: 'Standardized view mode and style toggle buttons into responsive wrapped pills for all display aspect ratios.'
+          }
+        ]
+      },
+      {
+        category: 'Fixed: Stability & Rendering Normalizations',
+        icon: 'bug_report',
+        badge: 'Fixed',
+        color: '#10b981',
+        items: [
+          {
+            title: 'Iconify Ligature Underscore 404 Bug',
+            desc: 'Normalized Google Material ligature names containing underscores (bug_report, rocket_launch, check_circle, inventory_2) to Iconify-compliant kebab-case.'
+          },
+          {
+            title: 'API Preset Cards Styling',
+            desc: 'Fixed unstyled white button background and text collision in API Studio preset cards with dark theme token alignment.'
+          },
+          {
+            title: 'Architecture Diagram Shape & Color Overflow',
+            desc: 'Resolved shape selector and color swatches clipping out of bounds in Diagram Studio using responsive flex-wrapping.'
+          },
+          {
+            title: 'Chromium Scrollbar White Corner Glitch',
+            desc: 'Eliminated solid white unstyled square appearing at the intersection of vertical and horizontal scrollbars in Chromium and Electron.'
+          }
+        ]
+      },
+      {
+        category: 'Removed: Legacy Assets & Deprecations',
+        icon: 'delete_sweep',
+        badge: 'Removed',
+        color: '#94a3b8',
+        items: [
+          {
+            title: 'Deprecated IDE Showcase GIF',
+            desc: 'Removed legacy VisualMark_Studio_IDE.gif from assets and frontend bundles to reduce bundle footprint.'
+          },
+          {
+            title: 'Legacy Unstyled Preset Elements',
+            desc: 'Removed unstyled legacy button structures in API Studio preset components.'
+          }
+        ]
+      }
+    ]
+  },
+
   {
     version: '1.0.3',
     type: 'patch',
     title: 'VisualMark Studio 1.0.3 — Command Palette, Terminals & Stability Overhaul',
     date: 'October 2026',
-    isCurrent: true,
+    isCurrent: false,
     highlights: [
       'Interactive Command Palette (F1 / Ctrl+Shift+P) with in-line ⚙ Keybinding Configuration and Alt+Enter trigger',
       'Monaco right-click context menu redirection directly into VisualMark Command Palette',

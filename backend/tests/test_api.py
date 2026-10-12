@@ -1,5 +1,5 @@
 """
-Unit and integration tests for Auto README Generator API.
+Unit and integration tests for VisualMark Studio API.
 """
 import sys
 import os

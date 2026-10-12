@@ -3,7 +3,7 @@
   "description": "VisualMark Studio - Code + Visual Markdown & Documentation IDE",
   "author": "JagaTheGhost",
   "private": true,
-  "version": "1.0.3",
+  "version": "1.1.0",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {

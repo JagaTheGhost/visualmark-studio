@@ -1,4 +1,7 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 import { useStudioSplit } from '../../utils/useResizableSplit'
 
 const API_PRESETS = [
@@ -71,7 +74,14 @@ export default function ApiStudioTab({
   const [authType, setAuthType] = useState('Bearer JWT')
   const [outputTab, setOutputTab] = useState('table')
   const [copied, setCopied] = useState(false)
-  const { formWidth, isDragging, handleMouseDown, handleDoubleClick } = useStudioSplit(520)
+  const [copyFeedback, setCopyFeedback] = useState('')
+
+  // View Mode: 'both' | 'preview' | 'code'
+  const [previewMode, setPreviewMode] = useState('both')
+  // Render Style in preview: 'blueprint' (Interactive Swagger/REST Blueprint) | 'markdown' (GitHub GFM Render)
+  const [renderStyle, setRenderStyle] = useState('blueprint')
+
+  const { formWidth, isDragging, handleMouseDown, handleDoubleClick } = useStudioSplit(480)
 
   const [params, setParams] = useState([
     { name: 'email', in: 'body', type: 'string', required: true, desc: 'User registered email', example: 'developer@example.com' },
@@ -100,21 +110,38 @@ export default function ApiStudioTab({
   const handleAddParam = () => {
     setParams((prev) => [
       ...prev,
-      { name: 'param_name', in: 'query', type: 'string', required: false, desc: 'Parameter description', example: 'value' }
+      { name: `param_${prev.length + 1}`, in: 'query', type: 'string', required: false, desc: '', example: '' }
     ])
   }
 
   const handleUpdateParam = (index, field, value) => {
-    setParams((prev) =>
-      prev.map((p, i) => (i === index ? { ...p, [field]: value } : p))
-    )
+    setParams((prev) => {
+      const next = [...prev]
+      next[index] = { ...next[index], [field]: value }
+      return next
+    })
   }
 
   const handleRemoveParam = (index) => {
     setParams((prev) => prev.filter((_, i) => i !== index))
   }
 
-  // Generate Curl snippet
+  const handleCopyText = useCallback((text, label = 'Copied') => {
+    if (!text) return
+    navigator.clipboard.writeText(text).then(() => {
+      setCopyFeedback(label)
+      setTimeout(() => setCopyFeedback(''), 1800)
+    })
+  }, [])
+
+  const getStatusPillClass = (code) => {
+    if (code.startsWith('2')) return 'success'
+    if (code.startsWith('4')) return 'client-error'
+    if (code.startsWith('5')) return 'server-error'
+    return 'success'
+  }
+
+  // Generate cURL command
   const curlSnippet = useMemo(() => {
     let cmd = `curl -X ${method} "https://api.yourdomain.com${path}"`
     if (authType === 'Bearer JWT') {
@@ -298,46 +325,45 @@ print(response.json())`
         </div>
       </div>
 
-      {/* Main Studio Body: 2-Column Responsive Layout */}
+      {/* Main Form & Preview Grid */}
       <div className="studio-content-grid">
-        {/* Left Column: Form Controls */}
+        {/* Left Column: API Builder Controls */}
         <div
           className="studio-form-column custom-scrollbar"
-          style={{ width: `${formWidth}px`, minWidth: `${formWidth}px`, maxWidth: `${formWidth}px`, flex: 'none' }}
+          style={{ width: `${formWidth}px`, flexShrink: 0 }}
         >
           {/* Quick Presets */}
           <div className="studio-section">
             <label className="studio-section-label">Quick Endpoint Presets</label>
-            <div className="badge-styles-card-grid">
-              {API_PRESETS.map((p) => {
-                const isSelected = path === p.path && method === p.method
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    className={`badge-style-card ${isSelected ? 'active' : ''}`}
-                    onClick={() => handleLoadPreset(p)}
-                  >
-                    <div className="badge-style-card-header">
-                      <span className={`method-badge ${p.method.toLowerCase()}`}>{p.method}</span>
-                      <span className="badge-style-card-title truncate" style={{ fontSize: '12px' }}>{p.title}</span>
-                    </div>
-                    <span className="badge-style-card-desc truncate">{p.path}</span>
-                  </button>
-                )
-              })}
+            <div className="api-presets-grid">
+              {API_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  className={`api-preset-card ${path === preset.path && method === preset.method ? 'active' : ''}`}
+                  onClick={() => handleLoadPreset(preset)}
+                >
+                  <span className={`method-badge ${preset.method.toLowerCase()}`}>
+                    {preset.method}
+                  </span>
+                  <div className="api-preset-info">
+                    <span className="api-preset-title">{preset.title}</span>
+                    <span className="api-preset-path">{preset.path}</span>
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Primary Route Definition */}
+          {/* Endpoint Configuration Bar */}
           <div className="studio-section">
             <label className="studio-section-label">HTTP Method & Path Endpoint</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '8px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
               <select
                 className="studio-select"
+                style={{ width: '120px', fontWeight: 'bold' }}
                 value={method}
                 onChange={(e) => setMethod(e.target.value)}
-                style={{ fontWeight: 700, fontFamily: 'monospace' }}
               >
                 <option value="GET">GET</option>
                 <option value="POST">POST</option>
@@ -504,56 +530,270 @@ print(response.json())`
           title="Drag to resize form and preview sections • Double-click to reset"
         />
 
-        {/* Right Column: Code & Markdown Output Canvas */}
+        {/* Right Column: Live Documentation Preview & Code Output Canvas */}
         <div className="studio-preview-column custom-scrollbar" style={{ flex: 1, minWidth: 0 }}>
-          {/* Exporter Selector */}
-          <div className="studio-card">
-            <div className="studio-card-header">
-              <span className="studio-card-title">Endpoint Exporter</span>
-              <div className="studio-segmented-styles">
-                <button
-                  type="button"
-                  className={`studio-style-btn ${outputTab === 'table' ? 'active' : ''}`}
-                  onClick={() => setOutputTab('table')}
-                >
-                  Table
-                </button>
-                <button
-                  type="button"
-                  className={`studio-style-btn ${outputTab === 'details' ? 'active' : ''}`}
-                  onClick={() => setOutputTab('details')}
-                >
-                  &lt;details&gt;
-                </button>
-                <button
-                  type="button"
-                  className={`studio-style-btn ${outputTab === 'curl' ? 'active' : ''}`}
-                  onClick={() => setOutputTab('curl')}
-                >
-                  cURL
-                </button>
-                <button
-                  type="button"
-                  className={`studio-style-btn ${outputTab === 'js' ? 'active' : ''}`}
-                  onClick={() => setOutputTab('js')}
-                >
-                  Fetch
-                </button>
-                <button
-                  type="button"
-                  className={`studio-style-btn ${outputTab === 'python' ? 'active' : ''}`}
-                  onClick={() => setOutputTab('python')}
-                >
-                  Python
-                </button>
-              </div>
+          {/* View Mode Toolbar */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+            <div className="studio-segmented-styles">
+              <button
+                type="button"
+                className={`studio-style-btn ${previewMode === 'preview' ? 'active' : ''}`}
+                onClick={() => setPreviewMode('preview')}
+                title="Focus on live rendered documentation preview"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>visibility</span>
+                <span>Live Preview</span>
+              </button>
+              <button
+                type="button"
+                className={`studio-style-btn ${previewMode === 'both' ? 'active' : ''}`}
+                onClick={() => setPreviewMode('both')}
+                title="View both live preview and code exporter"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>vertical_split</span>
+                <span>Split View</span>
+              </button>
+              <button
+                type="button"
+                className={`studio-style-btn ${previewMode === 'code' ? 'active' : ''}`}
+                onClick={() => setPreviewMode('code')}
+                title="Focus on generated Markdown and code snippets"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>code</span>
+                <span>Markdown & Code</span>
+              </button>
             </div>
 
-            {/* Generated Code Preview Block */}
-            <pre className="studio-code-block custom-scrollbar" style={{ maxHeight: '480px' }}>
-              <code>{activeSnippet}</code>
-            </pre>
+            {previewMode !== 'code' && (
+              <div className="studio-segmented-styles" style={{ transform: 'scale(0.92)', transformOrigin: 'right center' }}>
+                <button
+                  type="button"
+                  className={`studio-style-btn ${renderStyle === 'blueprint' ? 'active' : ''}`}
+                  onClick={() => setRenderStyle('blueprint')}
+                  title="Interactive REST Blueprint Cards"
+                >
+                  Blueprint View
+                </button>
+                <button
+                  type="button"
+                  className={`studio-style-btn ${renderStyle === 'markdown' ? 'active' : ''}`}
+                  onClick={() => setRenderStyle('markdown')}
+                  title="GitHub Flavored Markdown Live Render"
+                >
+                  GitHub Render
+                </button>
+              </div>
+            )}
           </div>
+
+          {/* Section 1: Live Rendered API Documentation Card */}
+          {previewMode !== 'code' && (
+            <div className="studio-card" style={{ marginBottom: previewMode === 'both' ? '12px' : '0' }}>
+              <div className="studio-card-header">
+                <span className="studio-card-title">Live API Endpoint Documentation</span>
+                <span className="studio-card-tag">
+                  {renderStyle === 'blueprint' ? 'REST Blueprint' : 'GitHub GFM Render'}
+                </span>
+              </div>
+
+              {renderStyle === 'blueprint' ? (
+                <div className="api-live-preview-box custom-scrollbar">
+                  {/* Endpoint Bar */}
+                  <div className="api-preview-endpoint-bar">
+                    <span className={`method-badge ${method.toLowerCase()}`}>{method}</span>
+                    <span className="api-preview-route">{path}</span>
+                    <span className="api-preview-auth-pill">
+                      <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>lock</span>
+                      <span>{authType}</span>
+                    </span>
+                    <button
+                      type="button"
+                      className="btn-studio-secondary"
+                      onClick={() => handleCopyText(path, 'Path Copied!')}
+                      style={{ padding: '2px 8px', height: '24px', fontSize: '10px' }}
+                      title="Copy endpoint path"
+                    >
+                      <span className="material-symbols-outlined icon-xs">content_copy</span>
+                      <span>{copyFeedback === 'Path Copied!' ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  </div>
+
+                  {/* Summary Callout */}
+                  {summary && (
+                    <div className="api-preview-summary-callout">
+                      {summary}
+                    </div>
+                  )}
+
+                  {/* Parameters Table */}
+                  <div>
+                    <div className="api-preview-section-title">
+                      <span>Request Parameters ({params.length})</span>
+                    </div>
+                    {params.length > 0 ? (
+                      <div className="api-preview-table-container">
+                        <table className="api-preview-table">
+                          <thead>
+                            <tr>
+                              <th>Parameter</th>
+                              <th>In</th>
+                              <th>Type</th>
+                              <th>Required</th>
+                              <th>Description</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {params.map((p, idx) => (
+                              <tr key={idx}>
+                                <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#38bdf8' }}>
+                                  <code>{p.name}</code>
+                                </td>
+                                <td>
+                                  <span className={`api-param-badge ${p.in}`}>{p.in}</span>
+                                </td>
+                                <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
+                                  {p.type}
+                                </td>
+                                <td>
+                                  <span className={`api-req-badge ${p.required ? 'required' : 'optional'}`}>
+                                    {p.required ? 'Required' : 'Optional'}
+                                  </span>
+                                </td>
+                                <td style={{ color: 'var(--text-secondary)' }}>
+                                  {p.desc || '—'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div style={{ padding: '10px 14px', background: 'var(--surface-mid)', borderRadius: '4px', fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                        No request parameters required for this endpoint.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Request Body Payload (for POST/PUT/PATCH) */}
+                  {['POST', 'PUT', 'PATCH'].includes(method) && requestBody.trim() && (
+                    <div>
+                      <div className="api-preview-section-title">
+                        <span>Request Body Payload (JSON)</span>
+                        <button
+                          type="button"
+                          className="snippet-copy-btn"
+                          onClick={() => handleCopyText(requestBody, 'JSON Copied!')}
+                        >
+                          <span className="material-symbols-outlined icon-xs">content_copy</span>
+                          <span>{copyFeedback === 'JSON Copied!' ? 'Copied' : 'Copy'}</span>
+                        </button>
+                      </div>
+                      <pre className="api-preview-json-block custom-scrollbar">
+                        <code>{requestBody}</code>
+                      </pre>
+                    </div>
+                  )}
+
+                  {/* Response Body Payload */}
+                  {responseBody.trim() && (
+                    <div>
+                      <div className="api-preview-section-title">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>Expected Response</span>
+                          <span className={`api-status-pill ${getStatusPillClass(statusCode)}`}>
+                            {statusCode}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="snippet-copy-btn"
+                          onClick={() => handleCopyText(responseBody, 'Response Copied!')}
+                        >
+                          <span className="material-symbols-outlined icon-xs">content_copy</span>
+                          <span>{copyFeedback === 'Response Copied!' ? 'Copied' : 'Copy'}</span>
+                        </button>
+                      </div>
+                      <pre className="api-preview-json-block custom-scrollbar">
+                        <code>{responseBody}</code>
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* GitHub Markdown Render with ReactMarkdown */
+                <div className="table-render-viewport custom-scrollbar" style={{ padding: '16px', backgroundColor: 'var(--surface-base)' }}>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeRaw]}
+                    components={{
+                      table({ node, children, ...props }) {
+                        return (
+                          <div className="preview-table-container">
+                            <table className="preview-table rendered-markdown-table" {...props}>
+                              {children}
+                            </table>
+                          </div>
+                        )
+                      }
+                    }}
+                  >
+                    {outputTab === 'details' ? detailsSnippet : tableSnippet}
+                  </ReactMarkdown>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Section 2: Endpoint Exporter (Markdown & Code) */}
+          {previewMode !== 'preview' && (
+            <div className="studio-card">
+              <div className="studio-card-header">
+                <span className="studio-card-title">Endpoint Exporter</span>
+                <div className="studio-segmented-styles">
+                  <button
+                    type="button"
+                    className={`studio-style-btn ${outputTab === 'table' ? 'active' : ''}`}
+                    onClick={() => setOutputTab('table')}
+                  >
+                    Table
+                  </button>
+                  <button
+                    type="button"
+                    className={`studio-style-btn ${outputTab === 'details' ? 'active' : ''}`}
+                    onClick={() => setOutputTab('details')}
+                  >
+                    &lt;details&gt;
+                  </button>
+                  <button
+                    type="button"
+                    className={`studio-style-btn ${outputTab === 'curl' ? 'active' : ''}`}
+                    onClick={() => setOutputTab('curl')}
+                  >
+                    cURL
+                  </button>
+                  <button
+                    type="button"
+                    className={`studio-style-btn ${outputTab === 'js' ? 'active' : ''}`}
+                    onClick={() => setOutputTab('js')}
+                  >
+                    Fetch
+                  </button>
+                  <button
+                    type="button"
+                    className={`studio-style-btn ${outputTab === 'python' ? 'active' : ''}`}
+                    onClick={() => setOutputTab('python')}
+                  >
+                    Python
+                  </button>
+                </div>
+              </div>
+
+              {/* Generated Code Preview Block */}
+              <pre className="studio-code-block custom-scrollbar" style={{ maxHeight: previewMode === 'both' ? '280px' : '480px' }}>
+                <code>{activeSnippet}</code>
+              </pre>
+            </div>
+          )}
         </div>
       </div>
     </div>

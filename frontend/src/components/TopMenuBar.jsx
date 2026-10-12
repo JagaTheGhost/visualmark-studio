@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { APP_CURRENT_VERSION } from '../data/releaseNotes'
 import appLogo from '../assets/logo.png'
+import { useToast } from '../context/ToastContext'
 
 export default function TopMenuBar({
   activeFile,
@@ -52,6 +53,14 @@ export default function TopMenuBar({
   const [isMaximized, setIsMaximized] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const topBarRef = useRef(null)
+
+  let toastCtx = null
+  try {
+    toastCtx = useToast()
+  } catch {}
+  const unreadCount = toastCtx?.unreadCount || 0
+  const toggleHistory = toastCtx?.toggleHistory || (() => {})
+  const isHistoryOpen = toastCtx?.isHistoryOpen || false
 
   // Detect Electron environment and listen to window state
   useEffect(() => {
@@ -654,6 +663,24 @@ export default function TopMenuBar({
           <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
             <path d="M9.1 1.2a1 1 0 0 0-2.2 0l-.3 1a6.002 6.002 0 0 0-1.4.8l-1-.4a1 1 0 0 0-1.6 1.6l.4 1a6.002 6.002 0 0 0-.8 1.4l-1 .3a1 1 0 0 0 0 2.2l1 .3a6.002 6.002 0 0 0 .8 1.4l-.4 1a1 1 0 0 0 1.6 1.6l1-.4a6.002 6.002 0 0 0 1.4.8l.3 1a1 1 0 0 0 2.2 0l.3-1a6.002 6.002 0 0 0 1.4-.8l1 .4a1 1 0 0 0 1.6-1.6l-.4-1a6.002 6.002 0 0 0 .8-1.4l1-.3a1 1 0 0 0 0-2.2l-1-.3a6.002 6.002 0 0 0-.8-1.4l.4-1a1 1 0 0 0-1.6-1.6l-1 .4a6.002 6.002 0 0 0-1.4-.8l-.3-1zM8 10.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
           </svg>
+        </button>
+
+        {/* Notification Center Bell */}
+        <button
+          type="button"
+          className={`top-action-icon-btn notification-bell-btn ${unreadCount > 0 && !isHistoryOpen ? 'has-unread' : ''} ${isHistoryOpen ? 'is-active' : ''}`}
+          onClick={toggleHistory}
+          title={unreadCount > 0 && !isHistoryOpen ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'} (Click to open Notification Center)` : "Notification Center (Click to view history)"}
+          style={{ position: 'relative' }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '15px', color: (unreadCount > 0 && !isHistoryOpen) ? '#38bdf8' : isHistoryOpen ? '#ffffff' : 'inherit' }}>
+            {unreadCount > 0 && !isHistoryOpen ? 'notifications_active' : 'notifications'}
+          </span>
+          {unreadCount > 0 && !isHistoryOpen && (
+            <span className="top-notif-badge">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
         </button>
 
         {/* Theme Mode Toggle */}

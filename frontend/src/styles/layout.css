@@ -361,6 +361,29 @@
   color: #ffffff;
 }
 
+.top-action-icon-btn.is-active {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.top-notif-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  min-width: 13px;
+  height: 13px;
+  line-height: 13px;
+  padding: 0 3px;
+  border-radius: 7px;
+  text-align: center;
+  box-shadow: 0 0 0 1.5px #18181b;
+  pointer-events: none;
+}
+
 .top-divider {
   width: 1px;
   height: 14px;

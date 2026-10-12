@@ -27,12 +27,11 @@ export default function CommandPalette({
   // Auto focus input when modal opens
   useEffect(() => {
     if (isOpen) {
-      setQuery('>')
+      setQuery('')
       setSelectedIndex(0)
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus()
-          inputRef.current.setSelectionRange(1, 1)
         }
       }, 50)
     }

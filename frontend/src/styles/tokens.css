@@ -126,3 +126,8 @@ html, body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--surface-highest);
 }
+
+.custom-scrollbar::-webkit-scrollbar-corner,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}

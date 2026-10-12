@@ -1,0 +1,244 @@
+/* ==========================================================================
+   VisualMark Studio — Floating Selection Toolbar (Quick Actions HUD)
+   Matches Dark Modern VS Code / Notion / Office Quick Menu Ergonomics
+   ========================================================================== */
+
+.floating-selection-toolbar {
+  position: absolute;
+  z-index: 999;
+  user-select: none;
+  animation: floatingToolbarFadeIn 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: auto;
+}
+
+@keyframes floatingToolbarFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.floating-toolbar-inner {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 4px;
+  background-color: #252526;
+  border: 1px solid #3c3c3c;
+  border-radius: 6px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75), 0 2px 8px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+}
+
+.floating-divider {
+  width: 1px;
+  height: 18px;
+  background-color: #3c3c3c;
+  margin: 0 3px;
+  flex-shrink: 0;
+}
+
+.floating-btn-group {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.floating-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 6px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #cccccc;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.08s ease, color 0.08s ease;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.floating-toolbar-btn.icon-btn {
+  width: 26px;
+  padding: 0;
+}
+
+.floating-toolbar-btn:hover {
+  background-color: #333333;
+  color: #ffffff;
+}
+
+.floating-toolbar-btn:active,
+.floating-toolbar-btn.active {
+  background-color: #007acc;
+  color: #ffffff;
+}
+
+.floating-btn-text {
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.dropdown-caret {
+  font-size: 10px;
+  color: #858585;
+  margin-left: 1px;
+}
+
+.floating-toolbar-btn:hover .dropdown-caret,
+.floating-toolbar-btn.active .dropdown-caret {
+  color: #ffffff;
+}
+
+/* ================= Dropdown Menus ================= */
+.floating-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  background-color: #252526;
+  border: 1px solid #454545;
+  border-radius: 5px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8), 0 3px 8px rgba(0, 0, 0, 0.4);
+  min-width: 160px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 1000;
+  animation: dropdownPop 0.1s ease-out;
+}
+
+@keyframes dropdownPop {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.floating-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 5px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: #cccccc;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.08s ease, color 0.08s ease;
+}
+
+.floating-dropdown-item:hover {
+  background-color: #04395e;
+  color: #ffffff;
+}
+
+.dropdown-syntax {
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  color: #858585;
+}
+
+.floating-dropdown-item:hover .dropdown-syntax {
+  color: #c6c6c6;
+}
+
+/* Heading item previews */
+.heading-preview {
+  font-weight: 700;
+  margin-right: 8px;
+  display: inline-block;
+  min-width: 22px;
+}
+.heading-preview.h1 { font-size: 14px; color: #38bdf8; }
+.heading-preview.h2 { font-size: 13px; color: #60a5fa; }
+.heading-preview.h3 { font-size: 12px; color: #818cf8; }
+.heading-preview.h4 { font-size: 11px; color: #a78bfa; }
+
+/* Callout pill badges */
+.callout-pill {
+  font-size: 9.5px;
+  font-weight: 700;
+  font-family: var(--font-mono, monospace);
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-right: 8px;
+  text-transform: uppercase;
+}
+.callout-pill.note { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+.callout-pill.tip { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
+.callout-pill.important { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
+.callout-pill.warning { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.4); }
+.callout-pill.caution { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+
+/* Link Popover Card */
+.floating-popover-card {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  background-color: #252526;
+  border: 1px solid #454545;
+  border-radius: 5px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
+  padding: 8px 10px;
+  width: 260px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.floating-popover-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #858585;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.floating-popover-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.floating-popover-input {
+  flex: 1;
+  background: #1e1e1e;
+  border: 1px solid #3c3c3c;
+  border-radius: 3px;
+  color: #ffffff;
+  padding: 4px 8px;
+  font-size: 12px;
+  outline: none;
+}
+.floating-popover-input:focus {
+  border-color: #007acc;
+}
+.floating-popover-submit {
+  background: #007acc;
+  color: #ffffff;
+  border: none;
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+.floating-popover-submit:hover {
+  background: #0098ff;
+}

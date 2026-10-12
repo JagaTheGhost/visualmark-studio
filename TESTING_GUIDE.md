@@ -1,320 +1,137 @@
-# 🎯 Quick Test Guide - New Features
+# 🎯 VisualMark Studio — Quality Assurance & Testing Guide
 
-## ✅ What's Changed (Quick Reference)
-
-### Visual/Design Changes
-- [ ] Header has gradient background with overlay
-- [ ] Cards have shadows and hover effects
-- [ ] Form inputs have focus rings and hover states
-- [ ] Buttons have better styling and animations
-- [ ] Spacing is more generous throughout
-- [ ] Color palette looks more professional
-
-### Functional Changes
-- [ ] Tech stack has 48 options (was 22)
-- [ ] Multiple categories: Frontend, Backend, Database, DevOps, Testing, Tools
-- [ ] Generated README has more sections (15+)
-- [ ] Better feature descriptions with emojis
-- [ ] Deployment guide included
-- [ ] Architecture documentation
-- [ ] Troubleshooting section
-- [ ] Contributing guidelines
-
-### Content Improvements
-- [ ] README has project structure section
-- [ ] Configuration (.env) documentation
-- [ ] Testing commands documented
-- [ ] Better prerequisites list
-- [ ] Deployment instructions for multiple platforms
-- [ ] Professional badges
+This guide establishes the comprehensive test protocols for **VisualMark Studio**, covering automated test execution, desktop verification, and regression matrices across the Monaco code editor, 11 visual studios, and the Electron runtime.
 
 ---
 
-## 🧪 Testing Checklist
+## 📋 Table of Contents
 
-### Desktop Testing
-```
-✓ Open http://localhost:3000
-✓ Header looks professional with gradient
-✓ All cards have proper spacing and shadows
-✓ Buttons are well-styled
-✓ Tech stack grid is organized
-✓ Generate button works
-✓ Preview shows new sections
-```
-
-### Mobile Testing (480px)
-```
-✓ Header is readable
-✓ Form stacks properly
-✓ Tech stack wraps nicely
-✓ Buttons are full-width
-✓ Preview is scrollable
-✓ No horizontal scroll
-```
-
-### Tablet Testing (768px)
-```
-✓ Layout is centered
-✓ Cards are properly sized
-✓ Tech stack grid is balanced
-✓ Preview is readable
-✓ Spacing looks good
-```
-
-### Functionality Testing
-```
-✓ Select multiple tech stack items
-✓ Enter description
-✓ Enter GitHub URL
-✓ Click generate
-✓ View preview
-✓ Copy to clipboard works
-✓ Download file works
-```
+1. [Automated Test Execution](#1-automated-test-execution)
+2. [Desktop IDE Core Verification Protocol](#2-desktop-ide-core-verification-protocol)
+3. [The 11 Visual Studios Verification Checklist](#3-the-11-visual-studios-verification-checklist)
+4. [Monaco Editor & HUD Selection Toolbar Protocol](#4-monaco-editor--hud-selection-toolbar-protocol)
+5. [Bottom Panel Drawer & Diagnostics Verification](#5-bottom-panel-drawer--diagnostics-verification)
+6. [Release Packaging & Asset Deduplication Verification](#6-release-packaging--asset-deduplication-verification)
 
 ---
 
-## 🎨 Visual Elements to Check
+## 1. Automated Test Execution
 
-### Header
-- [ ] Gradient background (indigo → violet → blue)
-- [ ] Bold, large heading
-- [ ] Subtitle with proper spacing
-- [ ] Clean, professional appearance
+### Backend API Test Suite
+Run the automated pytest suite verifying API contract validation, Markdown generation, and SSRF security sanitization:
 
-### Form Section
-- [ ] White background with shadow
-- [ ] Proper padding (looks spacious)
-- [ ] Inputs have nice borders
-- [ ] Labels are clear
-- [ ] Helper text is visible
-- [ ] Focus states show clearly
+```bash
+cd backend
+python -m pytest tests/test_api.py -v
+```
+**Expected Outcome:**
+- `test_health_check` → `PASSED`
+- `test_generate_readme_from_description` → `PASSED`
+- `test_generate_readme_missing_inputs` → `PASSED`
+- `test_resolve_image_ssrf_protection` → `PASSED`
 
-### Tech Stack Grid
-- [ ] Categories are clearly labeled
-- [ ] Options are well-spaced
-- [ ] Scrollable when needed
-- [ ] Checkboxes work smoothly
-- [ ] Hover effect on options
+### Frontend Production Compilation
+Verify Vite code-splitting, tree-shaking, and syntax validation:
 
-### Buttons
-- [ ] Primary button is prominent
-- [ ] Has shadow effect
-- [ ] Hover state is visible
-- [ ] Click animation works
-- [ ] Focus ring appears
-
-### Preview
-- [ ] Raw markdown is visible
-- [ ] Rendered preview looks good
-- [ ] Code blocks are styled nicely
-- [ ] Headings are clearly hierarchical
-- [ ] Scrollbars work
-- [ ] All new sections present
+```bash
+cd frontend
+npm run build
+```
+**Expected Outcome:**
+- 3,700+ modules transformed without syntax errors or broken imports.
+- Production chunks emitted cleanly into `frontend/dist/`.
 
 ---
 
-## 📊 New Tech Stack Categories
+## 2. Desktop IDE Core Verification Protocol
 
-### Now Available:
-- ✅ 10 Frontend options
-- ✅ 10 Backend options
-- ✅ 8 Database options
-- ✅ 10 DevOps options
-- ✅ 7 Testing/Tools options
+Launch the application in development desktop mode:
+```bash
+cd frontend
+npm run electron:dev
+```
 
-**Total: 45+ technologies**
+### Verification Checklist:
+- [ ] **Frameless Window Chrome:** Titlebar displays application icon, version tag, search bar, and native Windows minimize, maximize, and close buttons.
+- [ ] **Direct Disk I/O:**
+  - Press `Ctrl+O`: Native file picker opens; selecting a `.md` file loads its content into the Monaco buffer.
+  - Press `Ctrl+S`: Saves buffer to the open file on disk; unsaved indicator (`*`) clears.
+  - Press `Ctrl+Shift+O`: Mounts a folder into the File Explorer sidebar tree.
+- [ ] **Split View Synchronized Scrolling:**
+  - Scroll inside Monaco editor; the preview pane scrolls proportionally without lag or rubber-banding.
+  - Press `Ctrl+\`: Orientation cycles between side-by-side vertical split and top-to-bottom horizontal split.
+  - Press `Ctrl+Shift+V`: Cycles through Split View, Editor-Only, and Preview-Only modes.
 
 ---
 
-## 📝 New README Sections
+## 3. The 11 Visual Studios Verification Checklist
 
-### Generated Content Includes:
-- ✅ Project name & description
-- ✅ ✨ Features (with emojis)
-- ✅ 🏗️ Project structure
-- ✅ 📚 Tech stack (organized)
-- ✅ 🚀 Getting started
-- ✅ 📖 Usage instructions
-- ✅ 🔧 Configuration (.env)
-- ✅ 📁 Architecture
-- ✅ 🧪 Testing commands
-- ✅ 🐛 Troubleshooting
-- ✅ 🚀 Deployment guide
-- ✅ 📝 Contributing
-- ✅ 📄 License
-- ✅ 🙏 Acknowledgments
-- ✅ 📞 Contact
+Test that all 11 studio workspaces open, generate valid Markdown, and insert cleanly into document buffers:
 
----
-
-## 🚀 Test Scenarios
-
-### Scenario 1: Full Stack App
-```
-URL: https://github.com/user/my-app
-Description: A full-stack web application
-Tech: React, Node.js, MongoDB, Docker, GitHub Actions
-Expected: Complete README with all sections
-```
-
-### Scenario 2: Backend Only
-```
-URL: (empty)
-Description: RESTful API for data management
-Tech: FastAPI, PostgreSQL, AWS, Pytest
-Expected: Backend-focused README
-```
-
-### Scenario 3: Frontend Only
-```
-URL: (empty)
-Description: Interactive dashboard
-Tech: Vue, TypeScript, Tailwind CSS
-Expected: Frontend-focused README
-```
-
-### Scenario 4: No Tech Stack
-```
-URL: https://github.com/user/my-project
-Description: (empty)
-Tech: (none)
-Expected: Generic but professional README
-```
+| Studio | Tab ID | Test Action | Expected Result |
+| :--- | :--- | :--- | :--- |
+| **Shields.io Badges** | `badges.studio` | Select Devicon preset, choose `for-the-badge` style, click "Insert" | Badges Markdown injected at cursor line. |
+| **Mermaid Architecture** | `diagrams.studio` | Choose Flowchart template, edit node labels | Live diagram updates in real-time without syntax flicker. |
+| **Visual Tables** | `tables.studio` | Add 3 rows, toggle column alignment, click "Insert" | Clean GFM Markdown table generated. |
+| **Snippets & Callouts** | `snippets.studio` | Select `[!TIP]` callout with custom text | Renders standard GitHub alert block quote. |
+| **Hero Images & Frames** | `images.studio` | Choose macOS dark window frame, adjust padding | Window frame mockup renders with crisp corners. |
+| **Directory Trees** | `tree.studio` | Scan workspace folder, select Unicode Box style | Emits structured directory tree in fenced block. |
+| **REST API Studio** | `api.studio` | Switch between "Live Preview", "Split View", and "Markdown & Code" | Displays interactive REST Blueprint spec card and GFM table preview. |
+| **Icons & Emojis** | `icons.studio` | Switch between Vector Icons & Emojis tabs; pick custom HEX color; toggle `Tint preview` | Icon cards update color in real-time; colored SVG downloads cleanly. |
+| **Contributors Grid** | `contributors.studio` | Add username and roles | Emits All-Contributors table with avatar image. |
+| **Changelog Studio** | `changelog.studio` | Add `Added` bullet and bump Minor version | Generates SemVer changelog header and notes. |
+| **README Auditor** | `audit.studio` | Run audit on current document | Reports scorecard grade (A+ to F) and section checklist. |
 
 ---
 
-## ✨ Key Improvements You'll See
+## 4. Monaco Editor & HUD Selection Toolbar Protocol
 
-1. **Professional Polish** - Everything looks more refined
-2. **Better Organization** - Clear sections and hierarchy
-3. **More Content** - Comprehensive documentation
-4. **Responsive Design** - Works on any device
-5. **Modern Interactions** - Smooth animations and transitions
-6. **Professional Color** - Indigo-based professional palette
-7. **Generous Spacing** - Easier to read and navigate
-8. **Clear Feedback** - Hover states and focus indicators
-9. **Better Typography** - Proper sizing and weights
-10. **Complete Coverage** - Everything a good README needs
+### Floating Selection HUD Toolbar:
+1. Highlight any sentence or heading in the Monaco editor.
+2. Verify the HUD toolbar appears smoothly above the selection.
+3. Test toolbar dropdowns:
+   - **Headings:** Choose H2; text is prefixed with `## `.
+   - **Code Fences:** Choose Python; wraps selection in ` ```python ` block.
+   - **Hyperlinks:** Enter URL; transforms into `[selection](url)`.
+   - **Alert Callouts:** Choose `[!NOTE]`; wraps in blockquote alert.
+4. Verify clicking toolbar buttons **does not lose editor focus** or clear selection.
+5. Verify Undo (`Ctrl+Z`) restores previous text state accurately.
 
----
-
-## 📱 Responsive Breakpoints
-
-Test at these screen widths:
-
-| Device | Width | Expected |
-|--------|-------|----------|
-| Desktop | 1920px | Full layout |
-| Laptop | 1200px | Full layout |
-| Tablet | 768px | 2-column for preview |
-| Mobile | 480px | Single column, stacked |
-| Small | 320px | Everything stacks |
+### Inline Autocomplete:
+- Type `:` inside Monaco editor: Autocomplete list opens presenting Unicode emojis and Material vector icons. Selecting an item inserts its markdown/shortcode cleanly.
 
 ---
 
-## 🎯 Success Criteria
+## 5. Bottom Panel Drawer & Diagnostics Verification
 
-### Design Quality
-- [ ] Looks professional
-- [ ] Spacing is consistent
-- [ ] Colors are harmonious
-- [ ] Typography is clear
-- [ ] No misalignment
+Press `Ctrl+` ` ` or click the Terminal icon in the Status Bar:
 
-### Functionality
-- [ ] All buttons work
-- [ ] Form submits correctly
-- [ ] Preview generates
-- [ ] Copy works
-- [ ] Download works
-
-### Content
-- [ ] README is comprehensive
-- [ ] Sections are organized
-- [ ] Content is relevant
-- [ ] Instructions are clear
-- [ ] No overwhelming text
-
-### Responsive
-- [ ] Works on desktop
-- [ ] Works on tablet
-- [ ] Works on mobile
-- [ ] No horizontal scroll
-- [ ] Touch-friendly
+- [ ] **Terminals Tab:**
+  - Launch PowerShell session: Executes native commands (e.g., `dir`, `git status`).
+  - Open second tab with CMD: Sessions remain isolated.
+- [ ] **Problems Tab:**
+  - Insert a broken Markdown link (e.g., `[test]()`) or unclosed code fence.
+  - Problem drawer lists the issue with severity icon; clicking jumps directly to the offending line in Monaco.
+- [ ] **Output Tab:**
+  - File save actions and IPC daemon transactions log timestamped telemetry entries.
 
 ---
 
-## 🐛 Troubleshooting
+## 6. Release Packaging & Asset Deduplication Verification
 
-**Problem:** Design looks old/different
-- Solution: Hard refresh browser (Ctrl+Shift+R)
-- Check: CSS file was saved properly
+To ensure that releases published to GitHub do not produce duplicate binary files:
 
-**Problem:** Tech stack only shows old options
-- Solution: Restart frontend server
-- Check: Input.jsx has 48 options
-
-**Problem:** README missing sections
-- Solution: Restart backend server
-- Check: prompts.py has all functions
-
-**Problem:** Layout breaks on mobile
-- Solution: Check browser dev tools responsive mode
-- Check: CSS media queries are applied
-
-**Problem:** Buttons don't work
-- Solution: Check browser console for errors
-- Check: Backend is running on port 8000
-
----
-
-## ✅ Final Verification
-
-Run this checklist before considering complete:
-
-```
-VISUAL
-[✓] Design looks modern and professional
-[✓] Spacing is generous throughout
-[✓] Colors are harmonious
-[✓] Buttons look clickable
-[✓] Cards have depth
-
-FUNCTIONAL
-[✓] Can generate README
-[✓] Can copy to clipboard
-[✓] Can download file
-[✓] Responsive on mobile
-[✓] No console errors
-
-CONTENT
-[✓] New sections present
-[✓] Tech stack expanded
-[✓] Features have emojis
-[✓] Instructions are clear
-[✓] Professional tone
-
-PERFORMANCE
-[✓] Loads quickly
-[✓] Generates quickly
-[✓] Smooth animations
-[✓] No lag
-[✓] Responsive input
+### Build Packaging:
+```bash
+cd frontend
+npm run electron:dist
 ```
 
----
-
-## 🎉 You're Done!
-
-When everything above is working, you have successfully:
-
-1. ✅ Redesigned the entire UI
-2. ✅ Added 26 new tech stack options
-3. ✅ Implemented new README sections
-4. ✅ Created professional design system
-5. ✅ Made it fully responsive
-6. ✅ Enhanced user experience
-
-**The application is now production-ready!** 🚀
+### Asset Audit Checklist:
+- Inspect `frontend/release/`:
+  - `VisualMark-Studio-Setup.exe` (exists once, ~173 MB)
+  - `VisualMark-Studio-Setup.exe.blockmap` (exists once, ~185 KB)
+  - `VisualMark-Studio-Portable.exe` (exists once, ~172 MB)
+  - `latest.yml` (exists once)
+- **Zero Duplicate Artifacts:** Verify that no dot-named duplicates (`VisualMark.Studio-*.exe`) exist in `release/`.
+- Run the portable executable: Application launches smoothly without installation prompts.

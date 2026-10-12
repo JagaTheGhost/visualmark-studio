@@ -10,6 +10,7 @@ Only the latest active minor release receives official security patches and upda
 
 | Version | Supported          |
 | ------- | ------------------ |
+| 1.1.x   | :white_check_mark: |
 | 1.0.x   | :white_check_mark: |
 | < 1.0.0 | :x:                |
 

@@ -17,6 +17,7 @@
 @import './styles/widgets.css';
 @import './styles/tooltips.css';
 @import './styles/toast.css';
+@import './styles/floatingToolbar.css';
 
 /* Native IDE Workspace Panels */
 @import './styles/explorer.css';

@@ -1,4 +1,4 @@
-# 🎨 Visual Design Guide - UI System
+# 🎨 VisualMark Studio — Design System & UI Architecture
 
 ## Color System Reference
 
@@ -338,7 +338,7 @@ Size:       3.5rem (56px)
 Weight:     900
 Color:      var(--text-primary)
 Spacing:    Letter-spacing: -0.025em
-Example:    "Auto README Generator"
+Example:    "VisualMark Studio"
 ```
 
 ### Section Title (H2)

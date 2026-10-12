@@ -44,6 +44,7 @@ const ApiStudioTab = lazy(() => import('./components/studio/ApiStudioTab'))
 const AuditStudioTab = lazy(() => import('./components/studio/AuditStudioTab'))
 const ContributorStudioTab = lazy(() => import('./components/studio/ContributorStudioTab'))
 const ChangelogStudioTab = lazy(() => import('./components/studio/ChangelogStudioTab'))
+const IconEmojiStudioTab = lazy(() => import('./components/studio/IconEmojiStudioTab'))
 const SettingsTab = lazy(() => import('./components/SettingsTab'))
 const ShortcutsTab = lazy(() => import('./components/ShortcutsTab'))
 const CommandPalette = lazy(() => import('./components/CommandPalette'))
@@ -269,6 +270,24 @@ Distributed under the MIT License.
   const [updateError, setUpdateError] = useState(null)
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false)
   const [appVersion, setAppVersion] = useState(APP_CURRENT_VERSION)
+  const [autoDownloadUpdates, setAutoDownloadUpdates] = useState(() => {
+    try {
+      const saved = localStorage.getItem('vm_auto_download_updates')
+      return saved !== null ? saved === 'true' : false
+    } catch {
+      return false
+    }
+  })
+  const autoDownloadUpdatesRef = useRef(autoDownloadUpdates)
+  autoDownloadUpdatesRef.current = autoDownloadUpdates
+  const [pendingUpdateInfo, setPendingUpdateInfo] = useState(null)
+  const [showInitialUpdateModal, setShowInitialUpdateModal] = useState(() => {
+    try {
+      return localStorage.getItem('vm_update_mode_configured') !== 'true'
+    } catch {
+      return false
+    }
+  })
 
   // Synchronize dynamic app version from Electron package.json if available
   useEffect(() => {
@@ -278,6 +297,13 @@ Distributed under the MIT License.
       }).catch(() => {})
     }
   }, [])
+
+  // Sync autoDownload setting with Electron main process
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.electronAPI?.setAutoDownload) {
+      window.electronAPI.setAutoDownload(autoDownloadUpdates)
+    }
+  }, [autoDownloadUpdates])
 
   // Integrated Bottom Panel & Diagnostics State (VS Code / Antigravity IDE)
   const {
@@ -428,7 +454,7 @@ Distributed under the MIT License.
   const handleClearRecentWorkspaces = useCallback(() => {
     setRecentWorkspaces([])
     localStorage.removeItem('visualmark_recent_workspaces')
-    showToast('Cleared recently opened workspaces list', 'info')
+    showToast('Cleared recently opened workspaces list', 'info', { minor: true })
   }, [showToast])
 
   // Hot Exit & Crash Resilience: cache unsaved draft edits across crashes or computer restarts
@@ -595,7 +621,7 @@ Distributed under the MIT License.
           }
           return combined
         })
-        showToast(`⚡ Auto-recovered ${draftKeys.length} unsaved draft(s) from previous session (Hot Exit)`, 'info')
+        showToast(`⚡ Auto-recovered ${draftKeys.length} unsaved draft(s) from previous session (Hot Exit)`, 'info', { minor: true })
       }
     } catch (err) {
       console.warn('Failed restoring hot exit drafts:', err)
@@ -647,13 +673,70 @@ Distributed under the MIT License.
     }
   }, [appVersion, showToast, handleOpenWhatsNewTab])
 
+  const handleToggleAutoDownloadUpdates = useCallback((enabled) => {
+    setAutoDownloadUpdates(enabled)
+    try {
+      localStorage.setItem('vm_auto_download_updates', enabled ? 'true' : 'false')
+    } catch {}
+    if (typeof window !== 'undefined' && window.electronAPI?.setAutoDownload) {
+      window.electronAPI.setAutoDownload(enabled)
+    }
+    showToast(
+      enabled
+        ? 'Automatic update downloads enabled (updates will download in background).'
+        : 'Automatic update downloads disabled (VisualMark Studio will prompt before downloading).',
+      'info',
+      { source: 'Update' }
+    )
+  }, [showToast])
+
+  const handleStartDownloadUpdate = useCallback(async (info) => {
+    setPendingUpdateInfo(null)
+    setUpdateProgress({ percent: 0, transferred: 0, total: 0, version: info?.version })
+    setUpdateError(null)
+    showToast(`Starting download of update v${info?.version || ''}...`, 'info', { source: 'Update', important: true })
+    if (typeof window !== 'undefined' && window.electronAPI?.downloadUpdate) {
+      try {
+        const res = await window.electronAPI.downloadUpdate()
+        if (res && res.success === false) {
+          setUpdateProgress(null)
+          showToast(`Failed to start download: ${res.error || 'Unknown error'}`, 'error', { source: 'Update', important: true })
+        }
+      } catch (err) {
+        setUpdateProgress(null)
+        showToast(`Download failed: ${err.message}`, 'error', { source: 'Update', important: true })
+      }
+    }
+  }, [showToast])
+
+  const handleRestartToUpdate = useCallback(() => {
+    if (window.electronAPI?.quitAndInstallUpdate) {
+      window.electronAPI.quitAndInstallUpdate()
+    } else {
+      showToast('Restart the application to apply update.', 'info')
+    }
+  }, [showToast])
+
   // Electron Auto-Updater IPC event listeners
   useEffect(() => {
     if (typeof window !== 'undefined' && window.electronAPI) {
       const cleanupAvailable = window.electronAPI.onUpdateAvailable?.((info) => {
-        setUpdateProgress({ percent: 0, transferred: 0, total: 0, version: info?.version })
         setUpdateError(null)
-        showToast(`Downloading update v${info?.version || ''} in background...`, 'info')
+        if (autoDownloadUpdatesRef.current) {
+          setUpdateProgress({ percent: 0, transferred: 0, total: 0, version: info?.version })
+          showToast(`Downloading update v${info?.version || ''} in background...`, 'info', { source: 'Update', important: true })
+        } else {
+          setPendingUpdateInfo(info)
+          showToast(`Update v${info?.version || ''} is available! Would you like to download it now?`, 'info', {
+            source: 'Update',
+            important: true,
+            duration: 15000,
+            action: {
+              label: 'Download Now',
+              onClick: () => handleStartDownloadUpdate(info)
+            }
+          })
+        }
       })
 
       const cleanupProgress = window.electronAPI.onUpdateProgress?.((progress) => {
@@ -663,15 +746,23 @@ Distributed under the MIT License.
       const cleanupDownloaded = window.electronAPI.onUpdateDownloaded?.((info) => {
         setUpdateProgress(null)
         setUpdateDownloaded(info)
+        setPendingUpdateInfo(null)
         setUpdateError(null)
-        showToast(`Update v${info?.version || ''} downloaded! Click status bar to restart & install.`, 'success')
+        showToast(`Update v${info?.version || ''} downloaded! Click status bar to restart & install.`, 'success', {
+          source: 'Update',
+          important: true,
+          action: {
+            label: 'Restart Now',
+            onClick: () => handleRestartToUpdate()
+          }
+        })
       })
 
       const cleanupError = window.electronAPI.onUpdateError?.((err) => {
         setUpdateProgress(null)
         const errMsg = err?.message || 'Update check/download failed'
         setUpdateError(errMsg)
-        showToast(`Update failed: ${errMsg}`, 'warning')
+        showToast(`Update failed: ${errMsg}`, 'warning', { source: 'Update', important: true })
       })
 
       return () => {
@@ -681,7 +772,7 @@ Distributed under the MIT License.
         if (typeof cleanupError === 'function') cleanupError()
       }
     }
-  }, [showToast])
+  }, [showToast, handleStartDownloadUpdate, handleRestartToUpdate])
 
   const handleCheckForUpdates = useCallback(async () => {
     if (isCheckingUpdate) return
@@ -703,14 +794,6 @@ Distributed under the MIT License.
       setIsCheckingUpdate(false)
     }
   }, [appVersion, isCheckingUpdate, showToast])
-
-  const handleRestartToUpdate = useCallback(() => {
-    if (window.electronAPI?.quitAndInstallUpdate) {
-      window.electronAPI.quitAndInstallUpdate()
-    } else {
-      showToast('Restart the application to apply update.', 'info')
-    }
-  }, [showToast])
 
   // Documentation Generation
   const handleGenerate = async (url = repoUrl, desc = description, techStack = selectedTechs, options = {}) => {
@@ -1235,13 +1318,13 @@ Distributed under the MIT License.
       const cleanWs = window.electronAPI.onOpenExternalWorkspace?.(async (ws) => {
         if (ws?.folderPath) {
           await openWorkspaceDirectoryRef.current(ws.folderPath, ws.folderName)
-          showToastRef.current(`Opened workspace: ${ws.folderName || ws.folderPath}`, 'info')
+          showToastRef.current(`Opened workspace: ${ws.folderName || ws.folderPath}`, 'info', { minor: true })
         }
       })
       const cleanFile = window.electronAPI.onOpenExternalFile?.(async (file) => {
         if (file?.filePath) {
           handleSelectFileRef.current(file.fileName, null, file.filePath)
-          showToastRef.current(`Opened file: ${file.fileName}`, 'info')
+          showToastRef.current(`Opened file: ${file.fileName}`, 'info', { minor: true })
         }
       })
       return () => {
@@ -1543,7 +1626,7 @@ Distributed under the MIT License.
           : res.fileName
 
         handleSelectFile(relPath, res.content, res.filePath)
-        showToast(`Opened ${res.fileName} from disk`, 'info')
+        showToast(`Opened ${res.fileName} from disk`, 'info', { minor: true })
       }
     } else {
       // Web fallback: trigger file input
@@ -1556,7 +1639,7 @@ Distributed under the MIT License.
           const reader = new FileReader()
           reader.onload = (re) => {
             handleSelectFile(file.name, re.target.result)
-            showToast(`Loaded ${file.name}`, 'info')
+            showToast(`Loaded ${file.name}`, 'info', { minor: true })
           }
           reader.readAsText(file)
         }
@@ -1597,7 +1680,7 @@ Distributed under the MIT License.
           } else {
             handleSelectFile(relPath, readRes.content, file.path)
           }
-          showToast(`✓ Opened ${file.name}`, 'info')
+          showToast(`✓ Opened ${file.name}`, 'info', { minor: true })
           return
         }
       } catch (err) {
@@ -1609,7 +1692,7 @@ Distributed under the MIT License.
     const reader = new FileReader()
     reader.onload = (e) => {
       handleSelectFile(file.name, e.target.result)
-      showToast(`✓ Opened ${file.name}`, 'info')
+      showToast(`✓ Opened ${file.name}`, 'info', { minor: true })
     }
     reader.readAsText(file)
   }, [workspaceDirectory, handleSelectFile, showToast])
@@ -1672,7 +1755,7 @@ Distributed under the MIT License.
     if (window.confirm(`Are you sure you want to reset the active markdown buffer? Any unsaved edits to ${activeFile} will be cleared.`)) {
       localStorage.removeItem('readme_draft_markdown')
       setMarkdown('')
-      showToast('Reset active markdown buffer.', 'info')
+      showToast('Reset active markdown buffer.', 'info', { minor: true })
     }
   }
 
@@ -2242,6 +2325,15 @@ Distributed under the MIT License.
       action: () => handleOpenStudioTab('changelog.studio')
     },
     {
+      id: 'studio.icons',
+      title: 'Open Icons & Emoji Studio Tab',
+      description: 'Curated developer emojis, GitHub shortcodes, vector symbols, and heading decorators',
+      icon: 'sentiment_satisfied',
+      category: 'Studio',
+      shortcut: getBindingKey('studio.icons', 'Ctrl + Shift + E'),
+      action: () => handleOpenStudioTab('icons.studio')
+    },
+    {
       id: 'edit.find',
       title: 'Edit: Find in Document',
       description: 'Search and replace text in current document',
@@ -2576,6 +2668,8 @@ Distributed under the MIT License.
                 setOrientation={setOrientation}
                 openPresetTabs={openPresetTabs}
                 onClosePresetTab={handleClosePresetTab}
+                updateProgress={updateProgress}
+                updateDownloaded={updateDownloaded}
               />
 
               {/* Central Workspace: Dedicated Studio Tabs or Markdown Preview */}
@@ -2684,6 +2778,13 @@ Distributed under the MIT License.
                       onBackToReadme={handleBackToReadme}
                     />
                   </Suspense>
+                ) : activeFile === 'icons.studio' ? (
+                  <Suspense fallback={<StudioLoadingFallback title="Icons & Emoji Studio" />}>
+                    <IconEmojiStudioTab
+                      onInsertEmoji={(emojiMd) => handleRequestInsertSnippet(emojiMd, 'Icon & Emoji')}
+                      onBackToReadme={handleBackToReadme}
+                    />
+                  </Suspense>
                 ) : activeFile === 'settings' ? (
                   <Suspense fallback={<StudioLoadingFallback title="Settings" />}>
                     <SettingsTab
@@ -2707,8 +2808,20 @@ Distributed under the MIT License.
                       setGithubToken={setGithubToken}
                       editorEngine={editorEngine}
                       setEditorEngine={setEditorEngine}
+                      autoDownloadUpdates={autoDownloadUpdates}
+                      setAutoDownloadUpdates={handleToggleAutoDownloadUpdates}
+                      onCheckForUpdates={handleCheckForUpdates}
+                      isCheckingUpdate={isCheckingUpdate}
+                      currentVersion={appVersion}
+                      onOpenWhatsNew={handleOpenWhatsNewTab}
                       onClose={() => handleCloseStudioTab('settings')}
                       onOpenShortcuts={handleOpenShortcutsTab}
+                      updateProgress={updateProgress}
+                      updateDownloaded={updateDownloaded}
+                      updateError={updateError}
+                      pendingUpdateInfo={pendingUpdateInfo}
+                      onStartDownloadUpdate={handleStartDownloadUpdate}
+                      onRestartToUpdate={handleRestartToUpdate}
                     />
                   </Suspense>
                 ) : activeFile === 'shortcuts' ? (
@@ -2923,6 +3036,140 @@ Distributed under the MIT License.
                 onCreateNewDoc={() => handleInsertIntoNewDoc(insertModalState.snippet, insertModalState.snippetType)}
               />
             </Suspense>
+          )}
+
+          {/* Update Available Confirmation Dialog (When auto-download is disabled) */}
+          {pendingUpdateInfo && (
+            <div className="ide-update-prompt-overlay" onClick={() => setPendingUpdateInfo(null)}>
+              <div className="ide-update-prompt-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="ide-update-prompt-header">
+                  <div className="ide-update-prompt-title">
+                    <span className="material-symbols-outlined" style={{ color: '#38bdf8', fontSize: '20px' }}>system_update</span>
+                    <h3>Update Available (v{pendingUpdateInfo.version})</h3>
+                  </div>
+                  <button
+                    type="button"
+                    className="ide-update-prompt-close"
+                    onClick={() => setPendingUpdateInfo(null)}
+                    title="Dismiss"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="ide-update-prompt-body">
+                  <p>
+                    A new version of VisualMark Studio (<strong>v{pendingUpdateInfo.version}</strong>) is ready to download.
+                  </p>
+                  <p className="ide-update-prompt-sub">
+                    Would you like to start downloading this update now? You can continue working in the editor while it downloads in the background.
+                  </p>
+                </div>
+                <div className="ide-update-prompt-actions">
+                  <button
+                    type="button"
+                    className="ide-update-prompt-btn secondary"
+                    onClick={() => {
+                      setPendingUpdateInfo(null)
+                      showToast('Update postponed.', 'info', { source: 'Update', minor: true })
+                    }}
+                  >
+                    Later
+                  </button>
+                  <button
+                    type="button"
+                    className="ide-update-prompt-btn primary"
+                    onClick={() => handleStartDownloadUpdate(pendingUpdateInfo)}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>download</span>
+                    Download Update Now
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* First Startup: Ask user for Auto vs Manual Update preference */}
+          {showInitialUpdateModal && (
+            <div className="ide-update-prompt-overlay">
+              <div className="ide-update-prompt-modal startup-mode-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="ide-update-prompt-header">
+                  <div className="ide-update-prompt-title">
+                    <span className="material-symbols-outlined" style={{ color: '#38bdf8', fontSize: '20px' }}>
+                      system_update
+                    </span>
+                    <h3>Software Update Preference</h3>
+                  </div>
+                </div>
+
+                <div className="ide-update-prompt-body">
+                  <p style={{ fontSize: '13px', color: '#e4e4e7', marginBottom: '6px' }}>
+                    Welcome to <strong>VisualMark Studio</strong>! How would you like the application to handle software updates?
+                  </p>
+
+                  <div className="startup-update-choices">
+                    <div
+                      className={`startup-update-card ${autoDownloadUpdates ? 'is-selected' : ''}`}
+                      onClick={() => setAutoDownloadUpdates(true)}
+                    >
+                      <div className="startup-update-card-radio">
+                        <span className="material-symbols-outlined" style={{ color: autoDownloadUpdates ? '#38bdf8' : '#71717a' }}>
+                          {autoDownloadUpdates ? 'radio_button_checked' : 'radio_button_unchecked'}
+                        </span>
+                      </div>
+                      <div className="startup-update-card-content">
+                        <div className="startup-update-card-title">
+                          <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#38bdf8' }}>bolt</span>
+                          <span>Automatic Updates (Recommended)</span>
+                        </div>
+                        <div className="startup-update-card-desc">
+                          VisualMark Studio checks and downloads new releases silently in the background, then notifies you when ready to restart.
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`startup-update-card ${!autoDownloadUpdates ? 'is-selected' : ''}`}
+                      onClick={() => setAutoDownloadUpdates(false)}
+                    >
+                      <div className="startup-update-card-radio">
+                        <span className="material-symbols-outlined" style={{ color: !autoDownloadUpdates ? '#38bdf8' : '#71717a' }}>
+                          {!autoDownloadUpdates ? 'radio_button_checked' : 'radio_button_unchecked'}
+                        </span>
+                      </div>
+                      <div className="startup-update-card-content">
+                        <div className="startup-update-card-title">
+                          <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#a1a1aa' }}>touch_app</span>
+                          <span>Manual Updates</span>
+                        </div>
+                        <div className="startup-update-card-desc">
+                          VisualMark Studio notifies you when an update is available and asks for your confirmation before downloading.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="ide-update-prompt-sub" style={{ marginTop: '8px' }}>
+                    💡 You can change this setting anytime under <strong>Settings &gt; Application Updates</strong>.
+                  </p>
+                </div>
+
+                <div className="ide-update-prompt-actions">
+                  <button
+                    type="button"
+                    className="ide-update-prompt-btn primary"
+                    onClick={() => {
+                      handleToggleAutoDownloadUpdates(autoDownloadUpdates)
+                      try {
+                        localStorage.setItem('vm_update_mode_configured', 'true')
+                      } catch {}
+                      setShowInitialUpdateModal(false)
+                    }}
+                  >
+                    <span>Confirm Preference</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>arrow_forward</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
   )

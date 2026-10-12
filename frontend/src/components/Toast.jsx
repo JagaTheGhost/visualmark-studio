@@ -216,8 +216,9 @@ export function NotificationHistoryPanel() {
             onChange={(e) => setToastFilterLevel(e.target.value)}
             title="Notification Popup Filter Level"
           >
-            <option value="important">Important Only (Default)</option>
-            <option value="all">All Popups (Verbose)</option>
+            <option value="important">Strict: Important Only (Recommended)</option>
+            <option value="balanced">Balanced: Standard Notifications</option>
+            <option value="all">Verbose: All Popups</option>
             <option value="errors">Errors Only</option>
             <option value="silent">Do Not Disturb (Silent)</option>
           </select>

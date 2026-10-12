@@ -686,6 +686,7 @@
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75) !important;
   overflow: hidden !important;
   padding: 0 !important;
+  font-family: 'Arimo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 .whats-new-header {

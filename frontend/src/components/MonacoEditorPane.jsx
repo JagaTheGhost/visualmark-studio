@@ -1,5 +1,8 @@
-import React, { useRef, useEffect, useCallback, useMemo } from 'react'
+import React, { useRef, useEffect, useCallback, useMemo, useState } from 'react'
 import Editor, { useMonaco } from '@monaco-editor/react'
+import FloatingSelectionToolbar from './FloatingSelectionToolbar'
+import { loadFloatingToolbarConfig } from '../utils/floatingToolbarConfig'
+import { EMOJI_ITEMS, MATERIAL_ICONS } from '../data/iconsAndEmojisData'
 
 /**
  * Configure Custom Monaco Themes matching README Studio Design System
@@ -211,6 +214,55 @@ function registerMarkdownCompletions(monaco) {
       return { suggestions }
     }
   })
+
+  // Register Emoji & Shortcode Completion Provider (triggers on ':')
+  monaco.languages.registerCompletionItemProvider('markdown', {
+    triggerCharacters: [':'],
+    provideCompletionItems: (model, position) => {
+      const lineContent = model.getLineContent(position.lineNumber)
+      const textUntilPosition = lineContent.substring(0, position.column - 1)
+
+      const colonIndex = textUntilPosition.lastIndexOf(':')
+      if (colonIndex === -1) {
+        return { suggestions: [] }
+      }
+
+      const query = textUntilPosition.substring(colonIndex + 1).toLowerCase()
+      if (/\s/.test(query)) {
+        return { suggestions: [] }
+      }
+
+      const range = {
+        startLineNumber: position.lineNumber,
+        endLineNumber: position.lineNumber,
+        startColumn: colonIndex + 1,
+        endColumn: position.column
+      }
+
+      const allItems = [...EMOJI_ITEMS, ...MATERIAL_ICONS]
+      const matched = allItems.filter((item) => {
+        if (!query) return true
+        const cleanCode = (item.shortcode || item.icon || '').replace(/:/g, '').toLowerCase()
+        return (
+          cleanCode.includes(query) ||
+          item.name.toLowerCase().includes(query) ||
+          (item.keywords && item.keywords.toLowerCase().includes(query))
+        )
+      })
+
+      const suggestions = matched.slice(0, 40).map((item) => ({
+        label: `${item.char}  ${item.shortcode}`,
+        filterText: `:${item.shortcode.replace(/:/g, '')}`,
+        kind: monaco.languages.CompletionItemKind.Value,
+        detail: item.name,
+        documentation: `${item.char} ${item.name} (${item.shortcode})\nCategory: ${item.category}`,
+        insertText: item.char,
+        range
+      }))
+
+      return { suggestions }
+    }
+  })
 }
 
 let configured = false
@@ -231,6 +283,228 @@ export default function MonacoEditorPane({
 }) {
   const localEditorRef = useRef(null)
   const isSyncingScrollRef = useRef(false)
+
+  // Floating Selection Toolbar Config & State
+  const [toolbarConfig, setToolbarConfig] = useState(loadFloatingToolbarConfig)
+  const toolbarConfigRef = useRef(toolbarConfig)
+  toolbarConfigRef.current = toolbarConfig
+
+  const [selectionToolbarState, setSelectionToolbarState] = useState({
+    visible: false,
+    top: 0,
+    left: 0,
+    flipped: false,
+    selectedText: '',
+    range: null
+  })
+
+  // Listen for config changes from Settings tab
+  useEffect(() => {
+    const handleConfigChange = (e) => {
+      const cfg = e.detail || loadFloatingToolbarConfig()
+      setToolbarConfig(cfg)
+      if (!cfg.enabled) {
+        setSelectionToolbarState(prev => prev.visible ? { ...prev, visible: false } : prev)
+      }
+    }
+    window.addEventListener('floating-toolbar-config-changed', handleConfigChange)
+    return () => window.removeEventListener('floating-toolbar-config-changed', handleConfigChange)
+  }, [])
+
+  // Calculate coordinates & visibility of floating toolbar based on Monaco selection
+  const updateSelectionToolbar = useCallback(() => {
+    const editor = localEditorRef.current
+    if (!editor) return
+
+    const cfg = toolbarConfigRef.current
+    if (!cfg || !cfg.enabled) {
+      setSelectionToolbarState(prev => prev.visible ? { ...prev, visible: false } : prev)
+      return
+    }
+
+    const selection = editor.getSelection()
+    if (!selection || selection.isEmpty()) {
+      setSelectionToolbarState(prev => prev.visible ? { ...prev, visible: false } : prev)
+      return
+    }
+
+    const model = editor.getModel()
+    if (!model) return
+
+    const selectedText = model.getValueInRange(selection)
+    const minChars = cfg.minSelectionChars || 1
+    if (!selectedText || selectedText.trim().length < minChars) {
+      setSelectionToolbarState(prev => prev.visible ? { ...prev, visible: false } : prev)
+      return
+    }
+
+    const startPos = selection.getStartPosition()
+    const startCoord = editor.getScrolledVisiblePosition(startPos)
+    if (!startCoord) {
+      setSelectionToolbarState(prev => prev.visible ? { ...prev, visible: false } : prev)
+      return
+    }
+
+    const endPos = selection.getEndPosition()
+    const endCoord = editor.getScrolledVisiblePosition(endPos) || startCoord
+    const layout = editor.getLayoutInfo()
+
+    // Position above selection start line; flip below if near the top
+    const toolbarHeight = 36
+    let flipped = false
+    let top = startCoord.top - toolbarHeight - 8
+
+    if (top < 8) {
+      top = endCoord.top + endCoord.height + 8
+      flipped = true
+    }
+
+    // Horizontal clamping: account for minimap and padding
+    const availableWidth = layout ? layout.width : 600
+    const minimapWidth = (layout && layout.minimap) ? layout.minimap.minimapWidth : 0
+    const maxRight = availableWidth - minimapWidth - 20
+    let left = Math.max(16, Math.min(startCoord.left, maxRight - 320))
+
+    setSelectionToolbarState({
+      visible: true,
+      top: Math.round(top),
+      left: Math.round(left),
+      flipped,
+      selectedText,
+      range: selection
+    })
+  }, [])
+
+  // Formatting applicator with full undo/redo stack retention via editor.executeEdits
+  const handleApplyFormat = useCallback((type, extra = '') => {
+    const editor = localEditorRef.current
+    if (!editor) return
+
+    const selection = editor.getSelection()
+    if (!selection || selection.isEmpty()) return
+
+    const model = editor.getModel()
+    if (!model) return
+
+    const text = model.getValueInRange(selection)
+    let replacement = text
+
+    switch (type) {
+      case 'heading': {
+        const level = typeof extra === 'number' ? extra : 1
+        const prefix = '#'.repeat(level) + ' '
+        const clean = text.replace(/^#+\s*/gm, '')
+        replacement = clean.split('\n').map(line => line.trim() ? `${prefix}${line}` : line).join('\n')
+        break
+      }
+      case 'bold': {
+        if (text.startsWith('**') && text.endsWith('**') && text.length >= 4) {
+          replacement = text.slice(2, -2)
+        } else {
+          replacement = `**${text}**`
+        }
+        break
+      }
+      case 'italic': {
+        if (text.startsWith('*') && text.endsWith('*') && text.length >= 2) {
+          replacement = text.slice(1, -1)
+        } else {
+          replacement = `*${text}*`
+        }
+        break
+      }
+      case 'strikethrough': {
+        if (text.startsWith('~~') && text.endsWith('~~') && text.length >= 4) {
+          replacement = text.slice(2, -2)
+        } else {
+          replacement = `~~${text}~~`
+        }
+        break
+      }
+      case 'code': {
+        if (text.startsWith('`') && text.endsWith('`') && text.length >= 2) {
+          replacement = text.slice(1, -1)
+        } else {
+          replacement = `\`${text}\``
+        }
+        break
+      }
+      case 'quote': {
+        replacement = text.split('\n').map(line => `> ${line}`).join('\n')
+        break
+      }
+      case 'codeblock': {
+        const lang = extra || 'bash'
+        replacement = `\`\`\`${lang}\n${text}\n\`\`\``
+        break
+      }
+      case 'link': {
+        const url = extra || 'https://'
+        replacement = `[${text || 'link text'}](${url})`
+        break
+      }
+      case 'image': {
+        const url = extra || 'https://'
+        replacement = `![${text || 'image description'}](${url})`
+        break
+      }
+      case 'bulletList': {
+        replacement = text.split('\n').map(line => line.startsWith('- ') ? line : `- ${line}`).join('\n')
+        break
+      }
+      case 'numberedList': {
+        replacement = text.split('\n')
+          .map(line => line.replace(/^\d+\.\s*/, ''))
+          .map((line, i) => `${i + 1}. ${line}`)
+          .join('\n')
+        break
+      }
+      case 'taskList': {
+        replacement = text.split('\n').map(line => line.startsWith('- [ ] ') || line.startsWith('- [x] ') ? line : `- [ ] ${line}`).join('\n')
+        break
+      }
+      case 'divider': {
+        replacement = `${text}\n\n---\n`
+        break
+      }
+      case 'table': {
+        replacement = `| Column 1 | Column 2 | Column 3 |\n| :--- | :--- | :--- |\n| ${text || 'Item'} | Description | Status |\n| Secondary | Detail | Active |`
+        break
+      }
+      case 'callout': {
+        const tag = extra || 'NOTE'
+        replacement = `> [!${tag}]\n> ${text || 'Details and important context.'}`
+        break
+      }
+      case 'mermaid': {
+        replacement = `\`\`\`mermaid\nflowchart TD\n    A[${text || 'Component A'}] --> B[Component B]\n\`\`\``
+        break
+      }
+      case 'details': {
+        const summary = extra || 'Details'
+        replacement = `<details>\n<summary>${summary}</summary>\n\n${text || 'Detailed content here...'}\n</details>`
+        break
+      }
+      case 'badge': {
+        const label = encodeURIComponent(text || 'Status')
+        replacement = `![${text || 'Badge'}](https://img.shields.io/badge/${label}-Active-blue?style=for-the-badge)`
+        break
+      }
+      default:
+        break
+    }
+
+    editor.executeEdits('floating-toolbar', [
+      {
+        range: selection,
+        text: replacement,
+        forceMoveMarkers: true
+      }
+    ])
+    editor.pushUndoStop()
+    editor.focus()
+    setSelectionToolbarState(prev => ({ ...prev, visible: false }))
+  }, [])
 
   const activeTheme = useMemo(() => {
     if (themeMode === 'light') return 'studio-light'
@@ -265,6 +539,15 @@ export default function MonacoEditorPane({
           col: e.position.column
         })
       }
+    })
+
+    // Floating selection toolbar event triggers
+    editor.onDidChangeCursorSelection(() => {
+      updateSelectionToolbar()
+    })
+
+    editor.onDidChangeModelContent(() => {
+      setSelectionToolbarState(prev => prev.visible ? { ...prev, visible: false } : prev)
     })
 
     // Track active Monaco editor globally for studio commands
@@ -320,8 +603,9 @@ export default function MonacoEditorPane({
           firstVisibleLine
         })
       }
+      updateSelectionToolbar()
     })
-  }, [editorRef, activeTheme, onCursorChange, onScroll])
+  }, [editorRef, activeTheme, onCursorChange, onScroll, updateSelectionToolbar])
 
   // Update theme dynamically
   const monaco = useMonaco()
@@ -408,6 +692,19 @@ export default function MonacoEditorPane({
 
   return (
     <div className="monaco-editor-wrapper" style={{ width: '100%', height: '100%', position: 'relative' }}>
+      {selectionToolbarState.visible && toolbarConfig.enabled && (
+        <FloatingSelectionToolbar
+          position={{
+            top: selectionToolbarState.top,
+            left: selectionToolbarState.left,
+            flipped: selectionToolbarState.flipped
+          }}
+          selectedText={selectionToolbarState.selectedText}
+          config={toolbarConfig}
+          onFormat={handleApplyFormat}
+          onClose={() => setSelectionToolbarState(prev => ({ ...prev, visible: false }))}
+        />
+      )}
       <Editor
         height="100%"
         defaultLanguage="markdown"

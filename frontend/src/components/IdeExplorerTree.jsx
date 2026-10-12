@@ -1248,7 +1248,7 @@ export default function IdeExplorerTree({
                 onClick={() => {
                   navigator.clipboard.writeText(contextMenu.node.relPath || contextMenu.node.name)
                   setContextMenu(null)
-                  showToast('Copied relative path', 'info')
+                  showToast('Copied relative path', 'info', { minor: true })
                 }}
               >
                 <div className="ide-context-item-left">
@@ -1264,7 +1264,7 @@ export default function IdeExplorerTree({
                   onClick={() => {
                     navigator.clipboard.writeText(contextMenu.node.path)
                     setContextMenu(null)
-                    showToast('Copied full path', 'info')
+                    showToast('Copied full path', 'info', { minor: true })
                   }}
                 >
                   <div className="ide-context-item-left">

@@ -1353,3 +1353,58 @@
   transition: background-color 1s ease;
   border-radius: var(--radius-xs);
 }
+
+/* ==========================================================================
+   Tab Bar Update Progress & Status Pills (IDE Native Theme)
+   ========================================================================== */
+.tab-update-progress-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background-color: var(--surface-mid, #27272a);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  color: var(--text-secondary, #94a3b8);
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+
+.tab-update-progress-pill .tab-progress-spinner {
+  font-size: 11px;
+  animation: spin 1.2s linear infinite;
+}
+
+.tab-update-ready-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-mono, monospace);
+  font-size: 9.5px;
+  font-weight: 500;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background-color: var(--surface-mid, #27272a);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  color: var(--text-secondary, #94a3b8);
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+
+.tab-progress-bottom-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background-color: #007acc;
+  transition: width 0.3s ease;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.tab-downloading-shortcut {
+  cursor: pointer;
+}

@@ -235,13 +235,22 @@ export default function SidebarDrawer({
       color: '#818cf8',
       description: 'Curate Keep-a-Changelog standard release notes with SemVer bumping, categorized bullet points, and release links.',
       features: ['Keep-a-Changelog Standard', 'SemVer Version Bumping', 'Categorized Release Buckets']
+    },
+    {
+      id: 'icons.studio',
+      title: 'Icons & Emoji Studio',
+      category: 'Visual Design',
+      icon: 'sentiment_satisfied',
+      color: '#38bdf8',
+      description: 'Curated developer emojis, GitHub shortcodes, vector symbols, and 1-click Markdown heading decorators.',
+      features: ['100+ Developer Emojis', 'Heading Decorator Tool', 'Offline Vector Symbols']
     }
   ], [])
 
   const studioCategories = useMemo(() => [
     { id: 'All', label: 'All', count: studioToolsList.length },
     { id: 'Open', label: 'In Tabs', count: studioToolsList.filter((t) => openStudioTabs.includes(t.id)).length },
-    { id: 'Visual', label: 'Visual Design', count: studioToolsList.filter((t) => ['badges.studio', 'tables.studio', 'images.studio'].includes(t.id)).length },
+    { id: 'Visual', label: 'Visual Design', count: studioToolsList.filter((t) => ['badges.studio', 'tables.studio', 'images.studio', 'icons.studio'].includes(t.id)).length },
     { id: 'Architecture', label: 'Architecture', count: studioToolsList.filter((t) => ['diagrams.studio', 'tree.studio', 'snippets.studio'].includes(t.id)).length },
     { id: 'API & Specs', label: 'API & Quality', count: studioToolsList.filter((t) => ['api.studio', 'audit.studio', 'contributors.studio', 'changelog.studio'].includes(t.id)).length }
   ], [studioToolsList, openStudioTabs])
@@ -259,7 +268,7 @@ export default function SidebarDrawer({
       }
 
       if (studioCategory === 'Open') return openStudioTabs.includes(tool.id)
-      if (studioCategory === 'Visual') return ['badges.studio', 'tables.studio', 'images.studio'].includes(tool.id)
+      if (studioCategory === 'Visual') return ['badges.studio', 'tables.studio', 'images.studio', 'icons.studio'].includes(tool.id)
       if (studioCategory === 'Architecture') return ['diagrams.studio', 'tree.studio', 'snippets.studio'].includes(tool.id)
       if (studioCategory === 'API & Specs') return ['api.studio', 'audit.studio', 'contributors.studio', 'changelog.studio'].includes(tool.id)
 

@@ -3,7 +3,7 @@
 > **The Modern Code + Visual Desktop IDE for Technical Documentation, Markdown Architecture, and Publishing Suites.**
 <br>
 <p align="center">
-  <img src="frontend/src/assets/VisualMark_Studio_IDE.gif" width="100%" alt="VisualMark Studio Desktop IDE Showcase" style="border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.5);" />
+  <img src="frontend/src/assets/VisualMark Studio Banner.gif" width="100%" alt="VisualMark Studio Desktop IDE Showcase" style="border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.5);" />
 </p>
 
 ---
@@ -34,6 +34,7 @@
   - [4.8 Contributors & Team Grid Studio (`contributors.studio`)](#48-contributors--team-grid-studio-contributorsstudio)
   - [4.9 Changelog & SemVer Release Studio (`changelog.studio`)](#49-changelog--semver-release-studio-changelogstudio)
   - [4.10 README Health Auditor & Linter (`audit.studio`)](#410-readme-health-auditor--linter-auditstudio)
+  - [4.11 Vector Icons & Developer Emojis Studio (`icons.studio`)](#411-vector-icons--developer-emojis-studio-iconsstudio)
 - [5. Automated Documentation Engine & Template Presets](#5-automated-documentation-engine--template-presets)
   - [5.1 Full Documentation Suite Generator](#51-full-documentation-suite-generator)
   - [5.2 Production Template Presets](#52-production-template-presets)
@@ -53,7 +54,7 @@
 
 Technical documentation is often fragmented across multiple disparate tools: developers draft Markdown in basic text editors, build architecture diagrams on third-party SaaS whiteboards, generate badges across browser tabs, construct Markdown tables in online converters, and manually stitch together release notes.
 
-**VisualMark Studio** transforms documentation authoring into a unified, **native desktop IDE experience**. It marries the code-editing power of the **Monaco editor** (the core of VS Code) with **10 dedicated interactive visual studios**, direct local disk I/O, and an automated documentation engine.
+**VisualMark Studio** transforms documentation authoring into a unified, **native desktop IDE experience**. It marries the code-editing power of the **Monaco editor** (the core of VS Code) with **11 dedicated interactive visual studios**, direct local disk I/O, and an automated documentation engine.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -207,6 +208,11 @@ VisualMark Studio bundles 10 dedicated visual environments accessible as tabs:
 - **Parameters & Request Bodies**: Visual tables for path parameters, query parameters, header requirements, and JSON request bodies.
 - **Response Payloads**: Define 200 OK, 400 Bad Request, 401 Unauthorized, and 500 error schema mocks.
 - **cURL Command Generator**: Automatically constructs ready-to-run `curl` commands for each endpoint.
+- **Live Documentation Preview Engine**:
+  - **Three View Modes**: Full-canvas `Live Preview`, synchronized `Split View` (form builder + live preview), and `Markdown & Code` raw syntax viewer.
+  - **REST Blueprint Render**: Interactive Swagger-style card with method badges, parameter matrices, request bodies, and tabbed status responses.
+  - **GitHub GFM Render**: Pixel-perfect rendering of the GitHub Markdown tables using `ReactMarkdown`.
+  - **1-Click Insert**: Directly injects generated API specs into the active document buffer.
 
 ### 4.8 Contributors & Team Grid Studio (`contributors.studio`)
 - **All-Contributors Standard**: Adheres to the official specification for open-source recognition.
@@ -224,6 +230,18 @@ VisualMark Studio bundles 10 dedicated visual environments accessible as tabs:
 - **Automated Scorecard & Letter Grade**: Scores your documentation from **A+ to F** based on completeness, structure, and readability.
 - **Missing Section Detection**: Flags missing essential sections (License, Installation, Contributing, Prerequisites, Architecture, Testing).
 - **1-Click Boilerplate Injection**: Injects missing section boilerplates directly into your document buffer with a single click.
+
+### 4.11 Vector Icons & Developer Emojis Studio (`icons.studio`)
+- **Dual-Mode Studio Workspace**: Dedicated clean partitioning between **Vector Material Icons (Material Symbols)** and **Developer Emojis**.
+- **Vector Icon Color Customizer**: 9 curated theme swatches (Slate, Indigo, Emerald, Sky, Amber, Rose, Purple, GitHub Dark, GitHub Light), HTML5 native color wheel, and direct HEX code input with auto-formatting.
+- **Live Catalog Tinting (`[x] Tint catalog preview`)**: Dynamically applies selected custom color in real time across the entire browsable vector icon catalog.
+- **Dual-Flavor SVG Export Engine**:
+  - **Colored SVG Asset Downloader**: Downloads `.svg` vector files with color baked into the vector shapes.
+  - **Iconify Image Markdown Generator**: Generates remote `<img src="https://api.iconify.design/material-symbols:${icon}.svg?color=${hex}" ... />` syntax compatible with GitHub Markdown.
+  - **Raw SVG Markup Copy**: One-click copying of optimized raw `<svg>` code.
+  - **One-Click Insert into Active Document**: Injects formatted icon markup or native emoji shortcodes directly at the Monaco editor cursor position.
+- **Monaco `:` Autocomplete Provider**: Typing `:` in the editor summons autocomplete suggestions for both Unicode emojis and Material vector icons.
+- **Instant Search & Category Filtering**: Real-time filtering across categories (Actions, Navigation, Editor, Files & Code, Status & Alerts, Hardware & Dev, Communication, Shapes, etc.).
 
 ---
 

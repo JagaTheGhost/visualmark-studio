@@ -55,31 +55,25 @@ jobs:
           npm run build
           npx electron-builder --win --publish never
 
-      - name: Ensure installer asset filename consistency
+      - name: Verify Release Artifacts (No Duplicates)
         working-directory: ./frontend/release
         shell: bash
         run: |
-          for f in *.exe *.blockmap; do
-            if [ -f "$f" ]; then
-              hyphen_name="${f//VisualMark.Studio/VisualMark-Studio}"
-              dot_name="${f//VisualMark-Studio/VisualMark.Studio}"
-              if [ "$f" != "$hyphen_name" ] && [ ! -f "$hyphen_name" ]; then
-                cp "$f" "$hyphen_name"
-              fi
-              if [ "$f" != "$dot_name" ] && [ ! -f "$dot_name" ]; then
-                cp "$f" "$dot_name"
-              fi
-            fi
-          done
-          ls -la
+          echo "Verifying generated release assets:"
+          ls -lh
+          # Ensure no duplicate dot-named artifacts exist
+          rm -f VisualMark.Studio*.exe VisualMark.Studio*.blockmap
+          echo "Cleaned release artifacts list:"
+          ls -lh
 
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            frontend/release/*.exe
-            frontend/release/*.blockmap
+            frontend/release/VisualMark-Studio-Setup.exe
+            frontend/release/VisualMark-Studio-Setup.exe.blockmap
+            frontend/release/VisualMark-Studio-Portable.exe
             frontend/release/latest.yml
           draft: false
           prerelease: false

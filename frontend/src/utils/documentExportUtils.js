@@ -6,7 +6,7 @@ export function copyDocumentToClipboard(content, filename, showToast) {
   if (!content) return
   navigator.clipboard.writeText(unfoldDataUris(content))
   if (showToast) {
-    showToast(`Copied ${filename || 'document'} to clipboard!`, 'success')
+    showToast(`Copied ${filename || 'document'} to clipboard!`, 'info', { minor: true })
   }
 }
 

@@ -1,5 +1,21 @@
 import React, { useState, useEffect } from 'react'
+import { APP_CURRENT_VERSION } from '../data/releaseNotes'
 import { useToast } from '../context/ToastContext'
+import {
+  FLOATING_TOOLBAR_ACTIONS,
+  loadFloatingToolbarConfig,
+  saveFloatingToolbarConfig,
+  DEFAULT_FLOATING_TOOLBAR_CONFIG
+} from '../utils/floatingToolbarConfig'
+
+function formatBytes(bytes) {
+  if (!bytes || isNaN(bytes) || bytes <= 0) return '0 MB'
+  const mb = bytes / (1024 * 1024)
+  if (mb >= 1024) {
+    return `${(mb / 1024).toFixed(2)} GB`
+  }
+  return `${mb.toFixed(1)} MB`
+}
 
 export default function SettingsTab({
   themeMode,
@@ -17,13 +33,25 @@ export default function SettingsTab({
   orientation,
   setOrientation,
   syncScroll = true,
-  setSyncScroll = () => {},
+  setSyncScroll = () => { },
   githubToken = '',
-  setGithubToken = () => {},
+  setGithubToken = () => { },
   editorEngine = 'monaco',
-  setEditorEngine = () => {},
-  onClose = () => {},
-  onOpenShortcuts = () => {}
+  setEditorEngine = () => { },
+  onClose = () => { },
+  onOpenShortcuts = () => { },
+  autoDownloadUpdates = false,
+  setAutoDownloadUpdates = () => { },
+  onCheckForUpdates = () => { },
+  isCheckingUpdate = false,
+  currentVersion = APP_CURRENT_VERSION,
+  onOpenWhatsNew = () => { },
+  updateProgress = null,
+  updateDownloaded = null,
+  updateError = null,
+  pendingUpdateInfo = null,
+  onStartDownloadUpdate = () => { },
+  onRestartToUpdate = () => { }
 }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('all')
@@ -33,8 +61,8 @@ export default function SettingsTab({
     toastFilterLevel,
     setToastFilterLevel,
     history = [],
-    clearHistory = () => {},
-    showToast = () => {}
+    clearHistory = () => { },
+    showToast = () => { }
   } = useToast()
 
   useEffect(() => {
@@ -61,6 +89,7 @@ export default function SettingsTab({
   const [pdfPageSize, setPdfPageSize] = useState(
     localStorage.getItem('readme_pdf_size') || 'A4'
   )
+  const [toolbarConfig, setToolbarConfig] = useState(loadFloatingToolbarConfig)
 
   const handleFontFamilyChange = (val) => {
     setFontFamily(val)
@@ -104,15 +133,19 @@ export default function SettingsTab({
       handleAutoSaveModeChange('afterDelay')
       handleBadgeStyleChange('flat-square')
       handlePdfPageSizeChange('A4')
+      setToolbarConfig({ ...DEFAULT_FLOATING_TOOLBAR_CONFIG })
+      saveFloatingToolbarConfig(DEFAULT_FLOATING_TOOLBAR_CONFIG)
     }
   }
 
   const categories = [
     { id: 'all', label: 'All Settings' },
     { id: 'editor', label: 'Text Editor' },
+    { id: 'toolbar', label: 'Floating Toolbar' },
     { id: 'appearance', label: 'Appearance' },
     { id: 'files', label: 'Files & Export' },
     { id: 'notifications', label: 'Notifications & Toasts' },
+    { id: 'updates', label: 'App Updates' },
     { id: 'github', label: 'GitHub & Integrations' }
   ]
 
@@ -140,7 +173,7 @@ export default function SettingsTab({
               title="Configure Keyboard Shortcuts"
             >
               <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M14 2H2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM2 3h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm1 2h2v2H3V5zm3 0h2v2H6V5zm3 0h2v2H9V5zm3 0h1v2h-1V5zM3 8h1v2H3V8zm2 0h6v2H5V8zm7 0h1v2h-1V8z"/>
+                <path d="M14 2H2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM2 3h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm1 2h2v2H3V5zm3 0h2v2H6V5zm3 0h2v2H9V5zm3 0h1v2h-1V5zM3 8h1v2H3V8zm2 0h6v2H5V8zm7 0h1v2h-1V8z" />
               </svg>
               <span>Keyboard Shortcuts</span>
             </button>
@@ -159,7 +192,7 @@ export default function SettingsTab({
         {/* Search Bar (VS Code style) */}
         <div className="settings-search-wrapper">
           <svg className="settings-search-icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
           </svg>
           <input
             type="text"
@@ -210,7 +243,7 @@ export default function SettingsTab({
                 <div className="settings-card-info">
                   <div className="settings-card-label">Editor: Engine</div>
                   <div className="settings-card-sublabel">
-                    Choose between the high-performance Monaco Editor (VS Code core with minimap, code folding, smart autocompletion) or the Classic lightweight editor.
+                    Choose between the high-performance Monaco Editor (with minimap, code folding, smart autocompletion) or the Classic lightweight editor.
                   </div>
                 </div>
                 <div className="settings-card-control">
@@ -396,6 +429,165 @@ export default function SettingsTab({
           </section>
         )}
 
+        {/* ==================== CATEGORY: FLOATING SELECTION TOOLBAR ==================== */}
+        {(activeCategory === 'all' || activeCategory === 'toolbar') && (
+          <section className="settings-group-section">
+            <div className="settings-group-header">
+              <span className="material-symbols-outlined">auto_fix_high</span>
+              <h3>Floating Quick-Action Toolbar</h3>
+              <span className="settings-env-badge" style={{ marginLeft: 'auto', textTransform: 'none' }}>
+                {toolbarConfig.enabled
+                  ? `${FLOATING_TOOLBAR_ACTIONS.filter(a => toolbarConfig[a.id]).length} / ${FLOATING_TOOLBAR_ACTIONS.length} tools active`
+                  : 'Disabled'}
+              </span>
+            </div>
+
+            {/* Master Enable/Disable */}
+            {matchesSearch('floating toolbar quick actions highlight selection word notion popup hud') && (
+              <div className="settings-card">
+                <div className="settings-card-info">
+                  <div className="settings-card-label">Enable Floating Selection Toolbar</div>
+                  <div className="settings-card-sublabel">
+                    When text is highlighted in the editor, display a floating HUD with quick formatting actions, headings, lists, and callout insertion.
+                  </div>
+                </div>
+                <div className="settings-card-control">
+                  <label className="settings-toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={toolbarConfig.enabled}
+                      onChange={(e) => {
+                        const updated = { ...toolbarConfig, enabled: e.target.checked }
+                        setToolbarConfig(updated)
+                        saveFloatingToolbarConfig(updated)
+                        showToast(
+                          e.target.checked ? 'Floating selection toolbar enabled' : 'Floating selection toolbar disabled',
+                          'info',
+                          { source: 'Settings' }
+                        )
+                      }}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* Actions Modular Control Grid */}
+            {toolbarConfig.enabled && matchesSearch('quick action tools format headings bold italic lists tables callouts badges') && (
+              <div className="settings-card" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <div className="settings-card-info">
+                    <div className="settings-card-label">Modular Toolbar Tools</div>
+                    <div className="settings-card-sublabel">
+                      Choose exactly which buttons and dropdown menus appear in your floating HUD.
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      type="button"
+                      className="settings-action-btn"
+                      onClick={() => {
+                        const updated = { ...toolbarConfig }
+                        FLOATING_TOOLBAR_ACTIONS.forEach(a => { updated[a.id] = true })
+                        setToolbarConfig(updated)
+                        saveFloatingToolbarConfig(updated)
+                      }}
+                    >
+                      Enable All
+                    </button>
+                    <button
+                      type="button"
+                      className="settings-action-btn"
+                      onClick={() => {
+                        const updated = { ...toolbarConfig }
+                        FLOATING_TOOLBAR_ACTIONS.forEach(a => { updated[a.id] = false })
+                        setToolbarConfig(updated)
+                        saveFloatingToolbarConfig(updated)
+                      }}
+                    >
+                      Disable All
+                    </button>
+                    <button
+                      type="button"
+                      className="settings-action-btn"
+                      onClick={() => {
+                        setToolbarConfig({ ...DEFAULT_FLOATING_TOOLBAR_CONFIG })
+                        saveFloatingToolbarConfig(DEFAULT_FLOATING_TOOLBAR_CONFIG)
+                      }}
+                      title="Reset toolbar to defaults"
+                    >
+                      Reset HUD Defaults
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                    gap: '8px',
+                    backgroundColor: 'var(--surface-lowest, #1e1e1e)',
+                    padding: '12px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-subtle, rgba(255,255,255,0.06))'
+                  }}
+                >
+                  {FLOATING_TOOLBAR_ACTIONS.map(action => {
+                    const isChecked = !!toolbarConfig[action.id]
+                    return (
+                      <label
+                        key={action.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '6px 10px',
+                          borderRadius: '4px',
+                          backgroundColor: isChecked ? 'rgba(0, 122, 204, 0.1)' : 'transparent',
+                          border: isChecked ? '1px solid rgba(0, 122, 204, 0.3)' : '1px solid transparent',
+                          cursor: 'pointer',
+                          transition: 'all 0.1s ease',
+                          userSelect: 'none'
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            const updated = { ...toolbarConfig, [action.id]: e.target.checked }
+                            setToolbarConfig(updated)
+                            saveFloatingToolbarConfig(updated)
+                          }}
+                          style={{ cursor: 'pointer', accentColor: '#007acc' }}
+                        />
+                        <span
+                          className="material-symbols-outlined"
+                          style={{
+                            fontSize: '16px',
+                            color: isChecked ? '#38bdf8' : 'var(--text-muted, #858585)'
+                          }}
+                        >
+                          {action.icon}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: '12px',
+                            color: isChecked ? '#ffffff' : 'var(--text-secondary, #cccccc)',
+                            fontWeight: isChecked ? '500' : 'normal'
+                          }}
+                        >
+                          {action.label}
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
         {/* ==================== CATEGORY: APPEARANCE ==================== */}
         {(activeCategory === 'all' || activeCategory === 'appearance') && (
           <section className="settings-group-section">
@@ -544,8 +736,9 @@ export default function SettingsTab({
                     value={toastFilterLevel}
                     onChange={(e) => setToastFilterLevel(e.target.value)}
                   >
-                    <option value="important">Important & Warnings Only (Default - Recommended)</option>
-                    <option value="all">All Notifications (Verbose)</option>
+                    <option value="important">Strict: Important & Warnings Only (Default - Recommended)</option>
+                    <option value="balanced">Balanced: Standard Notifications</option>
+                    <option value="all">Verbose: All Notifications</option>
                     <option value="errors">Errors Only</option>
                     <option value="silent">Do Not Disturb (Silent - No Popups)</option>
                   </select>
@@ -559,7 +752,7 @@ export default function SettingsTab({
                 <div className="settings-card-info">
                   <div className="settings-card-label">Notification Center History</div>
                   <div className="settings-card-sublabel">
-                    Currently storing {history.length} notification(s). Clear history log or test notifications below.
+                    Currently storing {history.length} notification(s). Clear history log from Notification Center.
                   </div>
                 </div>
                 <div className="settings-card-control" style={{ display: 'flex', gap: '8px' }}>
@@ -576,52 +769,198 @@ export default function SettingsTab({
                 </div>
               </div>
             )}
+          </section>
+        )}
 
-            {/* Test Notification Previews */}
-            {matchesSearch('test preview notification sample warning error toast') && (
+        {/* ==================== CATEGORY: APPLICATION UPDATES ==================== */}
+        {(activeCategory === 'all' || activeCategory === 'updates') && (
+          <section className="settings-group-section">
+            <div className="settings-group-header">
+              <span className="material-symbols-outlined">system_update</span>
+              <h3>Application Updates</h3>
+            </div>
+
+            {/* Auto vs Manual Updates Setting */}
+            {matchesSearch('updates auto manual download automatic background version upgrade mode') && (
               <div className="settings-card">
                 <div className="settings-card-info">
-                  <div className="settings-card-label">Preview IDE Notification Banners</div>
+                  <div className="settings-card-label">Automatically Download Updates</div>
                   <div className="settings-card-sublabel">
-                    Trigger sample IDE toast cards to preview the new styling, category badges, and severity accents.
+                    When enabled (Automatic), updates are downloaded silently in the background. When disabled (Manual), VisualMark Studio asks for your confirmation before downloading.
                   </div>
                 </div>
-                <div className="settings-card-control" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                <div className="settings-card-control">
+                  <label className="settings-toggle-switch" title={autoDownloadUpdates ? "Automatic updates enabled (Click to switch to Manual)" : "Manual updates enabled (Click to switch to Automatic)"}>
+                    <input
+                      type="checkbox"
+                      checked={autoDownloadUpdates}
+                      onChange={(e) => setAutoDownloadUpdates(e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* Live Update Download Progress Card (Visible for both Auto and Manual Downloads) */}
+            {updateProgress && !updateDownloaded && (
+              <div className="settings-card">
+                <div className="settings-card-info" style={{ width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className="material-symbols-outlined spin" style={{ fontSize: '15px', color: 'var(--text-secondary)' }}>
+                        sync
+                      </span>
+                      <span className="settings-card-label" style={{ margin: 0 }}>
+                        Downloading Update {updateProgress.version ? `v${updateProgress.version}` : ''}
+                      </span>
+                      <span className="settings-update-mode-badge">
+                        {autoDownloadUpdates ? 'Auto' : 'Manual'}
+                      </span>
+                    </div>
+                    <span className="settings-update-percent">
+                      {Math.round(updateProgress.percent || 0)}%
+                    </span>
+                  </div>
+
+                  {/* Clean IDE Progress Bar */}
+                  <div className="settings-update-progress-track">
+                    <div
+                      className="settings-update-progress-fill"
+                      style={{ width: `${Math.min(100, Math.max(0, updateProgress.percent || 0))}%` }}
+                    />
+                  </div>
+
+                  {/* Transfer Details / Stats */}
+                  <div className="settings-update-stats">
+                    <span>
+                      {updateProgress.total > 0
+                        ? `${formatBytes(updateProgress.transferred || 0)} of ${formatBytes(updateProgress.total || 0)}`
+                        : `${formatBytes(updateProgress.transferred || 0)} transferred`}
+                    </span>
+                    {updateProgress.bytesPerSecond > 0 && (
+                      <span>Speed: {formatBytes(updateProgress.bytesPerSecond)}/s</span>
+                    )}
+                    <span>
+                      {autoDownloadUpdates ? 'Downloading in background' : 'Downloading requested release'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Update Ready to Install Card */}
+            {updateDownloaded && (
+              <div className="settings-card">
+                <div className="settings-card-info">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>
+                      check_circle
+                    </span>
+                    <span className="settings-card-label" style={{ margin: 0 }}>
+                      Update Ready to Install: v{updateDownloaded.version || 'New Release'}
+                    </span>
+                    <span className="settings-update-mode-badge">Ready</span>
+                  </div>
+                  <div className="settings-card-sublabel">
+                    VisualMark Studio downloaded the latest release {autoDownloadUpdates ? 'in the background' : 'successfully'}. Restart the app to apply the update immediately.
+                  </div>
+                </div>
+                <div className="settings-card-control">
                   <button
                     type="button"
-                    className="settings-action-btn"
-                    onClick={() => showToast('Git merge conflict detected in `src/App.jsx`', 'warning', { source: 'Git' })}
-                    style={{ color: '#e3b341', borderColor: 'rgba(210, 153, 34, 0.4)' }}
+                    className="settings-action-btn primary"
+                    onClick={onRestartToUpdate}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
                   >
-                    Test Warning
+                    <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>restart_alt</span>
+                    <span>Restart &amp; Install</span>
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* Manual Update Available Prompt Card */}
+            {pendingUpdateInfo && !updateProgress && !updateDownloaded && (
+              <div className="settings-card">
+                <div className="settings-card-info">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>
+                      cloud_download
+                    </span>
+                    <span className="settings-card-label" style={{ margin: 0 }}>
+                      Update v{pendingUpdateInfo.version} Available
+                    </span>
+                    <span className="settings-update-mode-badge">Available</span>
+                  </div>
+                  <div className="settings-card-sublabel">
+                    A new version is available. Since automatic background downloading is disabled, click below to start downloading.
+                  </div>
+                </div>
+                <div className="settings-card-control">
                   <button
                     type="button"
                     className="settings-action-btn"
-                    onClick={() => showToast('Failed to compile Markdown PDF export: exit code 1', 'error', { source: 'Compiler' })}
-                    style={{ color: '#f85149', borderColor: 'rgba(248, 81, 73, 0.4)' }}
+                    onClick={() => onStartDownloadUpdate(pendingUpdateInfo)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
                   >
-                    Test Error
+                    <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>download</span>
+                    <span>Download Now</span>
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* Update Error Notice Card */}
+            {updateError && !updateProgress && !updateDownloaded && (
+              <div className="settings-card">
+                <div className="settings-card-info">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>
+                      info
+                    </span>
+                    <span className="settings-card-label" style={{ margin: 0 }}>
+                      Update Notice
+                    </span>
+                  </div>
+                  <div className="settings-card-sublabel">
+                    {updateError}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Check for Updates & Release Notes */}
+            {matchesSearch('check for updates current version release notes patch') && (
+              <div className="settings-card">
+                <div className="settings-card-info">
+                  <div className="settings-card-label">Current Version: v{currentVersion}</div>
+                  <div className="settings-card-sublabel">
+                    VisualMark Studio checks for new releases on GitHub. You can check for updates manually or review patch release notes.
+                  </div>
+                </div>
+                <div className="settings-card-control" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   <button
                     type="button"
                     className="settings-action-btn"
-                    onClick={() => showToast('VisualMark Studio update ready to install', 'success', {
-                      source: 'Update',
-                      important: true,
-                      action: { label: 'Restart IDE', onClick: () => showToast('Restarting IDE...', 'info') }
-                    })}
-                    style={{ color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.4)' }}
+                    onClick={onCheckForUpdates}
+                    disabled={isCheckingUpdate || Boolean(updateProgress)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
                   >
-                    Test Actionable
+                    <span className={`material-symbols-outlined ${isCheckingUpdate ? 'spin' : ''}`} style={{ fontSize: '15px' }}>
+                      {isCheckingUpdate ? 'sync' : 'refresh'}
+                    </span>
+                    <span>{isCheckingUpdate ? 'Checking...' : updateProgress ? 'Downloading...' : 'Check for Updates'}</span>
                   </button>
+
                   <button
                     type="button"
                     className="settings-action-btn"
-                    onClick={() => showToast('Saved file `README.md` to workspace disk', 'info', { source: 'File' })}
-                    style={{ color: '#8b949e' }}
+                    onClick={onOpenWhatsNew}
+                    style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
                   >
-                    Test Routine Info
+                    <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>new_releases</span>
+                    <span>What's New</span>
                   </button>
                 </div>
               </div>

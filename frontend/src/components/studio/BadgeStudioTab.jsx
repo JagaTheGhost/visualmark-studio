@@ -11,23 +11,17 @@ import {
   SKILL_ICONS_LIST,
   GITHUB_METRICS,
   GITHUB_LANG_COLORS,
-  NATIVE_REPO_CARD_TYPES,
   CURATED_PACKS
 } from '../../data/badgeStudioData'
 import {
   escapeXml,
-  escapeShieldsText,
-  getClassicRepoPinSvg,
-  getLanguagesBarSvg,
-  getLanguagesDonutSvg,
-  getMetricsGridSvg,
-  getBentoSpecSvg,
-  getGlassmorphismCardSvg,
-  getCyberpunkCardSvg,
-  getTerminalNeofetchCardSvg,
-  getAuroraGlowSvg,
-  getMinimalCleanSvg
-} from '../../utils/repoCardSvgGenerators'
+  escapeShieldsText
+} from '../../utils/modernRepoCardEngine'
+import {
+  useRepoCardState,
+  RepoCardInspector,
+  RepoCardPreview
+} from './RepoCardStudio'
 
 export default function BadgeStudioTab({
   onInsertBadge,
@@ -66,27 +60,11 @@ export default function BadgeStudioTab({
   const [skillPerLine, setSkillPerLine] = useState('10')
   const [skillSearch, setSkillSearch] = useState('')
 
-  // GitHub Repo Card State (100% Native Vector SVG Generator)
-  const [nativeCardStyle, setNativeCardStyle] = useState('native-classic')
-  const [cardCustomDesc, setCardCustomDesc] = useState('Automated Documentation Platform & GitHub Repository')
-  const [cardCustomStars, setCardCustomStars] = useState('1.2k')
-  const [cardCustomForks, setCardCustomForks] = useState('240')
-  const [cardCustomIssues, setCardCustomIssues] = useState('12')
-  const [cardCustomLicense, setCardCustomLicense] = useState('MIT')
-  const [cardCustomLang, setCardCustomLang] = useState('TypeScript')
-  const [cardCustomLangColor, setCardCustomLangColor] = useState('#3178c6')
-  const [cardCustomLanguagesList, setCardCustomLanguagesList] = useState([
-    { name: 'TypeScript', percent: 64.5, color: '#3178c6' },
-    { name: 'JavaScript', percent: 23.2, color: '#f1e05a' },
-    { name: 'CSS', percent: 8.8, color: '#563d7c' },
-    { name: 'HTML', percent: 3.5, color: '#e34c26' }
-  ])
-  const [cardThemeColor, setCardThemeColor] = useState('#6366f1')
-  const [repoCardRadius, setRepoCardRadius] = useState('8') // '0', '8', '12', '18'
-  const [nativeEmbedMode, setNativeEmbedMode] = useState('relative-asset') // 'relative-asset' | 'raw-cdn'
-  const [isFetchingGitHub, setIsFetchingGitHub] = useState(false)
-  const [githubSyncStatus, setGithubSyncStatus] = useState(null) // { type: 'success' | 'error', message: string }
-  const [saveStatusMessage, setSaveStatusMessage] = useState('')
+  // GitHub Repo Card State (Modern Client-Side Vector Engine)
+  const repoCardState = useRepoCardState({
+    repoUrl,
+    onInsertBadge
+  })
 
   // Rack Mode State
   const [rackBadges, setRackBadges] = useState([
@@ -193,71 +171,7 @@ export default function BadgeStudioTab({
   }, [selectedSkillIcons, skillTheme, skillPerLine])
 
 
-  // Native Vector SVG Generator
-  const nativeCardSvg = useMemo(() => {
-    const params = {
-      owner: repoOwner,
-      repo: repoName,
-      desc: cardCustomDesc || 'Automated Documentation Platform & GitHub Repository',
-      stars: cardCustomStars || '1.2k',
-      forks: cardCustomForks || '240',
-      issues: cardCustomIssues || '12',
-      license: cardCustomLicense || 'MIT',
-      lang: cardCustomLang || 'TypeScript',
-      langColor: cardCustomLangColor || '#3178c6',
-      languages: cardCustomLanguagesList,
-      themeColor: cardThemeColor || '#6366f1',
-      radius: Number(repoCardRadius) || 8
-    }
 
-    switch (nativeCardStyle) {
-      case 'native-classic':
-        return getClassicRepoPinSvg(params)
-      case 'native-bento':
-        return getBentoSpecSvg(params)
-      case 'native-glass':
-        return getGlassmorphismCardSvg(params)
-      case 'native-cyberpunk':
-        return getCyberpunkCardSvg(params)
-      case 'native-aurora':
-        return getAuroraGlowSvg(params)
-      case 'native-terminal':
-        return getTerminalNeofetchCardSvg(params)
-      case 'native-minimal':
-        return getMinimalCleanSvg(params)
-      case 'native-langs-bar':
-        return getLanguagesBarSvg(params)
-      case 'native-langs-donut':
-        return getLanguagesDonutSvg(params)
-      case 'native-metrics-grid':
-        return getMetricsGridSvg(params)
-      default:
-        return getClassicRepoPinSvg(params)
-    }
-  }, [
-    nativeCardStyle, repoOwner, repoName, cardCustomDesc, cardCustomStars, cardCustomForks,
-    cardCustomIssues, cardCustomLicense, cardCustomLang, cardCustomLangColor,
-    cardCustomLanguagesList, cardThemeColor, repoCardRadius
-  ])
-
-  // Export Native SVG File handler
-  const handleDownloadNativeSvg = async () => {
-    try {
-      const defaultName = `${repoName || 'repo'}-card.svg`
-      if (typeof window !== 'undefined' && window.electronAPI?.saveTextExportDialog) {
-        await window.electronAPI.saveTextExportDialog({
-          defaultPath: defaultName,
-          filters: [{ name: 'SVG Vector Image', extensions: ['svg'] }, { name: 'All Files', extensions: ['*'] }],
-          content: nativeCardSvg
-        })
-        return
-      }
-      const blob = new Blob([nativeCardSvg], { type: 'image/svg+xml;charset=utf-8' })
-      saveAs(blob, defaultName)
-    } catch (err) {
-      console.error('Download SVG error:', err)
-    }
-  }
 
   // Single Badge Markdown
   const singleBadgeMarkdown = useMemo(() => {
@@ -316,19 +230,7 @@ export default function BadgeStudioTab({
     return `<div align="center">\n\n[![My Skills](${skillIconsUrl})](https://skillicons.dev)\n\n</div>`
   }, [skillIconsUrl])
 
-  // Repo Card Markdown (100% Native Vector SVG)
-  const repoCardMarkdown = useMemo(() => {
-    let filename = `${repoName}-card.svg`
-    if (nativeCardStyle === 'native-langs-bar' || nativeCardStyle === 'native-langs-donut') {
-      filename = `${repoName}-langs.svg`
-    } else if (nativeCardStyle === 'native-metrics-grid') {
-      filename = `${repoName}-metrics.svg`
-    }
-    const imgSrc = nativeEmbedMode === 'raw-cdn'
-      ? `https://raw.githubusercontent.com/${cleanRepo}/main/assets/${filename}`
-      : `assets/${filename}`
-    return `<div align="center">\n  <a href="https://github.com/${cleanRepo}">\n    <img src="${imgSrc}" alt="${repoOwner}/${repoName}" width="500" />\n  </a>\n</div>`
-  }, [nativeEmbedMode, nativeCardStyle, cleanRepo, repoName, repoOwner])
+
 
 
   // Dynamic GitHub Metrics Markdown
@@ -379,11 +281,11 @@ export default function BadgeStudioTab({
     }
     if (activeMode === 'rack') return rackMarkdown
     if (activeMode === 'skillicons') return skillIconsMarkdown
-    if (activeMode === 'repocards') return repoCardMarkdown
+    if (activeMode === 'repocards') return repoCardState.generatedSnippet
     if (activeMode === 'github') return dynamicMetricsMarkdown
     if (activeMode === 'packs') return packMarkdown
     return singleBadgeMarkdown
-  }, [activeMode, syntaxView, singleBadgeHtml, singleBadgeUrl, singleBadgeMarkdown, rackMarkdown, skillIconsMarkdown, repoCardMarkdown, dynamicMetricsMarkdown, packMarkdown])
+  }, [activeMode, syntaxView, singleBadgeHtml, singleBadgeUrl, singleBadgeMarkdown, rackMarkdown, skillIconsMarkdown, repoCardState.generatedSnippet, dynamicMetricsMarkdown, packMarkdown])
 
   // Filtered SimpleIcons
   const filteredIcons = useMemo(() => {
@@ -412,162 +314,9 @@ export default function BadgeStudioTab({
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleCopySvgCode = () => {
-    navigator.clipboard.writeText(nativeCardSvg)
-    setSaveStatusMessage('✓ Copied SVG code to clipboard!')
-    setTimeout(() => setSaveStatusMessage(''), 2500)
-  }
-
-  const handleFetchGitHubData = async (overrideRepo = null) => {
-    const target = overrideRepo || cleanRepo
-    if (!target || !target.includes('/')) {
-      setGithubSyncStatus({ type: 'error', message: 'Please specify a valid owner/repo (e.g. facebook/react)' })
-      return
-    }
-    const [owner, name] = target.split('/')
-    setIsFetchingGitHub(true)
-    setGithubSyncStatus(null)
-
-    try {
-      const res = await fetch(`https://api.github.com/repos/${owner}/${name}`)
-      if (res.status === 404) {
-        setGithubSyncStatus({ type: 'error', message: `Repository "${owner}/${name}" not found on GitHub.` })
-        return
-      }
-      if (res.status === 403) {
-        setGithubSyncStatus({ type: 'error', message: 'GitHub API rate limit reached. Values remain editable manually.' })
-        return
-      }
-      if (!res.ok) {
-        setGithubSyncStatus({ type: 'error', message: `GitHub API error (${res.status}): ${res.statusText}` })
-        return
-      }
-
-      const data = await res.json()
-      if (data.description) setCardCustomDesc(data.description)
-      if (data.stargazers_count !== undefined) {
-        const sc = data.stargazers_count
-        setCardCustomStars(sc >= 1000 ? `${(sc / 1000).toFixed(1)}k` : String(sc))
-      }
-      if (data.forks_count !== undefined) {
-        const fc = data.forks_count
-        setCardCustomForks(fc >= 1000 ? `${(fc / 1000).toFixed(1)}k` : String(fc))
-      }
-      if (data.open_issues_count !== undefined) {
-        setCardCustomIssues(String(data.open_issues_count))
-      }
-      if (data.license) {
-        setCardCustomLicense(data.license.spdx_id || data.license.name || 'MIT')
-      }
-      if (data.language) {
-        setCardCustomLang(data.language)
-        if (GITHUB_LANG_COLORS[data.language]) {
-          setCardCustomLangColor(GITHUB_LANG_COLORS[data.language])
-        }
-      }
-
-      // Fetch languages breakdown
-      try {
-        const langRes = await fetch(`https://api.github.com/repos/${owner}/${name}/languages`)
-        if (langRes.ok) {
-          const langData = await langRes.json()
-          const totalBytes = Object.values(langData).reduce((a, b) => a + b, 0)
-          if (totalBytes > 0) {
-            const parsedLangs = Object.entries(langData).map(([lName, bytes]) => {
-              const pct = Number(((bytes / totalBytes) * 100).toFixed(1))
-              return {
-                name: lName,
-                percent: pct,
-                color: GITHUB_LANG_COLORS[lName] || '#8b949e'
-              }
-            }).filter((l) => l.percent > 0.5)
-            if (parsedLangs.length > 0) {
-              setCardCustomLanguagesList(parsedLangs)
-            }
-          }
-        }
-      } catch (errLangs) {
-        console.warn('Could not fetch language breakdown:', errLangs)
-      }
-
-      setGithubSyncStatus({
-        type: 'success',
-        message: `Synced with GitHub: ${data.stargazers_count} stars, ${data.forks_count} forks, primary language ${data.language || 'N/A'}`
-      })
-    } catch (err) {
-      setGithubSyncStatus({ type: 'error', message: `Fetch failed: ${err.message}` })
-    } finally {
-      setIsFetchingGitHub(false)
-    }
-  }
-
-  const handleDetectWorkspaceGit = async () => {
-    if (typeof window === 'undefined' || !window.electronAPI) return
-    try {
-      if (window.electronAPI.getGitInfo) {
-        const info = await window.electronAPI.getGitInfo()
-        if (info && info.remoteUrl) {
-          const parsed = info.remoteUrl
-            .replace(/^git@github\.com:/, '')
-            .replace(/^https?:\/\/github\.com\//, '')
-            .replace(/\.git$/, '')
-            .trim()
-          if (parsed) {
-            setCustomRepo(parsed)
-            setGithubSyncStatus({ type: 'success', message: `Detected local git repository: ${parsed}` })
-            handleFetchGitHubData(parsed)
-            return
-          }
-        }
-      }
-      setGithubSyncStatus({ type: 'error', message: 'No git remote origin URL found in current workspace.' })
-    } catch (err) {
-      setGithubSyncStatus({ type: 'error', message: `Could not inspect local git: ${err.message}` })
-    }
-  }
-
-  const handleSaveToWorkspaceAndEmbed = async () => {
-    try {
-      let filename = `${repoName || 'repo'}-card.svg`
-      if (nativeCardStyle === 'native-langs-bar' || nativeCardStyle === 'native-langs-donut') {
-        filename = `${repoName || 'repo'}-langs.svg`
-      } else if (nativeCardStyle === 'native-metrics-grid') {
-        filename = `${repoName || 'repo'}-metrics.svg`
-      }
-      const relativePath = `assets/${filename}`
-
-      let saved = false
-      if (typeof window !== 'undefined' && window.electronAPI) {
-        if (window.electronAPI.getDefaultWorkspace) {
-          const ws = await window.electronAPI.getDefaultWorkspace()
-          if (ws && ws.rootPath) {
-            const cleanRoot = ws.rootPath.replace(/[/\\]+$/, '')
-            const fullPath = `${cleanRoot}/${relativePath}`
-            const res = await window.electronAPI.createFileDirect(fullPath, nativeCardSvg)
-            if (res && res.success) saved = true
-          }
-        }
-        if (!saved && window.electronAPI.createFileDirect) {
-          const res = await window.electronAPI.createFileDirect(relativePath, nativeCardSvg)
-          if (res && res.success) saved = true
-        }
-      }
-
-      const snippet = `<div align="center">\n  <a href="https://github.com/${cleanRepo}">\n    <img src="${relativePath}" alt="${repoName}" width="500" />\n  </a>\n</div>`
-      onInsertBadge(snippet)
-
-      setSaveStatusMessage(saved ? `✓ Saved to ${relativePath} and embedded!` : '✓ Embedded into markdown document!')
-      setTimeout(() => setSaveStatusMessage(''), 3500)
-    } catch (err) {
-      console.error('Save to workspace error:', err)
-      const snippet = `<div align="center">\n  <a href="https://github.com/${cleanRepo}">\n    <img src="assets/${repoName}-card.svg" alt="${repoName}" width="500" />\n  </a>\n</div>`
-      onInsertBadge(snippet)
-    }
-  }
-
   const handleInsert = async () => {
-    if (activeMode === 'repocards' && cardEngine === 'native-svg' && nativeEmbedMode === 'relative-asset') {
-      await handleSaveToWorkspaceAndEmbed()
+    if (activeMode === 'repocards') {
+      await repoCardState.handleInsertCard()
       return
     }
     onInsertBadge(activeSnippet)
@@ -1167,312 +916,11 @@ export default function BadgeStudioTab({
           {/* =========================================================================
               MODE 3: GITHUB REPO PIN & ACTIVITY CARDS
              ========================================================================= */}
+          {/* =========================================================================
+              MODE 3: GITHUB REPO PIN & ACTIVITY CARDS (Modern 3-Step Guided Inspector)
+             ========================================================================= */}
           {activeMode === 'repocards' && (
-            <div className="repocards-container">
-              <div className="repocard-native-banner">
-                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>verified</span>
-                <span>Client-Side Vector Engine: 0 external API dependencies, 100% free offline generation, scales without limits.</span>
-              </div>
-
-                  <div className="studio-section">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                      <label className="studio-section-label" style={{ margin: 0 }}>Target GitHub Repository</label>
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Local Desktop + Direct API</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <input
-                        type="text"
-                        className="studio-text-input"
-                        value={customRepo || cleanRepo}
-                        onChange={(e) => setCustomRepo(e.target.value)}
-                        placeholder="owner/repo (e.g. facebook/react)"
-                        style={{ flex: 1 }}
-                      />
-                      <button
-                        type="button"
-                        className="btn-studio-secondary"
-                        onClick={() => handleFetchGitHubData()}
-                        disabled={isFetchingGitHub}
-                        title="Fetch live stats directly from GitHub REST API"
-                        style={{ height: '32px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '5px' }}
-                      >
-                        <span className={`material-symbols-outlined icon-xs ${isFetchingGitHub ? 'spin' : ''}`}>
-                          {isFetchingGitHub ? 'sync' : 'bolt'}
-                        </span>
-                        <span>{isFetchingGitHub ? 'Syncing...' : 'Sync Live'}</span>
-                      </button>
-                      {typeof window !== 'undefined' && window.electronAPI && (
-                        <button
-                          type="button"
-                          className="btn-studio-secondary"
-                          onClick={handleDetectWorkspaceGit}
-                          title="Detect repository from local workspace git origin URL"
-                          style={{ height: '32px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '5px' }}
-                        >
-                          <span className="material-symbols-outlined icon-xs">folder_open</span>
-                          <span>Local Git</span>
-                        </button>
-                      )}
-                    </div>
-                    {githubSyncStatus && (
-                      <div
-                        style={{
-                          marginTop: '8px',
-                          padding: '6px 10px',
-                          borderRadius: '6px',
-                          fontSize: '11.5px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          backgroundColor: githubSyncStatus.type === 'success' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                          color: githubSyncStatus.type === 'success' ? '#34d399' : '#f87171',
-                          border: `1px solid ${githubSyncStatus.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
-                        }}
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
-                          {githubSyncStatus.type === 'success' ? 'check_circle' : 'error'}
-                        </span>
-                        <span style={{ flex: 1 }}>{githubSyncStatus.message}</span>
-                        <button
-                          type="button"
-                          onClick={() => setGithubSyncStatus(null)}
-                          style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0 }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Native SVG Style Grid */}
-                  <div className="studio-section">
-                    <label className="studio-section-label">
-                      Vector Card Architecture ({NATIVE_REPO_CARD_TYPES.length} Styles)
-                    </label>
-                    <div className="repocard-types-grid">
-                      {NATIVE_REPO_CARD_TYPES.map((nrc) => (
-                        <button
-                          key={nrc.id}
-                          type="button"
-                          className={`repocard-type-card ${nativeCardStyle === nrc.id ? 'active' : ''}`}
-                          onClick={() => setNativeCardStyle(nrc.id)}
-                        >
-                          <div className="repocard-card-header">
-                            <span className="repocard-type-title">{nrc.title}</span>
-                            <span className="repocard-type-tag" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>
-                              {nrc.tag}
-                            </span>
-                          </div>
-                          <span className="repocard-type-desc">{nrc.desc}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Telemetry & Content Customization */}
-                  <div className="studio-section">
-                    <label className="studio-section-label">Telemetry & Content Customization</label>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div className="studio-field">
-                        <span className="studio-field-label">Repository Tagline / Description</span>
-                        <input
-                          type="text"
-                          className="studio-text-input"
-                          value={cardCustomDesc}
-                          onChange={(e) => setCardCustomDesc(e.target.value)}
-                          placeholder="Automated Documentation Platform & GitHub Repository"
-                        />
-                      </div>
-                      <div className="repocard-fields-grid">
-                        <div className="studio-field">
-                          <span className="studio-field-label">Stars Count</span>
-                          <input
-                            type="text"
-                            className="studio-text-input"
-                            value={cardCustomStars}
-                            onChange={(e) => setCardCustomStars(e.target.value)}
-                            placeholder="e.g. 1.2k"
-                          />
-                        </div>
-                        <div className="studio-field">
-                          <span className="studio-field-label">Forks Count</span>
-                          <input
-                            type="text"
-                            className="studio-text-input"
-                            value={cardCustomForks}
-                            onChange={(e) => setCardCustomForks(e.target.value)}
-                            placeholder="e.g. 240"
-                          />
-                        </div>
-                      </div>
-                      <div className="repocard-fields-grid">
-                        <div className="studio-field">
-                          <span className="studio-field-label">Open Issues</span>
-                          <input
-                            type="text"
-                            className="studio-text-input"
-                            value={cardCustomIssues}
-                            onChange={(e) => setCardCustomIssues(e.target.value)}
-                            placeholder="e.g. 12"
-                          />
-                        </div>
-                        <div className="studio-field">
-                          <span className="studio-field-label">License SPDX</span>
-                          <input
-                            type="text"
-                            className="studio-text-input"
-                            value={cardCustomLicense}
-                            onChange={(e) => setCardCustomLicense(e.target.value)}
-                            placeholder="e.g. MIT"
-                          />
-                        </div>
-                      </div>
-                      <div className="repocard-fields-grid">
-                        <div className="studio-field">
-                          <span className="studio-field-label">Primary Language</span>
-                          <input
-                            type="text"
-                            className="studio-text-input"
-                            value={cardCustomLang}
-                            onChange={(e) => setCardCustomLang(e.target.value)}
-                            placeholder="TypeScript"
-                          />
-                        </div>
-                        <div className="studio-field">
-                          <span className="studio-field-label">Language Dot Color</span>
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <input
-                              type="color"
-                              value={cardCustomLangColor}
-                              onChange={(e) => setCardCustomLangColor(e.target.value)}
-                              style={{ width: '32px', height: '32px', padding: 0, border: 'none', borderRadius: '4px', cursor: 'pointer', background: 'transparent' }}
-                            />
-                            <input
-                              type="text"
-                              className="studio-text-input"
-                              value={cardCustomLangColor}
-                              onChange={(e) => setCardCustomLangColor(e.target.value)}
-                              placeholder="#3178c6"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Language Breakdown Display for Lang Cards */}
-                  {(nativeCardStyle === 'native-langs-bar' || nativeCardStyle === 'native-langs-donut') && (
-                    <div className="studio-section">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                        <label className="studio-section-label" style={{ margin: 0 }}>Detected Language Breakdown</label>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Proportional Share</span>
-                      </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                        {cardCustomLanguagesList.map((l, i) => (
-                          <div
-                            key={i}
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              padding: '4px 8px',
-                              borderRadius: '6px',
-                              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                              border: '1px solid rgba(255, 255, 255, 0.1)',
-                              fontSize: '11.5px'
-                            }}
-                          >
-                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: l.color }} />
-                            <span style={{ color: '#f0f6fc', fontWeight: 600 }}>{l.name}</span>
-                            <span style={{ color: '#8b949e' }}>{l.percent}%</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Accent Color & Curvature */}
-                  <div className="studio-section">
-                    <label className="studio-section-label">Aesthetic Accent Color & Curvature</label>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                        <input
-                          type="color"
-                          value={cardThemeColor}
-                          onChange={(e) => setCardThemeColor(e.target.value)}
-                          style={{ width: '32px', height: '32px', padding: 0, border: 'none', borderRadius: '4px', cursor: 'pointer', background: 'transparent' }}
-                        />
-                        <input
-                          type="text"
-                          className="studio-text-input"
-                          value={cardThemeColor}
-                          onChange={(e) => setCardThemeColor(e.target.value)}
-                          placeholder="#6366f1"
-                        />
-                        <div style={{ display: 'flex', gap: '4px' }}>
-                          {['#6366f1', '#10b981', '#38bdf8', '#ec4899', '#f59e0b', '#a855f7'].map((c) => (
-                            <button
-                              key={c}
-                              type="button"
-                              onClick={() => setCardThemeColor(c)}
-                              style={{
-                                width: '20px',
-                                height: '20px',
-                                borderRadius: '50%',
-                                backgroundColor: c,
-                                border: cardThemeColor === c ? '2px solid #ffffff' : '1px solid rgba(255,255,255,0.2)',
-                                cursor: 'pointer'
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <div className="studio-segmented-styles">
-                        {[
-                          { label: 'Sharp (0px)', val: '0' },
-                          { label: 'Rounded (8px)', val: '8' },
-                          { label: 'Squircle (12px)', val: '12' },
-                          { label: 'Pill (18px)', val: '18' }
-                        ].map((rad) => (
-                          <button
-                            key={rad.val}
-                            type="button"
-                            className={`studio-style-btn ${repoCardRadius === rad.val ? 'active' : ''}`}
-                            onClick={() => setRepoCardRadius(rad.val)}
-                          >
-                            {rad.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Embed Strategy */}
-                  <div className="studio-section">
-                    <label className="studio-section-label">README Integration Mode</label>
-                    <div className="studio-segmented-styles">
-                      <button
-                        type="button"
-                        className={`studio-style-btn ${nativeEmbedMode === 'relative-asset' ? 'active' : ''}`}
-                        onClick={() => setNativeEmbedMode('relative-asset')}
-                      >
-                        📁 Repo Asset (assets/card.svg)
-                      </button>
-                      <button
-                        type="button"
-                        className={`studio-style-btn ${nativeEmbedMode === 'raw-cdn' ? 'active' : ''}`}
-                        onClick={() => setNativeEmbedMode('raw-cdn')}
-                      >
-                        🌐 Raw GitHub CDN URL
-                      </button>
-                    </div>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                      {nativeEmbedMode === 'relative-asset'
-                        ? 'Download the .svg and place it in your repository\'s assets/ folder for permanent self-hosted uptime.'
-                        : 'Directly references raw.githubusercontent.com for instant global CDN delivery.'}
-                    </span>
-                  </div>
-            </div>
+            <RepoCardInspector {...repoCardState} />
           )}
 
 
@@ -1789,7 +1237,7 @@ export default function BadgeStudioTab({
                       : activeMode === 'skillicons'
                       ? `${selectedSkillIcons.length} skills (${skillTheme})`
                       : activeMode === 'repocards'
-                      ? `${NATIVE_REPO_CARD_TYPES.find((s) => s.id === nativeCardStyle)?.title || 'Vector SVG'}`
+                      ? `${repoCardState.template} (${repoCardState.theme})`
                       : activeMode === 'rack'
                       ? `${rackBadges.length} in rack`
                       : activeMode === 'github'
@@ -1917,57 +1365,7 @@ export default function BadgeStudioTab({
 
               {/* Repo Card Preview */}
               {activeMode === 'repocards' && (
-                <div style={{ textAlign: 'center', padding: '16px', maxWidth: '100%', overflowX: 'auto' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                    <div
-                      dangerouslySetInnerHTML={{ __html: nativeCardSvg }}
-                      style={{ maxWidth: '100%', display: 'inline-flex', justifyContent: 'center' }}
-                    />
-                    <div className="repocard-download-bar" style={{ width: '100%', maxWidth: '500px', flexDirection: 'column', gap: '8px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#10b981' }}>verified_user</span>
-                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Native Vector SVG • Zero External Dependencies</span>
-                        </div>
-                        {saveStatusMessage && (
-                          <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 600 }}>{saveStatusMessage}</span>
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', gap: '6px', width: '100%' }}>
-                        <button
-                          type="button"
-                          className="btn-studio-primary"
-                          onClick={handleSaveToWorkspaceAndEmbed}
-                          title="Save SVG directly into ./assets/ and embed into document"
-                          style={{ flex: 1, height: '30px', fontSize: '11px' }}
-                        >
-                          <span className="material-symbols-outlined icon-xs">save</span>
-                          <span>Save to ./assets/ & Embed</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-studio-secondary"
-                          onClick={handleCopySvgCode}
-                          title="Copy vector SVG XML markup to clipboard"
-                          style={{ height: '30px', fontSize: '11px' }}
-                        >
-                          <span className="material-symbols-outlined icon-xs">code</span>
-                          <span>Copy SVG</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-studio-secondary"
-                          onClick={handleDownloadNativeSvg}
-                          title="Download vector SVG file"
-                          style={{ height: '30px', fontSize: '11px' }}
-                        >
-                          <span className="material-symbols-outlined icon-xs">download</span>
-                          <span>Export .svg</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <RepoCardPreview {...repoCardState} />
               )}
 
               {/* Rack Mode Preview */}

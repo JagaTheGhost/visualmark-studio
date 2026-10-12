@@ -1031,8 +1031,29 @@ ipcMain.handle('workspace-get-default', async () => {
 })
 
 // ==================== AUTO UPDATER PIPELINE ====================
-autoUpdater.autoDownload = true
+autoUpdater.autoDownload = false
 autoUpdater.autoInstallOnAppQuit = true
+
+ipcMain.handle('app-set-auto-download', (_event, enabled) => {
+  autoUpdater.autoDownload = Boolean(enabled)
+  console.log('[AutoUpdater] autoDownload updated to:', autoUpdater.autoDownload)
+  return autoUpdater.autoDownload
+})
+
+ipcMain.handle('app-get-auto-download', () => {
+  return autoUpdater.autoDownload
+})
+
+ipcMain.handle('app-download-update', async () => {
+  console.log('[AutoUpdater] Explicit downloadUpdate requested...')
+  try {
+    const res = await autoUpdater.downloadUpdate()
+    return { success: true, result: res }
+  } catch (err) {
+    console.error('[AutoUpdater] downloadUpdate failed:', err)
+    return { success: false, error: err ? (err.message || String(err)) : 'Failed to download update' }
+  }
+})
 
 function initAutoUpdater() {
   autoUpdater.on('checking-for-update', () => {

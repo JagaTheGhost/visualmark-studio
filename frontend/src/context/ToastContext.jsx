@@ -20,6 +20,30 @@ function resolveNotificationSource(message, explicitSource) {
   return 'IDE'
 }
 
+/**
+ * Detect minor / routine actions (e.g. file opening, path copying, tab switching)
+ * that should not distract the user with floating toast popups under Strict/Important mode.
+ */
+function isMinorAction(message, options, type) {
+  if (options?.minor === true || options?.priority === 'minor') return true
+  if (options?.important === true || options?.priority === 'important' || options?.priority === 'critical') return false
+  if (type === 'error' || type === 'warning' || type === 'loading' || options?.action) return false
+
+  const text = String(message || '').toLowerCase().trim()
+  return (
+    text.startsWith('opened ') ||
+    text.startsWith('✓ opened') ||
+    text.startsWith('loaded ') ||
+    text.startsWith('copied relative path') ||
+    text.startsWith('copied full path') ||
+    text.includes('copied to clipboard') ||
+    text.includes('cleared recently opened') ||
+    text.startsWith('switching to ') ||
+    text.startsWith('reset active markdown') ||
+    text.includes('auto-recovered')
+  )
+}
+
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([])
   const [history, setHistory] = useState(() => {
@@ -41,7 +65,7 @@ export function ToastProvider({ children }) {
     isHistoryOpenRef.current = isHistoryOpen
   }, [isHistoryOpen])
 
-  // Notification popup filter level: 'important' (default) | 'all' | 'errors' | 'silent'
+  // Notification popup filter level: 'important' (default) | 'balanced' | 'all' | 'errors' | 'silent'
   const [toastFilterLevel, setToastFilterLevelState] = useState(() => {
     try {
       return localStorage.getItem('visualmark_toast_level') || 'important'
@@ -103,13 +127,25 @@ export function ToastProvider({ children }) {
     const timestamp = new Date()
     const source = resolveNotificationSource(resolvedMessage, resolvedOpts.source)
 
-    // Determine importance
+    // Determine minor vs important
+    const isMinor = isMinorAction(resolvedMessage, resolvedOpts, resolvedType)
     const isImportant = Boolean(
       resolvedOpts.important ||
+      resolvedOpts.priority === 'important' ||
+      resolvedOpts.priority === 'critical' ||
       resolvedType === 'error' ||
       resolvedType === 'warning' ||
       resolvedType === 'loading' ||
-      resolvedOpts.action
+      resolvedOpts.action ||
+      (!isMinor && (
+        (resolvedType === 'success' && (
+          String(resolvedMessage).toLowerCase().includes('saved') ||
+          String(resolvedMessage).toLowerCase().includes('exported') ||
+          String(resolvedMessage).toLowerCase().includes('update')
+        )) ||
+        source === 'UPDATE' ||
+        source === 'EXPORT'
+      ))
     )
 
     // Determine auto-dismiss duration
@@ -140,6 +176,7 @@ export function ToastProvider({ children }) {
       type: resolvedType,
       source,
       important: isImportant,
+      minor: isMinor,
       action: resolvedOpts.action || null, // { label: string, onClick: () => void }
       duration,
       timestamp,
@@ -153,9 +190,13 @@ export function ToastProvider({ children }) {
     } else if (toastFilterLevel === 'errors') {
       shouldPop = resolvedType === 'error'
     } else if (toastFilterLevel === 'important') {
-      shouldPop = isImportant
+      // Strict: only important/critical events pop up, routine actions are quiet
+      shouldPop = isImportant && !isMinor
+    } else if (toastFilterLevel === 'balanced') {
+      // Balanced: standard notifications pop up, minor routine actions are quiet
+      shouldPop = !isMinor || isImportant
     } else {
-      shouldPop = true // 'all'
+      shouldPop = true // 'all' (verbose)
     }
 
     if (shouldPop) {
@@ -187,6 +228,7 @@ export function ToastProvider({ children }) {
         type: resolvedType,
         source,
         important: isImportant,
+        minor: isMinor,
         time: timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         date: timestamp.toLocaleDateString(),
         read: isCurrentlyOpen ? true : false,
@@ -199,8 +241,8 @@ export function ToastProvider({ children }) {
       return updated
     })
 
-    // Only increment unread badge count when the notification center drawer is CLOSED
-    if (!isHistoryOpenRef.current) {
+    // Increment unread badge count only for non-minor notifications when drawer is closed
+    if (!isHistoryOpenRef.current && (!isMinor || toastFilterLevel === 'all')) {
       setUnreadCount((c) => c + 1)
     }
 

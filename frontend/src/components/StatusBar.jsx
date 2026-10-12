@@ -1,5 +1,5 @@
 import React from 'react'
-import { useToast } from '../context/ToastContext'
+import { APP_CURRENT_VERSION } from '../data/releaseNotes'
 
 export default function StatusBar({
   cursorPosition = { line: 1, col: 1 },
@@ -14,20 +14,13 @@ export default function StatusBar({
   onOpenGitTab = () => {},
   isBottomPanelOpen = false,
   onToggleBottomPanel = () => {},
-  currentVersion = '1.0.1',
+  currentVersion = APP_CURRENT_VERSION,
   updateDownloaded = null,
   updateProgress = null,
   updateError = null,
   onOpenWhatsNew = () => {},
   onRestartToUpdate = () => {}
 }) {
-  let toastCtx = null
-  try {
-    toastCtx = useToast()
-  } catch {}
-  const unreadCount = toastCtx?.unreadCount || 0
-  const toggleHistory = toastCtx?.toggleHistory || (() => {})
-  const isHistoryOpen = toastCtx?.isHistoryOpen || false
 
   const readMinutes = Math.max(1, Math.ceil(wordCount / 200))
   const isGitRepo = gitInfo?.isRepo ?? false
@@ -207,32 +200,6 @@ export default function StatusBar({
             <span>Update v{updateDownloaded.version}</span>
           </div>
         )}
-
-        {/* Notification Center Bell */}
-        <div
-          className={`status-item notification-bell-btn ${unreadCount > 0 && !isHistoryOpen ? 'has-unread' : ''} ${isHistoryOpen ? 'is-active' : ''}`}
-          onClick={toggleHistory}
-          data-tooltip={unreadCount > 0 && !isHistoryOpen ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'} (Click to open Notification Center)` : "Notification Center (Click to view history)"}
-          data-tooltip-pos="top"
-          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}
-        >
-          <span className="material-symbols-outlined status-icon" style={{ fontSize: '14px', color: (unreadCount > 0 && !isHistoryOpen) ? '#007acc' : isHistoryOpen ? '#ffffff' : 'inherit' }}>
-            {unreadCount > 0 && !isHistoryOpen ? 'notifications_active' : 'notifications'}
-          </span>
-          {unreadCount > 0 && !isHistoryOpen && (
-            <span className="notif-badge" style={{
-              background: '#007acc',
-              color: '#ffffff',
-              fontSize: '10px',
-              fontWeight: '700',
-              padding: '1px 5px',
-              borderRadius: '10px',
-              lineHeight: '1'
-            }}>
-              {unreadCount}
-            </span>
-          )}
-        </div>
 
         {/* Version Pill (Click to open Release Notes tab) */}
         <div

@@ -106,6 +106,16 @@ const STUDIO_TABS_CONFIG = {
       </svg>
     )
   },
+  'icons.studio': {
+    id: 'icons.studio',
+    label: 'Icons & Emojis',
+    iconColor: '#38bdf8',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+      </svg>
+    )
+  },
   'settings': {
     id: 'settings',
     label: 'Settings',
@@ -265,7 +275,9 @@ export default function TabBar({
   setOrientation,
   openPresetTabs = [],
   onClosePresetTab = () => {},
-  onDropExternalFile = () => {}
+  onDropExternalFile = () => {},
+  updateProgress = null,
+  updateDownloaded = null
 }) {
   const rawList = Array.isArray(openDocTabs) ? openDocTabs : Object.keys(files)
   const tabList = rawList.filter(
@@ -499,6 +511,7 @@ export default function TabBar({
           const config = STUDIO_TABS_CONFIG[tabId]
           if (!config) return null
           const isActive = activeFile === tabId
+          const isUpdateTab = tabId === 'settings' || tabId === 'whats-new' || tabId === 'release-notes'
 
           return (
             <div
@@ -506,11 +519,35 @@ export default function TabBar({
               className={`editor-tab studio-tool-tab ${isActive ? 'active' : ''}`}
               onClick={() => onSelectFile(tabId)}
               title={tabId.endsWith('.studio') ? `${config.label} Studio` : config.label}
+              style={{ position: 'relative' }}
             >
               <span className="tab-file-icon" style={{ color: config.iconColor }}>
                 {config.icon}
               </span>
               <span className="tab-file-title truncate">{config.label}</span>
+
+              {/* Download Progress Indicator Pill on Tab Header */}
+              {isUpdateTab && updateProgress && !updateDownloaded && (
+                <span className="tab-update-progress-pill" title={`Downloading Update: ${Math.round(updateProgress.percent || 0)}%`}>
+                  <span className="material-symbols-outlined tab-progress-spinner">sync</span>
+                  <span>{Math.round(updateProgress.percent || 0)}%</span>
+                </span>
+              )}
+
+              {/* Update Ready Indicator on Tab Header */}
+              {isUpdateTab && updateDownloaded && (
+                <span className="tab-update-ready-pill" title={`Update v${updateDownloaded.version} ready to install`}>
+                  ● Ready
+                </span>
+              )}
+
+              {/* Live animated bottom progress bar on the tab */}
+              {isUpdateTab && updateProgress && !updateDownloaded && (
+                <div
+                  className="tab-progress-bottom-bar"
+                  style={{ width: `${Math.min(100, Math.max(0, updateProgress.percent || 0))}%` }}
+                />
+              )}
 
               <button
                 type="button"
@@ -528,6 +565,27 @@ export default function TabBar({
             </div>
           )
         })}
+
+        {/* Floating Quick Tab when update is actively downloading and Settings is not opened */}
+        {updateProgress && !updateDownloaded && !openStudioTabs.includes('settings') && !openStudioTabs.includes('whats-new') && (
+          <div
+            className="editor-tab studio-tool-tab tab-downloading-shortcut"
+            onClick={() => onOpenStudioTab('settings')}
+            title="Update downloading in background. Click to open Settings"
+            style={{ position: 'relative' }}
+          >
+            <span className="material-symbols-outlined spin" style={{ fontSize: '13px', color: '#38bdf8' }}>
+              sync
+            </span>
+            <span className="tab-file-title" style={{ color: '#38bdf8', fontWeight: 600 }}>
+              Updating {Math.round(updateProgress.percent || 0)}%
+            </span>
+            <div
+              className="tab-progress-bottom-bar"
+              style={{ width: `${Math.min(100, Math.max(0, updateProgress.percent || 0))}%` }}
+            />
+          </div>
+        )}
 
         {/* Preset Blueprint Preview Tabs (Support multi-preset tabs for comparison) */}
         {openPresetTabs.map((presetId) => {

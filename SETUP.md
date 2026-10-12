@@ -1,459 +1,216 @@
-# VisualMark Studio — Setup & Installation Guide
+# VisualMark Studio — Developer Setup & Installation Guide
 
-Complete step-by-step instructions to get VisualMark Studio running locally from source.
+Complete step-by-step instructions to get VisualMark Studio running locally from source for development, testing, and distribution.
+
+---
 
 ## 📋 Table of Contents
 
-1. [Prerequisites](#prerequisites)
-2. [Backend Setup](#backend-setup)
-3. [Frontend Setup](#frontend-setup)
-4. [Running the Application](#running-the-application)
-5. [Verification](#verification)
-6. [Troubleshooting](#troubleshooting)
+1. [Prerequisites](#1-prerequisites)
+2. [Cloning the Repository](#2-cloning-the-repository)
+3. [Backend Setup (FastAPI Sidecar)](#3-backend-setup-fastapi-sidecar)
+4. [Frontend Setup (React + Electron)](#4-frontend-setup-react--electron)
+5. [Running the Application](#5-running-the-application)
+6. [Building the Standalone Sidecar & Binaries](#6-building-the-standalone-sidecar--binaries)
+7. [Verification & Health Checks](#7-verification--health-checks)
+8. [Troubleshooting Guide](#8-troubleshooting-guide)
 
 ---
 
-## Prerequisites
+## 1. Prerequisites
 
 ### System Requirements
+- **Operating System:** Windows 10/11 (64-bit recommended), macOS 11+, or Linux (Ubuntu 20.04+)
+- **Memory (RAM):** 4 GB minimum (8 GB recommended)
+- **Disk Space:** 1.5 GB free disk space (includes Node modules and Python packages)
 
-- **Windows 10+**, macOS 10.15+, or Ubuntu 18.04+
-- **RAM:** 2GB minimum (4GB recommended)
-- **Disk Space:** 500MB available
-
-### Software
-
-**Node.js & npm:**
-- Download: https://nodejs.org/
-- Version: 16.0.0 or higher
-- Verify:
-  ```bash
-  node --version
-  npm --version
-  ```
-
-**Python:**
-- Download: https://www.python.org/
-- Version: 3.8 or higher
-- Verify:
-  ```bash
-  python --version
-  ```
-
-**Git** (optional but recommended):
-- Download: https://git-scm.com/
-- Verify:
-  ```bash
-  git --version
-  ```
+### Software Dependencies
+- **Node.js:** v18.0.0 or higher (v20 LTS recommended)
+  - Verify: `node --version && npm --version`
+- **Python:** 3.10 or higher (3.11 recommended)
+  - Verify: `python --version` (or `python3 --version`)
+- **Git:** 2.30 or higher
+  - Verify: `git --version`
 
 ---
 
-## Backend Setup
+## 2. Cloning the Repository
+
+```bash
+git clone https://github.com/JagaTheGhost/visualmark-studio.git
+cd visualmark-studio
+```
+
+---
+
+## 3. Backend Setup (FastAPI Sidecar)
+
+The backend provides repository AST scanning, tech stack discovery, documentation templates, and an SSRF-safe image proxy.
 
 ### Step 1: Navigate to Backend Directory
-
 ```bash
-cd auto-readme-generator/backend
+cd backend
 ```
 
-### Step 2: Create Virtual Environment (Optional but Recommended)
-
-**Windows:**
-```bash
+### Step 2: Create and Activate Virtual Environment
+**Windows (PowerShell / Command Prompt):**
+```powershell
 python -m venv venv
-venv\Scripts\activate
+.\venv\Scripts\activate
 ```
 
-**macOS/Linux:**
+**macOS / Linux:**
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-After activation, your prompt should show `(venv)` prefix.
-
-### Step 3: Install Python Dependencies
-
+### Step 3: Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-Expected packages to install:
-- fastapi==0.104.1
-- uvicorn==0.24.0
-- pydantic==2.5.0
-- python-dotenv==1.0.0
-- aiohttp==3.9.1
-- requests==2.31.0
+Core dependencies installed:
+- `fastapi` — High-performance asynchronous API framework
+- `uvicorn` — ASGI web server
+- `pydantic` — Data validation and schema definitions
+- `pyinstaller` — Standalone binary freeze tool (for desktop distribution)
 
-### Step 4: Verify Installation
-
-```bash
-pip list
-```
-
-You should see all packages listed.
-
-### Step 5: Test Backend (Optional)
-
+### Step 4: Verify Backend Execution
 ```bash
 python app.py
 ```
-
-Or run the automated test suite:
-
-```bash
-python -m pytest tests/test_api.py
-```
-
 Expected output:
 ```
-INFO:     Started server process [12345]
+INFO:     Started server process [1234]
 INFO:     Waiting for application startup.
-INFO:     Application startup complete
-INFO:     Uvicorn running on http://127.0.0.1:8000
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 ```
-
 Press `Ctrl+C` to stop.
 
 ---
 
-## Frontend Setup
+## 4. Frontend Setup (React + Electron)
+
+The frontend houses the Monaco Editor, 11 Visual Studio suites, the HUD floating toolbar, and the Electron desktop wrapper.
 
 ### Step 1: Navigate to Frontend Directory
-
 ```bash
 cd ../frontend
 ```
 
 ### Step 2: Install Node Dependencies
-
 ```bash
 npm install
 ```
 
-This will download and install all dependencies from `package.json`.
-
-### Step 3: Test Build (Optional)
-
+### Step 3: Verify Frontend Build
 ```bash
 npm run build
 ```
-
 Expected output:
 ```
 vite v5.4.21 building for production...
-✓ 3757 modules transformed
-dist/assets/index.js       369 kB │ gzip: 110 kB
-dist/assets/index.css      240 kB │ gzip:  36 kB
+✓ 3779 modules transformed.
+dist/index.html ...
+✓ built in ~20s
 ```
 
 ---
 
-## Running the Application
+## 5. Running the Application
 
-### Option A: Running in Native Desktop IDE Mode (Recommended)
-
-From the `frontend` directory:
+### Option A: Native Desktop IDE Mode (Recommended)
+This launches both the Vite development server and the Electron desktop application with live reloading, native disk I/O, and sidecar integration:
 
 ```bash
-npm start
-# OR: npm run electron:dev
+cd frontend
+npm run electron:dev
+# (or simply: npm start)
 ```
 
-This concurrently launches Vite on `http://localhost:3000` and opens the Electron native desktop IDE shell with direct disk I/O, Git status indicators, and sidecar integration.
+The Electron shell launches in frameless Obsidian Dark theme. If no standalone sidecar binary exists yet, it automatically discovers and connects to your local FastAPI server.
 
-### Option B: Running Browser Web Mode
+### Option B: Browser Web Mode (Frontend + Backend)
+If you prefer developing in a standard web browser:
 
-**Terminal 1 - Backend:**
-
+**Terminal 1 — Backend:**
 ```bash
-cd auto-readme-generator/backend
+cd backend
 python app.py
 ```
 
-**Terminal 2 - Frontend:**
-
-```bash
-cd auto-readme-generator/frontend
-npm run dev
-```
-
-Visit `http://localhost:3000` in your web browser.
-
-### Option C: Running Only Backend (for API Testing)
-
-```bash
-cd backend
-python main.py
-```
-
-Access API docs:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-
-### Option C: Running Frontend Only (without real backend)
-
+**Terminal 2 — Frontend:**
 ```bash
 cd frontend
 npm run dev
 ```
-
-Note: This will fail when you try to generate a README because the backend is not running.
+Open `http://localhost:3000` in Google Chrome, Microsoft Edge, or Firefox.
 
 ---
 
-## Verification
+## 6. Building the Standalone Sidecar & Binaries
+
+To produce standalone executables that run without requiring Python or Node.js on the target machine:
+
+### Step 1: Compile the Python Sidecar Binary
+Compiles `server.exe` into `frontend/resources/backend-sidecar/`:
+```bash
+cd backend
+python build_sidecar.py
+```
+
+### Step 2: Package Windows Executables
+```bash
+cd ../frontend
+npm run electron:dist
+```
+Generated artifacts in `frontend/release/`:
+- `VisualMark-Studio-Setup.exe` — Full Windows NSIS installer
+- `VisualMark-Studio-Portable.exe` — Zero-install portable executable
+- `latest.yml` — Auto-update manifest for Electron Updater
+
+---
+
+## 7. Verification & Health Checks
 
 ### Check Backend Health
-
 ```bash
 curl http://localhost:8000/health
 ```
-
-Expected response:
+Expected JSON response:
 ```json
-{"status":"ok","service":"Auto README Generator API"}
+{"status":"ok","service":"README Studio API"}
 ```
 
-### Generate Test README
+### Run Backend Unit Tests
+```bash
+cd backend
+python -m pytest tests/test_api.py -v
+```
 
+### Test Documentation Generation Endpoint
 ```bash
 curl -X POST http://localhost:8000/generate-readme \
   -H "Content-Type: application/json" \
   -d '{
     "repo_url": "https://github.com/facebook/react",
-    "description": "A JavaScript library for UI",
-    "tech_stack": ["React", "JavaScript"]
+    "description": "A declarative, efficient JavaScript library for building user interfaces.",
+    "tech_stack": ["React", "JavaScript", "TypeScript"]
   }'
 ```
 
-### Open in Browser
-
-1. Navigate to: **http://localhost:3000**
-2. Should see "Auto README Generator" header
-3. Fill in the form
-4. Click "Generate README"
-5. See preview and export options
-
 ---
 
-## Troubleshooting
+## 8. Troubleshooting Guide
 
-### Issue: Python not found
+### Port 8000 Conflict
+- **Cause:** Another service is using port 8000.
+- **Resolution:** In Electron desktop mode, the app automatically scans and selects a free port between 8000 and 8030. When running manually in web mode, pass a custom port: `python app.py --port 8005`.
 
-**Windows:**
-```bash
-python --version
-# or try:
-python3 --version
-```
+### Monaco Editor Blank or CSP Errors
+- **Resolution:** Verify that `node_modules/@monaco-editor/react` is installed correctly. Ensure `frontend/index.html` Content Security Policy includes `'self'` and `'unsafe-eval'`.
 
-**Solution:** 
-- Add Python to PATH
-- Reinstall Python with "Add Python to PATH" checkbox enabled
-
-### Issue: Module not found (pip)
-
-**Solution:**
-```bash
-# Ensure virtual environment is activated
-# Windows:
-venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
-
-# Reinstall requirements
-pip install -r requirements.txt
-```
-
-### Issue: npm command not found
-
-**Solution:**
-- Restart terminal after installing Node.js
-- Verify: `npm --version`
-- Add Node to PATH if needed
-
-### Issue: Port already in use
-
-**Port 3000 (Frontend):**
-```bash
-# Windows: Find and kill process on port 3000
-netstat -ano | findstr :3000
-taskkill /PID <PID> /F
-
-# macOS/Linux:
-lsof -i :3000
-kill -9 <PID>
-```
-
-**Port 8000 (Backend):**
-```bash
-# Windows:
-netstat -ano | findstr :8000
-taskkill /PID <PID> /F
-
-# macOS/Linux:
-lsof -i :8000
-kill -9 <PID>
-```
-
-Or change port in `vite.config.js`:
-```javascript
-server: {
-  port: 3001,  // Change to different port
-}
-```
-
-### Issue: CORS Error
-
-**Solution:**
-Backend `main.py` already has CORS enabled. If you still get errors:
-
-1. Check backend is running
-2. Check frontend is using correct API URL
-3. In `frontend/src/App.jsx`, verify:
-   ```javascript
-   const API_BASE_URL = 'http://localhost:8000'
-   ```
-
-### Issue: Virtual Environment Not Activating
-
-**Windows:**
-```bash
-# If execution policy error:
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-
-# Then try:
-venv\Scripts\activate
-```
-
-**macOS/Linux:**
-```bash
-# Make sure you're in the right directory
-ls venv/bin/activate
-
-# Then:
-source venv/bin/activate
-```
-
-### Issue: npm install fails
-
-**Solution:**
-```bash
-# Clear npm cache
-npm cache clean --force
-
-# Remove node_modules and package-lock.json
-rm -rf node_modules package-lock.json
-
-# Reinstall
-npm install
-```
-
-### Issue: Vite build fails
-
-**Solution:**
-```bash
-# Make sure all dependencies are installed
-npm install
-
-# Clear build cache
-rm -rf dist
-
-# Try building again
-npm run build
-```
-
----
-
-## Development Tips
-
-### Running with Auto-Reload
-
-**Backend** (already enabled with `reload=True`):
-```bash
-python main.py
-# Makes changes to main.py or prompts.py and it reloads automatically
-```
-
-**Frontend** (already enabled with Vite dev server):
-```bash
-npm run dev
-# Makes changes and they reload in browser automatically
-```
-
-### Using VS Code for Debugging
-
-1. Install Python extension
-2. Create `.vscode/launch.json`:
-   ```json
-   {
-     "version": "0.2.0",
-     "configurations": [
-       {
-         "name": "FastAPI",
-         "type": "python",
-         "request": "launch",
-         "module": "uvicorn",
-         "args": ["main:app", "--reload"],
-         "jinja": true,
-         "cwd": "${workspaceFolder}/backend"
-       }
-     ]
-   }
-   ```
-
-### Running Tests
-
-Backend API test:
-```bash
-# Using curl (shown above)
-curl http://localhost:8000/docs
-```
-
-### Environment Variables
-
-Create `.env` file if needed:
-```
-BACKEND_URL=http://localhost:8000
-DEBUG=true
-```
-
----
-
-## Next Steps
-
-Once everything is running:
-
-1. ✅ Generate your first README
-2. 📖 Read the full [DOCUMENTATION.md](../DOCUMENTATION.md)
-3. 🔧 Explore the code structure
-4. 🚀 Deploy to production (see docs)
-5. 🎉 Share with your team!
-
----
-
-## Quick Reference
-
-```bash
-# Backend
-cd backend
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # macOS/Linux
-pip install -r requirements.txt
-python main.py
-
-# Frontend (new terminal)
-cd frontend
-npm install
-npm run dev
-
-# Open browser
-http://localhost:3000
-```
-
----
-
-**Questions?** Check the [DOCUMENTATION.md](../DOCUMENTATION.md) for more help!
+### Terminal Shell Spawning Issues
+- **Resolution:** On Windows, verify PowerShell is installed in system PATH (`C:\Windows\System32\WindowsPowerShell\v1.0`).

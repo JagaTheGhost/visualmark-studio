@@ -743,3 +743,64 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ==========================================================================
+   Application Updates Progress & Action Cards (IDE Native Theme)
+   ========================================================================== */
+.settings-update-mode-badge {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background-color: var(--surface-mid, #27272a);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  color: var(--text-secondary, #94a3b8);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.settings-update-percent {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #e2e8f0);
+  font-family: var(--font-mono, monospace);
+}
+
+.settings-update-progress-track {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background-color: var(--surface-highest, rgba(255, 255, 255, 0.08));
+  overflow: hidden;
+  margin: 9px 0 6px 0;
+}
+
+.settings-update-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background-color: #007acc;
+  transition: width 0.3s ease;
+}
+
+.settings-update-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted, #71717a);
+  font-family: var(--font-mono, monospace);
+  margin-top: 4px;
+}
+
+.settings-action-btn.primary {
+  background-color: #007acc;
+  border-color: #007acc;
+  color: #ffffff;
+}
+
+.settings-action-btn.primary:hover {
+  background-color: #0062a3;
+  border-color: #0062a3;
+}

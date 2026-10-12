@@ -5,6 +5,70 @@ All notable changes to **VisualMark Studio** will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+> **Release Notes Standard**: For every minor update (e.g. `v1.1.0`), comprehensive release notes are documented across explicit subsections:
+> - **Added**: New visual studios, IDE features, tools, or integrations.
+> - **Changed**: Existing functionality modifications, visual redesigns, or UX improvements.
+> - **Fixed**: Bug fixes, stability patches, visual glitches, or error resolutions.
+> - **Removed**: Deprecated assets, legacy APIs, or pruned UI elements.
+
+---
+
+## [1.1.0] - 2026-10-13
+
+### Added
+- **Icons & Emoji Studio (11th Specialized Visual Studio - `icons.studio`)**:
+  - Dedicated visual studio tab accessible from Activity Bar, Studios menu, and Command Palette (`Ctrl+Shift+P`).
+  - Distinct dual-mode interface cleanly separating **Vector Material Icons (Material Symbols)** and **Developer Emojis**.
+  - **Vector Icon Color Customizer**: Integrated palette with 9 curated themes (Slate, Indigo, Emerald, Sky, Amber, Rose, Purple, GitHub Dark `#58a6ff`, GitHub Light `#24292f`), HTML5 color wheel picker, and direct HEX code input with auto-formatting.
+  - **Live Catalog Tinting Toggle (`[x] Tint catalog preview`)**: Dynamically applies selected custom color in real time across the entire browsable vector icon catalog.
+  - **Dual-Flavor SVG Export Engine**:
+    - **Colored SVG Asset Downloader**: Automatically downloads `.svg` vector files locally with baked `fill` attributes.
+    - **Iconify Image Markdown Generator**: Generates `<img src="https://api.iconify.design/material-symbols:${icon}.svg?color=${hex}" ... />` syntax compatible with GitHub Markdown, GitLab, and web previews.
+    - **Raw SVG Markup Copy**: One-click copying of optimized raw `<svg>` code.
+    - **One-Click Insert into Document**: Injects formatted icon markup or native emoji shortcodes directly at the Monaco editor cursor position.
+  - **Monaco `:` Autocomplete Provider**: Typing `:` in the editor summons autocomplete suggestions for both Unicode emojis and Material vector icons.
+  - **Instant Search & Category Filtering**: Real-time filtering across categories (Actions, Navigation, Editor, Files & Code, Status & Alerts, Hardware & Dev, Communication, Shapes, etc.).
+- **API Studio Live Documentation Preview (`api.studio`)**:
+  - Complete multi-mode interactive preview system built into the REST API builder.
+  - **Three View Modes**:
+    - **Live Preview**: Dedicated full-width interactive documentation rendering.
+    - **Split View**: Side-by-side synchronized view with interactive form builder on the left and live documentation preview on the right.
+    - **Markdown & Code**: Raw GitHub-flavored Markdown syntax viewer with quick copy and download.
+  - **Two Interactive Render Styles**:
+    - **REST Blueprint**: Modern interactive Swagger/Postman-style card featuring color-coded HTTP method badges (GET, POST, PUT, DELETE, PATCH), endpoint paths, headers, parameter matrix, request body payload viewer, and multi-status response tabs (200 OK, 400 Bad Request, 500 Server Error).
+    - **GitHub GFM Render**: Pixel-perfect GitHub-flavored Markdown rendering powered by `ReactMarkdown`, displaying exactly how the documentation will render on GitHub repositories.
+  - **Enhanced Presets Grid**: Pre-configured REST endpoints (Users API, Auth Tokens, Webhooks, Billing) with one-click form population.
+- **Modular Floating Quick-Action Toolbar (HUD)**:
+  - Word / Notion-style contextual HUD anchored dynamically above text selections in the Monaco editor.
+  - Interactive dropdowns for Headings (H1–H4), Code Blocks (8 languages), Hyperlinks (with live inline URL input), GitHub Alert Callouts (`[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`), and tools for Bold, Italic, Strikethrough, Inline Code, Lists, Tables, Diagrams, and Badges.
+  - Preserves native Monaco Undo/Redo history via `editor.executeEdits` and prevents editor blur on click.
+  - Dedicated Settings tab category with modular quick-action toggles ("Enable All", "Disable All", "Reset HUD Defaults") and live cross-component synchronization.
+- **Modern GitHub Repo Cards Studio**:
+  - Rebuilt from scratch with a guided 3-Step Inspector (Target & Sync -> Card Template -> Theme & Styling).
+  - 100% client-side pure vector SVG engine with zero external API dependency.
+  - Auto-adaptive `@media (prefers-color-scheme)` dark/light themes.
+  - 4 vector templates: Official Pin, Linear Bento, Languages Stacked Bar, Minimal Compact.
+  - Unified action bar for embedding self-hosted SVGs into `./assets/`, copying raw SVG, and downloading `.svg`.
+- **Redesigned Patch Notes UI**:
+  - Re-architected Release Notes tab into a responsive two-column layout featuring a SemVer version tree explorer, Google Font "Arimo" typography, and one-click "Copy Notes" markdown generator.
+- **Fluid 30 FPS Animated Banner Asset**:
+  - Replaced legacy showcase asset with a fluid 1200x600 30 FPS animated banner (`VisualMark Studio Banner.gif`) showcasing IDE workflows and visual studios.
+
+### Changed
+- **API Studio Layout Optimization**: Refined split view column proportion to 480px fixed builder column with fluid preview pane for optimal dual-column balance.
+- **Studio Form Layout Constraints**: Added `overflow-x: hidden` to `.studio-form-column` across all visual studios to prevent unwanted horizontal jitter during modal switches.
+- **API View Mode Controls**: Re-styled view mode selector (`Live Preview`, `Split View`, `Markdown & Code`) and render style toggles with responsive pill controls.
+
+### Fixed
+- **Iconify Material Symbol Underscore 404 Bug**: Resolved broken image links by automatically converting underscore ligature names (`bug_report`, `rocket_launch`, `check_circle`, `inventory_2`) to Iconify-compliant kebab-case (`bug-report`, `rocket-launch`, `check-circle`, `inventory-2`).
+- **API Studio Preset Card Visuals**: Fixed unstyled white button background and text collision in API Studio preset cards by adding proper dark theme styles in `extendedStudios.css`.
+- **Architecture Diagram Shape & Color Dots Overflow**: Fixed shape selector and color swatches clipping out of bounds in `DiagramStudioTab.jsx` by implementing responsive `flex-wrap` and gap alignment in `diagramStudio.css`.
+- **Chromium Scrollbar White Corner Glitch**: Fixed solid white unstyled square appearing at the intersection of vertical and horizontal scrollbars in Chromium/Electron by styling `::-webkit-scrollbar-corner { background: transparent; }` in `tokens.css`.
+
+### Removed
+- Removed deprecated `VisualMark_Studio_IDE.gif` from `assets/` and `frontend/src/assets/`.
+- Removed legacy unstyled UI button artifacts in API preset components.
+
 ---
 
 ## [1.0.3] - 2026-10-12
