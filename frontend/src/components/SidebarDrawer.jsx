@@ -301,7 +301,7 @@ export default function SidebarDrawer({
       style={{ width: `${drawerWidth}px`, minWidth: `${drawerWidth}px` }}
     >
       {/* Header with Title (Hidden when activeTab === 'explorer' or 'git' because they render their own top headers) */}
-      {activeTab !== 'explorer' && activeTab !== 'git' && (
+      {activeTab !== 'explorer' && activeTab !== 'git' && activeTab !== 'source-control' && (
         <div className="drawer-header">
           <div className="drawer-title-group">
             <span className="material-symbols-outlined drawer-title-icon">
@@ -321,7 +321,7 @@ export default function SidebarDrawer({
       )}
 
       {/* Drawer Body Container */}
-      <div className={`drawer-body custom-scrollbar ${activeTab === 'explorer' ? 'explorer-mode' : ''}`}>
+      <div className={`drawer-body custom-scrollbar ${activeTab === 'explorer' || activeTab === 'git' || activeTab === 'source-control' ? 'explorer-mode' : ''}`}>
         {/* ==================== 1. EXPLORER PANEL ==================== */}
         {activeTab === 'explorer' && (
           <IdeExplorerTree
@@ -337,13 +337,14 @@ export default function SidebarDrawer({
         )}
 
         {/* ==================== 2. GIT / SOURCE CONTROL PANEL ==================== */}
-        {activeTab === 'git' && (
+        {(activeTab === 'git' || activeTab === 'source-control') && (
           <SourceControlDrawer
             gitInfo={gitInfo}
             workspaceDirectory={workspaceDirectory}
             onRefreshGit={onRefreshGit}
             onSelectFile={onSelectFile}
             isRefreshing={isRefreshingGit}
+            showToast={showToast}
           />
         )}
 

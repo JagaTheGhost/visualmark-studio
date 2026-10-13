@@ -422,359 +422,524 @@
 }
 
 /* ==========================================================================
-   Source Control / Git Sidebar Drawer Styles
+   Source Control / Git Sidebar Drawer Styles (VisualMark Studio Theme)
    ========================================================================== */
 .source-control-drawer {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
-  color: #cccccc;
+  color: var(--text-primary, #cccccc);
   user-select: none;
+  background-color: var(--surface-low, #18181b);
+  overflow: hidden;
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
 }
 
+/* Header Bar - Identical to VS Code / VisualMark Explorer Header */
 .sc-header-bar {
+  height: 35px;
+  min-height: 35px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0 14px 0 16px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.05));
+  background-color: transparent;
+  flex-shrink: 0;
 }
 
 .sc-header-title {
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  color: #94a3b8;
-  font-family: var(--font-sans, system-ui);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary, #bbbbbb);
+  font-family: var(--font-sans);
 }
 
 .sc-header-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
+  position: relative;
 }
 
 .sc-icon-btn {
   background: transparent;
   border: none;
-  color: #858585;
+  color: var(--text-muted, #858585);
   cursor: pointer;
-  padding: 3px;
-  border-radius: 4px;
+  padding: 2px 4px;
+  border-radius: var(--radius-xs, 2px);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.14s ease, background 0.14s ease;
+  transition: color 120ms ease, background-color 120ms ease;
 }
 
 .sc-icon-btn:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
+  background-color: var(--surface-high, rgba(255, 255, 255, 0.08));
 }
 
 .sc-icon-btn .material-symbols-outlined {
   font-size: 16px;
 }
 
+.sc-icon-btn-sm {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #858585);
+  cursor: pointer;
+  padding: 2px 3px;
+  border-radius: var(--radius-xs, 2px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 120ms ease, background-color 120ms ease;
+}
+
+.sc-icon-btn-sm:hover:not(:disabled) {
+  color: #ffffff;
+  background-color: var(--surface-high, rgba(255, 255, 255, 0.08));
+}
+
+.sc-icon-btn-sm:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.sc-icon-btn-sm .material-symbols-outlined {
+  font-size: 15px;
+}
+
+/* Dropdown Menus */
+.sc-dropdown-container {
+  position: relative;
+}
+
+.sc-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  min-width: 175px;
+  background-color: var(--surface-mid, #252526);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+  border-radius: var(--radius-sm, 4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+  z-index: 1000;
+  padding: 4px 0;
+  animation: scMenuFade 0.12s ease-out;
+}
+
+@keyframes scMenuFade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.sc-dropdown-menu button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary, #cccccc);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  font-family: var(--font-sans);
+}
+
+.sc-dropdown-menu button:hover {
+  background-color: var(--primary, #007acc);
+  color: #ffffff;
+}
+
+.sc-dropdown-menu button.selected {
+  background-color: rgba(0, 122, 204, 0.25);
+  color: #60a5fa;
+  font-weight: 600;
+}
+
+.sc-dropdown-menu button .material-symbols-outlined {
+  font-size: 15px;
+  color: inherit;
+}
+
+.sc-menu-divider {
+  height: 1px;
+  background-color: var(--border-subtle, rgba(255, 255, 255, 0.08));
+  margin: 4px 0;
+}
+
+/* Empty State / Not Repo */
 .sc-not-repo-card {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 36px 20px;
+  padding: 32px 16px;
 }
 
 .sc-empty-icon-wrap {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background-color: var(--surface-mid, #252526);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .sc-not-repo-title {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
-  color: #e2e8f0;
-  margin: 0 0 8px;
+  color: #f1f5f9;
+  margin: 0 0 6px;
 }
 
 .sc-not-repo-desc {
   font-size: 12px;
-  line-height: 1.5;
-  color: #64748b;
-  margin: 0 0 20px;
+  line-height: 1.45;
+  color: var(--text-muted, #858585);
+  margin: 0 0 18px;
 }
 
 .sc-btn-init {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  background: #2563eb;
-  border: 1px solid rgba(147, 197, 253, 0.4);
-  color: #ffffff;
-  font-size: 12.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.sc-btn-init:hover {
-  background: #1d4ed8;
-}
-
-.sc-body-content {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  overflow: hidden;
-}
-
-.sc-repo-summary {
-  padding: 10px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(0, 0, 0, 0.15);
-}
-
-.sc-branch-row {
-  display: flex;
-  align-items: center;
   gap: 6px;
-}
-
-.sc-branch-icon {
-  font-size: 16px;
-  color: #38bdf8;
-}
-
-.sc-branch-name {
-  font-weight: 600;
-  font-size: 13px;
-  color: #f1f5f9;
-  font-family: var(--font-mono, monospace);
-}
-
-.sc-changes-pill {
-  margin-left: auto;
-  font-size: 11px;
-  padding: 1px 6px;
-  border-radius: 10px;
-  background: rgba(245, 158, 11, 0.2);
-  color: #f59e0b;
-  font-weight: 600;
-}
-
-.sc-clean-pill {
-  margin-left: auto;
-  font-size: 11px;
-  padding: 1px 6px;
-  border-radius: 10px;
-  background: rgba(16, 185, 129, 0.18);
-  color: #10b981;
-  font-weight: 600;
-}
-
-.sc-latest-commit {
-  margin: 6px 0 0;
-  font-size: 11.5px;
-  color: #64748b;
-  font-family: var(--font-mono, monospace);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sc-commit-form {
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.sc-commit-box-wrap {
-  width: 100%;
-}
-
-.sc-commit-input {
-  width: 100%;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: #181b21;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #e2e8f0;
-  font-size: 12.5px;
-  font-family: var(--font-sans, system-ui);
-  line-height: 1.4;
-  resize: vertical;
-  min-height: 52px;
-  outline: none;
-  transition: border-color 0.15s ease;
-}
-
-.sc-commit-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 1px #3b82f6;
-}
-
-.sc-commit-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.sc-btn-commit {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 5px;
-  background: #0078d4;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm, 4px);
+  background-color: var(--primary, #007acc);
   border: none;
   color: #ffffff;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.14s ease;
+  transition: background 0.12s ease;
 }
 
-.sc-btn-commit:hover:not(:disabled) {
-  background: #026ec1;
+.sc-btn-init:hover {
+  background-color: var(--primary-hover, #0062a3);
 }
 
-.sc-btn-commit:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.sc-btn-stage-all {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 6px 10px;
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #cbd5e1;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.14s ease;
-}
-
-.sc-btn-stage-all:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.14);
-  color: #ffffff;
-}
-
-.sc-btn-stage-all:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.sc-feedback-pill {
-  margin: 0 14px 8px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 11.5px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.sc-feedback-pill.success {
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #34d399;
-}
-
-.sc-feedback-pill.error {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #f87171;
-}
-
-.sc-changes-section {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  overflow: hidden;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.sc-changes-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 14px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #94a3b8;
-  letter-spacing: 0.6px;
-}
-
-.sc-section-count {
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #e2e8f0;
-}
-
-.sc-no-changes {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 14px;
-  font-size: 12px;
-  color: #64748b;
-}
-
-.sc-changes-list {
+/* Body Content */
+.sc-body-content {
   display: flex;
   flex-direction: column;
   flex: 1;
   overflow-y: auto;
+  min-height: 0;
 }
 
-.sc-change-item {
+/* Collapsible Section Block */
+.sc-section-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-section-header {
+  height: 24px;
+  min-height: 24px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 5px 14px;
+  padding: 0 8px;
+  background-color: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.05));
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.05));
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.1s ease;
+}
+
+.sc-section-header:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.sc-caret-icon {
+  font-size: 15px;
+  color: var(--text-muted, #858585);
+  margin-right: 4px;
+}
+
+.sc-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-primary, #cccccc);
+}
+
+.sc-count-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 5px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  margin-left: 6px;
+}
+
+.sc-section-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+/* Changes Body & Clean Commit Box */
+.sc-changes-body {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 6px;
+}
+
+.sc-commit-container {
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sc-commit-input-wrapper {
+  width: 100%;
+}
+
+.sc-commit-textarea {
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm, 3px);
+  background-color: var(--surface-mid, #252526);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  color: var(--text-primary, #cccccc);
+  font-size: 12px;
+  font-family: var(--font-sans);
+  line-height: 1.4;
+  resize: none;
+  height: 54px;
+  min-height: 54px;
+  outline: none;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.sc-commit-textarea:focus {
+  border-color: var(--primary, #007acc);
+  box-shadow: 0 0 0 1px var(--primary, #007acc);
+}
+
+/* Split Commit Button Group */
+.sc-split-commit-group {
+  display: flex;
+  width: 100%;
+  border-radius: var(--radius-sm, 3px);
+  overflow: visible;
+  position: relative;
+  height: 28px;
+}
+
+.sc-btn-primary-commit {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm, 3px) 0 0 var(--radius-sm, 3px);
+  background-color: var(--primary, #007acc);
+  border: none;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
   transition: background 0.12s ease;
-  font-size: 12.5px;
 }
 
-.sc-change-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+.sc-btn-primary-commit:hover:not(:disabled) {
+  background-color: var(--primary-hover, #0062a3);
 }
 
-.sc-change-item .sc-file-icon {
-  font-size: 15px;
-  color: #858585;
+.sc-btn-primary-commit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sc-commit-icon {
+  font-size: 15px !important;
+}
+
+.sc-btn-split-toggle {
+  width: 26px;
+  background-color: var(--primary, #007acc);
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0 var(--radius-sm, 3px) var(--radius-sm, 3px) 0;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.sc-btn-split-toggle:hover:not(:disabled) {
+  background-color: var(--primary-hover, #0062a3);
+}
+
+.sc-btn-split-toggle:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sc-btn-split-toggle .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.sc-split-menu {
+  width: 100%;
+  left: 0;
+  right: auto;
+}
+
+/* Staged / Changes Subsections */
+.sc-sub-changes-group {
+  display: flex;
+  flex-direction: column;
+  margin-top: 2px;
+}
+
+.sc-sub-header {
+  display: flex;
+  align-items: center;
+  padding: 3px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted, #858585);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.sc-sub-count {
+  font-size: 9px;
+  padding: 0 4px;
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  margin-left: 5px;
+}
+
+.sc-icon-btn-micro {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #858585);
+  cursor: pointer;
+  padding: 1px 3px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-icon-btn-micro:hover {
+  color: #ffffff;
+  background-color: var(--surface-high, rgba(255, 255, 255, 0.08));
+}
+
+.sc-icon-btn-micro .material-symbols-outlined {
+  font-size: 13px;
+}
+
+.sc-empty-clean-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+}
+
+/* File List & Rows */
+.sc-file-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.sc-file-row {
+  height: 22px;
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  font-size: 12px;
+  position: relative;
+}
+
+.sc-file-row:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.sc-file-type-icon {
+  font-size: 14px;
+  color: var(--text-muted, #858585);
   flex-shrink: 0;
 }
 
-.sc-change-item .sc-file-name {
-  color: #cccccc;
+.sc-file-name {
+  color: var(--text-primary, #cccccc);
   font-weight: 500;
   flex-shrink: 0;
 }
 
-.sc-change-item .sc-file-dir {
+.sc-file-dir {
   font-size: 11px;
-  color: #64748b;
+  color: var(--text-muted, #6e7681);
   flex: 1;
-  margin-left: 2px;
+  margin-left: 3px;
+}
+
+.sc-row-hover-actions {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.sc-file-row:hover .sc-row-hover-actions {
+  display: flex;
+}
+
+.sc-icon-action {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #858585);
+  padding: 1px 3px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sc-icon-action:hover {
+  color: #ffffff;
+  background-color: var(--surface-high, rgba(255, 255, 255, 0.1));
+}
+
+.sc-icon-action .material-symbols-outlined {
+  font-size: 13px;
 }
 
 .sc-status-badge {
@@ -782,5 +947,598 @@
   font-weight: 700;
   font-family: var(--font-mono, monospace);
   flex-shrink: 0;
+  margin-left: 6px;
+  min-width: 12px;
+  text-align: right;
+}
+
+/* ==========================================================================
+   3. GRAPH SECTION (Git Commit Graph & History)
+   ========================================================================== */
+.sc-graph-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.05));
+}
+
+.sc-btn-pill-auto {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted, #858585);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.sc-btn-pill-auto.active {
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.5);
+  background-color: rgba(56, 189, 248, 0.1);
+}
+
+.sc-graph-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2px 0 16px;
+}
+
+.sc-no-commits-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 12px;
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+}
+
+.sc-graph-tree-list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Single Commit Graph Row */
+.sc-graph-row {
+  height: 24px;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  position: relative;
+}
+
+.sc-graph-row:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.sc-graph-row.head-highlighted {
+  animation: headFlash 1.6s ease-out;
+}
+
+@keyframes headFlash {
+  0% { background-color: rgba(56, 189, 248, 0.25); }
+  50% { background-color: rgba(56, 189, 248, 0.12); }
+  100% { background-color: transparent; }
+}
+
+/* Left Node Column (Trunk line + dot/ring) */
+.sc-graph-node-col {
+  width: 20px;
+  height: 24px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sc-graph-trunk-line {
+  position: absolute;
+  top: 12px;
+  bottom: -12px;
+  left: 9px;
+  width: 2px;
+  background-color: #38bdf8;
+  z-index: 1;
+}
+
+.sc-graph-trunk-line-top {
+  position: absolute;
+  top: -12px;
+  bottom: 12px;
+  left: 9px;
+  width: 2px;
+  background-color: #38bdf8;
+  z-index: 1;
+}
+
+/* Hollow Blue Ring for HEAD (◎) */
+.sc-graph-head-ring {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #38bdf8;
+  background-color: var(--surface-low, #18181b);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 5px rgba(56, 189, 248, 0.4);
+}
+
+.sc-graph-head-inner-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background-color: #38bdf8;
+}
+
+/* Solid Blue Dot for regular commits (●) */
+.sc-graph-solid-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #38bdf8;
+  z-index: 2;
+}
+
+/* Middle Content: Commit subject + badges */
+.sc-graph-content {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+  margin-left: 2px;
+}
+
+.sc-commit-subject {
+  font-size: 12px;
+  color: var(--text-primary, #cccccc);
+  font-family: var(--font-sans);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Branch Pill Badge (◎ main) */
+.sc-badge-branch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 5px;
+  height: 16px;
+  border-radius: 8px;
+  background-color: #1e3a5f;
+  border: 1px solid #3b82f6;
+  color: #93c5fd;
+  font-size: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.sc-badge-dot {
+  font-size: 9px;
+}
+
+/* Remote Cloud Badge (☁) */
+.sc-badge-remote {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  height: 16px;
+  border-radius: 8px;
+  background-color: #3b1d54;
+  border: 1px solid #a855f7;
+  color: #e9d5ff;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+/* Tag Pill Badge */
+.sc-badge-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 5px;
+  height: 16px;
+  border-radius: 8px;
+  background-color: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  color: #6ee7b7;
+  font-size: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Right Author Column */
+.sc-graph-author-col {
+  margin-left: 6px;
+  flex-shrink: 0;
+  font-size: 11px;
+  color: #737373;
+  text-align: right;
+  max-width: 85px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   4. MODALS (Diff Viewer, Commit Inspector, Branch Switcher)
+   ========================================================================== */
+.sc-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.sc-modal-card {
+  background-color: var(--surface-low, #18181b);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+  border-radius: var(--radius-md, 6px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: scModalPop 0.14s ease-out;
+}
+
+@keyframes scModalPop {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.sc-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background-color: var(--surface-mid, #252526);
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.sc-modal-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.sc-btn-close-modal {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #858585);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-xs, 2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-btn-close-modal:hover {
+  color: #ffffff;
+  background-color: var(--surface-high, rgba(255, 255, 255, 0.1));
+}
+
+.sc-btn-close-modal .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.sc-modal-body {
+  padding: 14px;
+  overflow-y: auto;
+}
+
+/* Diff Viewer Modal */
+.sc-diff-modal {
+  max-width: 860px;
+  width: 90%;
+  max-height: 82vh;
+}
+
+.sc-diff-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-diff-filename {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f1f5f9;
+  font-family: var(--font-mono, monospace);
+}
+
+.sc-diff-status-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
+.sc-modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-btn-open-editor {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs, 2px);
+  background-color: var(--surface-high, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+  color: var(--text-primary, #cccccc);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.sc-btn-open-editor:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.sc-diff-code-view {
+  margin: 0;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  line-height: 1.5;
+  background-color: var(--surface-lowest, #1e1e1e);
+  padding: 8px 0;
+  border-radius: var(--radius-sm, 4px);
+  overflow-x: auto;
+}
+
+.sc-diff-line {
+  display: flex;
+  padding: 1px 12px;
+  white-space: pre;
+}
+
+.sc-diff-linenum {
+  width: 40px;
+  color: #555555;
+  user-select: none;
+  text-align: right;
+  padding-right: 14px;
+  flex-shrink: 0;
+}
+
+.sc-diff-text {
+  flex: 1;
+}
+
+.sc-diff-line.diff-add {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+}
+
+.sc-diff-line.diff-del {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+}
+
+.sc-diff-line.diff-hunk {
+  background-color: rgba(56, 189, 248, 0.08);
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+/* Commit Details Modal */
+.sc-commit-inspector {
+  max-width: 580px;
+  width: 90%;
+  max-height: 80vh;
+}
+
+.sc-commit-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.sc-commit-meta-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.sc-meta-item {
+  display: flex;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.sc-meta-label {
+  color: var(--text-muted, #858585);
+  width: 65px;
+  flex-shrink: 0;
+}
+
+.sc-meta-value {
+  color: var(--text-primary, #cccccc);
+  word-break: break-all;
+}
+
+.sc-bold {
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.sc-btn-copy-hash {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #858585);
+  cursor: pointer;
+  margin-left: 6px;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.sc-btn-copy-hash:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sc-commit-files-section {
+  margin-top: 12px;
+}
+
+.sc-commit-files-header {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary, #94a3b8);
+  margin-bottom: 6px;
+}
+
+.sc-commit-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sc-commit-file-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 3px 6px;
+  border-radius: var(--radius-xs, 2px);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.sc-file-status-letter {
+  font-weight: 700;
+  font-family: var(--font-mono, monospace);
+  width: 14px;
+}
+
+.sc-commit-filename {
+  color: var(--text-primary, #cccccc);
+  font-family: var(--font-mono, monospace);
+}
+
+/* Branch Switcher Modal */
+.sc-branch-modal {
+  max-width: 480px;
+  width: 90%;
+  max-height: 70vh;
+}
+
+.sc-create-branch-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sc-branch-input {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm, 3px);
+  background-color: var(--surface-mid, #252526);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+  color: #ffffff;
+  font-size: 12px;
+  outline: none;
+}
+
+.sc-branch-input:focus {
+  border-color: var(--primary, #007acc);
+}
+
+.sc-btn-create-branch {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm, 3px);
+  background-color: var(--primary, #007acc);
+  border: none;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sc-btn-create-branch:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sc-branch-filter-input {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm, 3px);
+  background-color: var(--surface-mid, #252526);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  color: #ffffff;
+  font-size: 12px;
+  outline: none;
+  margin-bottom: 10px;
+}
+
+.sc-branch-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.sc-branch-group-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted, #64748b);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.sc-branch-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: var(--radius-xs, 2px);
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--text-primary, #cccccc);
+  transition: background 0.1s ease;
+}
+
+.sc-branch-item:hover {
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
+.sc-branch-item.current {
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.sc-current-badge {
   margin-left: auto;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background-color: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
 }

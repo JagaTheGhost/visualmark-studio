@@ -767,78 +767,489 @@ async function getGitFullInfo(folderPath) {
   const statusCheck = await runGit(['status', '--porcelain'], folderPath, 4000)
   const statusMap = {}
   const changes = []
+  const stagedChanges = []
+  const unstagedChanges = []
 
   if (statusCheck.rawStdout) {
     const lines = statusCheck.rawStdout.split('\n')
     for (const line of lines) {
-      if (!line.trim()) continue
-      const code = line.slice(0, 2).trim()
-      const rawPath = line.slice(3).trim().replace(/^"(.*)"$/, '$1').replace(/\\/g, '/')
-      if (rawPath) {
-        let status = 'M'
-        let label = 'Modified'
-        if (code.includes('?')) {
-          status = 'U'
-          label = 'Untracked'
-        } else if (code.includes('A')) {
-          status = 'A'
-          label = 'Added'
-        } else if (code.includes('D')) {
-          status = 'D'
-          label = 'Deleted'
-        } else if (code.includes('R')) {
-          status = 'R'
-          label = 'Renamed'
+      if (!line.trim() || line.length < 3) continue
+      const x = line[0]
+      const y = line[1]
+      let rawPath = line.slice(3).trim().replace(/^"(.*)"$/, '$1').replace(/\\/g, '/')
+      if (rawPath.includes(' -> ')) {
+        rawPath = rawPath.split(' -> ')[1].trim()
+      }
+      if (!rawPath) continue
+
+      const getDetails = (code) => {
+        switch (code) {
+          case 'M': return { status: 'M', label: 'Modified' }
+          case 'A': return { status: 'A', label: 'Added' }
+          case 'D': return { status: 'D', label: 'Deleted' }
+          case 'R': return { status: 'R', label: 'Renamed' }
+          case '?': return { status: 'U', label: 'Untracked' }
+          default: return { status: code, label: 'Modified' }
         }
-        statusMap[rawPath] = status
-        changes.push({
+      }
+
+      // Check staged (X is not space, and not ?)
+      if (x !== ' ' && x !== '?') {
+        const d = getDetails(x)
+        stagedChanges.push({
           path: rawPath,
           fullPath: path.join(folderPath, rawPath),
           name: path.basename(rawPath),
-          status,
-          label
+          status: d.status,
+          label: d.label,
+          staged: true
         })
       }
+
+      // Check unstaged (Y is not space, or ??)
+      if (y !== ' ' || (x === '?' && y === '?')) {
+        const d = getDetails(x === '?' && y === '?' ? '?' : y)
+        unstagedChanges.push({
+          path: rawPath,
+          fullPath: path.join(folderPath, rawPath),
+          name: path.basename(rawPath),
+          status: d.status,
+          label: d.label,
+          staged: false
+        })
+        statusMap[rawPath] = d.status
+      } else {
+        statusMap[rawPath] = stagedChanges[stagedChanges.length - 1]?.status || 'M'
+      }
+
+      changes.push({
+        path: rawPath,
+        fullPath: path.join(folderPath, rawPath),
+        name: path.basename(rawPath),
+        status: statusMap[rawPath] || 'M',
+        label: (y !== ' ' || (x === '?' && y === '?')) ? 'Modified' : 'Staged'
+      })
     }
   }
 
-  // 4. Remote URL and latest commit
-  const [remoteCheck, logCheck] = await Promise.all([
+  // 4. Remote URL, latest commit, full graph log, and sync state (ahead / behind)
+  const [remoteCheck, logCheck, branchStatusCheck, logGraphCheck] = await Promise.all([
     runGit(['config', '--get', 'remote.origin.url'], folderPath, 3000),
-    runGit(['log', '-1', '--format=%h - %s (%cr)'], folderPath, 3000)
+    runGit(['log', '-1', '--format=%h - %s (%cr)'], folderPath, 3000),
+    runGit(['rev-list', '--left-right', '--count', `${branch}...@{u}`], folderPath, 3000),
+    runGit(['log', '-n', '50', '--pretty=format:%H%x00%h%x00%s%x00%an%x00%ae%x00%cr%x00%d%x00%P'], folderPath, 6000)
   ])
+
+  let ahead = 0
+  let behind = 0
+  if (branchStatusCheck.success && branchStatusCheck.stdout) {
+    const counts = branchStatusCheck.stdout.split(/\s+/)
+    ahead = parseInt(counts[0], 10) || 0
+    behind = parseInt(counts[1], 10) || 0
+  }
+
+  const commits = []
+  if (logGraphCheck.success && logGraphCheck.rawStdout) {
+    const lines = logGraphCheck.rawStdout.split('\n')
+    for (const line of lines) {
+      if (!line.trim()) continue
+      const parts = line.split('\0')
+      if (parts.length < 7) continue
+      const [hash, shortHash, subject, author, email, relativeDate, decorationsRaw, parentsRaw] = parts
+
+      const decorations = {
+        isHead: false,
+        branches: [],
+        remotes: [],
+        tags: []
+      }
+      if (decorationsRaw) {
+        const clean = decorationsRaw.trim().replace(/^\(|\)$/g, '')
+        if (clean) {
+          clean.split(',').forEach(item => {
+            const s = item.trim()
+            if (s.startsWith('HEAD -> ')) {
+              decorations.isHead = true
+              decorations.branches.push(s.replace('HEAD -> ', ''))
+            } else if (s === 'HEAD') {
+              decorations.isHead = true
+            } else if (s.startsWith('tag: ')) {
+              decorations.tags.push(s.replace('tag: ', ''))
+            } else if (s.includes('/')) {
+              if (!s.endsWith('/HEAD')) {
+                decorations.remotes.push(s)
+              }
+            } else if (s) {
+              decorations.branches.push(s)
+            }
+          })
+        }
+      }
+
+      commits.push({
+        hash,
+        shortHash,
+        subject,
+        author,
+        email,
+        relativeDate,
+        decorations,
+        parents: parentsRaw ? parentsRaw.trim().split(/\s+/) : []
+      })
+    }
+  }
 
   return {
     isRepo: true,
     branch: branch || 'main',
     remoteUrl: remoteCheck.stdout || null,
-    hasChanges: changes.length > 0,
-    changesCount: changes.length,
+    hasChanges: stagedChanges.length > 0 || unstagedChanges.length > 0,
+    changesCount: stagedChanges.length + unstagedChanges.length,
+    stagedChanges,
+    unstagedChanges,
     changes,
     statusMap,
-    latestCommit: logCheck.stdout || null
+    latestCommit: logCheck.stdout || null,
+    commits,
+    ahead,
+    behind
   }
 }
 
 ipcMain.handle('git-get-status', async (_event, folderPath) => {
   if (!folderPath || !fs.existsSync(folderPath)) {
-    return { isRepo: false, branch: null, hasChanges: false, changesCount: 0, changes: [], statusMap: {}, latestCommit: null, remoteUrl: null }
+    return { isRepo: false, branch: null, hasChanges: false, changesCount: 0, changes: [], stagedChanges: [], unstagedChanges: [], statusMap: {}, latestCommit: null, remoteUrl: null, ahead: 0, behind: 0 }
   }
   return getGitFullInfo(folderPath)
 })
 
 ipcMain.handle('git-stage-all', async (_event, folderPath) => {
   if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
-  const res = await runGit(['add', '-A'], folderPath, 5000)
+  const res = await runGit(['add', '-A'], folderPath, 8000)
   return res.success ? { success: true } : { success: false, error: res.error }
+})
+
+ipcMain.handle('git-stage-file', async (_event, { folderPath, filePath }) => {
+  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+  const res = await runGit(['add', filePath], folderPath, 8000)
+  return res.success ? { success: true } : { success: false, error: res.error }
+})
+
+ipcMain.handle('git-unstage-all', async (_event, folderPath) => {
+  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+  const res = await runGit(['restore', '--staged', '.'], folderPath, 8000)
+  return res.success ? { success: true } : { success: false, error: res.error }
+})
+
+ipcMain.handle('git-unstage-file', async (_event, { folderPath, filePath }) => {
+  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+  const res = await runGit(['restore', '--staged', filePath], folderPath, 8000)
+  return res.success ? { success: true } : { success: false, error: res.error }
+})
+
+ipcMain.handle('git-discard-file', async (_event, { folderPath, filePath }) => {
+  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+  // Try clean for untracked and restore for tracked
+  await runGit(['clean', '-f', filePath], folderPath, 5000)
+  const res = await runGit(['restore', filePath], folderPath, 5000)
+  if (!res.success) {
+    // Fallback to checkout
+    await runGit(['checkout', '--', filePath], folderPath, 5000)
+  }
+  return { success: true }
+})
+
+ipcMain.handle('git-discard-all', async (_event, folderPath) => {
+  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+  await runGit(['restore', '.'], folderPath, 8000)
+  await runGit(['clean', '-fd'], folderPath, 8000)
+  return { success: true }
 })
 
 ipcMain.handle('git-commit', async (_event, { folderPath, message }) => {
   if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
   if (!message?.trim()) return { success: false, error: 'Commit message is required' }
-  // Parameterized argument array - immune to command injection and quote escaping bugs
-  const res = await runGit(['commit', '-m', message.trim()], folderPath, 8000)
+  const res = await runGit(['commit', '-m', message.trim()], folderPath, 10000)
   return res.success ? { success: true, output: res.stdout } : { success: false, error: res.error }
+})
+
+ipcMain.handle('git-commit-action', async (_event, { folderPath, message, action = 'commit' }) => {
+  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+  if (!message?.trim() && action !== 'commit-amend') {
+    return { success: false, error: 'Commit message is required' }
+  }
+
+  if (action === 'commit-amend') {
+    const commitMsg = message?.trim() ? ['-m', message.trim()] : ['--no-edit']
+    const res = await runGit(['commit', '--amend', ...commitMsg], folderPath, 10000)
+    return res.success ? { success: true, output: res.stdout } : { success: false, error: res.error }
+  }
+
+  // 1. Commit
+  const commitRes = await runGit(['commit', '-m', message.trim()], folderPath, 10000)
+  if (!commitRes.success) {
+    return { success: false, error: commitRes.error }
+  }
+
+  // 2. Secondary action
+  if (action === 'commit-push') {
+    const pushRes = await runGit(['push'], folderPath, 25000)
+    if (!pushRes.success) {
+      return { success: true, warning: 'Committed locally, but Push failed: ' + (pushRes.error || '') }
+    }
+  } else if (action === 'commit-sync') {
+    await runGit(['pull', '--rebase'], folderPath, 25000)
+    const pushRes = await runGit(['push'], folderPath, 25000)
+    if (!pushRes.success) {
+      return { success: true, warning: 'Committed locally, but Sync Push failed: ' + (pushRes.error || '') }
+    }
+  }
+
+  return { success: true, output: commitRes.stdout }
+})
+
+ipcMain.handle('git-push', async (_event, folderPath) => {
+  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+  const res = await runGit(['push'], folderPath, 25000)
+  return res.success ? { success: true, output: res.stdout } : { success: false, error: res.error }
+})
+
+ipcMain.handle('git-pull', async (_event, folderPath) => {
+  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+  const res = await runGit(['pull'], folderPath, 25000)
+  return res.success ? { success: true, output: res.stdout } : { success: false, error: res.error }
+})
+
+ipcMain.handle('git-fetch', async (_event, folderPath) => {
+  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+  const res = await runGit(['fetch'], folderPath, 20000)
+  return res.success ? { success: true, output: res.stdout } : { success: false, error: res.error }
+})
+
+ipcMain.handle('git-get-graph', async (_event, { folderPath, maxCount = 50 }) => {
+  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, commits: [] }
+  const args = ['log', `-n`, `${maxCount}`, '--pretty=format:%H%x00%h%x00%s%x00%an%x00%ae%x00%cr%x00%d%x00%P']
+  const res = await runGit(args, folderPath, 10000)
+  if (!res.success) return { success: false, error: res.error, commits: [] }
+
+  const lines = res.rawStdout.split('\n')
+  const commits = []
+  for (const line of lines) {
+    if (!line.trim()) continue
+    const parts = line.split('\0')
+    if (parts.length < 7) continue
+    const [hash, shortHash, subject, author, email, relativeDate, decorationsRaw, parentsRaw] = parts
+
+    const decorations = {
+      isHead: false,
+      branches: [],
+      remotes: [],
+      tags: []
+    }
+    if (decorationsRaw) {
+      const clean = decorationsRaw.trim().replace(/^\(|\)$/g, '')
+      if (clean) {
+        clean.split(',').forEach(item => {
+          const s = item.trim()
+          if (s.startsWith('HEAD -> ')) {
+            decorations.isHead = true
+            decorations.branches.push(s.replace('HEAD -> ', ''))
+          } else if (s === 'HEAD') {
+            decorations.isHead = true
+          } else if (s.startsWith('tag: ')) {
+            decorations.tags.push(s.replace('tag: ', ''))
+          } else if (s.includes('/')) {
+            if (!s.endsWith('/HEAD')) {
+              decorations.remotes.push(s)
+            }
+          } else if (s) {
+            decorations.branches.push(s)
+          }
+        })
+      }
+    }
+
+    commits.push({
+      hash,
+      shortHash,
+      subject,
+      author,
+      email,
+      relativeDate,
+      decorations,
+      parents: parentsRaw ? parentsRaw.trim().split(/\s+/) : []
+    })
+  }
+
+  return { success: true, commits }
+})
+
+ipcMain.handle('git-get-branches', async (_event, folderPath) => {
+  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, local: [], remote: [], current: 'main' }
+  const res = await runGit(['branch', '-a'], folderPath, 5000)
+  if (!res.success) return { success: false, error: res.error, local: [], remote: [], current: 'main' }
+
+  let current = 'main'
+  const local = []
+  const remote = []
+  const lines = res.rawStdout.split('\n')
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    const isCur = trimmed.startsWith('*')
+    const branchName = trimmed.replace(/^\*\s*/, '').trim()
+    if (branchName.includes('->')) continue
+
+    if (isCur) current = branchName
+
+    if (branchName.startsWith('remotes/')) {
+      remote.push(branchName.replace(/^remotes\//, ''))
+    } else {
+      local.push(branchName)
+    }
+  }
+
+  return { success: true, current, local, remote }
+})
+
+ipcMain.handle('git-checkout-branch', async (_event, { folderPath, branch }) => {
+  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+  const res = await runGit(['checkout', branch], folderPath, 8000)
+  return res.success ? { success: true, output: res.stdout } : { success: false, error: res.error }
+})
+
+ipcMain.handle('git-create-branch', async (_event, { folderPath, branch }) => {
+  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+  const res = await runGit(['checkout', '-b', branch], folderPath, 8000)
+  return res.success ? { success: true, output: res.stdout } : { success: false, error: res.error }
+})
+
+ipcMain.handle('git-diff', async (_event, { folderPath, filePath, staged = false }) => {
+  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, diff: '' }
+  const args = staged ? ['diff', '--staged', filePath] : ['diff', filePath]
+  const res = await runGit(args, folderPath, 8000)
+  let diff = res.stdout || ''
+
+  // If empty and file exists, it might be untracked
+  if (!diff && filePath) {
+    const full = path.join(folderPath, filePath)
+    if (fs.existsSync(full)) {
+      try {
+        const content = fs.readFileSync(full, 'utf-8')
+        const lines = content.split('\n').map(l => '+' + l).join('\n')
+        diff = `--- /dev/null\n+++ b/${filePath}\n@@ -0,0 +1,${content.split('\n').length} @@\n${lines}`
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  return { success: true, diff }
+})
+
+ipcMain.handle('git-show-commit', async (_event, { folderPath, hash }) => {
+  if (!folderPath || !fs.existsSync(folderPath) || !hash) return { success: false, commit: null }
+  const [showRes, statRes] = await Promise.all([
+    runGit(['show', '--stat', '--patch', hash], folderPath, 10000),
+    runGit(['show', '--name-status', '--format=%H%x00%s%x00%an%x00%cr', hash], folderPath, 8000)
+  ])
+
+  let meta = {}
+  const files = []
+  if (statRes.rawStdout) {
+    const lines = statRes.rawStdout.split('\n')
+    if (lines.length > 0 && lines[0].includes('\0')) {
+      const parts = lines[0].split('\0')
+      meta = {
+        hash: parts[0],
+        subject: parts[1],
+        author: parts[2],
+        relativeDate: parts[3]
+      }
+    }
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (!line) continue
+      const statusChar = line[0]
+      const fPath = line.slice(1).trim()
+      files.push({ status: statusChar, path: fPath })
+    }
+  }
+
+  return {
+    success: true,
+    meta,
+    files,
+    diff: showRes.stdout || ''
+  }
+})
+
+ipcMain.handle('git-generate-commit-message', async (_event, folderPath) => {
+  if (!folderPath || !fs.existsSync(folderPath)) {
+    return { success: false, message: 'chore: update files' }
+  }
+
+  try {
+    const [statusRes, diffRes] = await Promise.all([
+      runGit(['status', '--porcelain'], folderPath, 4000),
+      runGit(['diff', '--stat'], folderPath, 4000)
+    ])
+
+    const files = []
+    if (statusRes.rawStdout) {
+      statusRes.rawStdout.split('\n').forEach(line => {
+        if (line.trim().length > 3) {
+          const p = line.slice(3).trim()
+          files.push(p)
+        }
+      })
+    }
+
+    if (files.length === 0) {
+      return { success: true, message: 'chore: working tree update' }
+    }
+
+    // Heuristics based on filenames
+    let type = 'feat'
+    let scope = ''
+    const lowerFiles = files.map(f => f.toLowerCase())
+
+    if (lowerFiles.some(f => f.includes('sourcecontrol') || f.includes('git'))) {
+      type = 'feat'
+      scope = 'source-control'
+    } else if (lowerFiles.some(f => f.includes('test') || f.includes('spec'))) {
+      type = 'test'
+      scope = 'unit'
+    } else if (lowerFiles.every(f => f.endsWith('.md') || f.includes('doc'))) {
+      type = 'docs'
+      scope = 'readme'
+    } else if (lowerFiles.some(f => f.includes('style') || f.endsWith('.css'))) {
+      type = 'style'
+      scope = 'ui'
+    } else if (lowerFiles.some(f => f.includes('fix') || f.includes('bug') || f.includes('error'))) {
+      type = 'fix'
+      scope = 'core'
+    } else if (lowerFiles.some(f => f.includes('package.json') || f.includes('docker') || f.includes('requirements'))) {
+      type = 'chore'
+      scope = 'deps'
+    } else if (lowerFiles.some(f => f.includes('electron') || f.includes('main.cjs'))) {
+      type = 'fix'
+      scope = 'electron'
+    } else {
+      type = 'feat'
+      scope = path.basename(files[0]).split('.')[0] || 'app'
+    }
+
+    const firstFileName = path.basename(files[0])
+    const countNote = files.length > 1 ? ` and ${files.length - 1} other files` : ''
+    const summary = `update ${firstFileName}${countNote}`
+    const message = scope ? `${type}(${scope}): ${summary}` : `${type}: ${summary}`
+
+    return { success: true, message }
+  } catch (err) {
+    return { success: true, message: 'chore: update repository files' }
+  }
 })
 
 ipcMain.handle('git-init', async (_event, folderPath) => {

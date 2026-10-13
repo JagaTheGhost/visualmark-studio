@@ -418,11 +418,18 @@ Distributed under the MIT License.
 
 
   // Git status refresher
-  const refreshGitStatus = useCallback(async (folderPath = workspaceDirectory?.path) => {
-    if (!folderPath || typeof window === 'undefined' || !window.electronAPI?.getGitInfo) return
+  const refreshGitStatus = useCallback(async (folderPath = null) => {
+    let target = folderPath || workspaceDirectory?.path || (typeof workspaceDirectory === 'string' ? workspaceDirectory : null)
+    if (!target && typeof window !== 'undefined' && window.electronAPI?.getDefaultWorkspace) {
+      try {
+        const def = await window.electronAPI.getDefaultWorkspace()
+        if (def?.rootPath) target = def.rootPath
+      } catch {}
+    }
+    if (!target || typeof window === 'undefined' || !window.electronAPI?.getGitInfo) return
     setIsRefreshingGit(true)
     try {
-      const info = await window.electronAPI.getGitInfo(folderPath)
+      const info = await window.electronAPI.getGitInfo(target)
       if (info) setGitInfo(info)
     } catch (err) {
       console.warn('Failed to query git status:', err)
@@ -2538,6 +2545,7 @@ Distributed under the MIT License.
                 onTabChange={(tab) => {
                   setActiveActivityTab(tab)
                   setSidebarCollapsed(false)
+                  if (tab === 'git') refreshGitStatus()
                 }}
                 sidebarCollapsed={sidebarCollapsed}
                 onToggleSidebar={() => setSidebarCollapsed(prev => !prev)}
@@ -2555,6 +2563,9 @@ Distributed under the MIT License.
                 openDocTabs={openDocTabs}
                 activeFile={activeFile}
                 workspaceDirectory={workspaceDirectory}
+                gitInfo={gitInfo}
+                onRefreshGit={refreshGitStatus}
+                isRefreshingGit={isRefreshingGit}
                 onOpenFolder={handleOpenNativeFolder}
                 onSelectFile={handleSelectFile}
                 onCreateFile={handleCreateFile}
@@ -2989,7 +3000,7 @@ Distributed under the MIT License.
             isDirty={!!dirtyFiles[activeFile]}
             gitInfo={gitInfo}
             onOpenGitTab={() => {
-              setActiveActivityTab('source-control')
+              setActiveActivityTab('git')
               setSidebarCollapsed(false)
             }}
             isBottomPanelOpen={isBottomPanelOpen}

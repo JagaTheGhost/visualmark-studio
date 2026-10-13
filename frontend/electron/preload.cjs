@@ -64,7 +64,23 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Git / Source Control Operations
   getGitInfo: (folderPath) => ipcRenderer.invoke('git-get-status', folderPath),
   gitStageAll: (folderPath) => ipcRenderer.invoke('git-stage-all', folderPath),
+  gitStageFile: (folderPath, filePath) => ipcRenderer.invoke('git-stage-file', { folderPath, filePath }),
+  gitUnstageAll: (folderPath) => ipcRenderer.invoke('git-unstage-all', folderPath),
+  gitUnstageFile: (folderPath, filePath) => ipcRenderer.invoke('git-unstage-file', { folderPath, filePath }),
+  gitDiscardFile: (folderPath, filePath) => ipcRenderer.invoke('git-discard-file', { folderPath, filePath }),
+  gitDiscardAll: (folderPath) => ipcRenderer.invoke('git-discard-all', folderPath),
   gitCommit: (folderPath, message) => ipcRenderer.invoke('git-commit', { folderPath, message }),
+  gitCommitAction: (folderPath, message, action) => ipcRenderer.invoke('git-commit-action', { folderPath, message, action }),
+  gitPush: (folderPath) => ipcRenderer.invoke('git-push', folderPath),
+  gitPull: (folderPath) => ipcRenderer.invoke('git-pull', folderPath),
+  gitFetch: (folderPath) => ipcRenderer.invoke('git-fetch', folderPath),
+  gitGetGraph: (folderPath, maxCount) => ipcRenderer.invoke('git-get-graph', { folderPath, maxCount }),
+  gitGetBranches: (folderPath) => ipcRenderer.invoke('git-get-branches', folderPath),
+  gitCheckoutBranch: (folderPath, branch) => ipcRenderer.invoke('git-checkout-branch', { folderPath, branch }),
+  gitCreateBranch: (folderPath, branch) => ipcRenderer.invoke('git-create-branch', { folderPath, branch }),
+  gitDiff: (folderPath, filePath, staged) => ipcRenderer.invoke('git-diff', { folderPath, filePath, staged }),
+  gitShowCommit: (folderPath, hash) => ipcRenderer.invoke('git-show-commit', { folderPath, hash }),
+  gitGenerateCommitMessage: (folderPath) => ipcRenderer.invoke('git-generate-commit-message', folderPath),
   gitInit: (folderPath) => ipcRenderer.invoke('git-init', folderPath),
 
   // Backend Sidecar Connection Info
