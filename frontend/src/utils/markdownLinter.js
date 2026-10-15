@@ -6,7 +6,7 @@
 export function lintMarkdownDocument(content = '', filename = 'README.md') {
   if (!content) return []
   const problems = []
-  const lines = content.split('\n')
+  const lines = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
 
   let insideCodeFence = false
   let codeFenceStartLine = 0

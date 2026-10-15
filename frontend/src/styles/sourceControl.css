@@ -631,6 +631,35 @@
   background-color: var(--primary-hover, #0062a3);
 }
 
+.sc-not-repo-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.sc-btn-clone {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm, 4px);
+  background-color: var(--surface-light, #333333);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  color: #f1f5f9;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.sc-btn-clone:hover {
+  background-color: rgba(56, 189, 248, 0.15);
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
 /* Body Content */
 .sc-body-content {
   display: flex;
@@ -1541,4 +1570,147 @@
   border-radius: 8px;
   background-color: rgba(56, 189, 248, 0.15);
   color: #38bdf8;
+}
+
+/* ====================================================================
+   Clone Repository Modal
+   ==================================================================== */
+.sc-clone-modal {
+  max-width: 490px;
+  width: 92%;
+}
+
+.sc-modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-clone-subtitle {
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+
+.sc-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.sc-form-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-primary, #e2e8f0);
+}
+
+.sc-form-hint {
+  font-size: 11px;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.35;
+}
+
+.sc-form-hint code {
+  background-color: rgba(255, 255, 255, 0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 10.5px;
+  color: #38bdf8;
+}
+
+.sc-folder-select-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-folder-select-row .sc-branch-input {
+  flex: 1;
+}
+
+.sc-btn-browse {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background-color: var(--surface-mid, #2a2d2e);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  border-radius: var(--radius-sm, 4px);
+  color: var(--text-primary, #cccccc);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s ease;
+}
+
+.sc-btn-browse:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.sc-clone-error-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm, 4px);
+  background-color: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  font-size: 12px;
+  margin-bottom: 14px;
+}
+
+.sc-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.sc-btn-cancel {
+  padding: 6px 14px;
+  background-color: transparent;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  border-radius: var(--radius-sm, 4px);
+  color: var(--text-primary, #cccccc);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.sc-btn-cancel:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.sc-btn-confirm-clone {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background-color: var(--primary, #007acc);
+  border: none;
+  border-radius: var(--radius-sm, 4px);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.sc-btn-confirm-clone:hover:not(:disabled) {
+  background-color: var(--primary-hover, #0062a3);
+}
+
+.sc-btn-confirm-clone:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }

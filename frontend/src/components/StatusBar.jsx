@@ -66,16 +66,16 @@ export default function StatusBar({
           </span>
         </div>
 
-        {/* Integrated Terminal Button */}
+        {/* System Output & Logs Button */}
         <div
-          className="status-item terminal-status-btn"
-          onClick={() => onToggleBottomPanel('terminal')}
+          className="status-item output-status-btn"
+          onClick={() => onToggleBottomPanel('output')}
           style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}
-          data-tooltip="Toggle Integrated Terminal (Ctrl+`)"
+          data-tooltip="Toggle System Output & Diagnostics (Ctrl+`)"
           data-tooltip-pos="top"
         >
-          <span className="material-symbols-outlined status-icon" style={{ fontSize: '14px' }}>terminal</span>
-          <span className="hide-mobile">Terminal</span>
+          <span className="material-symbols-outlined status-icon" style={{ fontSize: '14px' }}>output</span>
+          <span className="hide-mobile">Output</span>
         </div>
 
         {/* Position & Typography details */}

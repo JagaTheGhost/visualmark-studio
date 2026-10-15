@@ -1,23 +1,26 @@
-import { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import './index.css'
 import TopMenuBar from './components/TopMenuBar'
 import ActivityBar from './components/ActivityBar'
-import SidebarDrawer from './components/SidebarDrawer'
-import TabBar from './components/TabBar'
-import Preview from './components/Preview'
+import SidebarDrawer from './components/sidebar/SidebarDrawer'
+import TabBar from './components/tabbar/TabBar'
 import StatusBar from './components/StatusBar'
 import IdeTooltip from './components/IdeTooltip'
 import {
   loadKeybindings,
   saveKeybindingOverride,
-  resetAllKeybindings,
-  matchesKeybinding
+  resetAllKeybindings
 } from './utils/keybindingManager'
 import { initGlobalHorizontalWheelHandler } from './utils/horizontalScrollHelper'
 import { ToastContainer, NotificationHistoryPanel } from './components/Toast'
 import { useToast } from './context/ToastContext'
 import { useEditorPreferences } from './hooks/useEditorPreferences'
 import { useBottomPanel } from './hooks/useBottomPanel'
+import { useAppKeybindings } from './hooks/useAppKeybindings'
+import { useAppCommands } from './hooks/useAppCommands'
+import { useAppUpdates } from './hooks/useAppUpdates'
+import StudioWorkspaceRenderer, { isStudioTabId } from './components/app/StudioWorkspaceRenderer'
+import AppModals from './components/app/AppModals'
 import {
   copyDocumentToClipboard,
   downloadActiveFile,
@@ -27,39 +30,11 @@ import {
 } from './utils/documentExportUtils'
 import { validateDocFilename } from './utils/filenameUtils'
 import { foldDataUris, unfoldDataUris } from './utils/dataUriFold'
-import UnsupportedFileViewer from './components/UnsupportedFileViewer'
-import BottomPanelDrawer from './components/BottomPanelDrawer'
+import BottomPanelDrawer from './components/bottompanel/BottomPanelDrawer'
 import { lintMarkdownDocument } from './utils/markdownLinter'
 import { PRESET_TEMPLATES, getPresetById } from './data/presetTemplates'
 import { apiPost } from './utils/apiClient'
-
-// Code-split heavy studio tooling and modal workspaces to shrink main bundle
-const BadgeStudioTab = lazy(() => import('./components/studio/BadgeStudioTab'))
-const DiagramStudioTab = lazy(() => import('./components/studio/DiagramStudioTab'))
-const TableStudioTab = lazy(() => import('./components/studio/TableStudioTab'))
-const SnippetStudioTab = lazy(() => import('./components/studio/SnippetStudioTab'))
-const ImageStudioTab = lazy(() => import('./components/studio/ImageStudioTab'))
-const DirectoryTreeStudioTab = lazy(() => import('./components/studio/DirectoryTreeStudioTab'))
-const ApiStudioTab = lazy(() => import('./components/studio/ApiStudioTab'))
-const AuditStudioTab = lazy(() => import('./components/studio/AuditStudioTab'))
-const ContributorStudioTab = lazy(() => import('./components/studio/ContributorStudioTab'))
-const ChangelogStudioTab = lazy(() => import('./components/studio/ChangelogStudioTab'))
-const IconEmojiStudioTab = lazy(() => import('./components/studio/IconEmojiStudioTab'))
-const SettingsTab = lazy(() => import('./components/SettingsTab'))
-const ShortcutsTab = lazy(() => import('./components/ShortcutsTab'))
-const CommandPalette = lazy(() => import('./components/CommandPalette'))
-const InsertTargetModal = lazy(() => import('./components/InsertTargetModal'))
-const WhatsNewTab = lazy(() => import('./components/WhatsNewTab'))
 import { APP_CURRENT_VERSION } from './data/releaseNotes'
-
-function StudioLoadingFallback({ title = 'Studio Tool' }) {
-  return (
-    <div className="studio-tab-loading">
-      <div className="studio-loading-spinner" />
-      <div className="studio-loading-text">Loading {title}...</div>
-    </div>
-  )
-}
 
 const safeSetItem = (key, value) => {
   try {
@@ -69,14 +44,19 @@ const safeSetItem = (key, value) => {
   }
 }
 
-const isStudioTabId = (id) => {
-  return (
-    typeof id === 'string' &&
-    (id.endsWith('.studio') || id === 'settings' || id === 'shortcuts' || id === 'whats-new' || id === 'release-notes')
-  )
-}
 
 function App() {
+  const {
+    showToast: triggerToast,
+    runtimeProblems,
+    clearRuntimeProblems,
+    removeRuntimeProblem
+  } = useToast()
+
+  const showToast = useCallback((message, type = 'success', options = {}) => {
+    return triggerToast(message, type, options)
+  }, [triggerToast])
+
   // LocalStorage-backed core state
   const [repoUrl, setRepoUrl] = useState(() => localStorage.getItem('readme_repo_url') || '')
   const [description, setDescription] = useState(() => localStorage.getItem('readme_description') || '')
@@ -165,6 +145,8 @@ Distributed under the MIT License.
 
   const [activeFile, setActiveFile] = useState(() => {
     try {
+      const savedWs = localStorage.getItem('readme_workspace_directory')
+      if (!savedWs) return null
       const savedTabs = localStorage.getItem('readme_open_doc_tabs')
       let parsedTabs = []
       if (savedTabs !== null) {
@@ -248,6 +230,8 @@ Distributed under the MIT License.
   })
   const [openDocTabs, setOpenDocTabs] = useState(() => {
     try {
+      const savedWs = localStorage.getItem('readme_workspace_directory')
+      if (!savedWs) return []
       const saved = localStorage.getItem('readme_open_doc_tabs')
       if (saved !== null) {
         const parsed = JSON.parse(saved)
@@ -259,35 +243,21 @@ Distributed under the MIT License.
     } catch {
       // ignore
     }
-    return ['README.md']
+    return []
   })
+  const [isCloneModalOpen, setIsCloneModalOpen] = useState(false)
+
+  // Listen for global open-git-clone-dialog events
+  useEffect(() => {
+    const handleOpenClone = () => setIsCloneModalOpen(true)
+    window.addEventListener('open-git-clone-dialog', handleOpenClone)
+    return () => window.removeEventListener('open-git-clone-dialog', handleOpenClone)
+  }, [])
   const fileScrollPositions = useRef({})
   const fileCursorPositions = useRef({})
   const lastActiveDocRef = useRef('README.md')
   const [insertModalState, setInsertModalState] = useState({ isOpen: false, snippet: '', snippetType: '' })
-  const [updateDownloaded, setUpdateDownloaded] = useState(null)
-  const [updateProgress, setUpdateProgress] = useState(null)
-  const [updateError, setUpdateError] = useState(null)
-  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false)
   const [appVersion, setAppVersion] = useState(APP_CURRENT_VERSION)
-  const [autoDownloadUpdates, setAutoDownloadUpdates] = useState(() => {
-    try {
-      const saved = localStorage.getItem('vm_auto_download_updates')
-      return saved !== null ? saved === 'true' : false
-    } catch {
-      return false
-    }
-  })
-  const autoDownloadUpdatesRef = useRef(autoDownloadUpdates)
-  autoDownloadUpdatesRef.current = autoDownloadUpdates
-  const [pendingUpdateInfo, setPendingUpdateInfo] = useState(null)
-  const [showInitialUpdateModal, setShowInitialUpdateModal] = useState(() => {
-    try {
-      return localStorage.getItem('vm_update_mode_configured') !== 'true'
-    } catch {
-      return false
-    }
-  })
 
   // Synchronize dynamic app version from Electron package.json if available
   useEffect(() => {
@@ -298,12 +268,31 @@ Distributed under the MIT License.
     }
   }, [])
 
-  // Sync autoDownload setting with Electron main process
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.electronAPI?.setAutoDownload) {
-      window.electronAPI.setAutoDownload(autoDownloadUpdates)
-    }
-  }, [autoDownloadUpdates])
+  // Open "What's New" release notes in the editor tab section
+  const handleOpenWhatsNewTab = useCallback(() => {
+    setOpenDocTabs((prev) => prev.filter((f) => !isStudioTabId(f)))
+    setOpenStudioTabs((prev) => (prev.includes('whats-new') ? prev : [...prev, 'whats-new']))
+    setActiveFile('whats-new')
+  }, [])
+
+  // Electron Auto-Updater & Preferences
+  const {
+    autoDownloadUpdates,
+    setAutoDownloadUpdates,
+    updateProgress,
+    setUpdateProgress,
+    updateDownloaded,
+    updateError,
+    pendingUpdateInfo,
+    setPendingUpdateInfo,
+    isCheckingUpdate,
+    showInitialUpdateModal,
+    setShowInitialUpdateModal,
+    handleToggleAutoDownloadUpdates,
+    handleStartDownloadUpdate,
+    handleRestartToUpdate,
+    handleCheckForUpdates
+  } = useAppUpdates({ appVersion, showToast, handleOpenWhatsNewTab })
 
   // Integrated Bottom Panel & Diagnostics State (VS Code / Antigravity IDE)
   const {
@@ -418,7 +407,7 @@ Distributed under the MIT License.
 
 
   // Git status refresher
-  const refreshGitStatus = useCallback(async (folderPath = null) => {
+  const refreshGitStatus = useCallback(async (folderPath = null, isSilent = false) => {
     let target = folderPath || workspaceDirectory?.path || (typeof workspaceDirectory === 'string' ? workspaceDirectory : null)
     if (!target && typeof window !== 'undefined' && window.electronAPI?.getDefaultWorkspace) {
       try {
@@ -427,22 +416,16 @@ Distributed under the MIT License.
       } catch {}
     }
     if (!target || typeof window === 'undefined' || !window.electronAPI?.getGitInfo) return
-    setIsRefreshingGit(true)
+    if (!isSilent) setIsRefreshingGit(true)
     try {
       const info = await window.electronAPI.getGitInfo(target)
       if (info) setGitInfo(info)
     } catch (err) {
       console.warn('Failed to query git status:', err)
     } finally {
-      setIsRefreshingGit(false)
+      if (!isSilent) setIsRefreshingGit(false)
     }
   }, [workspaceDirectory])
-
-  const { showToast: triggerToast } = useToast()
-
-  const showToast = useCallback((message, type = 'success', options = {}) => {
-    return triggerToast(message, type, options)
-  }, [triggerToast])
 
   // Recent Workspaces Management
   const addRecentWorkspace = useCallback((wsPath, wsName) => {
@@ -463,6 +446,21 @@ Distributed under the MIT License.
     localStorage.removeItem('visualmark_recent_workspaces')
     showToast('Cleared recently opened workspaces list', 'info', { minor: true })
   }, [showToast])
+
+  // Close active workspace directory and return to Welcome Launcher
+  const handleCloseWorkspace = useCallback(() => {
+    setWorkspaceDirectory(null)
+    localStorage.removeItem('readme_workspace_directory')
+    setFilePathsMap({})
+    setOpenDocTabs([])
+    setActiveFile(null)
+    setLocalFilePath(null)
+    setGitInfo(null)
+    setAdditionalFiles({})
+    setMarkdown(defaultMarkdown)
+    window.dispatchEvent(new CustomEvent('workspace-tree-refresh'))
+    showToast('Workspace closed. Returning to launcher.', 'info', { minor: true })
+  }, [defaultMarkdown, showToast])
 
   // Hot Exit & Crash Resilience: cache unsaved draft edits across crashes or computer restarts
   const updateHotExitDraft = useCallback((fileKey, content, filePath = null) => {
@@ -648,159 +646,6 @@ Distributed under the MIT License.
       } catch {}
     }
   }, [openDocTabs, activeFile, workspaceDirectory])
-
-  // Open "What's New" release notes in the editor tab section
-  const handleOpenWhatsNewTab = useCallback(() => {
-    setOpenDocTabs((prev) => prev.filter((f) => !isStudioTabId(f)))
-    setOpenStudioTabs((prev) => (prev.includes('whats-new') ? prev : [...prev, 'whats-new']))
-    setActiveFile('whats-new')
-  }, [])
-
-  // Startup version check & "What's New" release notes editor tab
-  useEffect(() => {
-    try {
-      const lastSeenVersion = localStorage.getItem('visualmark_last_seen_version')
-      const suppressAuto = localStorage.getItem('visualmark_suppress_whats_new') === 'true'
-
-      if (!lastSeenVersion) {
-        // Initial launch of VisualMark Studio: open release notes tab
-        localStorage.setItem('visualmark_last_seen_version', appVersion)
-        handleOpenWhatsNewTab()
-      } else if (lastSeenVersion !== appVersion) {
-        // App updated to a newer version!
-        localStorage.setItem('visualmark_last_seen_version', appVersion)
-        if (!suppressAuto) {
-          handleOpenWhatsNewTab()
-        } else {
-          showToast(`VisualMark Studio updated to v${appVersion}!`, 'info')
-        }
-      }
-    } catch (e) {
-      console.warn('Error reading version from localStorage:', e)
-    }
-  }, [appVersion, showToast, handleOpenWhatsNewTab])
-
-  const handleToggleAutoDownloadUpdates = useCallback((enabled) => {
-    setAutoDownloadUpdates(enabled)
-    try {
-      localStorage.setItem('vm_auto_download_updates', enabled ? 'true' : 'false')
-    } catch {}
-    if (typeof window !== 'undefined' && window.electronAPI?.setAutoDownload) {
-      window.electronAPI.setAutoDownload(enabled)
-    }
-    showToast(
-      enabled
-        ? 'Automatic update downloads enabled (updates will download in background).'
-        : 'Automatic update downloads disabled (VisualMark Studio will prompt before downloading).',
-      'info',
-      { source: 'Update' }
-    )
-  }, [showToast])
-
-  const handleStartDownloadUpdate = useCallback(async (info) => {
-    setPendingUpdateInfo(null)
-    setUpdateProgress({ percent: 0, transferred: 0, total: 0, version: info?.version })
-    setUpdateError(null)
-    showToast(`Starting download of update v${info?.version || ''}...`, 'info', { source: 'Update', important: true })
-    if (typeof window !== 'undefined' && window.electronAPI?.downloadUpdate) {
-      try {
-        const res = await window.electronAPI.downloadUpdate()
-        if (res && res.success === false) {
-          setUpdateProgress(null)
-          showToast(`Failed to start download: ${res.error || 'Unknown error'}`, 'error', { source: 'Update', important: true })
-        }
-      } catch (err) {
-        setUpdateProgress(null)
-        showToast(`Download failed: ${err.message}`, 'error', { source: 'Update', important: true })
-      }
-    }
-  }, [showToast])
-
-  const handleRestartToUpdate = useCallback(() => {
-    if (window.electronAPI?.quitAndInstallUpdate) {
-      window.electronAPI.quitAndInstallUpdate()
-    } else {
-      showToast('Restart the application to apply update.', 'info')
-    }
-  }, [showToast])
-
-  // Electron Auto-Updater IPC event listeners
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.electronAPI) {
-      const cleanupAvailable = window.electronAPI.onUpdateAvailable?.((info) => {
-        setUpdateError(null)
-        if (autoDownloadUpdatesRef.current) {
-          setUpdateProgress({ percent: 0, transferred: 0, total: 0, version: info?.version })
-          showToast(`Downloading update v${info?.version || ''} in background...`, 'info', { source: 'Update', important: true })
-        } else {
-          setPendingUpdateInfo(info)
-          showToast(`Update v${info?.version || ''} is available! Would you like to download it now?`, 'info', {
-            source: 'Update',
-            important: true,
-            duration: 15000,
-            action: {
-              label: 'Download Now',
-              onClick: () => handleStartDownloadUpdate(info)
-            }
-          })
-        }
-      })
-
-      const cleanupProgress = window.electronAPI.onUpdateProgress?.((progress) => {
-        setUpdateProgress(progress)
-      })
-
-      const cleanupDownloaded = window.electronAPI.onUpdateDownloaded?.((info) => {
-        setUpdateProgress(null)
-        setUpdateDownloaded(info)
-        setPendingUpdateInfo(null)
-        setUpdateError(null)
-        showToast(`Update v${info?.version || ''} downloaded! Click status bar to restart & install.`, 'success', {
-          source: 'Update',
-          important: true,
-          action: {
-            label: 'Restart Now',
-            onClick: () => handleRestartToUpdate()
-          }
-        })
-      })
-
-      const cleanupError = window.electronAPI.onUpdateError?.((err) => {
-        setUpdateProgress(null)
-        const errMsg = err?.message || 'Update check/download failed'
-        setUpdateError(errMsg)
-        showToast(`Update failed: ${errMsg}`, 'warning', { source: 'Update', important: true })
-      })
-
-      return () => {
-        if (typeof cleanupAvailable === 'function') cleanupAvailable()
-        if (typeof cleanupProgress === 'function') cleanupProgress()
-        if (typeof cleanupDownloaded === 'function') cleanupDownloaded()
-        if (typeof cleanupError === 'function') cleanupError()
-      }
-    }
-  }, [showToast, handleStartDownloadUpdate, handleRestartToUpdate])
-
-  const handleCheckForUpdates = useCallback(async () => {
-    if (isCheckingUpdate) return
-    setIsCheckingUpdate(true)
-    if (typeof window !== 'undefined' && window.electronAPI?.checkForUpdates) {
-      try {
-        showToast('Checking for updates...', 'info')
-        const res = await window.electronAPI.checkForUpdates()
-        if (res?.status === 'dev') {
-          showToast('Auto-updater is active in production packaged builds.', 'info')
-        }
-      } catch {
-        showToast('Unable to check for updates right now.', 'warning')
-      } finally {
-        setTimeout(() => setIsCheckingUpdate(false), 2000)
-      }
-    } else {
-      showToast(`VisualMark Studio v${appVersion} is up to date.`, 'info')
-      setIsCheckingUpdate(false)
-    }
-  }, [appVersion, isCheckingUpdate, showToast])
 
   // Documentation Generation
   const handleGenerate = async (url = repoUrl, desc = description, techStack = selectedTechs, options = {}) => {
@@ -1038,11 +883,15 @@ Distributed under the MIT License.
     }
   }
 
-  // Live Markdown Diagnostics for Problems Tab & Status Bar
-  const problems = useMemo(() => {
+  // Live Markdown Diagnostics + Runtime Errors/Warnings for Problems Tab & Status Bar
+  const markdownLintProblems = useMemo(() => {
     if (!activeFile || isStudioTabId(activeFile) || unsupportedFilesMap[activeFile]) return []
     return lintMarkdownDocument(currentContent, activeFile)
   }, [currentContent, activeFile, unsupportedFilesMap])
+
+  const problems = useMemo(() => {
+    return [...(runtimeProblems || []), ...markdownLintProblems]
+  }, [runtimeProblems, markdownLintProblems])
 
   const errorCount = useMemo(() => problems.filter((p) => p.severity === 'error').length, [problems])
   const warningCount = useMemo(() => problems.filter((p) => p.severity === 'warning').length, [problems])
@@ -1309,8 +1158,6 @@ Distributed under the MIT License.
 
           if (savedWs?.path) {
             openWorkspaceDirectoryRef.current(savedWs.path, savedWs.name)
-          } else if (ws?.rootPath) {
-            openWorkspaceDirectoryRef.current(ws.rootPath, ws.rootName)
           }
         }).catch((err) => {
           console.warn('Could not load default workspace on startup:', err)
@@ -1903,175 +1750,20 @@ Distributed under the MIT License.
     showToast(`✓ Created new document "${targetFilename}" from ${template.title}!`, 'success')
   }, [allFiles, openDocTabs, openPresetTabs, handleCreateFile, showToast])
 
-  // Dynamic Keyboard shortcut listener
-  useEffect(() => {
-    const getKey = (id) => keybindings.find((k) => k.id === id)?.key
-
-    const handleKeyDown = (e) => {
-      // Preferences: Settings
-      if (matchesKeybinding(e, getKey('pref.settings') || 'Ctrl + ,')) {
-        e.preventDefault()
-        handleOpenSettingsTab()
-      }
-      // Preferences: Shortcuts
-      else if (matchesKeybinding(e, getKey('pref.shortcuts') || 'Ctrl + /')) {
-        e.preventDefault()
-        handleOpenShortcutsTab()
-      }
-      // Command Palette
-      else if (
-        matchesKeybinding(e, getKey('view.commandPalette') || 'Ctrl + Shift + P') ||
-        e.key === 'F1' ||
-        ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K'))
-      ) {
-        e.preventDefault()
-        setCommandPaletteOpen((prev) => !prev)
-      }
-      // Toggle Primary Sidebar
-      else if (matchesKeybinding(e, getKey('view.toggleSidebar') || 'Ctrl + B')) {
-        e.preventDefault()
-        setSidebarCollapsed((prev) => !prev)
-      }
-      // Create Documentation
-      else if (matchesKeybinding(e, getKey('doc.create') || getKey('ai.generate') || 'Ctrl + Enter')) {
-        e.preventDefault()
-        handleGenerate()
-      }
-      // File: New Document
-      else if (matchesKeybinding(e, getKey('file.new') || 'Ctrl + N')) {
-        e.preventDefault()
-        handleCreateUntitledFile()
-      }
-      // File: Close Active Tab (Ctrl + W)
-      else if ((e.ctrlKey || e.metaKey) && (e.key === 'w' || e.key === 'W') && !e.shiftKey && !e.altKey) {
-        e.preventDefault()
-        if (activeFile) {
-          handleCloseFile(activeFile)
-        }
-      }
-      // File: Open File
-      else if (matchesKeybinding(e, getKey('file.open') || 'Ctrl + O')) {
-        e.preventDefault()
-        handleOpenNativeFile()
-      }
-      // File: Open Folder
-      else if (matchesKeybinding(e, getKey('file.openFolder') || 'Ctrl + Shift + O')) {
-        e.preventDefault()
-        handleOpenNativeFolder()
-      }
-      // File: Quick Save
-      else if (matchesKeybinding(e, getKey('file.save') || 'Ctrl + S')) {
-        e.preventDefault()
-        handleSaveNativeFile(false)
-      }
-      // File: Save As
-      else if (matchesKeybinding(e, getKey('file.saveAs') || 'Ctrl + Shift + S')) {
-        e.preventDefault()
-        handleSaveNativeFile(true)
-      }
-      // File: Export PDF
-      else if (matchesKeybinding(e, getKey('file.exportPdf') || 'Ctrl + P')) {
-        e.preventDefault()
-        handleDownloadPdf()
-      }
-      // Navigation: Explorer
-      else if (matchesKeybinding(e, getKey('nav.explorer') || 'Ctrl + Shift + E')) {
-        e.preventDefault()
-        setActiveActivityTab('explorer')
-        setSidebarCollapsed(false)
-      }
-      // AI: Generator sidebar
-      else if (matchesKeybinding(e, getKey('nav.generator') || 'Ctrl + Shift + G')) {
-        e.preventDefault()
-        setActiveActivityTab('generator')
-        setSidebarCollapsed(false)
-      }
-      // View: Cycle View Mode
-      else if (matchesKeybinding(e, getKey('view.cycleMode') || 'Ctrl + Shift + V')) {
-        e.preventDefault()
-        setViewMode((prev) => (prev === 'split' ? 'preview' : prev === 'preview' ? 'editor' : 'split'))
-      }
-      // View: Toggle Split Orientation
-      else if (
-        matchesKeybinding(e, getKey('view.toggleOrientation') || 'Ctrl + \\') ||
-        (e.altKey && e.shiftKey && (e.key === '0' || e.code === 'Digit0'))
-      ) {
-        e.preventDefault()
-        setOrientation((prev) => (prev === 'horizontal' ? 'vertical' : 'horizontal'))
-      }
-      // View: Zen Mode
-      else if (matchesKeybinding(e, getKey('view.toggleZen') || 'F11')) {
-        e.preventDefault()
-        setIsZenMode((prev) => !prev)
-      }
-      // Edit: Find
-      else if (matchesKeybinding(e, getKey('edit.find') || 'Ctrl + F')) {
-        e.preventDefault()
-        setFindReplaceMode('find')
-        setFindReplaceOpen(true)
-      }
-      // Edit: Replace
-      else if (matchesKeybinding(e, getKey('edit.replace') || 'Ctrl + H')) {
-        e.preventDefault()
-        setFindReplaceMode('replace')
-        setFindReplaceOpen(true)
-      }
-      // Studio: Badges
-      else if (matchesKeybinding(e, getKey('studio.badges') || 'Ctrl + Shift + B')) {
-        e.preventDefault()
-        handleOpenStudioTab('badges.studio')
-      }
-      // Studio: Diagrams
-      else if (matchesKeybinding(e, getKey('studio.diagrams') || 'Ctrl + Shift + M')) {
-        e.preventDefault()
-        handleOpenStudioTab('diagrams.studio')
-      }
-      // Studio: Tables
-      else if (matchesKeybinding(e, getKey('studio.tables') || 'Ctrl + Shift + T')) {
-        e.preventDefault()
-        handleOpenStudioTab('tables.studio')
-      }
-      // Studio: Snippets
-      else if (matchesKeybinding(e, getKey('studio.snippets') || 'Ctrl + Shift + K')) {
-        e.preventDefault()
-        handleOpenStudioTab('snippets.studio')
-      }
-      // Studio: Images
-      else if (matchesKeybinding(e, getKey('studio.images') || 'Ctrl + Shift + I')) {
-        e.preventDefault()
-        handleOpenStudioTab('images.studio')
-      }
-      // View: Toggle Integrated Terminal (Ctrl + `)
-      else if ((e.ctrlKey || e.metaKey) && (e.key === '`' || e.code === 'Backquote' || e.key === '~')) {
-        e.preventDefault()
-        handleToggleBottomPanel('terminal')
-      }
-      // View: Toggle Bottom Panel Drawer (Ctrl + J)
-      else if ((e.ctrlKey || e.metaKey) && (e.key === 'j' || e.key === 'J')) {
-        e.preventDefault()
-        handleToggleBottomPanel()
-      }
-      // Escape -> Close dialogs / Return from studio tab
-      else if (e.key === 'Escape') {
-        if (findReplaceOpen) setFindReplaceOpen(false)
-        else if (commandPaletteOpen) setCommandPaletteOpen(false)
-        else if (isBottomPanelOpen) setIsBottomPanelOpen(false)
-        else if (isZenMode) setIsZenMode(false)
-        else if (isStudioTabId(activeFile)) {
-          handleCloseStudioTab(activeFile)
-        }
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [
+  // Global Keyboard Shortcuts
+  useAppKeybindings({
     keybindings,
     commandPaletteOpen,
+    setCommandPaletteOpen,
+    isCloneModalOpen,
+    setIsCloneModalOpen,
     findReplaceOpen,
+    setFindReplaceOpen,
     isBottomPanelOpen,
+    setIsBottomPanelOpen,
     handleToggleBottomPanel,
     isZenMode,
+    setIsZenMode,
     activeFile,
     handleOpenStudioTab,
     handleOpenSettingsTab,
@@ -2081,407 +1773,48 @@ Distributed under the MIT License.
     handleOpenNativeFolder,
     handleSaveNativeFile,
     handleDownloadPdf,
-    handleCreateFile
-  ])
+    handleCreateUntitledFile,
+    handleCloseFile,
+    handleCloseStudioTab,
+    setActiveActivityTab,
+    setSidebarCollapsed,
+    setViewMode,
+    setOrientation,
+    setFindReplaceMode
+  })
 
-  const getBindingKey = useCallback(
-    (id, fallback = '') => keybindings.find((k) => k.id === id)?.key || fallback,
-    [keybindings]
-  )
-
-  // Commands for Command Palette (Synchronized with keybindings and shortcuts editor)
-  const commands = useMemo(() => [
-    {
-      id: 'doc.create',
-      title: 'Create: Create Documentation',
-      description: 'Create documentation skeleton from configuration',
-      icon: 'note_add',
-      category: 'Create',
-      shortcut: getBindingKey('doc.create', 'Ctrl + Enter'),
-      action: () => handleGenerate()
-    },
-    {
-      id: 'file.new',
-      title: 'File: New Document',
-      description: 'Create a new markdown document tab',
-      icon: 'note_add',
-      category: 'File',
-      shortcut: getBindingKey('file.new', 'Ctrl + N'),
-      action: handleCreateUntitledFile
-    },
-    {
-      id: 'file.save',
-      title: 'File: Quick Save Document',
-      description: 'Save current active document to disk or local storage',
-      icon: 'save',
-      category: 'File',
-      shortcut: getBindingKey('file.save', 'Ctrl + S'),
-      action: handleSaveNativeFile
-    },
-    {
-      id: 'file.open',
-      title: 'File: Open File...',
-      description: 'Open native markdown or text file',
-      icon: 'file_open',
-      category: 'File',
-      shortcut: getBindingKey('file.open', 'Ctrl + O'),
-      action: handleOpenNativeFile
-    },
-    {
-      id: 'file.openFolder',
-      title: 'File: Open Folder...',
-      description: 'Open native folder directory',
-      icon: 'folder_open',
-      category: 'File',
-      shortcut: getBindingKey('file.openFolder', 'Ctrl + Shift + O'),
-      action: handleOpenNativeFolder
-    },
-    {
-      id: 'file.exportPdf',
-      title: 'File: Export as PDF',
-      description: 'High-fidelity GitHub-styled vector PDF document',
-      icon: 'picture_as_pdf',
-      category: 'File',
-      shortcut: getBindingKey('file.exportPdf', 'Ctrl + P'),
-      action: handleDownloadPdf
-    },
-    {
-      id: 'view-split',
-      title: 'View: Split Editor & Preview',
-      description: '50/50 Code Editor and GitHub preview',
-      icon: 'vertical_split',
-      category: 'Layout',
-      action: () => setViewMode('split')
-    },
-    {
-      id: 'view-editor',
-      title: 'View: Editor Only',
-      description: 'Maximize raw code editor space',
-      icon: 'code',
-      category: 'Layout',
-      action: () => setViewMode('editor')
-    },
-    {
-      id: 'view-preview',
-      title: 'View: Preview Only',
-      description: 'Read-only GitHub formatted documentation view',
-      icon: 'visibility',
-      category: 'Layout',
-      action: () => setViewMode('preview')
-    },
-    {
-      id: 'copy-md',
-      title: `Copy ${activeFile} Markdown`,
-      description: 'Copy active markdown text to system clipboard',
-      icon: 'content_copy',
-      category: 'Clipboard',
-      shortcut: 'Ctrl+Shift+C',
-      action: handleCopy
-    },
-    {
-      id: 'download-file',
-      title: `Export: Save Active File (${activeFile})`,
-      description: 'Download the current raw markdown buffer',
-      icon: 'description',
-      category: 'Export',
-      action: handleDownloadActiveFile
-    },
-    {
-      id: 'download-suite',
-      title: 'Export: Download Documentation Suite (.zip)',
-      description: 'Bundle all markdown documents into a zip archive',
-      icon: 'folder_zip',
-      category: 'Export',
-      action: handleDownloadSuite
-    },
-    {
-      id: 'download-html',
-      title: 'Export: Standalone HTML Page',
-      description: 'Self-contained GitHub-styled HTML file',
-      icon: 'html',
-      category: 'Export',
-      action: handleDownloadHtml
-    },
-    {
-      id: 'view.toggleSidebar',
-      title: 'View: Toggle Primary Sidebar Drawer',
-      description: 'Expand or collapse the left drawer panel',
-      icon: 'view_sidebar',
-      category: 'Layout',
-      shortcut: getBindingKey('view.toggleSidebar', 'Ctrl + B'),
-      action: () => setSidebarCollapsed(prev => !prev)
-    },
-    {
-      id: 'zen-mode',
-      title: 'Toggle Zen / Focus Mode',
-      description: 'Hide sidebar and chrome for distraction-free writing',
-      icon: 'fullscreen',
-      category: 'Layout',
-      action: () => setIsZenMode(prev => !prev)
-    },
-    {
-      id: 'view.toggleOrientation',
-      title: `Toggle Split Layout (${orientation === 'horizontal' ? 'Side-by-Side' : 'Top & Bottom'})`,
-      description: 'Switch between side-by-side vertical split and top-and-bottom stacked horizontal split',
-      icon: orientation === 'horizontal' ? 'view_column' : 'table_rows',
-      category: 'Layout',
-      shortcut: getBindingKey('view.toggleOrientation', 'Ctrl + \\'),
-      action: () => setOrientation((prev) => (prev === 'horizontal' ? 'vertical' : 'horizontal'))
-    },
-    {
-      id: 'pref.shortcuts',
-      title: 'Open Keyboard Shortcuts Tab',
-      description: 'Configure and customize all IDE hotkeys and shortcuts',
-      icon: 'keyboard',
-      category: 'Preferences',
-      shortcut: getBindingKey('pref.shortcuts', 'Ctrl + /'),
-      action: handleOpenShortcutsTab
-    },
-    {
-      id: 'pref.settings',
-      title: 'Open Settings Tab',
-      description: 'Configure editor, appearance, fonts, and export preferences',
-      icon: 'settings',
-      category: 'Preferences',
-      shortcut: getBindingKey('pref.settings', 'Ctrl + ,'),
-      action: handleOpenSettingsTab
-    },
-    {
-      id: 'studio.badges',
-      title: 'Open Shields.io Badge Studio Tab',
-      description: 'Interactive custom badge designer & generator',
-      icon: 'shield',
-      category: 'Studio',
-      shortcut: getBindingKey('studio.badges', 'Ctrl + Shift + B'),
-      action: () => handleOpenStudioTab('badges.studio')
-    },
-    {
-      id: 'studio.diagrams',
-      title: 'Open Mermaid Architecture Studio Tab',
-      description: 'Visually configure architecture diagrams, pipelines, and git graphs',
-      icon: 'schema',
-      category: 'Studio',
-      shortcut: getBindingKey('studio.diagrams', 'Ctrl + Shift + M'),
-      action: () => handleOpenStudioTab('diagrams.studio')
-    },
-    {
-      id: 'studio.tables',
-      title: 'Open Visual Markdown Table Studio Tab',
-      description: 'Interactive visual table builder with live preview',
-      icon: 'table_chart',
-      category: 'Studio',
-      shortcut: getBindingKey('studio.tables', 'Ctrl + Shift + T'),
-      action: () => handleOpenStudioTab('tables.studio')
-    },
-    {
-      id: 'studio.snippets',
-      title: 'Open Code & Callouts Snippets Studio Tab',
-      description: 'GitHub alerts, multi-language code blocks, and collapsible sections',
-      icon: 'code_blocks',
-      category: 'Studio',
-      shortcut: getBindingKey('studio.snippets', 'Ctrl + Shift + K'),
-      action: () => handleOpenStudioTab('snippets.studio')
-    },
-    {
-      id: 'studio.images',
-      title: 'Open Image & Banner Studio Tab',
-      description: 'Hero banners, screenshot window frames, and comparison grids',
-      icon: 'image',
-      category: 'Studio',
-      shortcut: getBindingKey('studio.images', 'Ctrl + Shift + I'),
-      action: () => handleOpenStudioTab('images.studio')
-    },
-    {
-      id: 'tree-studio',
-      title: 'Open Directory Tree Studio Tab',
-      description: 'Visual ASCII, Unicode, and Emoji folder tree generator',
-      icon: 'account_tree',
-      category: 'Studio',
-      action: () => handleOpenStudioTab('tree.studio')
-    },
-    {
-      id: 'api-studio',
-      title: 'Open API & Endpoints Studio Tab',
-      description: 'Interactive REST route designer with parameter matrix and cURL',
-      icon: 'api',
-      category: 'Studio',
-      action: () => handleOpenStudioTab('api.studio')
-    },
-    {
-      id: 'audit-studio',
-      title: 'Open README Auditor & Linter Tab',
-      description: 'Documentation health scorecard, A-F grade, and missing section boilerplate',
-      icon: 'verified_user',
-      category: 'Studio',
-      action: () => handleOpenStudioTab('audit.studio')
-    },
-    {
-      id: 'contributors-studio',
-      title: 'Open Contributor & Team Studio Tab',
-      description: 'All-Contributors table, avatar matrix, and role badges',
-      icon: 'group',
-      category: 'Studio',
-      action: () => handleOpenStudioTab('contributors.studio')
-    },
-    {
-      id: 'changelog-studio',
-      title: 'Open Changelog & Release Notes Tab',
-      description: 'Keep-a-Changelog standard release notes with SemVer bumping',
-      icon: 'history',
-      category: 'Studio',
-      action: () => handleOpenStudioTab('changelog.studio')
-    },
-    {
-      id: 'studio.icons',
-      title: 'Open Icons & Emoji Studio Tab',
-      description: 'Curated developer emojis, GitHub shortcodes, vector symbols, and heading decorators',
-      icon: 'sentiment_satisfied',
-      category: 'Studio',
-      shortcut: getBindingKey('studio.icons', 'Ctrl + Shift + E'),
-      action: () => handleOpenStudioTab('icons.studio')
-    },
-    {
-      id: 'edit.find',
-      title: 'Edit: Find in Document',
-      description: 'Search and replace text in current document',
-      icon: 'find_replace',
-      category: 'Editor',
-      shortcut: getBindingKey('edit.find', 'Ctrl + F'),
-      action: () => {
-        setFindReplaceMode('find')
-        setFindReplaceOpen(true)
-      }
-    },
-    {
-      id: 'edit.replace',
-      title: 'Edit: Find and Replace',
-      description: 'Search and replace text in current document',
-      icon: 'find_replace',
-      category: 'Editor',
-      shortcut: getBindingKey('edit.replace', 'Ctrl + H'),
-      action: () => {
-        setFindReplaceMode('replace')
-        setFindReplaceOpen(true)
-      }
-    },
-    {
-      id: 'editor.addCursorAbove',
-      title: 'Add Cursor Above',
-      description: 'Insert additional cursor on the line above',
-      icon: 'arrow_upward',
-      category: 'Editor',
-      shortcut: getBindingKey('editor.addCursorAbove', 'Ctrl + Alt + Up'),
-      action: () => {
-        window.activeMonacoEditor?.trigger('commandPalette', 'editor.action.insertCursorAbove')
-      }
-    },
-    {
-      id: 'editor.addCursorBelow',
-      title: 'Add Cursor Below',
-      description: 'Insert additional cursor on the line below',
-      icon: 'arrow_downward',
-      category: 'Editor',
-      shortcut: getBindingKey('editor.addCursorBelow', 'Ctrl + Alt + Down'),
-      action: () => {
-        window.activeMonacoEditor?.trigger('commandPalette', 'editor.action.insertCursorBelow')
-      }
-    },
-    {
-      id: 'editor.changeAllOccurrences',
-      title: 'Change All Occurrences',
-      description: 'Select all instances of current word for multi-cursor editing',
-      icon: 'find_in_page',
-      category: 'Editor',
-      shortcut: getBindingKey('editor.changeAllOccurrences', 'Ctrl + F2'),
-      action: () => {
-        window.activeMonacoEditor?.trigger('commandPalette', 'editor.action.changeAll')
-      }
-    },
-    {
-      id: 'editor.formatDocument',
-      title: 'Format Document',
-      description: 'Format and beautify document syntax',
-      icon: 'format_align_left',
-      category: 'Editor',
-      shortcut: getBindingKey('editor.formatDocument', 'Shift + Alt + F'),
-      action: () => {
-        window.activeMonacoEditor?.trigger('commandPalette', 'editor.action.formatDocument')
-      }
-    },
-    {
-      id: 'editor.toggleWordWrap',
-      title: 'Toggle Word Wrap',
-      description: 'Toggle soft word wrap in code editor',
-      icon: 'wrap_text',
-      category: 'Editor',
-      shortcut: getBindingKey('editor.toggleWordWrap', 'Alt + Z'),
-      action: () => {
-        setWordWrap((prev) => !prev)
-      }
-    },
-    {
-      id: 'clear-draft',
-      title: 'Reset Active Markdown Buffer',
-      description: 'Clear the current file content',
-      icon: 'delete_sweep',
-      category: 'Danger',
-      action: handleClear
-    },
-    {
-      id: 'toggle-terminal',
-      title: 'Terminal: Toggle Integrated Terminal',
-      description: 'Open or close PowerShell/CMD terminal drawer',
-      icon: 'terminal',
-      category: 'Terminal',
-      shortcut: 'Ctrl+`',
-      action: () => handleToggleBottomPanel('terminal')
-    },
-    {
-      id: 'toggle-problems',
-      title: 'View: Toggle Problems Diagnostics',
-      description: 'View markdown syntax errors and warnings',
-      icon: 'error_outline',
-      category: 'View',
-      shortcut: 'Ctrl+J',
-      action: () => handleToggleBottomPanel('problems')
-    },
-    {
-      id: 'toggle-output',
-      title: 'View: Toggle Output Panel',
-      description: 'View IDE daemon and system output logs',
-      icon: 'list_alt',
-      category: 'View',
-      action: () => handleToggleBottomPanel('output')
-    },
-    {
-      id: 'whats-new',
-      title: 'Patch Notes',
-      description: 'View version patch notes, highlights, and update changelog',
-      icon: 'description',
-      category: 'Help',
-      action: handleOpenWhatsNewTab
-    },
-    {
-      id: 'check-updates',
-      title: 'Check for Updates...',
-      description: 'Check for latest application updates on GitHub',
-      icon: 'system_update',
-      category: 'Help',
-      action: handleCheckForUpdates
-    }
-  ], [
-    activeFile,
+  // Command Palette Action Matrix
+  const commands = useAppCommands({
     keybindings,
-    getBindingKey,
+    activeFile,
+    orientation,
+    handleGenerate,
+    handleCreateUntitledFile,
+    handleSaveNativeFile,
+    handleOpenNativeFile,
+    handleOpenNativeFolder,
+    setIsCloneModalOpen,
+    handleCloseWorkspace,
+    handleDownloadPdf,
+    setViewMode,
     handleCopy,
     handleDownloadActiveFile,
     handleDownloadSuite,
     handleDownloadHtml,
-    handleDownloadPdf,
+    setSidebarCollapsed,
+    setIsZenMode,
+    setOrientation,
+    handleOpenShortcutsTab,
+    handleOpenSettingsTab,
+    handleOpenStudioTab,
+    setFindReplaceMode,
+    setFindReplaceOpen,
+    setWordWrap,
+    handleClear,
     handleToggleBottomPanel,
-    handleCheckForUpdates,
-    handleOpenWhatsNewTab
-  ])
+    handleOpenWhatsNewTab,
+    handleCheckForUpdates
+  })
 
   return (
     <div className={`ide-app-root theme-${themeMode} ${isZenMode ? 'zen-mode' : ''}`}>
@@ -2532,6 +1865,8 @@ Distributed under the MIT License.
           onOpenWhatsNew={handleOpenWhatsNewTab}
           onCheckForUpdates={handleCheckForUpdates}
           onCloseTab={handleCloseFile}
+          onCloneRepo={() => setIsCloneModalOpen(true)}
+          onCloseWorkspace={handleCloseWorkspace}
           appVersion={appVersion}
         />
       )}
@@ -2567,6 +1902,9 @@ Distributed under the MIT License.
                 onRefreshGit={refreshGitStatus}
                 isRefreshingGit={isRefreshingGit}
                 onOpenFolder={handleOpenNativeFolder}
+                onCloneRepo={() => setIsCloneModalOpen(true)}
+                onCloseWorkspace={handleCloseWorkspace}
+                onOpenWorkspaceDirectory={openWorkspaceDirectory}
                 onSelectFile={handleSelectFile}
                 onCreateFile={handleCreateFile}
                 onDeleteFile={handleDeleteFile}
@@ -2684,293 +2022,85 @@ Distributed under the MIT License.
               />
 
               {/* Central Workspace: Dedicated Studio Tabs or Markdown Preview */}
-              <div className="ide-editor-container">
-                {activePreset ? (
-                  <Preview
-                    markdown={activePreset.content}
-                    onMarkdownChange={() => {}}
-                    activeFile={activeFile}
-                    viewMode="preview"
-                    orientation={orientation}
-                    zoomLevel={zoomLevel}
-                    fontSize={fontSize}
-                    wordWrap={wordWrap}
-                    showLineNumbers={showLineNumbers}
-                    syncScroll={syncScroll}
-                    onCursorChange={() => {}}
-                    scrollToHeadingTarget={scrollToHeadingTarget}
-                    findReplaceOpen={false}
-                    setFindReplaceOpen={() => {}}
-                    previewPreset={activePreset}
-                    onExitPresetPreview={handleExitAllPresetPreviews}
-                    onConfirmLoadPreset={() => handleLoadPresetAsNewFile(activePreset)}
-                    editorEngine={editorEngine}
-                    themeMode={themeMode}
-                    tabSize={tabSize}
-                  />
-                ) : activeFile === 'badges.studio' ? (
-                  <Suspense fallback={<StudioLoadingFallback title="Shields.io Badges" />}>
-                    <BadgeStudioTab
-                      repoUrl={repoUrl}
-                      onInsertBadge={(badgeMd) => handleRequestInsertSnippet(badgeMd, 'Badge')}
-                      onBackToReadme={handleBackToReadme}
-                    />
-                  </Suspense>
-                ) : activeFile === 'diagrams.studio' ? (
-                  <Suspense fallback={<StudioLoadingFallback title="Mermaid Diagrams" />}>
-                    <DiagramStudioTab
-                      onInsertDiagram={(diagramMd) => handleRequestInsertSnippet(diagramMd, 'Diagram')}
-                      onBackToReadme={handleBackToReadme}
-                    />
-                  </Suspense>
-                ) : activeFile === 'tables.studio' ? (
-                  <Suspense fallback={<StudioLoadingFallback title="Table Designer" />}>
-                    <TableStudioTab
-                      onInsertTable={(tableMd) => handleRequestInsertSnippet(tableMd, 'Table')}
-                      onBackToReadme={handleBackToReadme}
-                    />
-                  </Suspense>
-                ) : activeFile === 'snippets.studio' ? (
-                  <Suspense fallback={<StudioLoadingFallback title="Code & Callout Snippets" />}>
-                    <SnippetStudioTab
-                      onInsertSnippet={(snippetMd) => handleRequestInsertSnippet(snippetMd, 'Snippet')}
-                      onBackToReadme={handleBackToReadme}
-                    />
-                  </Suspense>
-                ) : activeFile === 'images.studio' ? (
-                  <Suspense fallback={<StudioLoadingFallback title="Image & Banner Studio" />}>
-                    <ImageStudioTab
-                      repoUrl={repoUrl}
-                      onInsertImage={(imageMd) => handleRequestInsertSnippet(imageMd, 'Image')}
-                      onBackToReadme={handleBackToReadme}
-                    />
-                  </Suspense>
-                ) : activeFile === 'tree.studio' ? (
-                  <Suspense fallback={<StudioLoadingFallback title="Directory Tree Studio" />}>
-                    <DirectoryTreeStudioTab
-                      workspaceDirectory={workspaceDirectory}
-                      allFiles={allFiles}
-                      onInsertTree={(treeMd) => handleRequestInsertSnippet(treeMd, 'Directory Tree')}
-                      onBackToReadme={handleBackToReadme}
-                    />
-                  </Suspense>
-                ) : activeFile === 'api.studio' ? (
-                  <Suspense fallback={<StudioLoadingFallback title="API & Endpoints Studio" />}>
-                    <ApiStudioTab
-                      onInsertApi={(apiMd) => handleRequestInsertSnippet(apiMd, 'API Endpoint')}
-                      onBackToReadme={handleBackToReadme}
-                    />
-                  </Suspense>
-                ) : activeFile === 'audit.studio' ? (
-                  <Suspense fallback={<StudioLoadingFallback title="Documentation Auditor" />}>
-                    <AuditStudioTab
-                      allFiles={allFiles}
-                      openDocTabs={openDocTabs}
-                      initialFile={lastActiveDocRef.current || 'README.md'}
-                      onInsertSection={(secMd, targetFile) => {
-                        const file = targetFile || lastActiveDocRef.current || 'README.md'
-                        handleExecuteInsertSnippet(file, secMd, 'Documentation Section')
-                      }}
-                      onBackToReadme={(targetFile) => handleBackToReadme(targetFile || lastActiveDocRef.current || 'README.md')}
-                    />
-                  </Suspense>
-                ) : activeFile === 'contributors.studio' ? (
-                  <Suspense fallback={<StudioLoadingFallback title="Contributors Studio" />}>
-                    <ContributorStudioTab
-                      onInsertContributors={(contribMd) => handleRequestInsertSnippet(contribMd, 'Contributors')}
-                      onBackToReadme={handleBackToReadme}
-                    />
-                  </Suspense>
-                ) : activeFile === 'changelog.studio' ? (
-                  <Suspense fallback={<StudioLoadingFallback title="Changelog Studio" />}>
-                    <ChangelogStudioTab
-                      gitInfo={gitInfo}
-                      onInsertChangelog={(clMd) => handleRequestInsertSnippet(clMd, 'Changelog')}
-                      onBackToReadme={handleBackToReadme}
-                    />
-                  </Suspense>
-                ) : activeFile === 'icons.studio' ? (
-                  <Suspense fallback={<StudioLoadingFallback title="Icons & Emoji Studio" />}>
-                    <IconEmojiStudioTab
-                      onInsertEmoji={(emojiMd) => handleRequestInsertSnippet(emojiMd, 'Icon & Emoji')}
-                      onBackToReadme={handleBackToReadme}
-                    />
-                  </Suspense>
-                ) : activeFile === 'settings' ? (
-                  <Suspense fallback={<StudioLoadingFallback title="Settings" />}>
-                    <SettingsTab
-                      themeMode={themeMode}
-                      setThemeMode={setThemeMode}
-                      tabSize={tabSize}
-                      setTabSize={setTabSize}
-                      fontSize={fontSize}
-                      setFontSize={setFontSize}
-                      wordWrap={wordWrap}
-                      setWordWrap={setWordWrap}
-                      showLineNumbers={showLineNumbers}
-                      setShowLineNumbers={setShowLineNumbers}
-                      zoomLevel={zoomLevel}
-                      setZoomLevel={setZoomLevel}
-                      orientation={orientation}
-                      setOrientation={setOrientation}
-                      syncScroll={syncScroll}
-                      setSyncScroll={handleSetSyncScroll}
-                      githubToken={githubToken}
-                      setGithubToken={setGithubToken}
-                      editorEngine={editorEngine}
-                      setEditorEngine={setEditorEngine}
-                      autoDownloadUpdates={autoDownloadUpdates}
-                      setAutoDownloadUpdates={handleToggleAutoDownloadUpdates}
-                      onCheckForUpdates={handleCheckForUpdates}
-                      isCheckingUpdate={isCheckingUpdate}
-                      currentVersion={appVersion}
-                      onOpenWhatsNew={handleOpenWhatsNewTab}
-                      onClose={() => handleCloseStudioTab('settings')}
-                      onOpenShortcuts={handleOpenShortcutsTab}
-                      updateProgress={updateProgress}
-                      updateDownloaded={updateDownloaded}
-                      updateError={updateError}
-                      pendingUpdateInfo={pendingUpdateInfo}
-                      onStartDownloadUpdate={handleStartDownloadUpdate}
-                      onRestartToUpdate={handleRestartToUpdate}
-                    />
-                  </Suspense>
-                ) : activeFile === 'shortcuts' ? (
-                  <Suspense fallback={<StudioLoadingFallback title="Shortcuts" />}>
-                    <ShortcutsTab
-                      keybindings={keybindings}
-                      onUpdateKeybinding={handleUpdateKeybinding}
-                      onResetKeybindings={handleResetKeybindings}
-                      onClose={() => handleCloseStudioTab('shortcuts')}
-                      initialQuery={shortcutsInitialQuery}
-                      autoEditId={shortcutsAutoEditId}
-                    />
-                  </Suspense>
-                ) : (activeFile === 'whats-new' || activeFile === 'release-notes') ? (
-                  <Suspense fallback={<StudioLoadingFallback title="Release Notes" />}>
-                    <WhatsNewTab
-                      updateDownloaded={updateDownloaded}
-                      updateProgress={updateProgress}
-                      updateError={updateError}
-                      onRestartToUpdate={handleRestartToUpdate}
-                      onClose={() => handleCloseStudioTab(activeFile)}
-                      onOpenSettings={handleOpenSettingsTab}
-                      onOpenShortcuts={handleOpenShortcutsTab}
-                      onCheckForUpdates={handleCheckForUpdates}
-                    />
-                  </Suspense>
-                ) : !activeFile && !activePreset ? (
-                  <div className="workspace-empty-state">
-                    <div className="empty-state-card">
-                      <div className="empty-state-icon-box">
-                        <span className="material-symbols-outlined empty-icon-symbol">draft</span>
-                        <span className="empty-icon-glow"></span>
-                      </div>
-                      <h3 className="empty-state-title">No Document Currently Open</h3>
-                      <p className="empty-state-desc">
-                        All document tabs are closed. Open a file from the <strong>Explorer</strong> on the left, or choose an action below to get started.
-                      </p>
-                      <div className="empty-state-actions">
-                        <button
-                          type="button"
-                          className="btn-empty-action btn-empty-primary"
-                          onClick={() => {
-                            const firstFile = Object.keys(filePathsMap)[0] || 'README.md'
-                            handleSelectFile(firstFile)
-                          }}
-                          title="Open or focus primary document"
-                        >
-                          <span className="material-symbols-outlined">description</span>
-                          <span>Open Document</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-empty-action btn-empty-secondary"
-                          onClick={handleCreateUntitledFile}
-                          title="Create a new untitled buffer (Notepad / VS Code style)"
-                        >
-                          <span className="material-symbols-outlined">add</span>
-                          <span>New Document</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-empty-action btn-empty-secondary"
-                          onClick={handleOpenNativeFolder}
-                          title="Open a different workspace folder on your computer"
-                        >
-                          <span className="material-symbols-outlined">folder_open</span>
-                          <span>Open Folder...</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-empty-action btn-empty-secondary"
-                          onClick={() => {
-                            setActiveActivityTab('generator')
-                            setSidebarCollapsed(false)
-                          }}
-                          title="Open Documentation Configuration"
-                        >
-                          <span className="material-symbols-outlined">tune</span>
-                          <span>Doc Config</span>
-                        </button>
-                      </div>
-                      <div className="empty-state-footer-hints">
-                        <div className="empty-hint-chip">
-                          <kbd>Ctrl</kbd> + <kbd>K</kbd>
-                          <span>Command Palette</span>
-                        </div>
-                        <div className="empty-hint-chip">
-                          <kbd>Ctrl</kbd> + <kbd>O</kbd>
-                          <span>Open File</span>
-                        </div>
-                        <div className="empty-hint-chip">
-                          <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>E</kbd>
-                          <span>Toggle Explorer</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : unsupportedFilesMap[activeFile] ? (
-                  <UnsupportedFileViewer
-                    fileInfo={unsupportedFilesMap[activeFile]}
-                    onCloseTab={() => handleCloseFile(activeFile)}
-                  />
-                ) : (
-                  <Preview
-                    markdown={currentContent}
-                    onMarkdownChange={handleContentChange}
-                    activeFile={activeFile || 'README.md'}
-                    workspaceDirectory={workspaceDirectory}
-                    onDropExternalFile={handleDropExternalFile}
-                    showToast={showToast}
-                    viewMode={viewMode}
-                    orientation={orientation}
-                    zoomLevel={zoomLevel}
-                    fontSize={fontSize}
-                    wordWrap={wordWrap}
-                    showLineNumbers={showLineNumbers}
-                    syncScroll={syncScroll}
-                    onCursorChange={(pos) => {
-                      setCursorPosition(pos)
-                      if (activeFile && !isStudioTabId(activeFile)) {
-                        fileCursorPositions.current[activeFile] = pos
-                      }
-                    }}
-                    scrollToHeadingTarget={scrollToHeadingTarget}
-                    onOpenBadgeBuilder={() => handleOpenStudioTab('badges.studio')}
-                    onOpenDiagramStudio={() => handleOpenStudioTab('diagrams.studio')}
-                    onOpenTableStudio={() => handleOpenStudioTab('tables.studio')}
-                    onOpenSnippetStudio={() => handleOpenStudioTab('snippets.studio')}
-                    onOpenImageStudio={() => handleOpenStudioTab('images.studio')}
-                    findReplaceOpen={findReplaceOpen}
-                    setFindReplaceOpen={setFindReplaceOpen}
-                    findReplaceMode={findReplaceMode}
-                    editorEngine={editorEngine}
-                    themeMode={themeMode}
-                    tabSize={tabSize}
-                  />
-                )}
-              </div>
+              <StudioWorkspaceRenderer
+                activeFile={activeFile}
+                activePreset={activePreset}
+                orientation={orientation}
+                zoomLevel={zoomLevel}
+                fontSize={fontSize}
+                wordWrap={wordWrap}
+                showLineNumbers={showLineNumbers}
+                syncScroll={syncScroll}
+                scrollToHeadingTarget={scrollToHeadingTarget}
+                editorEngine={editorEngine}
+                themeMode={themeMode}
+                tabSize={tabSize}
+                handleExitAllPresetPreviews={handleExitAllPresetPreviews}
+                handleLoadPresetAsNewFile={handleLoadPresetAsNewFile}
+                repoUrl={repoUrl}
+                handleRequestInsertSnippet={handleRequestInsertSnippet}
+                handleBackToReadme={handleBackToReadme}
+                workspaceDirectory={workspaceDirectory}
+                allFiles={allFiles}
+                openDocTabs={openDocTabs}
+                lastActiveDocRef={lastActiveDocRef}
+                handleExecuteInsertSnippet={handleExecuteInsertSnippet}
+                gitInfo={gitInfo}
+                setThemeMode={setThemeMode}
+                setTabSize={setTabSize}
+                setFontSize={setFontSize}
+                setWordWrap={setWordWrap}
+                setShowLineNumbers={setShowLineNumbers}
+                setZoomLevel={setZoomLevel}
+                setOrientation={setOrientation}
+                handleSetSyncScroll={handleSetSyncScroll}
+                githubToken={githubToken}
+                setGithubToken={setGithubToken}
+                setEditorEngine={setEditorEngine}
+                autoDownloadUpdates={autoDownloadUpdates}
+                handleToggleAutoDownloadUpdates={handleToggleAutoDownloadUpdates}
+                handleCheckForUpdates={handleCheckForUpdates}
+                isCheckingUpdate={isCheckingUpdate}
+                appVersion={appVersion}
+                handleOpenWhatsNewTab={handleOpenWhatsNewTab}
+                handleCloseStudioTab={handleCloseStudioTab}
+                handleOpenShortcutsTab={handleOpenShortcutsTab}
+                updateProgress={updateProgress}
+                updateDownloaded={updateDownloaded}
+                updateError={updateError}
+                pendingUpdateInfo={pendingUpdateInfo}
+                handleStartDownloadUpdate={handleStartDownloadUpdate}
+                handleRestartToUpdate={handleRestartToUpdate}
+                keybindings={keybindings}
+                handleUpdateKeybinding={handleUpdateKeybinding}
+                handleResetKeybindings={handleResetKeybindings}
+                shortcutsInitialQuery={shortcutsInitialQuery}
+                shortcutsAutoEditId={shortcutsAutoEditId}
+                handleOpenSettingsTab={handleOpenSettingsTab}
+                setIsCloneModalOpen={setIsCloneModalOpen}
+                handleOpenNativeFolder={handleOpenNativeFolder}
+                handleCreateUntitledFile={handleCreateUntitledFile}
+                handleOpenNativeFile={handleOpenNativeFile}
+                setActiveActivityTab={setActiveActivityTab}
+                setSidebarCollapsed={setSidebarCollapsed}
+                recentWorkspaces={recentWorkspaces}
+                handleOpenRecentWorkspace={handleOpenRecentWorkspace}
+                handleClearRecentWorkspaces={handleClearRecentWorkspaces}
+                unsupportedFilesMap={unsupportedFilesMap}
+                handleCloseFile={handleCloseFile}
+                currentContent={currentContent}
+                handleContentChange={handleContentChange}
+                handleDropExternalFile={handleDropExternalFile}
+                showToast={showToast}
+                viewMode={viewMode}
+                setCursorPosition={setCursorPosition}
+                fileCursorPositions={fileCursorPositions}
+                handleOpenStudioTab={handleOpenStudioTab}
+                findReplaceOpen={findReplaceOpen}
+                setFindReplaceOpen={setFindReplaceOpen}
+                findReplaceMode={findReplaceMode}
+                setFindReplaceMode={setFindReplaceMode}
+              />
 
               {/* Integrated Bottom Panel Drawer (VS Code / Antigravity IDE) */}
               <BottomPanelDrawer
@@ -2982,6 +2112,8 @@ Distributed under the MIT License.
                 activeFile={activeFile || 'README.md'}
                 problems={problems}
                 onSelectProblem={handleSelectProblem}
+                onClearProblems={clearRuntimeProblems}
+                onRemoveProblem={removeRuntimeProblem}
                 systemLogs={systemLogs}
                 onClearLogs={() => setSystemLogs([])}
               />
@@ -3016,172 +2148,33 @@ Distributed under the MIT License.
           {/* Global IDE Tooltip System (Antigravity IDE / VS Code Style) */}
           <IdeTooltip />
 
-          {/* Command Palette Modal */}
-          {commandPaletteOpen && (
-            <Suspense fallback={null}>
-              <CommandPalette
-                isOpen={commandPaletteOpen}
-                onClose={() => setCommandPaletteOpen(false)}
-                commands={commands}
-                onConfigureKeybinding={(cmd) => {
-                  setCommandPaletteOpen(false)
-                  handleOpenShortcutsTab(cmd.title || '', cmd.id)
-                  showToast(`Configure shortcut for: ${cmd.title}`, 'info')
-                }}
-              />
-            </Suspense>
-          )}
-
-          {/* Dynamic Snippet Insertion Target Selection Modal */}
-          {insertModalState.isOpen && (
-            <Suspense fallback={null}>
-              <InsertTargetModal
-                isOpen={insertModalState.isOpen}
-                onClose={() => setInsertModalState({ isOpen: false, snippet: '', snippetType: '' })}
-                snippet={insertModalState.snippet}
-                snippetType={insertModalState.snippetType}
-                openDocTabs={openDocTabs}
-                lastActiveDoc={lastActiveDocRef.current}
-                fileCursorPositions={fileCursorPositions.current}
-                onConfirm={(targetFile) => handleExecuteInsertSnippet(targetFile, insertModalState.snippet, insertModalState.snippetType)}
-                onCreateNewDoc={() => handleInsertIntoNewDoc(insertModalState.snippet, insertModalState.snippetType)}
-              />
-            </Suspense>
-          )}
-
-          {/* Update Available Confirmation Dialog (When auto-download is disabled) */}
-          {pendingUpdateInfo && (
-            <div className="ide-update-prompt-overlay" onClick={() => setPendingUpdateInfo(null)}>
-              <div className="ide-update-prompt-modal" onClick={(e) => e.stopPropagation()}>
-                <div className="ide-update-prompt-header">
-                  <div className="ide-update-prompt-title">
-                    <span className="material-symbols-outlined" style={{ color: '#38bdf8', fontSize: '20px' }}>system_update</span>
-                    <h3>Update Available (v{pendingUpdateInfo.version})</h3>
-                  </div>
-                  <button
-                    type="button"
-                    className="ide-update-prompt-close"
-                    onClick={() => setPendingUpdateInfo(null)}
-                    title="Dismiss"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="ide-update-prompt-body">
-                  <p>
-                    A new version of VisualMark Studio (<strong>v{pendingUpdateInfo.version}</strong>) is ready to download.
-                  </p>
-                  <p className="ide-update-prompt-sub">
-                    Would you like to start downloading this update now? You can continue working in the editor while it downloads in the background.
-                  </p>
-                </div>
-                <div className="ide-update-prompt-actions">
-                  <button
-                    type="button"
-                    className="ide-update-prompt-btn secondary"
-                    onClick={() => {
-                      setPendingUpdateInfo(null)
-                      showToast('Update postponed.', 'info', { source: 'Update', minor: true })
-                    }}
-                  >
-                    Later
-                  </button>
-                  <button
-                    type="button"
-                    className="ide-update-prompt-btn primary"
-                    onClick={() => handleStartDownloadUpdate(pendingUpdateInfo)}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>download</span>
-                    Download Update Now
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {/* First Startup: Ask user for Auto vs Manual Update preference */}
-          {showInitialUpdateModal && (
-            <div className="ide-update-prompt-overlay">
-              <div className="ide-update-prompt-modal startup-mode-modal" onClick={(e) => e.stopPropagation()}>
-                <div className="ide-update-prompt-header">
-                  <div className="ide-update-prompt-title">
-                    <span className="material-symbols-outlined" style={{ color: '#38bdf8', fontSize: '20px' }}>
-                      system_update
-                    </span>
-                    <h3>Software Update Preference</h3>
-                  </div>
-                </div>
-
-                <div className="ide-update-prompt-body">
-                  <p style={{ fontSize: '13px', color: '#e4e4e7', marginBottom: '6px' }}>
-                    Welcome to <strong>VisualMark Studio</strong>! How would you like the application to handle software updates?
-                  </p>
-
-                  <div className="startup-update-choices">
-                    <div
-                      className={`startup-update-card ${autoDownloadUpdates ? 'is-selected' : ''}`}
-                      onClick={() => setAutoDownloadUpdates(true)}
-                    >
-                      <div className="startup-update-card-radio">
-                        <span className="material-symbols-outlined" style={{ color: autoDownloadUpdates ? '#38bdf8' : '#71717a' }}>
-                          {autoDownloadUpdates ? 'radio_button_checked' : 'radio_button_unchecked'}
-                        </span>
-                      </div>
-                      <div className="startup-update-card-content">
-                        <div className="startup-update-card-title">
-                          <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#38bdf8' }}>bolt</span>
-                          <span>Automatic Updates (Recommended)</span>
-                        </div>
-                        <div className="startup-update-card-desc">
-                          VisualMark Studio checks and downloads new releases silently in the background, then notifies you when ready to restart.
-                        </div>
-                      </div>
-                    </div>
-
-                    <div
-                      className={`startup-update-card ${!autoDownloadUpdates ? 'is-selected' : ''}`}
-                      onClick={() => setAutoDownloadUpdates(false)}
-                    >
-                      <div className="startup-update-card-radio">
-                        <span className="material-symbols-outlined" style={{ color: !autoDownloadUpdates ? '#38bdf8' : '#71717a' }}>
-                          {!autoDownloadUpdates ? 'radio_button_checked' : 'radio_button_unchecked'}
-                        </span>
-                      </div>
-                      <div className="startup-update-card-content">
-                        <div className="startup-update-card-title">
-                          <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#a1a1aa' }}>touch_app</span>
-                          <span>Manual Updates</span>
-                        </div>
-                        <div className="startup-update-card-desc">
-                          VisualMark Studio notifies you when an update is available and asks for your confirmation before downloading.
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <p className="ide-update-prompt-sub" style={{ marginTop: '8px' }}>
-                    💡 You can change this setting anytime under <strong>Settings &gt; Application Updates</strong>.
-                  </p>
-                </div>
-
-                <div className="ide-update-prompt-actions">
-                  <button
-                    type="button"
-                    className="ide-update-prompt-btn primary"
-                    onClick={() => {
-                      handleToggleAutoDownloadUpdates(autoDownloadUpdates)
-                      try {
-                        localStorage.setItem('vm_update_mode_configured', 'true')
-                      } catch {}
-                      setShowInitialUpdateModal(false)
-                    }}
-                  >
-                    <span>Confirm Preference</span>
-                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>arrow_forward</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Universal IDE Modals & Overlays */}
+          <AppModals
+            commandPaletteOpen={commandPaletteOpen}
+            setCommandPaletteOpen={setCommandPaletteOpen}
+            commands={commands}
+            handleOpenShortcutsTab={handleOpenShortcutsTab}
+            showToast={showToast}
+            insertModalState={insertModalState}
+            setInsertModalState={setInsertModalState}
+            openDocTabs={openDocTabs}
+            lastActiveDocRef={lastActiveDocRef}
+            fileCursorPositions={fileCursorPositions}
+            handleExecuteInsertSnippet={handleExecuteInsertSnippet}
+            handleInsertIntoNewDoc={handleInsertIntoNewDoc}
+            pendingUpdateInfo={pendingUpdateInfo}
+            setPendingUpdateInfo={setPendingUpdateInfo}
+            handleStartDownloadUpdate={handleStartDownloadUpdate}
+            showInitialUpdateModal={showInitialUpdateModal}
+            setShowInitialUpdateModal={setShowInitialUpdateModal}
+            autoDownloadUpdates={autoDownloadUpdates}
+            setAutoDownloadUpdates={setAutoDownloadUpdates}
+            handleToggleAutoDownloadUpdates={handleToggleAutoDownloadUpdates}
+            isCloneModalOpen={isCloneModalOpen}
+            setIsCloneModalOpen={setIsCloneModalOpen}
+            openWorkspaceDirectory={openWorkspaceDirectory}
+            workspaceDirectory={workspaceDirectory}
+          />
         </div>
   )
 }

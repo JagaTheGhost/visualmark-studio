@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 
 export function useBottomPanel() {
   const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(false)
-  const [activeBottomTab, setActiveBottomTab] = useState('terminal') // 'problems' | 'output' | 'terminal'
+  const [activeBottomTab, setActiveBottomTab] = useState('problems') // 'problems' | 'output'
   const [systemLogs, setSystemLogs] = useState(() => [
     {
       id: 1,
@@ -16,7 +16,7 @@ export function useBottomPanel() {
       time: new Date().toLocaleTimeString(),
       channel: 'system',
       type: 'info',
-      message: 'Integrated PowerShell & CMD terminal ready with diagnostics pipeline.'
+      message: 'Diagnostics and System Output pipelines ready.'
     }
   ])
 

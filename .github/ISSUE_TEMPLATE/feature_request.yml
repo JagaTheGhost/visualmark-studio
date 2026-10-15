@@ -1,0 +1,39 @@
+name: Feature Request
+description: Propose a new visual studio, tool, or enhancement for VisualMark Studio
+title: "[Feature]: "
+labels: ["enhancement", "proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting an idea! Please check existing issues or our [Features Guide](../../FEATURES.md) to ensure it hasn't been proposed or implemented already.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Motivation
+      description: Is your feature request related to a specific problem or workflow limitation?
+      placeholder: I am always frustrated when trying to...
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution or Workflow
+      description: Describe what you would like VisualMark Studio to do or how the feature should behave.
+      placeholder: It would be great to have a visual tool / button that allows...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions or workarounds you've explored?
+    validations:
+      required: false
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context & Mockups
+      description: Add any relevant mockups, diagrams, or links to external references.
+    validations:
+      required: false

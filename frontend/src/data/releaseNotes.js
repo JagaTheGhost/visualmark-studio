@@ -2,15 +2,109 @@
  * VisualMark Studio - Release Notes & Update History Dataset
  * Powers the "What's New" modal dialog, update notifications, and in-IDE release history.
  */
-export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.1.0'
+export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.1.1'
 
 export const RELEASE_HISTORY = [
+  {
+    version: '1.1.1',
+    type: 'patch',
+    title: 'VisualMark Studio 1.1.1 — Embedded Canvas Launcher, Tactile Physical Depth UI & Security Hardening',
+    date: 'October 2026',
+    isCurrent: true,
+    highlights: [
+      'Embedded Canvas Launcher: Eliminated generic floating card container; launcher now merges seamlessly into the background canvas',
+      'Tactile Physical Depth Controls: Multi-layered ambient drop shadows, top rim light-catch bevel highlights, and mechanical press animations',
+      'Engraved Background Typography: Soft recessed text shadows giving headings, taglines, and labels an authentic embedded appearance',
+      'Explorer Context & Dropdown Menus: Fixed unstyled browser-default popups with modern dark glassmorphism and elevated z-index',
+      'Streamlined Workspace Workflow: Pruned redundant Create Project wizard from launcher in favor of direct local/remote workspace entry',
+      'Studio Scrolling Fixed: Resolved wheel event traps and flex layout bounds enabling smooth vertical scrolling across all studio tabs',
+      'Electron IPC Security Hardening: Enforced double-dash argument delimiters, protocol validation, and executable launch blocks'
+    ],
+    sections: [
+      {
+        category: 'Changed: Embedded Canvas Launcher & Tactile UI',
+        icon: 'palette',
+        badge: 'UI Polish',
+        color: '#38bdf8',
+        items: [
+          {
+            title: 'Seamless Embedded Background Integration',
+            desc: 'Replaced the legacy floating card box with a transparent embedded canvas layout that integrates directly into the IDE background without artificial borders.'
+          },
+          {
+            title: 'Tactile Physical Depth Buttons',
+            desc: 'Primary cards (Clone Repository & Open Folder), secondary action pills, and recent workspace items now feature multi-tier shadows, top rim highlights, and mechanical click depression.'
+          },
+          {
+            title: 'Recessed & Engraved Typography',
+            desc: 'Headings, version badges, taglines, and keyboard shortcuts feature soft recessed text-shadows seamlessly etched into the dark canvas floor.'
+          },
+          {
+            title: 'Pruned Redundant Launcher Workflows',
+            desc: 'Removed the legacy Create Project card from the launcher, focusing initial startup directly on opening folders or cloning remote git repositories.'
+          }
+        ]
+      },
+      {
+        category: 'Fixed: Explorer Menus & Missing CSS',
+        icon: 'menu',
+        badge: 'Fixed',
+        color: '#eab308',
+        items: [
+          {
+            title: 'Explorer More Actions Dropdown Styling',
+            desc: 'Fixed missing CSS rules for .ide-dropdown-menu, converting unstyled white browser-default menus into modern dark glassmorphism with glowing vector icons.'
+          },
+          {
+            title: 'Context Menu Stacking & Dark Theme',
+            desc: 'Elevated context menu z-index to 99999 and applied backdrop blur, consistent padding, and danger hover states.'
+          }
+        ]
+      },
+      {
+        category: 'Security: IPC & Preview Hardening',
+        icon: 'security',
+        badge: 'Security',
+        color: '#10b981',
+        items: [
+          {
+            title: 'Git Remote Argument Injection Prevention',
+            desc: 'Enforced explicit "--" delimiter before target directories in Electron git clone calls to prevent flag injection.'
+          },
+          {
+            title: 'Protocol & Path Traversal Guards',
+            desc: 'Restricted openExternal calls strictly to http:// and https:// schemes, and blocked executable launch via openPath.'
+          },
+          {
+            title: 'Preview Sanitization',
+            desc: 'Audited and hardened DOMPurify configurations in LivePreviewPane and MermaidRenderer to prevent script injection.'
+          }
+        ]
+      },
+      {
+        category: 'Fixed: Studio Scrolling & Layout Boundaries',
+        icon: 'swap_vert',
+        badge: 'Fixed',
+        color: '#6366f1',
+        items: [
+          {
+            title: 'Wheel Event Trap Elimination',
+            desc: 'Removed e.preventDefault() boundaries in horizontalScrollHelper to allow natural vertical mouse and trackpad scrolling across all studio forms.'
+          },
+          {
+            title: 'Flex Column Height Bounds',
+            desc: 'Added min-height: 0 and height: 100% constraints across studio columns and main editor wrapper to ensure unconstrained scroll overflow.'
+          }
+        ]
+      }
+    ]
+  },
   {
     version: '1.1.0',
     type: 'minor',
     title: 'VisualMark Studio 1.1.0 — Icons & Emoji Studio, Live API Documentation Preview & UI Polish',
     date: 'October 2026',
-    isCurrent: true,
+    isCurrent: false,
     highlights: [
       '11th Specialized Visual Studio: Icons & Emoji Studio (icons.studio) with dedicated Vector Icons and Emojis tabs',
       'Vector Icon Color Customizer with 9 preset themes, native color wheel, hex input, and live catalog tinting',

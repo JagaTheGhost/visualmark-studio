@@ -1,16 +1,21 @@
 """
-README Studio - Documentation Generation Engine
-Designed with Stitch Developer Workspace principles.
-Provides multi-language GitHub repo analysis, directory tree extraction,
-live Shields badges, responsive hero banners, multi-package manager tabs,
-macOS CLI terminal frames, structured specification tables, collapsible FAQ accordions,
-and full documentation suites (Doc Pack).
+VisualMark Studio - Next-Generation Documentation Engine
+Modular, context-aware Markdown and Doc Pack generator.
+Performs repository metadata extraction, multi-language detection, domain-specific NLP heuristics,
+and generates tailored, non-generic README documents across 6 distinct themes:
+  - modern / default: Professional Technical Workspace & Developer Documentation
+  - showcase: Startup Product Landing & Feature Showcase
+  - minimalist: Clean, Compact & Distraction-Free
+  - cli: Developer CLI & System Utility with Terminal Mockups
+  - hacker: Cyberpunk Matrix ASCII Art & Hex-Indexed Headers
+  - academic: Research Paper, Formal Specifications & BibTeX Citations
 """
+
 import os
 import re
 import datetime
 import urllib.parse
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any
 import httpx
 
 # ==============================================================================
@@ -29,6 +34,7 @@ TECH_BADGE_MAP: Dict[str, Dict[str, str]] = {
     "Bootstrap": {"label": "Bootstrap", "color": "7952B3", "logo": "bootstrap", "logo_color": "white", "category": "Frontend"},
     "Vite": {"label": "Vite", "color": "646CFF", "logo": "vite", "logo_color": "FFD62E", "category": "Tooling"},
     "Webpack": {"label": "Webpack", "color": "8DD6F9", "logo": "webpack", "logo_color": "black", "category": "Tooling"},
+    "Electron": {"label": "Electron", "color": "47848F", "logo": "electron", "logo_color": "white", "category": "Desktop"},
 
     # Languages
     "TypeScript": {"label": "TypeScript", "color": "3178C6", "logo": "typescript", "logo_color": "white", "category": "Language"},
@@ -38,6 +44,9 @@ TECH_BADGE_MAP: Dict[str, Dict[str, str]] = {
     "Go": {"label": "Go", "color": "00ADD8", "logo": "go", "logo_color": "white", "category": "Language"},
     "Java": {"label": "Java", "color": "ED8B00", "logo": "openjdk", "logo_color": "white", "category": "Language"},
     "C++": {"label": "C++", "color": "00599C", "logo": "cplusplus", "logo_color": "white", "category": "Language"},
+    "C#": {"label": "C_Sharp", "color": "239120", "logo": "csharp", "logo_color": "white", "category": "Language"},
+    "Kotlin": {"label": "Kotlin", "color": "7F52FF", "logo": "kotlin", "logo_color": "white", "category": "Language"},
+    "Swift": {"label": "Swift", "color": "FA7343", "logo": "swift", "logo_color": "white", "category": "Language"},
 
     # Backend Frameworks & Runtimes
     "Node.js": {"label": "Node.js", "color": "339933", "logo": "node.js", "logo_color": "white", "category": "Backend"},
@@ -57,6 +66,12 @@ TECH_BADGE_MAP: Dict[str, Dict[str, str]] = {
     "SQLite": {"label": "SQLite", "color": "003B57", "logo": "sqlite", "logo_color": "white", "category": "Database"},
     "Supabase": {"label": "Supabase", "color": "3ECF8E", "logo": "supabase", "logo_color": "white", "category": "Database"},
 
+    # AI, ML & Data
+    "PyTorch": {"label": "PyTorch", "color": "EE4C2C", "logo": "pytorch", "logo_color": "white", "category": "AI/ML"},
+    "TensorFlow": {"label": "TensorFlow", "color": "FF6F00", "logo": "tensorflow", "logo_color": "white", "category": "AI/ML"},
+    "LangChain": {"label": "LangChain", "color": "1C3C3C", "logo": "langchain", "logo_color": "white", "category": "AI/ML"},
+    "OpenAI": {"label": "OpenAI", "color": "412991", "logo": "openai", "logo_color": "white", "category": "AI/ML"},
+
     # DevOps, Cloud & CI/CD
     "Docker": {"label": "Docker", "color": "2496ED", "logo": "docker", "logo_color": "white", "category": "DevOps"},
     "Kubernetes": {"label": "Kubernetes", "color": "326CE5", "logo": "kubernetes", "logo_color": "white", "category": "DevOps"},
@@ -72,9 +87,6 @@ TECH_BADGE_MAP: Dict[str, Dict[str, str]] = {
     "Playwright": {"label": "Playwright", "color": "2EAD33", "logo": "playwright", "logo_color": "white", "category": "Testing"},
 }
 
-# ==============================================================================
-# 2. DOCUMENTATION SECTIONS SPECIFICATION
-# ==============================================================================
 ALL_SECTIONS = [
     {"id": "features", "label": "Features & Capability Matrix"},
     {"id": "tech_stack", "label": "Tech Stack Specification"},
@@ -91,16 +103,15 @@ ALL_SECTIONS = [
 
 DEFAULT_SECTION_IDS = [s["id"] for s in ALL_SECTIONS]
 
-
-# ==============================================================================
-# 3. GITHUB REPOSITORY METADATA & FILE ANALYZER
-# ==============================================================================
 _SAFE_IDENTIFIER_REGEX = re.compile(r"^[a-zA-Z0-9_\-\.]+$")
 _SAFE_PATH_REGEX = re.compile(r"^[a-zA-Z0-9_\-\./]+$")
 
 
+# ==============================================================================
+# 2. GITHUB REPOSITORY METADATA & TREE EXTRACTOR
+# ==============================================================================
 def extract_owner_repo(url: str) -> Tuple[Optional[str], Optional[str]]:
-    """Extract and strictly validate owner and repository name from GitHub URL."""
+    """Extract and validate owner and repository name from GitHub URL."""
     if not url or not isinstance(url, str):
         return None, None
     m = re.search(r"github\.com/([a-zA-Z0-9_\-\.]+)/([a-zA-Z0-9_\-\.]+)", url)
@@ -142,213 +153,163 @@ def _build_tree_from_git_tree(tree_items: list, max_depth: int = 2) -> str:
         ".pytest_cache", ".venv", "venv", ".vscode", ".idea", ".DS_Store"
     }
 
-    tree = {}
+    tree: Dict[str, Any] = {}
     for item in tree_items:
         path = item.get("path", "")
         parts = path.split("/")
         if any(part in ignore_prefixes for part in parts):
             continue
-        if len(parts) > max_depth:
+        if len(parts) > max_depth + 1:
             continue
 
         curr = tree
-        for i, part in enumerate(parts):
-            is_dir = (item.get("type") == "tree") or (i < len(parts) - 1)
+        for part in parts:
             if part not in curr:
-                curr[part] = {} if is_dir else None
-            if curr[part] is not None:
-                curr = curr[part]
-
-    if not tree:
-        return ""
+                curr[part] = {}
+            curr = curr[part]
 
     lines = ["."]
 
-    def _render(node: dict, prefix: str = ""):
-        items = sorted(node.keys(), key=lambda k: (node[k] is None, k.lower()))
-        for idx, key in enumerate(items):
-            is_last = (idx == len(items) - 1)
+    def render(node: dict, prefix: str = ""):
+        keys = sorted(node.keys())
+        for idx, k in enumerate(keys):
+            is_last = (idx == len(keys) - 1)
             connector = "└── " if is_last else "├── "
             child_prefix = "    " if is_last else "│   "
-            is_dir = node[key] is not None
-            display_name = f"{key}/" if is_dir else key
-            lines.append(f"{prefix}{connector}{display_name}")
-            if is_dir and node[key]:
-                _render(node[key], prefix + child_prefix)
+            lines.append(f"{prefix}{connector}{k}")
+            if node[k]:
+                render(node[k], prefix + child_prefix)
 
-    _render(tree)
-    if len(lines) > 35:
-        lines = lines[:35] + ["└── ... (additional repository files)"]
-
-    return "\n".join(lines)
+    render(tree)
+    return "\n".join(lines[:35])
 
 
-def fetch_github_repo_metadata(url: str, custom_token: Optional[str] = None) -> dict:
-    """
-    Fetch comprehensive repository intelligence from GitHub API:
-    - Repository metadata (stars, forks, open issues, license, topics, homepage)
-    - Directory hierarchy & file trees
-    - Language ecosystem, package manifests, and package managers
-    """
-    owner, repo = extract_owner_repo(url)
+def fetch_github_repo_metadata(repo_url: str, custom_token: str = None) -> dict:
+    """Query GitHub API to extract repository details, language breakdown, and tech stack."""
+    owner, repo = extract_owner_repo(repo_url)
     if not owner or not repo:
         return {}
 
-    headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "README-Studio-Engine"}
-    token = (custom_token and custom_token.strip()) or os.environ.get("GITHUB_TOKEN")
+    headers = {
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "VisualMark-Studio-Engine/1.1.1",
+    }
+    token = custom_token or os.environ.get("GITHUB_TOKEN")
     if token:
-        headers["Authorization"] = f"Bearer {token}"
+        headers["Authorization"] = f"Bearer {token.strip()}"
 
     metadata = {
         "owner": owner,
         "name": repo,
-        "full_name": f"{owner}/{repo}",
         "slug": repo.lower(),
+        "full_name": f"{owner}/{repo}",
         "clone_url": f"https://github.com/{owner}/{repo}.git",
-        "description": "",
-        "homepage": "",
-        "stars": 0,
-        "forks": 0,
-        "open_issues": 0,
-        "license": "MIT",
-        "languages": {},
-        "topics": [],
-        "default_branch": "main",
         "detected_tech": [],
-        "package_manager": "npm",
-        "directory_tree": "",
-        "custom_install": None,
-        "custom_usage": None,
-        "custom_test": None,
+        "languages": {},
+        "tree_structure": "",
         "rate_limited": False,
     }
 
     try:
-        safe_owner = urllib.parse.quote(owner, safe="")
-        safe_repo = urllib.parse.quote(repo, safe="")
         with httpx.Client(headers=headers, timeout=5.0) as client:
-            repo_res = client.get(f"https://api.github.com/repos/{safe_owner}/{safe_repo}")
-            if repo_res.status_code == 403:
+            resp = client.get(f"https://api.github.com/repos/{owner}/{repo}")
+            if resp.status_code == 403 and "rate limit" in resp.text.lower():
                 metadata["rate_limited"] = True
                 return metadata
-            elif repo_res.status_code != 200:
+            if resp.status_code != 200:
                 return metadata
 
-            data = repo_res.json()
+            data = resp.json()
+            metadata["name"] = data.get("name") or repo
+            metadata["slug"] = metadata["name"].lower()
             metadata["description"] = data.get("description") or ""
-            metadata["homepage"] = data.get("homepage") or ""
             metadata["stars"] = data.get("stargazers_count", 0)
             metadata["forks"] = data.get("forks_count", 0)
             metadata["open_issues"] = data.get("open_issues_count", 0)
-            metadata["topics"] = data.get("topics", [])
-            metadata["default_branch"] = data.get("default_branch", "main")
+            metadata["license"] = data.get("license", {}).get("spdx_id") if data.get("license") else "MIT"
+            metadata["default_branch"] = data.get("default_branch") or "main"
             branch = metadata["default_branch"]
 
-            lic = data.get("license")
-            if lic and isinstance(lic, dict):
-                metadata["license"] = lic.get("spdx_id") or lic.get("name") or "MIT"
+            # Languages
+            lang_resp = client.get(f"https://api.github.com/repos/{owner}/{repo}/languages")
+            if lang_resp.status_code == 200:
+                metadata["languages"] = lang_resp.json()
 
-            # 1. Fetch language distribution
-            lang_res = client.get(f"https://api.github.com/repos/{safe_owner}/{safe_repo}/languages")
-            if lang_res.status_code == 200:
-                metadata["languages"] = lang_res.json()
-
-            # 2. Fetch Git tree for architecture and ecosystem identification
-            safe_branch = urllib.parse.quote(branch, safe="")
-            tree_res = client.get(
-                f"https://api.github.com/repos/{safe_owner}/{safe_repo}/git/trees/{safe_branch}?recursive=1"
-            )
+            # Tree
+            tree_resp = client.get(f"https://api.github.com/repos/{owner}/{repo}/git/trees/{branch}?recursive=1")
             tree_paths = []
-            if tree_res.status_code == 200:
-                tree_data = tree_res.json()
-                if "tree" in tree_data:
-                    metadata["directory_tree"] = _build_tree_from_git_tree(tree_data["tree"], max_depth=2)
-                    tree_paths = [t.get("path", "") for t in tree_data["tree"]]
+            if tree_resp.status_code == 200:
+                t_data = tree_resp.json()
+                items = t_data.get("tree", [])
+                metadata["tree_structure"] = _build_tree_from_git_tree(items, max_depth=2)
+                tree_paths = [it.get("path", "") for it in items]
 
-            # 3. Detect package manager and ecosystem configs from tree paths
-            if any("pnpm-lock.yaml" in p for p in tree_paths):
-                metadata["package_manager"] = "pnpm"
-            elif any("bun.lock" in p or "bun.lockb" in p for p in tree_paths):
-                metadata["package_manager"] = "bun"
-            elif any("yarn.lock" in p for p in tree_paths):
-                metadata["package_manager"] = "yarn"
-            elif any("poetry.lock" in p for p in tree_paths):
-                metadata["package_manager"] = "poetry"
-            elif any("uv.lock" in p for p in tree_paths):
-                metadata["package_manager"] = "uv"
-            elif any("Cargo.lock" in p for p in tree_paths):
-                metadata["package_manager"] = "cargo"
-            elif any("go.mod" in p for p in tree_paths):
-                metadata["package_manager"] = "go"
-
-            # 4. Detect tech stack from languages & topics
+            # Detect Tech
             detected = []
             for lang in metadata["languages"].keys():
                 if lang in TECH_BADGE_MAP and lang not in detected:
                     detected.append(lang)
 
-            for topic in metadata["topics"]:
-                for tech_key in TECH_BADGE_MAP.keys():
-                    if tech_key.lower() == topic.lower() and tech_key not in detected:
-                        detected.append(tech_key)
+            detection_rules = [
+                ("Dockerfile", "Docker"),
+                ("docker-compose", "Docker"),
+                (".github/workflows", "GitHub Actions"),
+                ("vite.config", "Vite"),
+                ("tailwind.config", "Tailwind CSS"),
+                ("next.config", "Next.js"),
+                ("tsconfig.json", "TypeScript"),
+                ("Cargo.toml", "Rust"),
+                ("go.mod", "Go"),
+            ]
+            for needle, tech in detection_rules:
+                if any(needle in p for p in tree_paths) and tech not in detected:
+                    detected.append(tech)
 
-            # 5. Detect infra & configs from tree
-            if any("docker-compose" in p or "compose.yaml" in p for p in tree_paths):
-                if "Docker" not in detected:
-                    detected.append("Docker")
-            if any("Dockerfile" in p for p in tree_paths):
-                if "Docker" not in detected:
-                    detected.append("Docker")
-            if any(".github/workflows" in p for p in tree_paths):
-                if "GitHub Actions" not in detected:
-                    detected.append("GitHub Actions")
-            if any("vite.config" in p for p in tree_paths):
-                if "Vite" not in detected:
-                    detected.append("Vite")
-            if any("tailwind.config" in p for p in tree_paths):
-                if "Tailwind CSS" not in detected:
-                    detected.append("Tailwind CSS")
-            if any("next.config" in p for p in tree_paths):
-                if "Next.js" not in detected:
-                    detected.append("Next.js")
-            if any("tsconfig.json" in p for p in tree_paths):
-                if "TypeScript" not in detected:
-                    detected.append("TypeScript")
-
-            # 6. Inspect package manifests for explicit frameworks
+            # Inspect package manifests
             pkg_json = _fetch_file_content(client, owner, repo, branch, "package.json")
             if pkg_json:
-                detected.extend([t for t in ["Node.js", "JavaScript"] if t not in detected])
-                if "react" in pkg_json and "React" not in detected:
-                    detected.append("React")
-                if "next" in pkg_json and "Next.js" not in detected:
-                    detected.append("Next.js")
-                if "vue" in pkg_json and "Vue" not in detected:
-                    detected.append("Vue")
-                if "tailwindcss" in pkg_json and "Tailwind CSS" not in detected:
-                    detected.append("Tailwind CSS")
-                if "typescript" in pkg_json and "TypeScript" not in detected:
-                    detected.append("TypeScript")
-                if "vite" in pkg_json and "Vite" not in detected:
-                    detected.append("Vite")
+                for tech in ["Node.js", "JavaScript"]:
+                    if tech not in detected:
+                        detected.append(tech)
+                pkg_map = {
+                    "react": "React",
+                    "next": "Next.js",
+                    "vue": "Vue",
+                    "tailwindcss": "Tailwind CSS",
+                    "typescript": "TypeScript",
+                    "vite": "Vite",
+                    "electron": "Electron",
+                    "express": "Express",
+                    "cypress": "Cypress",
+                    "playwright": "Playwright",
+                    "jest": "Jest",
+                    "vitest": "Vitest",
+                }
+                for pkg_key, tech_name in pkg_map.items():
+                    if pkg_key in pkg_json and tech_name not in detected:
+                        detected.append(tech_name)
 
             req_txt = _fetch_file_content(client, owner, repo, branch, "requirements.txt")
             pyproject = _fetch_file_content(client, owner, repo, branch, "pyproject.toml")
             if req_txt or pyproject:
                 if "Python" not in detected:
                     detected.append("Python")
-                content = (req_txt or "") + "\n" + (pyproject or "")
-                if "fastapi" in content.lower() and "FastAPI" not in detected:
-                    detected.append("FastAPI")
-                if "flask" in content.lower() and "Flask" not in detected:
-                    detected.append("Flask")
-                if "django" in content.lower() and "Django" not in detected:
-                    detected.append("Django")
-                if "pytest" in content.lower() and "Pytest" not in detected:
-                    detected.append("Pytest")
+                content = (req_txt or "").lower() + "\n" + (pyproject or "").lower()
+                py_map = {
+                    "fastapi": "FastAPI",
+                    "flask": "Flask",
+                    "django": "Django",
+                    "pytest": "Pytest",
+                    "torch": "PyTorch",
+                    "tensorflow": "TensorFlow",
+                    "langchain": "LangChain",
+                    "openai": "OpenAI",
+                }
+                for py_key, tech_name in py_map.items():
+                    if py_key in content and tech_name not in detected:
+                        detected.append(tech_name)
 
             metadata["detected_tech"] = detected
-
     except Exception:
         pass
 
@@ -356,575 +317,288 @@ def fetch_github_repo_metadata(url: str, custom_token: Optional[str] = None) -> 
 
 
 # ==============================================================================
-# 4. INFERENCE ENGINE (STITCH ARCHITECTURE & STUDIO TOOL INTEGRATIONS)
+# 3. DOMAIN INTELLIGENCE & HEURISTIC ENGINE (ANTI-GENERIC REASONING)
 # ==============================================================================
-def _build_hero_banner(
-    project_name: str,
+def detect_project_domain(
+    name: str,
     description: str,
-    theme: str = "default",
-    repo_metadata: dict = None,
+    tech_stack: List[str],
+    tree_text: str = ""
 ) -> str:
     """
-    Build a modern hero banner header using the Capsule Render API (from Image & Banner Studio).
-    Creates an eye-catching waving gradient with high-contrast typography.
+    Intelligently classify project into an architectural domain to drive non-generic content:
+      - ai_ml: Machine learning, LLMs, neural networks, agents, embeddings
+      - devtools_ide: Code editors, compilers, parsers, linters, developer tools
+      - web_fullstack: Web SaaS platforms, interactive portals, dashboards
+      - api_backend: Microservices, REST/GraphQL gateways, backend engines
+      - cli_tool: Command-line utilities, terminal tools, automation scripts
+      - library_sdk: Component packages, client libraries, utilities
+      - general: Fallback software engineering domain
     """
-    if theme == "hacker":
-        return ""
+    corpus = f"{name} {description} {' '.join(tech_stack)} {tree_text}".lower()
 
-    enc_title = urllib.parse.quote(project_name or "Project")
-    raw_desc = (description or "")[:85].strip()
-    enc_desc = urllib.parse.quote(raw_desc)
+    if any(k in corpus for k in ["llm", "gpt", "agent", "embedding", "pytorch", "tensorflow", "neural", "langchain", "prompt", "model", "inference"]):
+        return "ai_ml"
+    if any(k in corpus for k in ["ide", "editor", "compiler", "parser", "linter", "ast", "studio", "extension", "monaco", "markdown", "syntax"]):
+        return "devtools_ide"
+    if any(k in corpus for k in ["cli", "terminal", "command line", "subcommand", "stdout", "argv", "typer", "click"]):
+        return "cli_tool"
+    if any(k in corpus for k in ["sdk", "client library", "package", "component library", "crate", "gem"]):
+        return "library_package"
+    if any(k in corpus for k in ["microservice", "gateway", "rest api", "graphql", "fastapi", "django", "express", "endpoint", "grpc"]):
+        return "api_backend"
+    if any(k in corpus for k in ["saas", "dashboard", "portal", "react", "next.js", "vue", "svelte", "frontend", "web app", "ui"]):
+        return "web_fullstack"
 
-    banner_url = (
-        f"https://capsule-render.vercel.app/api?type=waving&color=0:6366f1,70:3b82f6,100:10b981&height=220&section=header"
-        f"&text={enc_title}&fontSize=42&fontAlignY=36"
-        f"&desc={enc_desc}&descAlignY=60&descAlign=50"
-    )
-
-    return (
-        f'<p align="center">\n'
-        f'  <img src="{banner_url}" width="100%" alt="{project_name} Banner" />\n'
-        f'</p>'
-    )
+    return "general"
 
 
-def _build_badges(
-    project_slug: str,
-    repo_metadata: dict = None,
-    tech_stack_items: list = None,
-) -> str:
-    """
-    Build dynamic markdown badges combining live GitHub repo stats and brand tech shields
-    (from Badge Studio).
-    """
-    repo_badges = []
-    tech_badges = []
-
-    # 1. Repository status & activity badges (Badge Studio)
-    if repo_metadata and repo_metadata.get("full_name"):
-        full_name = repo_metadata["full_name"]
-        lic = repo_metadata.get("license") or "MIT"
-        repo_badges.append(
-            f"[![GitHub Stars](https://img.shields.io/github/stars/{full_name}?style=for-the-badge&logo=github&color=0969da)](https://github.com/{full_name}/stargazers)"
-        )
-        repo_badges.append(
-            f"[![GitHub Forks](https://img.shields.io/github/forks/{full_name}?style=for-the-badge&logo=github&color=0969da)](https://github.com/{full_name}/network/members)"
-        )
-        repo_badges.append(
-            f"[![Issues](https://img.shields.io/github/issues/{full_name}?style=for-the-badge&logo=github&color=e11d48)](https://github.com/{full_name}/issues)"
-        )
-        repo_badges.append(
-            f"[![License](https://img.shields.io/badge/License-{lic}-10b981.svg?style=for-the-badge)](https://github.com/{full_name}/blob/main/LICENSE)"
-        )
-        repo_badges.append(
-            f"[![Code Size](https://img.shields.io/github/languages/code-size/{full_name}?style=for-the-badge&color=8b5cf6)](https://github.com/{full_name})"
-        )
-    else:
-        repo_badges.append("![Build Status](https://img.shields.io/badge/Build-Passing-10b981?style=for-the-badge)")
-        repo_badges.append("![License](https://img.shields.io/badge/License-MIT-0969da?style=for-the-badge)")
-        repo_badges.append("![Release](https://img.shields.io/badge/Release-v1.0.0-6366f1?style=for-the-badge)")
-        repo_badges.append("![Maintenance](https://img.shields.io/badge/Maintained-Active-f59e0b?style=for-the-badge)")
-
-    # 2. Technology brand badges with official logos (Badge Studio)
-    techs = tech_stack_items or []
-    for tech in techs[:8]:
-        meta = TECH_BADGE_MAP.get(tech)
-        if meta:
-            badge_url = (
-                f"https://img.shields.io/badge/{meta['label']}-{meta['color']}"
-                f"?style=for-the-badge&logo={meta['logo']}&logoColor={meta['logo_color']}"
-            )
-            tech_badges.append(f"![{tech}]({badge_url})")
-
-    # Combine into two cleanly spaced lines
-    row1 = " ".join(repo_badges)
-    row2 = " ".join(tech_badges)
-    if row2:
-        return f"{row1}\n<br/>\n{row2}"
-    return row1
-
-
-def _infer_features(
-    repo_url: str,
+def _synthesize_features(
+    domain: str,
     description: str,
-    tech_stack_items: list,
-    repo_metadata: dict = None,
+    techs: List[str],
+    repo_meta: dict = None
 ) -> str:
     """
-    Generate high-impact feature highlights formatted as modern technical cards,
-    a structured capability comparison matrix (from Table Studio), and GitHub alerts (from Snippet Studio).
+    Dynamically synthesize domain-specific, contextual capabilities rather than static generic bullet points.
     """
+    raw_desc = (description or "").strip()
     features = []
-    features.append(
-        "- **⚡ Autonomous High-Throughput Core:** Built from the ground up for low-latency execution, minimal memory overhead, and instantaneous response cycles."
-    )
-    features.append(
-        "- **🎨 Stitch-Engineered Developer Workspace:** Polished UI/UX visual hierarchy, dark glassmorphic styling, and fluid responsive layouts."
-    )
 
-    techs = tech_stack_items or []
-    if any(t in techs for t in ["FastAPI", "Express", "Node.js", "Django", "Flask"]):
-        features.append(
-            "- **🔒 Validated REST & API Gateways:** Strictly typed serialization schemas, automated OpenAPI/Swagger documentation, and resilient error recovery."
-        )
-    if any(t in techs for t in ["React", "Next.js", "Vue", "Vite"]):
-        features.append(
-            "- **🌐 Reactive Real-Time Client:** Reactive component tree with optimistic updates, instant state hydration, and zero layout shift."
-        )
-    if any(t in techs for t in ["Docker", "Kubernetes"]):
-        features.append(
-            "- **🐳 Containerized Orchestration:** Production-ready multi-stage Docker builds and unified compose configurations."
-        )
-    if any(t in techs for t in ["PostgreSQL", "MongoDB", "MySQL", "Redis"]):
-        features.append(
-            "- **🗄️ Resilient Persistence & Caching:** Automated connection pooling, transactional schema migrations, and high-concurrency memory caching."
-        )
+    # 1. Primary domain-driven headline feature
+    if domain == "ai_ml":
+        features.append("- **High-Throughput Model Inference:** Accelerated batch prediction pipeline optimized for low-latency embeddings and token streaming.")
+        features.append("- **Dynamic Prompt & Context Orchestration:** Intelligent prompt templating with automated token truncation and retrieval augmentation.")
+        features.append("- **Experiment & Checkpoint Lifecycle:** Automated metric telemetry, model weights caching, and checkpoint serialization.")
+    elif domain == "devtools_ide":
+        features.append("- **Zero-Latency AST & Diagnostics:** Real-time incremental syntax parsing with deterministic error boundaries and diagnostic reporting.")
+        features.append("- **Multi-Pane Visual Workspace:** Decoupled split-view synchronization pairing code editor buffers with live reactive previews.")
+        features.append("- **Local-First Offline Architecture:** Direct native filesystem I/O without cloud dependency, telemetry leakage, or network latency.")
+    elif domain == "cli_tool":
+        features.append("- **Zero-Dependency Native Execution:** Highly optimized single-binary deployment with instantaneous cold-start execution.")
+        features.append("- **Command Matrix & Subcommand Dispatch:** Intuitive flag parsing, positional argument handling, and interactive terminal prompts.")
+        features.append("- **Colorized Diagnostics & Progress Spinners:** Beautifully formatted ANSI output, structured JSON export flags, and POSIX exit codes.")
+    elif domain == "api_backend":
+        features.append("- **Type-Safe Contract Validation:** Strict request/response payload serialization with automated OpenAPI 3.1 & Swagger specifications.")
+        features.append("- **Distributed Rate Limiting & Auth:** Granular API token authorization, JWT session verification, and tiered request rate-limiting.")
+        features.append("- **Connection-Pooled Persistence:** High-concurrency database queries with automated connection recycling and transaction rollbacks.")
+    elif domain == "web_fullstack":
+        features.append("- **Reactive Component Hydration:** Responsive user interface with optimistic state updates, zero layout shift, and instant hot-reloading.")
+        features.append("- **Modern Visual Hierarchy:** Tailwind-engineered dark glassmorphism, tailored typography, and accessible WCAG contrast standards.")
+        features.append("- **End-to-End Type Safety:** Synchronized contracts bridging server payloads directly to client UI component props.")
+    else:
+        features.append(f"- **Core Architecture:** Engineered specifically to solve {raw_desc[:60]} with maximum efficiency and modular separation.")
+        features.append("- **Extensible Modular Boundaries:** Clean decoupling between domain business logic, data adapters, and presentation layers.")
+        features.append("- **Resilient Fault Isolation:** Built-in circuit breakers, grace-period retries, and comprehensive error containment.")
 
-    features.append(
-        "- **🛡️ Zero-Trust Security Posture:** Rigid input sanitation, sanitized environment configurations, and WCAG AAA contrast accessibility."
-    )
+    # 2. Technology-specific capabilities (Accurate to active stack)
+    if "Docker" in techs:
+        features.append("- **Containerized Orchestration:** Production-ready multi-stage Docker builds and unified compose configurations for reproducible dev/prod parity.")
+    if "Redis" in techs:
+        features.append("- **Sub-Millisecond In-Memory Caching:** Low-overhead cache layer with deterministic key invalidation and distributed lock management.")
+    if "FastAPI" in techs or "Python" in techs:
+        features.append("- **Asynchronous Concurrency:** Non-blocking async event loop execution maximizing single-instance throughput.")
+    if "TypeScript" in techs or "React" in techs:
+        features.append("- **Strict Type Conformance:** Comprehensive TypeScript definitions preventing runtime null-reference exceptions.")
+    if "Pytest" in techs or "Vitest" in techs:
+        features.append("- **Automated QA Test Suite:** High-coverage unit, integration, and regression test suites with continuous CI verification.")
 
-    feature_body = "\n".join(features)
-
-    # Capability Matrix Table (Table Studio)
-    matrix_table = (
-        "### 📊 Capability & Feature Matrix\n\n"
-        "| Module / Capability | Status | Target / Protocol | Scope & Architecture |\n"
-        "| :--- | :---: | :--- | :--- |\n"
-        "| **Core Processing Engine** | ✅ Active | Sub-millisecond Async | High-throughput asynchronous pipeline |\n"
-        "| **Reactive Web Client** | ✅ Active | React 18 / Vite HMR | Modern responsive interface with instant feedback |\n"
-        "| **REST API Gateway** | ✅ Active | OpenAPI 3.1 / Pydantic | Validated request/response serialization |\n"
-        "| **State & Cache Store** | ✅ Active | Redis / Memory Cache | Transient session state & distributed caching |\n"
-        "| **Containerized Deploy** | ✅ Active | Multi-Stage Docker | Optimized production builds under 150MB |"
-    )
-
-    # Curated Alert Callout (Snippet Studio)
-    callout = (
-        "> [!NOTE]\n"
-        "> **Production-Ready & Actively Maintained**\n"
-        "> Seamlessly toggle between local development and containerized modes with unified environment variable flags."
-    )
-
-    return f"{feature_body}\n\n{matrix_table}\n\n{callout}"
+    return "\n".join(features[:6])
 
 
-def _infer_tech_stack(tech_stack_items: list) -> str:
-    """
-    Generate categorized technical stack list and a structured specification matrix table (from Table Studio).
-    """
-    techs = tech_stack_items or ["Python", "FastAPI", "React", "TypeScript", "Tailwind CSS", "Docker"]
-
-    categories = {
-        "Frontend & UI": [],
-        "Backend & APIs": [],
-        "Data & Persistence": [],
-        "DevOps & Tooling": []
-    }
-
-    for t in techs:
-        meta = TECH_BADGE_MAP.get(t)
-        cat = meta.get("category", "") if meta else ""
-        if cat in ["Frontend", "Language"] and t in ["React", "Next.js", "Vue", "Tailwind CSS", "TypeScript", "JavaScript", "HTML5", "CSS3"]:
-            categories["Frontend & UI"].append(t)
-        elif cat in ["Backend", "API"] or t in ["FastAPI", "Flask", "Django", "Node.js", "Express", "Go", "Rust", "Python", "Bun"]:
-            categories["Backend & APIs"].append(t)
-        elif cat == "Database" or t in ["PostgreSQL", "MySQL", "MongoDB", "Redis", "SQLite", "Supabase"]:
-            categories["Data & Persistence"].append(t)
-        else:
-            categories["DevOps & Tooling"].append(t)
-
-    sections = []
-    for cat_name, items in categories.items():
-        if items:
-            items_str = ", ".join(f"`{item}`" for item in items)
-            sections.append(f"- **{cat_name}:** {items_str}")
-
-    if not sections:
-        sections = [f"- **Core Stack:** {', '.join(f'`{t}`' for t in techs)}"]
-
-    list_block = "\n".join(sections)
-
-    # Structured Tech Stack Specification Table (Table Studio)
-    table_rows = []
-    for t in techs[:7]:
-        meta = TECH_BADGE_MAP.get(t, {})
-        cat = meta.get("category", "Core Engine")
-        table_rows.append(f"| `{t}` | {cat} | Production integration | High performance, typed architecture |")
-
-    spec_table = (
-        "### 🛠️ Architecture Specification Matrix\n\n"
-        "| Technology | Layer | Role | Purpose & Implementation |\n"
-        "| :--- | :--- | :--- | :--- |\n" +
-        "\n".join(table_rows)
-    )
-
-    return f"{list_block}\n\n{spec_table}"
-
-
-def _infer_project_structure(tech_stack_items: list, repo_metadata: dict = None) -> str:
-    """Generate realistic, production-grade project directory tree tailored to tech stack."""
-    if repo_metadata and repo_metadata.get("directory_tree"):
-        return repo_metadata["directory_tree"]
-
-    techs = tech_stack_items or []
-    has_frontend = any(t in techs for t in ["React", "Vue", "Next.js", "Svelte", "Angular"])
-    has_backend = any(t in techs for t in ["FastAPI", "Python", "Flask", "Django", "Node.js", "Express", "Go", "Rust", "Bun"])
-
-    if has_frontend and has_backend:
-        backend_name = "FastAPI / Python" if any(t in techs for t in ["FastAPI", "Python", "Flask", "Django"]) else "Express / Node"
-        frontend_name = "React" if "React" in techs else ("Next.js" if "Next.js" in techs else "Frontend")
-        return (
-            ".\n"
-            f"├── backend/                 # API server & database services ({backend_name})\n"
-            "│   ├── api/                 # Endpoint controllers and route handlers\n"
-            "│   ├── core/                # Configuration, security & database engine\n"
-            "│   ├── models/              # Schema definitions & database entities\n"
-            "│   ├── services/            # Business domain logic & data processing\n"
-            "│   ├── tests/               # Automated backend test suite\n"
-            "│   └── requirements.txt     # Runtime dependencies\n"
-            f"├── frontend/                # Client user interface ({frontend_name})\n"
-            "│   ├── src/                 # Application components, views & hooks\n"
-            "│   ├── public/              # Static assets, fonts & brand media\n"
-            "│   ├── package.json         # Client manifest & build scripts\n"
-            "│   └── vite.config.js       # Client bundler configuration\n"
-            "├── docker-compose.yml       # Multi-service container orchestration\n"
-            "├── .env.example             # Environment template variables\n"
-            "└── README.md                # Project documentation"
-        )
-
-    if "Next.js" in techs:
-        return (
-            ".\n"
-            "├── app/                     # Next.js App Router (pages & server actions)\n"
-            "│   ├── api/                 # Route handlers & serverless endpoints\n"
-            "│   ├── layout.tsx           # Global shell & font configuration\n"
-            "│   └── page.tsx             # Main landing view\n"
-            "├── components/              # Reusable design system & UI components\n"
-            "│   └── ui/                  # Component library primitives\n"
-            "├── lib/                     # Utilities, API client & database helpers\n"
-            "├── public/                  # Public assets, SVGs & icons\n"
-            "├── tests/                   # Integration and component tests\n"
-            "├── package.json             # Manifest, dependencies & scripts\n"
-            "├── tsconfig.json            # TypeScript configuration\n"
-            "├── .env.example             # Sanitized environment template\n"
-            "└── README.md                # Project documentation"
-        )
-
-    if any(t in techs for t in ["FastAPI", "Flask", "Django", "Python"]):
-        return (
-            ".\n"
-            "├── app/                     # Core application package\n"
-            "│   ├── api/                 # REST endpoints & versioned route handlers\n"
-            "│   ├── core/                # Configuration, security & database session\n"
-            "│   ├── models/              # ORM database entities\n"
-            "│   ├── schemas/             # Pydantic serialization schemas\n"
-            "│   ├── services/            # Business workflows & domain operations\n"
-            "│   └── main.py              # Application entry point & lifespan events\n"
-            "├── tests/                   # Automated unit & integration tests\n"
-            "├── Dockerfile               # Container build instructions\n"
-            "├── requirements.txt         # Production runtime dependencies\n"
-            "├── .env.example             # Environment configuration template\n"
-            "└── README.md                # Project documentation"
-        )
-
-    return (
-        ".\n"
-        "├── src/                     # Core source code\n"
-        "│   ├── components/          # Reusable UI / system modules\n"
-        "│   ├── hooks/               # Custom state & lifecycle hooks\n"
-        "│   └── utils/               # Helper utilities & data transformers\n"
-        "├── tests/                   # Automated unit & integration tests\n"
-        "├── public/                  # Static assets & public resources\n"
-        "├── package.json             # Manifest & dependencies\n"
-        "├── .env.example             # Environment configuration template\n"
-        "└── README.md                # Project documentation"
-    )
-
-
-def _infer_prerequisites(tech_stack_items: list) -> str:
-    """Infer runtime prerequisites from tech stack formatted with keyboard tags."""
-    techs = tech_stack_items or []
+def _synthesize_prerequisites(techs: List[str]) -> str:
+    """Generate precise runtime versions according to active technology stack."""
     prereqs = []
-
-    if any(t in techs for t in ["React", "Next.js", "Vue", "Node.js", "Vite", "TypeScript"]):
-        prereqs.append("- **Node.js**: `v18.0.0+` (Recommended `v20+`) & **npm** `v9.0.0+`")
-    if any(t in techs for t in ["FastAPI", "Flask", "Django", "Python"]):
-        prereqs.append("- **Python**: `3.10+` (Recommended `3.11+`) & **pip**")
-    if any(t in techs for t in ["Docker"]):
-        prereqs.append("- **Docker Engine**: `v24.0+` & **Docker Compose**")
-    if any(t in techs for t in ["Rust"]):
-        prereqs.append("- **Rust & Cargo**: `latest stable`")
-    if any(t in techs for t in ["Go"]):
+    if any(t in techs for t in ["Python", "FastAPI", "Flask", "Django"]):
+        prereqs.append("- **Python**: `3.10+` (Recommended via `pyenv` or `conda`)")
+    if any(t in techs for t in ["Node.js", "React", "Next.js", "Vue", "TypeScript", "JavaScript", "Vite"]):
+        prereqs.append("- **Node.js**: `18.0.0+` (LTS) & `npm` `9.0+` (or `pnpm` / `bun`)")
+    if "Rust" in techs:
+        prereqs.append("- **Rust & Cargo**: `1.75+` (`rustup default stable`)")
+    if "Go" in techs:
         prereqs.append("- **Go**: `1.21+`")
+    if "Docker" in techs:
+        prereqs.append("- **Docker Engine**: `24.0+` & **Docker Compose**: `v2.20+`")
 
     if not prereqs:
-        prereqs = ["- **Git**: `2.30+`", "- **Node.js**: `18.0+`", "- **Python**: `3.10+`"]
+        prereqs.append("- **Git**: `2.34+`")
+        prereqs.append("- **Node.js**: `18+` or **Python**: `3.10+`")
 
     return "\n".join(prereqs)
 
 
-def _infer_installation(tech_stack_items: list, repo_metadata: dict = None) -> str:
-    """
-    Generate command-line installation instructions using macOS CLI Terminal Frame
-    and Multi-Package Manager & CLI Sync Tabs (from Snippet Studio).
-    """
-    if repo_metadata and repo_metadata.get("custom_install"):
-        return repo_metadata["custom_install"]
-
-    techs = tech_stack_items or []
+def _synthesize_installation(techs: List[str], clone_url: str, slug: str) -> str:
+    """Generate exact, step-by-step installation instructions with multi-package manager tabs."""
     has_node = any(t in techs for t in ["React", "Next.js", "Vue", "Node.js", "Vite", "TypeScript"])
     has_python = any(t in techs for t in ["FastAPI", "Flask", "Django", "Python"])
-    clone_target = repo_metadata.get("clone_url", "https://github.com/owner/project.git") if repo_metadata else "https://github.com/owner/project.git"
-    slug = repo_metadata.get("slug", "project") if repo_metadata else "project"
+    has_rust = "Rust" in techs
+    has_go = "Go" in techs
 
-    # 1. macOS CLI Terminal Frame (Snippet Studio)
-    term_frame = (
-        "```bash\n"
-        f"# [zsh — 80×24]\n"
-        f"$ git clone {clone_target} && cd {slug}\n"
-        "➜ Verifying runtime prerequisites (Node.js / Python)... Done\n"
-        "✓ Repository cloned and ready for package installation.\n"
-        "```"
-    )
+    commands = [
+        f"# 1. Clone working repository\n$ git clone {clone_url}\n$ cd {slug}"
+    ]
 
-    # 2. Multi-Package Manager Collapsible Tabs (Snippet Studio)
-    pm_tabs = []
     if has_python and has_node:
-        pm_tabs.append(
-            "<details open>\n"
-            "<summary><b>npm & pip (Standard)</b></summary>\n\n"
-            "```bash\n"
-            "# 1. Setup backend virtual environment & dependencies\n"
-            "cd backend && pip install -r requirements.txt\n\n"
-            "# 2. Setup frontend dependencies\n"
-            "cd ../frontend && npm install\n"
-            "```\n\n"
-            "</details>"
+        commands.append(
+            "# 2. Configure & initialize backend runtime\n"
+            "$ cd backend\n"
+            "$ python -m venv .venv\n"
+            "# Windows: .\\.venv\\Scripts\\Activate.ps1 | macOS/Linux: source .venv/bin/activate\n"
+            "$ pip install --upgrade pip\n"
+            "$ pip install -r requirements.txt\n"
+            "$ cp .env.example .env\n"
+            "$ cd .."
         )
-        pm_tabs.append(
-            "<details>\n"
-            "<summary><b>pnpm & uv (High-Speed)</b></summary>\n\n"
-            "```bash\n"
-            "# 1. Fast backend sync with uv\n"
-            "cd backend && uv pip install -r requirements.txt\n\n"
-            "# 2. Fast frontend sync with pnpm\n"
-            "cd ../frontend && pnpm install\n"
-            "```\n\n"
-            "</details>"
-        )
-        pm_tabs.append(
-            "<details>\n"
-            "<summary><b>bun & poetry</b></summary>\n\n"
-            "```bash\n"
-            "# 1. Backend with poetry\n"
-            "cd backend && poetry install\n\n"
-            "# 2. Frontend with bun\n"
-            "cd ../frontend && bun install\n"
-            "```\n\n"
-            "</details>"
+        commands.append(
+            "# 3. Configure & initialize frontend client\n"
+            "$ cd frontend\n"
+            "$ npm install\n"
+            "$ cd .."
         )
     elif has_python:
-        pm_tabs.append(
-            "<details open>\n"
-            "<summary><b>pip</b></summary>\n\n"
-            "```bash\n"
-            "pip install -r requirements.txt\n"
-            "```\n\n"
-            "</details>"
+        commands.append(
+            "# 2. Create isolated virtual environment\n"
+            "$ python -m venv .venv\n"
+            "# Windows: .\\.venv\\Scripts\\Activate.ps1 | macOS/Linux: source .venv/bin/activate\n"
+            "$ pip install --upgrade pip\n"
+            "$ pip install -r requirements.txt\n"
+            "$ cp .env.example .env"
         )
-        pm_tabs.append(
-            "<details>\n"
-            "<summary><b>uv (Recommended)</b></summary>\n\n"
-            "```bash\n"
-            "uv pip install -r requirements.txt\n"
-            "```\n\n"
-            "</details>"
+    elif has_node:
+        commands.append(
+            "# 2. Install project dependencies\n"
+            "$ npm install\n"
+            "$ cp .env.example .env"
         )
-        pm_tabs.append(
-            "<details>\n"
-            "<summary><b>poetry</b></summary>\n\n"
-            "```bash\n"
-            "poetry install\n"
-            "```\n\n"
-            "</details>"
+    elif has_rust:
+        commands.append(
+            "# 2. Build release binary\n"
+            "$ cargo build --release"
+        )
+    elif has_go:
+        commands.append(
+            "# 2. Download dependencies & compile\n"
+            "$ go mod download\n"
+            "$ go build -o bin/app"
         )
     else:
-        pm_tabs.append(
-            "<details open>\n"
-            "<summary><b>npm</b></summary>\n\n"
-            "```bash\n"
-            "npm install\n"
-            "```\n\n"
-            "</details>"
-        )
-        pm_tabs.append(
-            "<details>\n"
-            "<summary><b>pnpm</b></summary>\n\n"
-            "```bash\n"
-            "pnpm install\n"
-            "```\n\n"
-            "</details>"
-        )
-        pm_tabs.append(
-            "<details>\n"
-            "<summary><b>yarn</b></summary>\n\n"
-            "```bash\n"
-            "yarn install\n"
-            "```\n\n"
-            "</details>"
-        )
-        pm_tabs.append(
-            "<details>\n"
-            "<summary><b>bun</b></summary>\n\n"
-            "```bash\n"
-            "bun install\n"
-            "```\n\n"
-            "</details>"
+        commands.append(
+            "# 2. Install dependencies\n"
+            "$ npm install || pip install -r requirements.txt"
         )
 
-    callout = (
-        "> [!IMPORTANT]\n"
-        "> Always duplicate `.env.example` into `.env` and fill in necessary API credentials before starting development services."
-    )
-
-    return f"{term_frame}\n\n#### Dependency Installation Across Package Managers\n\n" + "\n\n".join(pm_tabs) + f"\n\n{callout}"
+    code_block = "\n\n".join(commands)
+    return f"```bash\n{code_block}\n```"
 
 
-def _infer_usage(tech_stack_items: list, repo_metadata: dict = None) -> str:
-    """Infer primary usage and dev server launch commands."""
-    if repo_metadata and repo_metadata.get("custom_usage"):
-        return repo_metadata["custom_usage"]
-
-    techs = tech_stack_items or []
+def _synthesize_usage(domain: str, techs: List[str], slug: str) -> str:
+    """Generate realistic, non-generic usage commands and code snippets."""
     has_node = any(t in techs for t in ["React", "Next.js", "Vue", "Node.js", "Vite", "TypeScript"])
     has_python = any(t in techs for t in ["FastAPI", "Flask", "Django", "Python"])
 
-    if has_python and has_node:
+    if domain == "cli_tool":
         return (
-            "# Terminal 1: Launch API Backend Service\n"
-            "cd backend && python -m uvicorn app:app --reload --port 8000\n\n"
-            "# Terminal 2: Launch Web Frontend Client\n"
-            "cd frontend && npm run dev"
+            "```bash\n"
+            f"# Run CLI tool directly\n"
+            f"$ {slug} --help\n\n"
+            f"# Execute primary task with verbose telemetry\n"
+            f"$ {slug} run --input ./data.json --output ./results/ --verbose\n\n"
+            f"# Check operational status\n"
+            f"$ {slug} status\n"
+            "```"
+        )
+    elif domain == "api_backend":
+        return (
+            "```bash\n"
+            "# Launch API backend service with live reloader\n"
+            "$ uvicorn app.main:app --reload --port 8000\n\n"
+            "# Inbound test request via cURL\n"
+            "$ curl -X POST http://localhost:8000/api/v1/process \\\n"
+            '  -H "Content-Type: application/json" \\\n'
+            '  -d \'{"query": "healthcheck", "limit": 10}\'\n'
+            "```\n\n"
+            "> [!NOTE]\n"
+            "> Interactive OpenAPI Swagger console is served at `http://localhost:8000/docs`."
+        )
+    elif has_python and has_node:
+        return (
+            "```bash\n"
+            "# Terminal 1: Launch Backend API\n"
+            "$ cd backend && uvicorn app:app --reload --port 8000\n\n"
+            "# Terminal 2: Launch Frontend Client\n"
+            "$ cd frontend && npm run dev\n"
+            "```\n\n"
+            "> [!TIP]\n"
+            "> Access the live client application in your browser at `http://localhost:5173` or `http://localhost:3000`."
         )
     elif has_python:
-        return "python main.py"
-    elif has_node:
-        return "npm run dev"
-    elif any(t in techs for t in ["Rust"]):
-        return "cargo run"
-    elif any(t in techs for t in ["Go"]):
-        return "go run main.go"
-
-    return "npm start"
-
-
-def _infer_detailed_usage(tech_stack_items: list) -> str:
-    """
-    Infer detailed workflow guide with keyboard shortcuts table (from Snippet Studio)
-    and interactive API documentation links.
-    """
-    techs = tech_stack_items or []
-    has_api = any(t in techs for t in ["FastAPI", "Flask", "Django", "Express"])
-
-    guide = (
-        "1. **Launch the development servers** using the multi-service command sequence above.\n"
-        "2. **Open the client application** at `http://localhost:3000` (or `http://localhost:8000`).\n"
-        "3. **Experience live synchronization** via automated hot module reloading."
-    )
-
-    # Keycaps & Shortcuts Table (Snippet Studio)
-    shortcuts_table = (
-        "### ⌨️ Keycaps & Global Keyboard Shortcuts\n\n"
-        "| Shortcut | Action | Scope |\n"
-        "| :--- | :--- | :--- |\n"
-        "| <kbd>Ctrl</kbd> + <kbd>K</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd> | Open Global Command Palette | Global Application |\n"
-        "| <kbd>Ctrl</kbd> + <kbd>S</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd> | Save Active Document & State | Editor Workspace |\n"
-        "| <kbd>Ctrl</kbd> + <kbd>Enter</kbd> | Trigger Autonomous Execution | Action Runner |\n"
-        "| <kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>F</kbd> | Format Code & Markdown | Active File |"
-    )
-
-    if has_api:
-        api_section = (
-            "### 📡 Interactive API Documentation\n\n"
-            "- **Swagger UI:** Visit `http://localhost:8000/docs` to test all endpoints interactively.\n"
-            "- **ReDoc Console:** Visit `http://localhost:8000/redoc` for detailed OpenAPI specifications."
+        return (
+            "```bash\n"
+            "# Start application\n"
+            "$ python main.py\n"
+            "```"
         )
-        return f"{guide}\n\n{shortcuts_table}\n\n{api_section}"
+    else:
+        return (
+            "```bash\n"
+            "# Launch development server\n"
+            "$ npm run dev\n\n"
+            "# Build production assets\n"
+            "$ npm run build\n"
+            "```"
+        )
 
-    return f"{guide}\n\n{shortcuts_table}"
 
+def _synthesize_configuration(domain: str, techs: List[str]) -> str:
+    """Generate a realistic, tailored environment variables file and table."""
+    env_vars = ["# Server Configuration", "PORT=8000", "ENV=development", "LOG_LEVEL=info"]
 
-def _infer_configuration(tech_stack_items: list) -> str:
-    """
-    Generate structured configuration specification table (from Table Studio)
-    and annotated .env.example template (from Snippet Studio).
-    """
-    techs = tech_stack_items or []
-    env_vars = [
-        ("PORT", "8000", "`number`", "✅ Required", "Local server HTTP listening port"),
-        ("NODE_ENV", "development", "`string`", "✅ Required", "Runtime mode (`development` | `production`)"),
-    ]
-    if any(t in techs for t in ["PostgreSQL", "MySQL", "MongoDB"]):
-        env_vars.append(("DATABASE_URL", "postgresql://user:pass@localhost:5432/app_db", "`string`", "✅ Required", "Primary relational database connection string"))
-    if any(t in techs for t in ["Redis"]):
-        env_vars.append(("REDIS_URL", "redis://localhost:6379/0", "`string`", "⚪ Optional", "In-memory cache & pub/sub connection URI"))
-    env_vars.append(("SECRET_KEY", "your_super_secret_key_here", "`string`", "✅ Required", "Cryptographic signing and session JWT secret"))
-    env_vars.append(("LOG_LEVEL", "info", "`string`", "⚪ Optional", "Verbosity level (`debug`, `info`, `warn`, `error`)"))
+    if any(t in techs for t in ["PostgreSQL", "Database"]):
+        env_vars.append("DATABASE_URL=postgresql://postgres:password@localhost:5432/app_db")
+    elif "MongoDB" in techs:
+        env_vars.append("MONGODB_URI=mongodb://localhost:27017/app_db")
+    else:
+        env_vars.append("DATABASE_URL=sqlite:///./data.db")
 
-    env_lines = []
-    for var, default, _, req, desc in env_vars:
-        req_tag = "# [Required]" if "Required" in req else "# [Optional]"
-        env_lines.append(f"# {desc} {req_tag}\n{var}={default}")
+    if "Redis" in techs:
+        env_vars.append("REDIS_URL=redis://localhost:6379/0")
 
-    env_sample = "\n\n".join(env_lines)
+    if any(t in techs for t in ["React", "Next.js", "Vite"]):
+        env_vars.append("VITE_API_BASE_URL=http://localhost:8000")
 
-    table_rows = "\n".join(
-        f"| `{var}` | {vtype} | `{default}` | {req} | {desc} |"
-        for var, default, vtype, req, desc in env_vars
+    if domain == "ai_ml" or "OpenAI" in techs:
+        env_vars.append("OPENAI_API_KEY=sk-your-secret-api-key")
+
+    env_block = "\n".join(env_vars)
+
+    table = (
+        "| Environment Variable | Description | Default | Required |\n"
+        "| :--- | :--- | :--- | :--- |\n"
+        "| `PORT` | Local network binding port | `8000` | No |\n"
+        "| `ENV` | Execution environment (`development` / `production`) | `development` | Yes |\n"
+        "| `LOG_LEVEL` | Logging verbosity (`debug`, `info`, `warn`, `error`) | `info` | No |\n"
+        "| `DATABASE_URL` | Primary persistent datastore connection URI | *Local URI* | Yes |"
     )
 
-    spec_table = (
-        "| Variable | Type | Default | Requirement | Description |\n"
-        "| :--- | :--- | :--- | :--- | :--- |\n" +
-        table_rows
-    )
+    return f"```env\n{env_block}\n```\n\n### ⚙️ Environment Parameters Specification\n\n{table}"
 
-    callout = (
-        "> [!CAUTION]\n"
-        "> **Security Advisory: Protect Credentials**\n"
-        "> Never commit production secrets, database credentials, or API keys to version control. Maintain private parameters in `.env.local`."
-    )
 
-    return (
-        "Create a `.env` file in the root directory:\n\n"
-        "```env\n"
-        f"{env_sample}\n"
-        "```\n\n"
-        "### ⚙️ Environment Specification Table\n\n"
-        f"{spec_table}\n\n"
-        f"{callout}"
-    )
-
-def _infer_architecture(tech_stack_items: list) -> str:
-    """
-    Infer architectural pattern using structured Topology Matrix tables (from Table Studio)
-    and Decoupled Principles (NO Diagram Studio / Mermaid diagrams, as per user requirement).
-    """
-    techs = tech_stack_items or []
-    ui_tech = "Web Client"
-    for t in ["React", "Next.js", "Vue", "Svelte", "Angular"]:
+def _synthesize_architecture(techs: List[str]) -> str:
+    """Infer architectural pattern using structured Topology Matrix tables."""
+    ui_tech = "Web Client (React / Vite)"
+    for t in ["Next.js", "Vue", "Svelte", "Angular", "Electron"]:
         if t in techs:
             ui_tech = f"{t} Interface"
             break
 
-    api_tech = "API Gateway"
-    for t in ["FastAPI", "Express", "Node.js", "Django", "Flask", "Go", "Rust"]:
+    api_tech = "API Gateway (FastAPI)"
+    for t in ["Express", "Node.js", "Django", "Flask", "Go", "Rust"]:
         if t in techs:
             api_tech = f"{t} Service"
             break
 
-    db_tech = "Database"
-    for t in ["PostgreSQL", "MongoDB", "MySQL", "SQLite", "Supabase"]:
+    db_tech = "Data Store (PostgreSQL)"
+    for t in ["MongoDB", "MySQL", "SQLite", "Supabase"]:
         if t in techs:
             db_tech = f"{t} Storage"
             break
@@ -933,10 +607,10 @@ def _infer_architecture(tech_stack_items: list) -> str:
         "### 🏛️ System Topology & Component Matrix\n\n"
         "| Layer | Component Identifier | Technology | Protocol / Transport | Architectural Boundary |\n"
         "| :--- | :--- | :--- | :--- | :--- |\n"
-        f'| **Presentation Layer** | `Client["Web Client ({ui_tech})"]` | Responsive SPA / SSR | `|"HTTPS / REST"|` | Client state hydration, optimistic rendering |\n'
-        f'| **API Gateway Layer** | `API["API Gateway ({api_tech})"]` | Asynchronous Service | OpenAPI / HTTP 1.1 & 2 | Route dispatching, serialization & auth tokens |\n'
-        f'| **Persistence Layer** | `DB["Data Store ({db_tech})"]` | Relational Storage | TCP / Connection Pool | ACID transactions, indexed models & migrations |\n'
-        '| **State & Cache Layer** | `Cache["State Cache (Redis)"]` | In-Memory Cache | Binary Socket Protocol | Session storage, rate limits & 300s TTL cache |'
+        f'| **Presentation Layer** | `Client["Web Client ({ui_tech})"]` | Responsive Client Interface | `|"HTTPS / REST"|` | Client state hydration, optimistic rendering |\n'
+        f'| **API Gateway Layer** | `API["API Gateway ({api_tech})"]` | Asynchronous Service Engine | OpenAPI / HTTP 1.1 & 2 | Route dispatching, serialization & auth tokens |\n'
+        f'| **Persistence Layer** | `DB["Data Store ({db_tech})"]` | Persistent Storage Engine | TCP / Connection Pool | ACID transactions, indexed models & migrations |\n'
+        '| **State & Cache Layer** | `Cache["State Cache (Redis)"]` | In-Memory Cache Store | Binary Socket Protocol | Session storage, rate limits & 300s TTL cache |'
     )
 
     dataflow_table = (
@@ -958,24 +632,19 @@ def _infer_architecture(tech_stack_items: list) -> str:
     return f"{topology_table}\n\n{dataflow_table}\n\n{principles}"
 
 
-
-def _infer_testing(tech_stack_items: list, repo_metadata: dict = None) -> str:
-    """Infer testing commands and structured QA matrix (from Table Studio)."""
-    if repo_metadata and repo_metadata.get("custom_test"):
-        return repo_metadata["custom_test"]
-
-    techs = tech_stack_items or []
+def _synthesize_testing(techs: List[str], repo_metadata: dict = None) -> str:
+    """Generate exact test suite execution commands and strategy matrix."""
     commands = []
     if any(t in techs for t in ["Python", "FastAPI", "Flask", "Django"]):
-        commands.append("# Run backend test suite with coverage\npytest -v --cov=.")
+        commands.append("# Run backend test suite with coverage report\n$ pytest -v --cov=.")
     if any(t in techs for t in ["React", "Next.js", "Node.js", "Vite", "TypeScript"]):
-        commands.append("# Run frontend unit & integration tests\nnpm test")
-    if any(t in techs for t in ["Rust"]):
-        commands.append("cargo test")
-    if any(t in techs for t in ["Go"]):
-        commands.append("go test -v ./...")
+        commands.append("# Run frontend test suite\n$ npm test")
+    if "Rust" in techs:
+        commands.append("# Run Rust unit & integration tests\n$ cargo test")
+    if "Go" in techs:
+        commands.append("# Run Go test suite\n$ go test -v ./...")
 
-    cmd_block = "\n\n".join(commands) if commands else "npm test"
+    cmd_block = "\n\n".join(commands) if commands else "$ npm test"
 
     qa_table = (
         "### 🧪 Testing Strategy Matrix\n\n"
@@ -989,14 +658,12 @@ def _infer_testing(tech_stack_items: list, repo_metadata: dict = None) -> str:
     return f"```bash\n{cmd_block}\n```\n\n{qa_table}"
 
 
-def _infer_troubleshooting(tech_stack_items: list) -> str:
-    """
-    Generate multi-item FAQ & troubleshooting collapsible accordions (from Snippet Studio).
-    """
+def _synthesize_troubleshooting(techs: List[str]) -> str:
+    """Generate realistic FAQ accordions addressing real developer pitfalls."""
     return (
         "<details>\n"
-        "<summary><b>Q: Port 8000 or 3000 is already in use?</b></summary>\n\n"
-        "Terminate any orphaned processes occupying the port:\n\n"
+        "<summary><b>Q: Port 8000 or 3000 is already occupied?</b></summary>\n\n"
+        "Terminate any orphaned processes holding the local socket:\n\n"
         "```bash\n"
         "# macOS / Linux\n"
         "lsof -ti:8000 | xargs kill -9\n\n"
@@ -1005,46 +672,96 @@ def _infer_troubleshooting(tech_stack_items: list) -> str:
         "```\n\n"
         "</details>\n\n"
         "<details>\n"
-        "<summary><b>Q: Database connection refused or timeout?</b></summary>\n\n"
-        "Ensure your local PostgreSQL service or Docker container is healthy:\n\n"
+        "<summary><b>Q: Database connection refused or connection timeout?</b></summary>\n\n"
+        "Verify your local database service or Docker container is healthy:\n\n"
         "```bash\n"
         "docker compose ps\n"
-        "docker compose up -d postgres\n"
+        "docker compose up -d\n"
         "```\n\n"
         "</details>\n\n"
         "<details>\n"
-        "<summary><b>Q: Dependencies failing or corrupted lockfile?</b></summary>\n\n"
-        "Purge local lockfiles and perform a clean installation:\n\n"
+        "<summary><b>Q: Corrupted dependencies or lockfile desynchronization?</b></summary>\n\n"
+        "Perform a clean purge and fresh install:\n\n"
         "```bash\n"
-        "# Node.js / Frontend\n"
+        "# Node.js\n"
         "rm -rf node_modules package-lock.json && npm install\n\n"
-        "# Python / Backend\n"
-        "pip install --no-cache-dir -r requirements.txt\n"
+        "# Python\n"
+        "pip install --force-reinstall -r requirements.txt\n"
         "```\n\n"
         "</details>\n\n"
         "> [!TIP]\n"
-        "> Enable verbose logs by running with `LOG_LEVEL=debug` or appending `--verbose` to any CLI command."
+        "> Append `--verbose` or run with `LOG_LEVEL=debug` to output granular stack traces."
     )
 
 
-def _infer_deployment(tech_stack_items: list) -> str:
-    """Infer deployment instructions, prioritizing Vercel, Render, and Docker."""
+def _synthesize_deployment(techs: List[str]) -> str:
+    """Generate cloud and container deployment specifications."""
     return (
-        "### ☁️ One-Click Cloud Deployments\n\n"
+        "### ☁️ Instant Cloud Deployment\n\n"
         "[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new) &nbsp; "
         "[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com)\n\n"
-        "### 🐳 Multi-Stage Docker Deployment\n\n"
+        "### 🐳 Multi-Stage Docker Containerization\n\n"
         "```bash\n"
-        "# Build and launch all services in detached container mode\n"
-        "docker compose up --build -d\n\n"
-        "# Inspect container cluster status\n"
-        "docker compose ps\n"
+        "# Build images and launch services in background\n"
+        "$ docker compose up --build -d\n\n"
+        "# Inspect cluster runtime status\n"
+        "$ docker compose ps\n"
         "```"
     )
 
 
 # ==============================================================================
-# 5. MAIN README COMPILER (DYNAMIC ORDERING & THEMES)
+# 4. BADGE GENERATION ENGINE (LIVE REPO STATS + BRAND SHIELDS)
+# ==============================================================================
+def _build_badges(
+    project_slug: str,
+    repo_metadata: dict = None,
+    tech_stack_items: list = None,
+) -> str:
+    """Build dynamic markdown badges combining live GitHub repo stats and brand tech shields."""
+    repo_badges = []
+    tech_badges = []
+
+    if repo_metadata and repo_metadata.get("full_name"):
+        full_name = repo_metadata["full_name"]
+        lic = repo_metadata.get("license") or "MIT"
+        repo_badges.append(
+            f"[![GitHub Stars](https://img.shields.io/github/stars/{full_name}?style=for-the-badge&logo=github&color=0969da)](https://github.com/{full_name}/stargazers)"
+        )
+        repo_badges.append(
+            f"[![GitHub Forks](https://img.shields.io/github/forks/{full_name}?style=for-the-badge&logo=github&color=0969da)](https://github.com/{full_name}/network/members)"
+        )
+        repo_badges.append(
+            f"[![Issues](https://img.shields.io/github/issues/{full_name}?style=for-the-badge&logo=github&color=e11d48)](https://github.com/{full_name}/issues)"
+        )
+        repo_badges.append(
+            f"[![License](https://img.shields.io/badge/License-{lic}-10b981.svg?style=for-the-badge)](https://github.com/{full_name}/blob/main/LICENSE)"
+        )
+    else:
+        repo_badges.append("![Build Status](https://img.shields.io/badge/Build-Passing-10b981?style=for-the-badge)")
+        repo_badges.append("![License](https://img.shields.io/badge/License-MIT-0969da?style=for-the-badge)")
+        repo_badges.append("![Release](https://img.shields.io/badge/Release-v1.0.0-6366f1?style=for-the-badge)")
+        repo_badges.append("![Maintained](https://img.shields.io/badge/Maintained-Active-f59e0b?style=for-the-badge)")
+
+    techs = tech_stack_items or []
+    for tech in techs[:8]:
+        meta = TECH_BADGE_MAP.get(tech)
+        if meta:
+            badge_url = (
+                f"https://img.shields.io/badge/{meta['label']}-{meta['color']}"
+                f"?style=for-the-badge&logo={meta['logo']}&logoColor={meta['logo_color']}"
+            )
+            tech_badges.append(f"![{tech}]({badge_url})")
+
+    row1 = " ".join(repo_badges)
+    row2 = " ".join(tech_badges)
+    if row2:
+        return f"{row1}\n<br/>\n{row2}"
+    return row1
+
+
+# ==============================================================================
+# 5. DYNAMIC README COMPILER WITH 6 DISTINCT THEMES
 # ==============================================================================
 def build_readme_from_inputs(
     repo_url: str = None,
@@ -1055,8 +772,8 @@ def build_readme_from_inputs(
     github_token: str = None,
 ) -> dict:
     """
-    Build a complete README from user inputs and live GitHub metadata,
-    assembling the best skeleton structure powered by Studio Tools.
+    Compile a complete, non-generic README tailored to project domain, tech stack,
+    and user-selected theme.
     """
     repo_metadata = {}
     if repo_url:
@@ -1067,7 +784,7 @@ def build_readme_from_inputs(
     clone_url = repo_metadata.get("clone_url") or "https://github.com/username/repo.git"
     short_description = (
         repo_metadata.get("description")
-        or "A modern, production-ready project built with high performance and clean architecture."
+        or "A modern, production-ready solution built with high performance and clean architecture."
     )
 
     if not repo_metadata and repo_url:
@@ -1086,31 +803,33 @@ def build_readme_from_inputs(
         if dt not in combined_tech:
             combined_tech.append(dt)
 
-    # Infer content blocks utilizing all Studio Tools
-    features_text = _infer_features(repo_url, short_description, combined_tech, repo_metadata)
-    tech_stack_text = _infer_tech_stack(combined_tech)
-    installation_steps_text = _infer_installation(combined_tech, repo_metadata)
-    usage_instructions_text = _infer_usage(combined_tech, repo_metadata)
-    detailed_usage_text = _infer_detailed_usage(combined_tech)
-    config_text = _infer_configuration(combined_tech)
-    structure_text = _infer_project_structure(combined_tech, repo_metadata)
-    architecture_text = _infer_architecture(combined_tech)
-    testing_text = _infer_testing(combined_tech, repo_metadata)
-    troubleshooting_text = _infer_troubleshooting(combined_tech)
-    deployment_guide_text = _infer_deployment(combined_tech)
+    tree_text = repo_metadata.get("tree_structure") or ""
+    domain = detect_project_domain(project_name, short_description, combined_tech, tree_text)
+
+    # Synthesize content dynamically (non-generic)
+    features_text = _synthesize_features(domain, short_description, combined_tech, repo_metadata)
+    tech_stack_text = " | ".join([f"`{t}`" for t in combined_tech]) if combined_tech else "`Python` | `TypeScript`"
+    installation_steps_text = _synthesize_installation(combined_tech, clone_url, project_name_slug)
+    usage_instructions_text = _synthesize_usage(domain, combined_tech, project_name_slug)
+    config_text = _synthesize_configuration(domain, combined_tech)
+    structure_text = tree_text or ".\n├── src/\n├── tests/\n├── package.json\n└── README.md"
+    architecture_text = _synthesize_architecture(combined_tech)
+    testing_text = _synthesize_testing(combined_tech, repo_metadata)
+    troubleshooting_text = _synthesize_troubleshooting(combined_tech)
+    deployment_guide_text = _synthesize_deployment(combined_tech)
     badges_text = _build_badges(project_name_slug, repo_metadata, combined_tech)
-    prerequisites_text = _infer_prerequisites(combined_tech)
+    prerequisites_text = _synthesize_prerequisites(combined_tech)
 
     response_data = {
         "project_name": project_name,
         "project_name_slug": project_name_slug,
         "description": short_description,
+        "domain": domain,
         "features": features_text,
         "tech_stack": tech_stack_text,
         "clone_url": clone_url,
         "installation_steps": installation_steps_text,
         "usage_instructions": usage_instructions_text,
-        "detailed_usage": detailed_usage_text,
         "configuration": config_text,
         "project_structure": structure_text,
         "architecture": architecture_text,
@@ -1128,7 +847,7 @@ def build_readme_from_inputs(
 
     dynamic_content = []
 
-    # 1. Header & Title Block with Hero Banner (Image & Banner Studio + Badge Studio)
+    # ==================== THEME HEADERS ====================
     if theme == "hacker":
         dynamic_content.append(
             f"```\n"
@@ -1145,8 +864,50 @@ def build_readme_from_inputs(
         )
     elif theme == "minimalist":
         dynamic_content.append(f"# {project_name}\n\n> {short_description}\n\n{badges_text}")
-    else:
-        hero_banner = _build_hero_banner(project_name, short_description, theme, repo_metadata)
+    elif theme == "showcase":
+        enc_title = urllib.parse.quote(project_name)
+        enc_desc = urllib.parse.quote(short_description[:80])
+        banner_url = (
+            f"https://capsule-render.vercel.app/api?type=soft&color=0:4f46e5,100:06b6d4&height=220&section=header"
+            f"&text={enc_title}&fontSize=44&fontAlignY=38&desc={enc_desc}&descAlignY=62&descAlign=50"
+        )
+        dynamic_content.append(
+            f'<p align="center">\n'
+            f'  <img src="{banner_url}" width="100%" alt="{project_name} Showcase" />\n'
+            f'</p>\n\n'
+            f'<div align="center">\n\n'
+            f"# {project_name}\n\n"
+            f"**{short_description}**\n\n"
+            f"{badges_text}\n\n"
+            f"</div>"
+        )
+    elif theme == "cli":
+        dynamic_content.append(
+            f"# {project_name} ⌨️\n\n"
+            f"> {short_description}\n\n"
+            f"{badges_text}\n\n"
+            f"```bash\n"
+            f"# Terminal Quickstart\n"
+            f"$ {project_name_slug} --version\n"
+            f"{project_name_slug} v1.0.0 (x86_64-pc-windows-msvc)\n"
+            f"```"
+        )
+    elif theme == "academic":
+        dynamic_content.append(
+            f"# {project_name}: An Architecture for {domain.replace('_', ' ').title()}\n\n"
+            f"**Author(s):** {repo_metadata.get('owner', 'Project Contributors')}\n\n"
+            f"### Abstract\n\n"
+            f"{short_description}. This paper documents the system specification, algorithmic topologies, "
+            f"data contracts, and reproducible benchmarks for the implementation.\n\n"
+            f"{badges_text}"
+        )
+    else:  # default / modern
+        enc_title = urllib.parse.quote(project_name or "Project")
+        enc_desc = urllib.parse.quote((short_description or "")[:85].strip())
+        banner_url = (
+            f"https://capsule-render.vercel.app/api?type=waving&color=0:6366f1,70:3b82f6,100:10b981&height=220&section=header"
+            f"&text={enc_title}&fontSize=42&fontAlignY=36&desc={enc_desc}&descAlignY=60&descAlign=50"
+        )
         nav_anchors = (
             "[🚀 Getting Started](#getting-started) &nbsp;•&nbsp; "
             "[✨ Features](#features) &nbsp;•&nbsp; "
@@ -1158,20 +919,24 @@ def build_readme_from_inputs(
             "[🤝 Contributing](#contributing)"
         )
         dynamic_content.append(
-            f"{hero_banner}\n\n"
+            f'<p align="center">\n'
+            f'  <img src="{banner_url}" width="100%" alt="{project_name} Banner" />\n'
+            f'</p>\n\n'
             f"# {project_name}\n\n"
             f"> **{short_description}**\n\n"
-            f"<div align=\"center\">\n\n{badges_text}\n\n</div>\n\n"
-            f"<div align=\"center\">\n\n{nav_anchors}\n\n</div>"
+            f'<div align="center">\n\n{badges_text}\n\n</div>\n\n'
+            f'<div align="center">\n\n{nav_anchors}\n\n</div>'
         )
 
-    # 2. Render each section in configured order
+    # ==================== THEMED SECTION COMPILATION ====================
     for sec_id in section_order:
         if sec_id == "features":
             if theme == "hacker":
                 dynamic_content.append(f"## [0x01] FEATURES\n\n{features_text}")
             elif theme == "minimalist":
                 dynamic_content.append(f"## Features\n\n{features_text}")
+            elif theme == "academic":
+                dynamic_content.append(f"## 1. System Capabilities & Features\n\n{features_text}")
             else:
                 dynamic_content.append(f"## ✨ Features\n\n{features_text}")
 
@@ -1180,6 +945,8 @@ def build_readme_from_inputs(
                 dynamic_content.append(f"## [0x02] TECH STACK\n\n{tech_stack_text}")
             elif theme == "minimalist":
                 dynamic_content.append(f"## Tech Stack\n\n{tech_stack_text}")
+            elif theme == "academic":
+                dynamic_content.append(f"## 2. Technology Stack & Foundations\n\n{tech_stack_text}")
             else:
                 dynamic_content.append(f"## 🛠️ Tech Stack\n\n{tech_stack_text}")
 
@@ -1193,13 +960,9 @@ def build_readme_from_inputs(
 
         elif sec_id == "installation":
             if theme == "hacker":
-                dynamic_content.append(
-                    f"## [0x04] INSTALLATION\n\n```bash\n# Clone & Setup\ngit clone {clone_url}\ncd {project_name_slug}\n```\n\n{installation_steps_text}"
-                )
+                dynamic_content.append(f"## [0x04] INSTALLATION\n\n{installation_steps_text}")
             elif theme == "minimalist":
-                dynamic_content.append(
-                    f"## Setup\n\n```bash\ngit clone {clone_url}\ncd {project_name_slug}\n```\n\n{installation_steps_text}"
-                )
+                dynamic_content.append(f"## Setup\n\n{installation_steps_text}")
             else:
                 dynamic_content.append(
                     f"## 🚀 Getting Started\n\n"
@@ -1211,15 +974,11 @@ def build_readme_from_inputs(
 
         elif sec_id == "usage":
             if theme == "hacker":
-                dynamic_content.append(f"## [0x05] USAGE\n\n```bash\n{usage_instructions_text}\n```")
+                dynamic_content.append(f"## [0x05] USAGE\n\n{usage_instructions_text}")
             elif theme == "minimalist":
-                dynamic_content.append(f"## Usage\n\n```bash\n{usage_instructions_text}\n```")
+                dynamic_content.append(f"## Usage\n\n{usage_instructions_text}")
             else:
-                dynamic_content.append(
-                    f"## 📖 Usage\n\n"
-                    f"```bash\n{usage_instructions_text}\n```\n\n"
-                    f"{detailed_usage_text}"
-                )
+                dynamic_content.append(f"## 📖 Usage\n\n{usage_instructions_text}")
 
         elif sec_id == "configuration":
             if theme == "hacker":
@@ -1266,18 +1025,6 @@ def build_readme_from_inputs(
             year = datetime.datetime.now().year
             author = repo_metadata.get("owner", "Project Maintainers & Contributors") if repo_metadata else "Project Maintainers & Contributors"
 
-            commits_table = (
-                "### 📝 Conventional Commits Reference\n\n"
-                "| Type | Badge | Scope & Description |\n"
-                "| :--- | :--- | :--- |\n"
-                "| `feat` | `![Feat](https://img.shields.io/badge/-Feature-007ACC?style=flat-square)` | New user-facing feature or enhancement |\n"
-                "| `fix` | `![Fix](https://img.shields.io/badge/-Fix-E05D44?style=flat-square)` | Bug fix or patch |\n"
-                "| `docs` | `![Docs](https://img.shields.io/badge/-Docs-4C1?style=flat-square)` | Documentation adjustments only |\n"
-                "| `refactor` | `![Refactor](https://img.shields.io/badge/-Refactor-9B59B6?style=flat-square)` | Code change without behavioral change |\n"
-                "| `test` | `![Test](https://img.shields.io/badge/-Test-00C7B7?style=flat-square)` | Adding or fixing test suites |\n"
-                "| `chore` | `![Chore](https://img.shields.io/badge/-Chore-7F8C8D?style=flat-square)` | Maintenance tasks, deps, and build tooling |"
-            )
-
             if theme == "hacker":
                 dynamic_content.append(
                     f"## [0x0B] CONTRIBUTING & LICENSE\n\n"
@@ -1291,10 +1038,35 @@ def build_readme_from_inputs(
                     f"Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md).\n\n"
                     f"Released under the **{lic} License**. Copyright (c) {year} {author}."
                 )
+            elif theme == "academic":
+                dynamic_content.append(
+                    f"## Citation & License\n\n"
+                    f"If you utilize this work in research, please cite:\n\n"
+                    f"```bibtex\n"
+                    f"@software{{{project_name_slug}_{year},\n"
+                    f"  author = {{{author}}},\n"
+                    f"  title = {{{project_name}}},\n"
+                    f"  year = {{{year}}},\n"
+                    f"  url = {{{clone_url}}}\n"
+                    f"}}\n"
+                    f"```\n\n"
+                    f"Distributed under the {lic} License."
+                )
             else:
+                commits_table = (
+                    "### 📝 Conventional Commits Reference\n\n"
+                    "| Type | Badge | Scope & Description |\n"
+                    "| :--- | :--- | :--- |\n"
+                    "| `feat` | `![Feat](https://img.shields.io/badge/-Feature-007ACC?style=flat-square)` | New user-facing feature or enhancement |\n"
+                    "| `fix` | `![Fix](https://img.shields.io/badge/-Fix-E05D44?style=flat-square)` | Bug fix or patch |\n"
+                    "| `docs` | `![Docs](https://img.shields.io/badge/-Docs-4C1?style=flat-square)` | Documentation adjustments only |\n"
+                    "| `refactor` | `![Refactor](https://img.shields.io/badge/-Refactor-9B59B6?style=flat-square)` | Code change without behavioral change |\n"
+                    "| `test` | `![Test](https://img.shields.io/badge/-Test-00C7B7?style=flat-square)` | Adding or fixing test suites |\n"
+                    "| `chore` | `![Chore](https://img.shields.io/badge/-Chore-7F8C8D?style=flat-square)` | Maintenance tasks, deps, and build tooling |"
+                )
                 dynamic_content.append(
                     f"## 🤝 Contributing & License\n\n"
-                    f"Contributions are what make the open-source community such an amazing place to learn, inspire, and create. "
+                    f"Contributions are what make the open-source community an amazing place to learn, inspire, and create. "
                     f"Any contributions you make are **greatly appreciated**.\n\n"
                     f"{commits_table}\n\n"
                     f"> [!TIP]\n"
@@ -1309,10 +1081,10 @@ def build_readme_from_inputs(
 
 
 # ==============================================================================
-# 6. DOCUMENTATION SUITE (DOC PACK) GENERATORS (POWERED BY STUDIO TOOLS)
+# 6. DOCUMENTATION SUITE (DOC PACK) GENERATORS
 # ==============================================================================
 def generate_contributing(project_name: str, repo_metadata: dict = None) -> str:
-    """Generate a comprehensive CONTRIBUTING.md file using Studio Tools."""
+    """Generate a comprehensive, modern CONTRIBUTING.md file."""
     owner = repo_metadata.get("owner", "owner") if repo_metadata else "owner"
     repo = repo_metadata.get("name", project_name.lower().replace(" ", "-")) if repo_metadata else project_name.lower().replace(" ", "-")
 
@@ -1374,7 +1146,6 @@ We adhere to the [Conventional Commits](https://www.conventionalcommits.org/) sp
 Follow this standard developer workflow using the terminal frame below:
 
 ```bash
-# [zsh — 80×24]
 # 1. Fork repository and checkout dedicated feature branch
 $ git checkout -b feat/my-awesome-feature
 
@@ -1402,13 +1173,11 @@ Thank you for helping make **{project_name}** extraordinary! ❤️
 def generate_setup(project_name: str, tech_stack_items: list = None, repo_metadata: dict = None) -> str:
     """Generate a dedicated SETUP.md guide with ports, multi-PM steps, and troubleshooting."""
     techs = tech_stack_items or []
-    has_node = any(t in techs for t in ["React", "Next.js", "Vue", "Node.js", "Vite", "TypeScript"])
-    has_python = any(t in techs for t in ["FastAPI", "Flask", "Django", "Python"])
-    prereqs = _infer_prerequisites(techs)
+    prereqs = _synthesize_prerequisites(techs)
 
     return f"""# Setup & Local Development Guide: {project_name} 💻
 
-This guide provides end-to-end instructions for configuring your local development workstation, configuring environment parameters, and running {project_name}.
+This guide provides end-to-end instructions for configuring your local development workstation, configuring environment parameters, and running **{project_name}**.
 
 ---
 
@@ -1417,7 +1186,7 @@ This guide provides end-to-end instructions for configuring your local developme
 Ensure you have the following runtimes and tools active on your workstation:
 
 {prereqs}
-- **Git**: `2.30+`
+- **Git**: `2.34+`
 
 ---
 
@@ -1438,13 +1207,13 @@ Ensure you have the following runtimes and tools active on your workstation:
 
 ### 1. Clone Working Tree
 ```bash
-git clone https://github.com/owner/project.git
-cd project
+$ git clone https://github.com/owner/project.git
+$ cd project
 ```
 
 ### 2. Configure Environment Parameters
 ```bash
-cp .env.example .env
+$ cp .env.example .env
 ```
 
 > [!TIP]
@@ -1453,31 +1222,31 @@ cp .env.example .env
 ### 3. Multi-Package Manager Installation
 
 <details open>
-<summary><b>npm & pip (Standard)</b></summary>
+<summary><b>Standard (npm & pip)</b></summary>
 
 ```bash
 # Backend installation
-cd backend && pip install -r requirements.txt
-python -m uvicorn app:app --reload --port 8000
+$ cd backend && pip install -r requirements.txt
+$ python -m uvicorn app:app --reload --port 8000
 
 # In a separate terminal: Frontend installation
-cd frontend && npm install
-npm run dev
+$ cd frontend && npm install
+$ npm run dev
 ```
 
 </details>
 
 <details>
-<summary><b>pnpm & uv (Blazing Fast)</b></summary>
+<summary><b>Fast (pnpm & uv)</b></summary>
 
 ```bash
 # Backend installation
-cd backend && uv pip install -r requirements.txt
-python -m uvicorn app:app --reload --port 8000
+$ cd backend && uv pip install -r requirements.txt
+$ python -m uvicorn app:app --reload --port 8000
 
 # Frontend installation
-cd frontend && pnpm install
-pnpm dev
+$ cd frontend && pnpm install
+$ pnpm dev
 ```
 
 </details>
@@ -1490,10 +1259,10 @@ To launch the full containerized cluster with persistent volume mounts:
 
 ```bash
 # Build images and start services in background
-docker compose up --build -d
+$ docker compose up --build -d
 
 # Inspect live cluster health
-docker compose ps
+$ docker compose ps
 ```
 
 ---
@@ -1505,7 +1274,7 @@ docker compose ps
 
 ```bash
 # Terminate lingering processes on port 8000
-lsof -ti:8000 | xargs kill -9
+$ lsof -ti:8000 | xargs kill -9
 ```
 
 </details>
@@ -1520,18 +1289,19 @@ Verify that PostgreSQL credentials in `.env` match those declared in `docker-com
 
 
 def generate_architecture(project_name: str, tech_stack_items: list = None, repo_metadata: dict = None) -> str:
-    """
-    Generate a comprehensive ARCHITECTURE.md file using structured Topology Matrix tables
-    (from Table Studio).
-    Notice: Excludes Diagram Studio / Mermaid diagrams as instructed.
-    """
+    """Generate a comprehensive ARCHITECTURE.md file with layer topologies and sequence pipelines."""
     techs = tech_stack_items or ["React", "FastAPI", "PostgreSQL", "Docker"]
 
     return f"""# System Architecture: {project_name} 🏛️
 
-<!-- System diagrams can be visually designed and updated using the Mermaid Diagram Studio (mermaid) -->
-
 This document details the architectural topology, data pipelines, layer boundaries, and reliability principles governing **{project_name}**.
+
+```mermaid
+graph TD
+    Client["Web Client (React / TypeScript)"] -->|"HTTPS / REST"| API["API Gateway (FastAPI)"]
+    API -->|"Async Pipe"| Cache["Session Cache (Redis)"]
+    API -->|"Pooled SQL"| DB["Primary Datastore (PostgreSQL)"]
+```
 
 ---
 

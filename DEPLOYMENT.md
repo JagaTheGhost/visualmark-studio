@@ -65,11 +65,11 @@ Useful for rapid local testing without waiting for NSIS compression.
 
 ## 🤖 GitHub Actions CI/CD Release Automation
 
-Production binaries are automatically built and published via `.github/workflows/release.yml` whenever a SemVer tag (e.g. `v1.1.0`) is pushed to GitHub:
+Production binaries are automatically built and published via `.github/workflows/release.yml` whenever a SemVer tag (e.g. `v1.1.1`) is pushed to GitHub:
 
 ```bash
-git tag v1.1.0
-git push origin v1.1.0
+git tag v1.1.1
+git push origin v1.1.1
 ```
 
 The workflow:

@@ -8,6 +8,8 @@
   overflow: hidden;
   position: relative;
   background-color: var(--surface-base);
+  min-height: 0;
+  min-width: 0;
 }
 
 /* Tab Strip Bar (Antigravity IDE / VS Code Native Desktop Style) */
@@ -782,6 +784,7 @@
   flex-direction: column;
   overflow: hidden;
   background-color: var(--surface-lowest);
+  position: relative;
 }
 
 .editor-surface {

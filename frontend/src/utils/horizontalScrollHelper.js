@@ -6,16 +6,13 @@
  */
 
 /**
- * Known classes and attributes that designate horizontal scroll strips.
+ * Known classes and attributes that designate dedicated horizontal scroll strips.
  */
 const KNOWN_HORIZONTAL_SELECTORS = [
   '.tabs-container',
   '.toolbar-left-group',
   '.editor-sub-toolbar',
   '.templates-category-pills',
-  '.badge-mode-nav',
-  '.brand-plates-rack',
-  '.badge-style-rack',
   '.doc-tabs-nav',
   '.horizontal-scroll-container',
   '[data-horizontal-scroll="true"]'
@@ -24,42 +21,41 @@ const KNOWN_HORIZONTAL_SELECTORS = [
 /**
  * Checks if an element is horizontally scrollable and currently overflowing.
  * @param {HTMLElement} el
+ * @param {boolean} isShiftKey
  * @returns {boolean}
  */
-export function isHorizontallyScrollable(el) {
+export function isHorizontallyScrollable(el, isShiftKey = false) {
   if (!el || el === document.body || el === document.documentElement || !(el instanceof HTMLElement)) {
     return false
   }
 
-  // 1. Check known explicit classes/attributes
+  // 1. Check known explicit single-row horizontal strips
   for (const selector of KNOWN_HORIZONTAL_SELECTORS) {
     if (el.matches?.(selector)) {
       return el.scrollWidth > el.clientWidth + 1.5
     }
   }
 
-  // 2. Generic dynamic style inspection
-  const style = window.getComputedStyle(el)
-  const overflowX = style.overflowX
-  const overflowY = style.overflowY
+  // 2. If Shift key is held, allow horizontal scroll on any container with overflowX
+  if (isShiftKey) {
+    const style = window.getComputedStyle(el)
+    const overflowX = style.overflowX
+    return (overflowX === 'auto' || overflowX === 'scroll') && el.scrollWidth > el.clientWidth + 1.5
+  }
 
-  const canScrollX = (overflowX === 'auto' || overflowX === 'scroll') && el.scrollWidth > el.clientWidth + 1.5
-  // Check if primarily vertically scrollable
-  const canScrollY = (overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight + 1.5
-
-  // If it can scroll horizontally and is NOT a vertical-scrolling pane
-  return canScrollX && !canScrollY
+  return false
 }
 
 /**
  * Walks up the DOM tree from startEl to find the nearest horizontally scrollable container.
  * @param {EventTarget} startEl
+ * @param {boolean} isShiftKey
  * @returns {HTMLElement|null}
  */
-export function findHorizontalScrollContainer(startEl) {
+export function findHorizontalScrollContainer(startEl, isShiftKey = false) {
   let curr = startEl
   while (curr && curr !== document.body && curr !== document.documentElement) {
-    if (curr instanceof HTMLElement && isHorizontallyScrollable(curr)) {
+    if (curr instanceof HTMLElement && isHorizontallyScrollable(curr, isShiftKey)) {
       return curr
     }
     curr = curr.parentElement
@@ -69,7 +65,7 @@ export function findHorizontalScrollContainer(startEl) {
 
 /**
  * Processes a wheel event and translates vertical wheel movement into horizontal scroll
- * for horizontal containers, preventing default vertical scrolling.
+ * for designated horizontal containers without swallowing vertical scrolling at boundaries.
  * @param {WheelEvent} e
  * @returns {boolean} whether the event was handled
  */
@@ -85,7 +81,7 @@ export function handleHorizontalWheelEvent(e) {
     return false
   }
 
-  const container = findHorizontalScrollContainer(e.target)
+  const container = findHorizontalScrollContainer(e.target, e.shiftKey)
   if (!container) {
     return false
   }
@@ -110,7 +106,6 @@ export function handleHorizontalWheelEvent(e) {
     delta = e.deltaX
   }
 
-  // Speed scaling factor: feels natural and responsive for tab bars and pill rows
   const scrollStep = delta
 
   const canScrollRight = scrollStep > 0 && container.scrollLeft < maxScrollLeft - 0.5
@@ -120,11 +115,10 @@ export function handleHorizontalWheelEvent(e) {
     container.scrollLeft += scrollStep
     e.preventDefault()
     return true
-  } else {
-    // At scroll boundary: prevent vertical page scroll from jumping
-    e.preventDefault()
-    return true
   }
+
+  // Never call e.preventDefault() at boundary! Allow vertical scroll on parent panes to proceed naturally.
+  return false
 }
 
 /**

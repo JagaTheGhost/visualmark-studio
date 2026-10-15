@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { sanitizeSvg } from '../utils/securityUtils'
 
 let mermaidInstance = null
 let mermaidPromise = null
@@ -23,7 +24,7 @@ async function getMermaid() {
           fontFamily: 'Inter, JetBrains Mono, monospace',
           fontSize: '13px'
         },
-        securityLevel: 'loose'
+        securityLevel: 'strict'
       })
       mermaidInstance = mModule
       return mermaidInstance
@@ -54,7 +55,7 @@ export default function MermaidRenderer({ chart }) {
         const mermaid = await getMermaid()
         const { svg } = await mermaid.render(uniqueId, chart.trim())
         if (isMounted) {
-          setSvgContent(svg)
+          setSvgContent(sanitizeSvg(svg))
         }
       } catch (err) {
         if (isMounted) {

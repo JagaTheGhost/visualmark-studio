@@ -60,6 +60,33 @@ export function ToastProvider({ children }) {
   const activeTimers = useRef(new Map())
   const lastToastRef = useRef({ message: '', type: '', time: 0, id: null })
 
+  // Runtime Problems list pushed from errors and warnings instead of popup toasts
+  const [runtimeProblems, setRuntimeProblems] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('visualmark_runtime_problems')
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
+
+  const clearRuntimeProblems = useCallback(() => {
+    setRuntimeProblems([])
+    try {
+      sessionStorage.removeItem('visualmark_runtime_problems')
+    } catch {}
+  }, [])
+
+  const removeRuntimeProblem = useCallback((id) => {
+    setRuntimeProblems((prev) => {
+      const updated = prev.filter((p) => p.id !== id)
+      try {
+        sessionStorage.setItem('visualmark_runtime_problems', JSON.stringify(updated))
+      } catch {}
+      return updated
+    })
+  }, [])
+
   // Synchronize isHistoryOpenRef so showToast always has the real-time open state
   React.useEffect(() => {
     isHistoryOpenRef.current = isHistoryOpen
@@ -126,6 +153,59 @@ export function ToastProvider({ children }) {
     lastToastRef.current = { message: resolvedMessage, type: resolvedType, time: now, id }
     const timestamp = new Date()
     const source = resolveNotificationSource(resolvedMessage, resolvedOpts.source)
+
+    // Errors and warnings: Route to ProblemsTab instead of treating them as floating toast popups
+    if (resolvedType === 'error' || resolvedType === 'warning') {
+      const problemSource = resolvedOpts.source || source || (resolvedType === 'error' ? 'System Error' : 'System Warning')
+      const problemFile = resolvedOpts.file || 'Workspace'
+      const problemEntry = {
+        id: `prob-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        severity: resolvedType,
+        message: typeof resolvedMessage === 'string' ? resolvedMessage : String(resolvedMessage),
+        source: problemSource,
+        file: problemFile,
+        line: resolvedOpts.line || null,
+        col: resolvedOpts.col || null,
+        timestamp: timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        rawTimestamp: Date.now()
+      }
+
+      setRuntimeProblems((prev) => {
+        const filtered = prev.filter((p) => p.message !== problemEntry.message)
+        const next = [problemEntry, ...filtered].slice(0, 50)
+        try {
+          sessionStorage.setItem('visualmark_runtime_problems', JSON.stringify(next))
+        } catch {}
+        return next
+      })
+
+      // Append to Notification History Log for persistent audit record
+      setHistory((prev) => {
+        const isCurrentlyOpen = isHistoryOpenRef.current
+        const entry = {
+          id,
+          message: typeof resolvedMessage === 'string' ? resolvedMessage : 'Notification',
+          type: resolvedType,
+          source: problemSource,
+          important: true,
+          minor: false,
+          time: timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: timestamp.toLocaleDateString(),
+          read: isCurrentlyOpen ? true : false,
+          action: resolvedOpts.action || null
+        }
+        if (!isCurrentlyOpen) {
+          setUnreadCount((c) => c + 1)
+        }
+        const updated = [entry, ...prev.filter((h) => h.id !== id)].slice(0, 60)
+        try {
+          localStorage.setItem('visualmark_notification_history', JSON.stringify(updated))
+        } catch {}
+        return updated
+      })
+
+      return id
+    }
 
     // Determine minor vs important
     const isMinor = isMinorAction(resolvedMessage, resolvedOpts, resolvedType)
@@ -320,8 +400,10 @@ export function ToastProvider({ children }) {
     clearAll: clearAllToasts,
     toggleHistory,
     clearHistory,
-    removeHistoryItem
-  }), [showToast, dismissToast, clearAllToasts, toggleHistory, clearHistory, removeHistoryItem])
+    removeHistoryItem,
+    clearRuntimeProblems,
+    removeRuntimeProblem
+  }), [showToast, dismissToast, clearAllToasts, toggleHistory, clearHistory, removeHistoryItem, clearRuntimeProblems, removeRuntimeProblem])
 
   const value = useMemo(() => ({
     toasts,
@@ -338,7 +420,10 @@ export function ToastProvider({ children }) {
     resumeToastTimer,
     toggleHistory,
     clearHistory,
-    removeHistoryItem
+    removeHistoryItem,
+    runtimeProblems,
+    clearRuntimeProblems,
+    removeRuntimeProblem
   }), [
     toasts,
     history,
@@ -354,7 +439,10 @@ export function ToastProvider({ children }) {
     resumeToastTimer,
     toggleHistory,
     clearHistory,
-    removeHistoryItem
+    removeHistoryItem,
+    runtimeProblems,
+    clearRuntimeProblems,
+    removeRuntimeProblem
   ])
 
   return (

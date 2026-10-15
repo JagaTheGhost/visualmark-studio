@@ -13,6 +13,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.1] - 2026-10-15
+
+### Changed
+- **Embedded Canvas Welcome Launcher**:
+  - Replaced the generic floating rectangular modal card with an embedded canvas layout that integrates seamlessly into the dark IDE editor background (`background: transparent`, zero artificial container borders).
+  - **Engraved Background Typography**: Soft recessed and debossed text-shadows (`text-shadow: 0 1px 2px rgba(0,0,0,0.9)`) on headings, version badges, taglines, and shortcuts giving typography an authentic embedded canvas feel.
+  - **Tactile Physical Depth Controls**:
+    - Primary action cards (**Clone Repository** and **Open Folder...**) now feature genuine physical depth with multi-layered ambient drop shadows, crisp top-edge light-catch bevel highlights (`border-top: 1px solid rgba(255,255,255,0.18)`), deep bottom rim borders (`border-bottom: 2px solid rgba(0,0,0,0.75)`), directional surface gradients, and tactile mechanical press animations on `:active`.
+    - Secondary action pills (`+ New File`, `Open File...`, `Doc Generator`) and recent workspace list items feature matching tactile depth.
+    - Keyboard shortcut `<kbd>` badges styled as physical mechanical chiclet keycaps.
+
+### Fixed
+- **Explorer More Actions Dropdown CSS**: Fixed missing CSS rules for `.ide-dropdown-menu`, `.ide-dropdown-item`, and `.ide-dropdown-divider`, replacing unstyled browser-default white buttons with dark glassmorphic styling, glowing cyan icons, and danger hover states.
+- **Context Menu Stacking**: Unified duplicate context menu definitions in `explorer.css` and elevated `z-index` to `99999` with backdrop blur.
+- **Studio Tab Scroll Boundary**: Removed `e.preventDefault()` wheel event trap at scroll limits in `horizontalScrollHelper.js`, bounded flex column heights with `min-height: 0; height: 100%`, and mapped sidebar drawer class bindings to enable smooth trackpad and mouse wheel scrolling across all studios.
+
+### Removed
+- **Create Project Launcher Wizard**: Pruned the redundant "Create New Project" card and associated callbacks from `WelcomeLauncher.jsx`, `StudioWorkspaceRenderer.jsx`, and `App.jsx`, streamlining the launcher to direct workspace entry.
+
+### Security
+- **Electron IPC Hardening**:
+  - Enforced explicit `--` delimiter before destination paths in `git clone` to prevent remote command-line argument injection.
+  - Restricted `openExternal` strictly to valid `http:` and `https:` schemes.
+  - Blocked execution of dangerous binary and script file types via `openPath`.
+- **Preview Sanitization**: Audited and hardened DOMPurify configurations in `LivePreviewPane.jsx` and `MermaidRenderer.jsx` to neutralize XSS vectors.
+
+---
+
 ## [1.1.0] - 2026-10-13
 
 ### Added

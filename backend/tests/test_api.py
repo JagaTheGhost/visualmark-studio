@@ -74,8 +74,8 @@ def test_generate_suite_includes_contributing_and_license():
 
 
 def test_themes():
-    """Verify default, minimalist, and hacker theme outputs."""
-    for theme in ["default", "minimalist", "hacker"]:
+    """Verify all 6 documentation theme outputs."""
+    for theme in ["default", "minimalist", "hacker", "showcase", "cli", "academic"]:
         data = build_readme_from_inputs(
             description="My CLI tool",
             tech_stack_items=["Python", "FastAPI"],
@@ -89,6 +89,12 @@ def test_themes():
             assert "# My Awesome Project" in md or "# " in md
         elif theme == "default":
             assert "✨ Features" in md
+        elif theme == "showcase":
+            assert "Showcase" in md or "capsule-render" in md
+        elif theme == "cli":
+            assert "--help" in md or "--version" in md or "Terminal" in md
+        elif theme == "academic":
+            assert "Abstract" in md or "System Architecture" in md
 
 
 def test_url_helpers():

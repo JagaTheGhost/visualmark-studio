@@ -14,6 +14,8 @@ export const DEFAULT_KEYBINDINGS = [
   { id: 'pref.shortcuts', title: 'Preferences: Open Keyboard Shortcuts', category: 'Preferences', defaultKey: 'Ctrl + /', desc: 'Open Keyboard Shortcuts configuration tab' },
   { id: 'view.commandPalette', title: 'View: Open Command Palette', category: 'Navigation', defaultKey: 'Ctrl + Shift + P', desc: 'Open interactive command palette and search' },
   { id: 'view.toggleSidebar', title: 'View: Toggle Primary Sidebar', category: 'View', defaultKey: 'Ctrl + B', desc: 'Show or collapse the left activity sidebar' },
+  { id: 'view.output', title: 'View: Toggle Output & Logs Panel', category: 'View', defaultKey: 'Ctrl + `', desc: 'Open or close system output and diagnostics drawer' },
+  { id: 'view.problems', title: 'View: Toggle Problems Diagnostics', category: 'View', defaultKey: 'Ctrl + J', desc: 'Open or close markdown syntax errors and warnings' },
   { id: 'view.cycleMode', title: 'View: Toggle Split / Preview Mode', category: 'View', defaultKey: 'Ctrl + Shift + V', desc: 'Cycle between Split, Editor-only, and Preview-only' },
   { id: 'view.toggleOrientation', title: 'View: Toggle Split Orientation', category: 'View', defaultKey: 'Ctrl + \\', desc: 'Toggle between Side-by-Side and Stacked editor views' },
   { id: 'view.toggleZen', title: 'View: Toggle Zen / Full Screen Mode', category: 'View', defaultKey: 'F11', desc: 'Toggle distraction-free full-screen editor mode' },

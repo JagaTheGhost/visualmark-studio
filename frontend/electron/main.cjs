@@ -412,36 +412,6 @@ ipcMain.handle('dialog-save-text-export', async (_event, { defaultPath, filters,
   }
 })
 
-// Native External Terminal Spawner (PowerShell, Command Prompt, or OS Terminal)
-ipcMain.handle('terminal-open-external', async (_event, { folderPath, shellType = 'powershell' } = {}) => {
-  const cwd = folderPath && fs.existsSync(folderPath) ? folderPath : path.resolve(__dirname, '../../')
-  try {
-    if (process.platform === 'win32') {
-      if (shellType === 'cmd') {
-        spawn('cmd.exe', ['/c', 'start', 'Command Prompt', 'cmd.exe', '/k', `cd /d "${cwd}"`], {
-          cwd,
-          detached: true,
-          stdio: 'ignore'
-        }).unref()
-      } else {
-        // Windows PowerShell
-        spawn('cmd.exe', ['/c', 'start', 'PowerShell', 'powershell.exe', '-NoExit', '-Command', `Set-Location -LiteralPath '${cwd.replace(/'/g, "''")}'`], {
-          cwd,
-          detached: true,
-          stdio: 'ignore'
-        }).unref()
-      }
-    } else if (process.platform === 'darwin') {
-      spawn('open', ['-a', 'Terminal', cwd], { detached: true }).unref()
-    } else {
-      spawn('x-terminal-emulator', [], { cwd, detached: true }).unref()
-    }
-    return { success: true, cwd, shellType }
-  } catch (err) {
-    return { success: false, error: err.message }
-  }
-})
-
 // Toggle Developer Tools
 ipcMain.on('window-toggle-devtools', () => {
   if (mainWindow) {
@@ -456,98 +426,6 @@ ipcMain.on('window-reload', () => {
   }
 })
 
-// ==================== EMBEDDED INTEGRATED TERMINAL ENGINE ====================
-const activeTerminals = new Map() // termId -> { proc, shellType, cwd }
-
-ipcMain.handle('terminal-session-start', async (_event, { termId = 'default', shellType = 'powershell', cwd }) => {
-  const existing = activeTerminals.get(termId)
-  if (existing) {
-    try {
-      if (process.platform === 'win32') {
-        spawn('taskkill', ['/pid', String(existing.proc.pid), '/f', '/t'])
-      } else {
-        existing.proc.kill('SIGTERM')
-      }
-    } catch {}
-    activeTerminals.delete(termId)
-  }
-
-  const workingDir = cwd && fs.existsSync(cwd) ? cwd : path.resolve(__dirname, '../../')
-
-  let shellExe = 'powershell.exe'
-  let shellArgs = ['-NoLogo']
-
-  if (shellType === 'cmd') {
-    shellExe = 'cmd.exe'
-    shellArgs = ['/k', 'cd', '/d', workingDir]
-  } else if (process.platform !== 'win32') {
-    shellExe = process.env.SHELL || '/bin/bash'
-    shellArgs = []
-  }
-
-  try {
-    const proc = spawn(shellExe, shellArgs, {
-      cwd: workingDir,
-      env: { ...process.env, TERM: 'xterm-256color' },
-      stdio: ['pipe', 'pipe', 'pipe'],
-      windowsHide: true
-    })
-
-    activeTerminals.set(termId, { proc, shellType, cwd: workingDir })
-
-    proc.stdout.on('data', (chunk) => {
-      if (mainWindow) {
-        mainWindow.webContents.send('terminal-session-data', { termId, data: chunk.toString('utf-8') })
-      }
-    })
-
-    proc.stderr.on('data', (chunk) => {
-      if (mainWindow) {
-        mainWindow.webContents.send('terminal-session-data', { termId, data: chunk.toString('utf-8'), isError: true })
-      }
-    })
-
-    proc.on('close', (code) => {
-      activeTerminals.delete(termId)
-      if (mainWindow) {
-        mainWindow.webContents.send('terminal-session-exit', { termId, code })
-      }
-    })
-
-    return { success: true, termId, shellType, cwd: workingDir }
-  } catch (err) {
-    return { success: false, error: err.message }
-  }
-})
-
-ipcMain.handle('terminal-session-write', async (_event, { termId = 'default', command }) => {
-  const item = activeTerminals.get(termId)
-  if (!item || !item.proc || !item.proc.stdin) {
-    return { success: false, error: 'Terminal session not active' }
-  }
-  try {
-    item.proc.stdin.write(command + '\r\n')
-    return { success: true }
-  } catch (err) {
-    return { success: false, error: err.message }
-  }
-})
-
-ipcMain.handle('terminal-session-kill', async (_event, { termId = 'default' }) => {
-  const item = activeTerminals.get(termId)
-  if (item && item.proc) {
-    try {
-      if (process.platform === 'win32') {
-        spawn('taskkill', ['/pid', String(item.proc.pid), '/f', '/t'])
-      } else {
-        item.proc.kill('SIGTERM')
-      }
-    } catch {}
-    activeTerminals.delete(termId)
-  }
-  return { success: true }
-})
-
 // Common binary, media, executable and archive extensions that cannot be parsed as text
 const BINARY_EXTENSIONS = new Set([
   'png', 'jpg', 'jpeg', 'gif', 'bmp', 'ico', 'webp', 'tiff', 'psd',
@@ -557,6 +435,13 @@ const BINARY_EXTENSIONS = new Set([
   'db', 'sqlite', 'sqlite3', 'iso', 'dmg',
   'woff', 'woff2', 'ttf', 'eot', 'otf',
   'docx', 'xlsx', 'pptx'
+])
+
+// Dangerous executable and script extensions that must never be launched directly via shell.openPath
+const DANGEROUS_EXECUTABLE_EXTENSIONS = new Set([
+  'exe', 'bat', 'cmd', 'vbs', 'vbe', 'js', 'jse', 'wsf', 'wsh', 'ps1', 'ps1xml',
+  'ps2', 'psc1', 'psc2', 'msh', 'msh1', 'msh2', 'mshxml', 'msh1xml', 'msh2xml',
+  'scr', 'msi', 'msp', 'com', 'pif', 'hta', 'cpl', 'jar', 'reg', 'inf', 'scf', 'lnk', 'url'
 ])
 
 // Read arbitrary file with binary / unsupported format fail-safe
@@ -645,6 +530,30 @@ ipcMain.handle('dialog-open-folder', async () => {
     folderPath,
     folderName: path.basename(folderPath),
     files: scan
+  }
+})
+
+// Native Select Destination Folder for Clone Dialog
+ipcMain.handle('dialog-select-clone-parent', async () => {
+  if (!mainWindow) return { canceled: true }
+  let defaultDir = null
+  try {
+    defaultDir = app.getPath('documents') || app.getPath('home')
+  } catch {}
+
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Select Destination Folder for Cloned Repository',
+    defaultPath: defaultDir || undefined,
+    properties: ['openDirectory', 'createDirectory']
+  })
+
+  if (result.canceled || result.filePaths.length === 0) {
+    return { canceled: true }
+  }
+
+  return {
+    canceled: false,
+    folderPath: result.filePaths[0]
   }
 })
 
@@ -1258,6 +1167,89 @@ ipcMain.handle('git-init', async (_event, folderPath) => {
   return res.success ? { success: true, output: res.stdout } : { success: false, error: res.error }
 })
 
+ipcMain.handle('git-get-default-clone-dir', async () => {
+  try {
+    return app.getPath('documents') || app.getPath('home') || process.cwd()
+  } catch {
+    return process.cwd()
+  }
+})
+
+ipcMain.handle('git-clone', async (_event, { repoUrl, targetDir, folderName }) => {
+  if (!repoUrl?.trim()) return { success: false, error: 'Repository URL is required.' }
+
+  let cleanUrl = repoUrl.trim()
+
+  // Guard against git flag injection (e.g. --upload-pack)
+  if (cleanUrl.startsWith('-')) {
+    return { success: false, error: 'Invalid repository URL.' }
+  }
+
+  // Support GitHub shorthand: owner/repo
+  if (!cleanUrl.includes('://') && !cleanUrl.startsWith('git@') && cleanUrl.split('/').length === 2 && !cleanUrl.includes(' ')) {
+    cleanUrl = `https://github.com/${cleanUrl}.git`
+  } else if (cleanUrl.startsWith('github.com/')) {
+    cleanUrl = `https://${cleanUrl}`
+  }
+
+  // Validate allowed protocols strictly to prevent ext:: or file:// abuse
+  if (!cleanUrl.startsWith('https://') && !cleanUrl.startsWith('http://') && !cleanUrl.startsWith('git@') && !cleanUrl.startsWith('ssh://')) {
+    return { success: false, error: 'Only HTTP/HTTPS and SSH git repository URLs are supported.' }
+  }
+
+  let effectiveTargetDir = targetDir?.trim()
+  if (!effectiveTargetDir) {
+    try {
+      effectiveTargetDir = app.getPath('documents') || app.getPath('home')
+    } catch {
+      effectiveTargetDir = process.cwd()
+    }
+  }
+
+  if (!fs.existsSync(effectiveTargetDir)) {
+    try {
+      fs.mkdirSync(effectiveTargetDir, { recursive: true })
+    } catch (e) {
+      return { success: false, error: `Destination directory cannot be created: ${e.message}` }
+    }
+  }
+
+  // Derive repo folder name if not provided
+  let destDirName = folderName?.trim()
+  if (!destDirName) {
+    const urlWithoutGit = cleanUrl.replace(/\/+$/, '').replace(/\.git$/, '')
+    destDirName = urlWithoutGit.split('/').pop() || 'cloned-repo'
+  }
+
+  // Sanitize folder name: disallow leading hyphen or path separators to prevent directory traversal
+  if (destDirName.startsWith('-') || destDirName.includes('..') || destDirName.includes('/') || destDirName.includes('\\')) {
+    return { success: false, error: 'Invalid destination folder name.' }
+  }
+
+  const destinationPath = path.join(effectiveTargetDir, destDirName)
+  if (fs.existsSync(destinationPath)) {
+    try {
+      const entries = fs.readdirSync(destinationPath)
+      if (entries.length > 0) {
+        return { success: false, error: `Folder "${destDirName}" already exists in the destination directory and is not empty.` }
+      }
+    } catch {}
+  }
+
+  // Execute git clone safely with option delimiter '--' and 3-minute timeout
+  const res = await runGit(['clone', '--', cleanUrl, destDirName], effectiveTargetDir, 180000)
+  if (!res.success) {
+    return { success: false, error: res.error || 'Git clone failed.' }
+  }
+
+  return {
+    success: true,
+    destinationPath,
+    folderName: destDirName,
+    output: res.stdout
+  }
+})
+
 ipcMain.handle('workspace-read-tree', async (_event, folderPath) => {
   if (!folderPath || !fs.existsSync(folderPath)) {
     return {
@@ -1369,6 +1361,15 @@ ipcMain.on('show-in-folder', (_event, filePath) => {
 ipcMain.handle('open-path-in-os', async (_event, filePath) => {
   if (filePath && fs.existsSync(filePath)) {
     try {
+      const ext = path.extname(filePath).toLowerCase().replace(/^\./, '')
+      if (DANGEROUS_EXECUTABLE_EXTENSIONS.has(ext)) {
+        // Prevent accidental execution of executable binaries or shell scripts from untrusted repos
+        shell.showItemInFolder(filePath)
+        return {
+          success: false,
+          error: `Direct execution of executable files or scripts (.${ext}) is restricted for safety. Revealed file in Explorer instead.`
+        }
+      }
       await shell.openPath(filePath)
       return { success: true }
     } catch (err) {

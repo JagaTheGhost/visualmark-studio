@@ -42,24 +42,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openExternalUrl: (url) => ipcRenderer.send('open-external-url', url),
   showItemInFolder: (filePath) => ipcRenderer.send('show-in-folder', filePath),
   openPathInOs: (filePath) => ipcRenderer.invoke('open-path-in-os', filePath),
-  openTerminal: (options) => ipcRenderer.invoke('terminal-open-external', options),
   toggleDevTools: () => ipcRenderer.send('window-toggle-devtools'),
   reloadWindow: () => ipcRenderer.send('window-reload'),
-
-  // Embedded Integrated Terminal IPC
-  startTerminalSession: (options) => ipcRenderer.invoke('terminal-session-start', options),
-  writeTerminalSession: (options) => ipcRenderer.invoke('terminal-session-write', options),
-  killTerminalSession: (options) => ipcRenderer.invoke('terminal-session-kill', options),
-  onTerminalSessionData: (callback) => {
-    const handler = (_event, payload) => callback(payload)
-    ipcRenderer.on('terminal-session-data', handler)
-    return () => ipcRenderer.removeListener('terminal-session-data', handler)
-  },
-  onTerminalSessionExit: (callback) => {
-    const handler = (_event, payload) => callback(payload)
-    ipcRenderer.on('terminal-session-exit', handler)
-    return () => ipcRenderer.removeListener('terminal-session-exit', handler)
-  },
 
   // Git / Source Control Operations
   getGitInfo: (folderPath) => ipcRenderer.invoke('git-get-status', folderPath),
@@ -82,6 +66,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   gitShowCommit: (folderPath, hash) => ipcRenderer.invoke('git-show-commit', { folderPath, hash }),
   gitGenerateCommitMessage: (folderPath) => ipcRenderer.invoke('git-generate-commit-message', folderPath),
   gitInit: (folderPath) => ipcRenderer.invoke('git-init', folderPath),
+  gitClone: (options) => ipcRenderer.invoke('git-clone', options),
+  gitGetDefaultCloneDir: () => ipcRenderer.invoke('git-get-default-clone-dir'),
+  selectCloneParentDialog: () => ipcRenderer.invoke('dialog-select-clone-parent'),
 
   // Backend Sidecar Connection Info
   getBackendUrl: () => ipcRenderer.invoke('get-backend-url'),

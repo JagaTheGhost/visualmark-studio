@@ -45,6 +45,8 @@ export default function TopMenuBar({
   onOpenRecentWorkspace = () => {},
   onClearRecentWorkspaces = () => {},
   onCloseTab = () => {},
+  onCloneRepo = () => {},
+  onCloseWorkspace = () => {},
   appVersion = APP_CURRENT_VERSION
 }) {
   const [activeMenu, setActiveMenu] = useState(null)
@@ -160,6 +162,9 @@ export default function TopMenuBar({
                   <span>Open Folder...</span>
                   <kbd>Ctrl+Shift+O</kbd>
                 </button>
+                <button type="button" className="dropdown-item" onClick={() => handleItemClick(onCloneRepo)}>
+                  <span>Clone Repository...</span>
+                </button>
 
                 {/* Open Recent Submenu */}
                 <div
@@ -240,6 +245,16 @@ export default function TopMenuBar({
                   <span>Close Tab</span>
                   <kbd>Ctrl+W</kbd>
                 </button>
+                {workspaceDirectory && (
+                  <button
+                    type="button"
+                    className="dropdown-item"
+                    onClick={() => handleItemClick(onCloseWorkspace)}
+                  >
+                    <span>Close Workspace</span>
+                    <kbd>Ctrl+K F</kbd>
+                  </button>
+                )}
                 <button
                   type="button"
                   className="dropdown-item"
@@ -349,8 +364,8 @@ export default function TopMenuBar({
                   <span>Toggle Primary Sidebar</span>
                   <kbd>Ctrl+B</kbd>
                 </button>
-                <button type="button" className="dropdown-item" onClick={() => handleItemClick(() => onToggleBottomPanel && onToggleBottomPanel('terminal'))}>
-                  <span>Toggle Integrated Terminal</span>
+                <button type="button" className="dropdown-item" onClick={() => handleItemClick(() => onToggleBottomPanel && onToggleBottomPanel('output'))}>
+                  <span>Toggle Output & Diagnostics</span>
                   <kbd>Ctrl+`</kbd>
                 </button>
                 <button type="button" className="dropdown-item" onClick={() => handleItemClick(() => onToggleBottomPanel && onToggleBottomPanel('problems'))}>
@@ -435,26 +450,18 @@ export default function TopMenuBar({
             )}
           </div>
 
-          {/* Terminal Menu */}
+          {/* Diagnostics & Output Menu */}
           <div className="menubar-item-wrapper">
             <button
               type="button"
-              className={`menubar-btn ${activeMenu === 'terminal' ? 'active' : ''}`}
-              onClick={() => handleMenuClick('terminal')}
-              onMouseEnter={() => handleMenuMouseEnter('terminal')}
+              className={`menubar-btn ${activeMenu === 'diagnostics' ? 'active' : ''}`}
+              onClick={() => handleMenuClick('diagnostics')}
+              onMouseEnter={() => handleMenuMouseEnter('diagnostics')}
             >
-              Terminal
+              Diagnostics
             </button>
-            {activeMenu === 'terminal' && (
+            {activeMenu === 'diagnostics' && (
               <div className="menubar-dropdown">
-                <button
-                  type="button"
-                  className="dropdown-item"
-                  onClick={() => handleItemClick(() => onToggleBottomPanel && onToggleBottomPanel('terminal'))}
-                >
-                  <span>New Integrated Terminal</span>
-                  <kbd>Ctrl+`</kbd>
-                </button>
                 <button
                   type="button"
                   className="dropdown-item"
@@ -463,27 +470,15 @@ export default function TopMenuBar({
                   <span>View Problems Diagnostics</span>
                   <kbd>Ctrl+J</kbd>
                 </button>
+                <button
+                  type="button"
+                  className="dropdown-item"
+                  onClick={() => handleItemClick(() => onToggleBottomPanel && onToggleBottomPanel('output'))}
+                >
+                  <span>View System Output & Logs</span>
+                  <kbd>Ctrl+`</kbd>
+                </button>
                 <div className="dropdown-divider" />
-                <button
-                  type="button"
-                  className="dropdown-item"
-                  onClick={() => handleItemClick(() => {
-                    const dir = workspaceDirectory?.path || (localFilePath ? localFilePath.substring(0, Math.max(localFilePath.lastIndexOf('/'), localFilePath.lastIndexOf('\\'))) : null)
-                    window.electronAPI?.openTerminal?.({ folderPath: dir, shellType: 'powershell' })
-                  })}
-                >
-                  <span>External Terminal (PowerShell)</span>
-                </button>
-                <button
-                  type="button"
-                  className="dropdown-item"
-                  onClick={() => handleItemClick(() => {
-                    const dir = workspaceDirectory?.path || (localFilePath ? localFilePath.substring(0, Math.max(localFilePath.lastIndexOf('/'), localFilePath.lastIndexOf('\\'))) : null)
-                    window.electronAPI?.openTerminal?.({ folderPath: dir, shellType: 'cmd' })
-                  })}
-                >
-                  <span>External Command Prompt (cmd)</span>
-                </button>
                 <button
                   type="button"
                   className="dropdown-item"

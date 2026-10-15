@@ -15,24 +15,47 @@ import socket
 
 def is_safe_public_url(target_url: str) -> bool:
     """Validate that target URL uses HTTP/HTTPS and resolves strictly to public IP addresses."""
+    if not target_url or not isinstance(target_url, str):
+        return False
     try:
-        parsed = urllib.parse.urlparse(target_url)
+        parsed = urllib.parse.urlparse(target_url.strip())
         if parsed.scheme.lower() not in ("http", "https"):
+            return False
+        # Disallow credentials in URL
+        if parsed.username or parsed.password:
             return False
         hostname = parsed.hostname
         if not hostname:
             return False
         hostname_lower = hostname.lower()
-        if hostname_lower in ("localhost", "127.0.0.1", "0.0.0.0", "::1") or hostname_lower.endswith((".local", ".internal", ".localhost")):
+        if hostname_lower in ("localhost", "127.0.0.1", "0.0.0.0", "::1", "metadata.google.internal") or hostname_lower.endswith((".local", ".internal", ".localhost")):
             return False
+        # Resolve all DNS addresses and check every resolved IP
         addr_info = socket.getaddrinfo(hostname, None)
         for _, _, _, _, sockaddr in addr_info:
             ip = ipaddress.ip_address(sockaddr[0])
-            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+            if (
+                ip.is_private
+                or ip.is_loopback
+                or ip.is_link_local
+                or ip.is_reserved
+                or ip.is_multicast
+                or ip.is_unspecified
+                or str(ip).startswith("169.254.")
+                or str(ip).startswith("100.64.")
+            ):
                 return False
         return True
     except Exception:
         return False
+
+
+class SafeRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Custom redirect handler that validates all redirect destinations against SSRF rules."""
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not is_safe_public_url(newurl):
+            raise urllib.error.HTTPError(newurl, code, "SSRF Protection: Redirect target prohibited", headers, fp)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 from prompts import (
     build_readme_from_inputs,
@@ -243,14 +266,20 @@ def resolve_image_url(url: str):
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/*,*/*;q=0.8"
             }
         )
-        with urllib.request.urlopen(req, timeout=10) as response:
+        opener = urllib.request.build_opener(SafeRedirectHandler())
+        with opener.open(req, timeout=10) as response:
             final_url = response.geturl()
+            # Double check that final resolved URL is also safe
+            if not is_safe_public_url(final_url):
+                return {"success": False, "error": "Resolved to prohibited internal host", "original_url": clean_target}
             parsed = urllib.parse.urlparse(final_url)
             query = urllib.parse.parse_qs(parsed.query)
 
             # 1. Google Image redirects containing imgurl parameter
             if "imgurl" in query and query["imgurl"]:
-                return {"success": True, "direct_url": query["imgurl"][0], "original_url": clean_target}
+                candidate = query["imgurl"][0]
+                if is_safe_public_url(candidate):
+                    return {"success": True, "direct_url": candidate, "original_url": clean_target}
 
             # 2. Direct image content type
             content_type = response.headers.get("Content-Type", "").lower()
@@ -264,11 +293,97 @@ def resolve_image_url(url: str):
                 if not og_match:
                     og_match = re.search(r'<meta[^>]+content=[\'"]([^\'"]+)[\'"][^>]+property=[\'"]og:image[\'"]', html_chunk, re.IGNORECASE)
                 if og_match:
-                    return {"success": True, "direct_url": og_match.group(1), "original_url": clean_target}
+                    cand_og = og_match.group(1).strip()
+                    if is_safe_public_url(cand_og):
+                        return {"success": True, "direct_url": cand_og, "original_url": clean_target}
 
             return {"success": True, "direct_url": final_url, "original_url": clean_target}
     except Exception as e:
         return {"success": False, "error": str(e), "original_url": clean_target}
+
+
+class GitCloneRequest(BaseModel):
+    repo_url: str
+    target_dir: Optional[str] = None
+    folder_name: Optional[str] = None
+
+
+@api_router.post("/git-clone")
+def git_clone_endpoint(req: GitCloneRequest):
+    """Execute git clone safely to the specified target directory."""
+    import subprocess
+    import os
+    import shutil
+
+    clean_url = req.repo_url.strip()
+    if not clean_url:
+        raise HTTPException(status_code=400, detail="Repository URL is required.")
+
+    # Guard against git flag injection (e.g. --upload-pack)
+    if clean_url.startswith("-"):
+        raise HTTPException(status_code=400, detail="Invalid repository URL")
+
+    # Expand GitHub shorthand e.g. owner/repo
+    if "://" not in clean_url and not clean_url.startswith("git@") and "/" in clean_url and " " not in clean_url:
+        parts = clean_url.split("/")
+        if len(parts) == 2:
+            clean_url = f"https://github.com/{clean_url}.git"
+    elif clean_url.startswith("github.com/"):
+        clean_url = f"https://{clean_url}"
+
+    # Validate allowed protocols
+    if not (clean_url.startswith("https://") or clean_url.startswith("http://") or clean_url.startswith("git@") or clean_url.startswith("ssh://")):
+        raise HTTPException(status_code=400, detail="Only HTTP/HTTPS and SSH git repository URLs are supported.")
+
+    # Determine destination directory
+    target_dir = (req.target_dir and req.target_dir.strip()) or os.path.expanduser("~/Documents")
+    if not os.path.exists(target_dir):
+        try:
+            os.makedirs(target_dir, exist_ok=True)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Cannot create destination directory: {e}")
+
+    dest_folder = (req.folder_name and req.folder_name.strip())
+    if not dest_folder:
+        url_stripped = clean_url.rstrip("/")
+        if url_stripped.endswith(".git"):
+            url_stripped = url_stripped[:-4]
+        dest_folder = url_stripped.split("/")[-1] or "cloned-repo"
+
+    # Sanitize folder name: disallow leading hyphen or path separators
+    if dest_folder.startswith("-") or ".." in dest_folder or "/" in dest_folder or "\\" in dest_folder:
+        raise HTTPException(status_code=400, detail="Invalid target folder name.")
+
+    full_dest_path = os.path.join(target_dir, dest_folder)
+    if os.path.exists(full_dest_path):
+        try:
+            if os.listdir(full_dest_path):
+                raise HTTPException(status_code=400, detail=f'Folder "{dest_folder}" already exists in destination and is not empty.')
+        except Exception:
+            pass
+
+    try:
+        # Use '--' to separate options from arguments and prevent command/argument injection
+        res = subprocess.run(
+            ["git", "clone", "--", clean_url, dest_folder],
+            cwd=target_dir,
+            capture_output=True,
+            text=True,
+            timeout=180
+        )
+        if res.returncode != 0:
+            err = res.stderr.strip() or res.stdout.strip() or "Git clone failed."
+            return {"success": False, "error": err}
+        return {
+            "success": True,
+            "destinationPath": full_dest_path.replace("\\", "/"),
+            "folderName": dest_folder,
+            "output": res.stdout
+        }
+    except subprocess.TimeoutExpired:
+        return {"success": False, "error": "Git clone timed out after 3 minutes."}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 
 @api_router.get("/")

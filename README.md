@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/version-1.1.0-6366f1.svg?style=for-the-badge" alt="Version 1.1.0" /></a>
+  <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/version-1.1.1-6366f1.svg?style=for-the-badge" alt="Version 1.1.1" /></a>
   <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/Download-Windows_.exe-22c55e?style=for-the-badge&logo=windows&logoColor=white" alt="Download Windows" /></a>
   <a href="https://electronjs.org"><img src="https://img.shields.io/badge/Electron-44.7+-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron" /></a>
   <a href="https://fastapi.tiangolo.com"><img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" /></a>
@@ -27,7 +27,7 @@
 
 Writing technical documentation is notoriously fragmented across disconnected browser tabs: drafting Markdown in basic text boxes, generating badges on web forms, drawing architecture diagrams on third-party whiteboards, building tables in online converters, and manually tracking release notes.
 
-**VisualMark Studio** unites all of this under a single, **100% offline native desktop IDE**. It pairs the industry-standard **Monaco code editor** (the engine powering VS Code) with **11 specialized interactive visual studios**, direct local disk I/O, an integrated PowerShell/CMD terminal drawer, and automated documentation generation.
+**VisualMark Studio** unites all of this under a single, **100% offline native desktop IDE**. It pairs the industry-standard **Monaco code editor** (the engine powering VS Code) with **11 specialized interactive visual studios**, direct local disk I/O, rich documentation architecture tools, and automated documentation generation.
 
 | Traditional Documentation Workflow | The VisualMark Studio Experience |
 | :--- | :--- |
@@ -142,20 +142,33 @@ visualmark-studio/
 │   └── prompts.py          # Deterministic template & documentation engine
 ├── frontend/
 │   ├── electron/
-│   │   ├── main.cjs        # Electron main process (native IPC, terminal spawn, disk I/O)
-│   │   └── preload.cjs     # Context bridge (file dialogs, shell execution, window controls)
+│   │   ├── main.cjs        # Electron main process (native IPC, window management, disk I/O)
+│   │   └── preload.cjs     # Context bridge (file dialogs, native file operations, window controls)
 │   ├── src/
-│   │   ├── components/     # TopMenuBar, MonacoEditorPane, TabBar, Studios, BottomPanelDrawer
-│   │   ├── data/           # Preset templates, badge packs, devicon maps
-│   │   ├── styles/         # Modular CSS (tokens, layout, monaco, modals, drawer, studios)
+│   │   ├── components/     # TopMenuBar, MonacoEditorPane, TabBar, Studios, BottomPanel
+│   │   ├── data/           # Preset templates, badge packs, devicon maps, release notes
+│   │   ├── styles/         # Modular CSS (tokens, layout, monaco, modals, studios)
 │   │   ├── utils/          # keybindingManager, apiClient, documentExportUtils
 │   │   └── App.jsx         # Workspace state orchestrator & lifecycle manager
 │   └── package.json        # Electron & frontend build manifest
 ├── FEATURES.md             # Exhaustive top-to-bottom capabilities & features guide
 ├── SETUP.md                # Local development & setup instructions
+├── TESTING_GUIDE.md        # Comprehensive manual & automated testing guide
 ├── DEPLOYMENT.md           # Standalone packaging & release build guide
 └── README.md               # Master project showcase
 ```
+
+---
+
+## 🤝 Contributing & Community
+
+VisualMark Studio thrives on open-source community contributions! Whether you're reporting a bug, proposing a new visual studio, or polishing documentation, we welcome your involvement.
+
+- **[Contributing Guide](CONTRIBUTING.md)**: Development setup, branch conventions, and PR workflow.
+- **[Code of Conduct](CODE_OF_CONDUCT.md)**: Community standards and pledge.
+- **[Security Policy](SECURITY.md)**: Vulnerability disclosure and reporting guidelines.
+- **[Changelog](CHANGELOG.md)**: Release history and version notes.
+- **[Documentation & Guides](DOCUMENTATION.md)**: Comprehensive architectural and user manuals.
 
 ---
 

@@ -1,0 +1,520 @@
+/* ==========================================================================
+   Welcome Launcher Component Styles (VisualMark Studio Theme)
+   Embedded Canvas Design System with Physical Tactile Depth Controls
+   ========================================================================== */
+
+.welcome-launcher-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 40px 24px;
+  background: transparent;
+  user-select: none;
+  overflow-y: auto;
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+}
+
+/* Embedded canvas area: seamless integration into background without generic floating card box */
+.welcome-launcher-card,
+.welcome-launcher-embedded {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 680px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  animation: welcomeFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes welcomeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ==========================================================================
+   Brand Header & Embedded Typography
+   ========================================================================== */
+
+.welcome-brand-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.welcome-logo-wrap {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-app-logo {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  z-index: 2;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.6));
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.welcome-logo-wrap:hover .welcome-app-logo {
+  transform: scale(1.06) rotate(-2deg);
+}
+
+.welcome-logo-glow {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, rgba(99, 102, 241, 0.1) 60%, transparent 80%);
+  filter: blur(14px);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.welcome-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+/* Typography embedded/recessed into background with engraved shadows */
+.welcome-app-name {
+  margin: 0;
+  font-size: 27px;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: -0.4px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+
+.welcome-version-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.7);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.05);
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.03em;
+}
+
+.welcome-tagline {
+  margin: 0;
+  font-size: 13.5px;
+  color: #64748b;
+  max-width: 520px;
+  line-height: 1.55;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.9);
+}
+
+/* ==========================================================================
+   Primary Action Buttons (Tactile Depth & Physical Elevation)
+   ========================================================================== */
+
+.welcome-primary-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  width: 100%;
+  margin-top: 6px;
+  margin-bottom: 22px;
+}
+
+@media (max-width: 640px) {
+  .welcome-primary-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tactile Physical Button Cards */
+.welcome-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 20px 18px 22px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #182234 0%, #0f1624 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.75);
+  box-shadow: 
+    0 8px 20px -3px rgba(0, 0, 0, 0.65),
+    0 3px 6px -1px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  font-family: inherit;
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+/* Tactile physical elevation on hover */
+.welcome-card:hover {
+  transform: translateY(-2.5px);
+  box-shadow: 
+    0 16px 32px -4px rgba(0, 0, 0, 0.75),
+    0 6px 12px -2px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+/* Mechanical press-down on click */
+.welcome-card:active {
+  transform: translateY(1.5px);
+  border-bottom-width: 1px;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.6),
+    inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.welcome-card-clone:hover {
+  background: linear-gradient(180deg, #1b283d 0%, #0f1728 100%);
+  border-top-color: rgba(56, 189, 248, 0.45);
+  border-color: rgba(56, 189, 248, 0.28);
+}
+
+.welcome-card-open:hover {
+  background: linear-gradient(180deg, #272218 0%, #16130d 100%);
+  border-top-color: rgba(245, 158, 11, 0.45);
+  border-color: rgba(245, 158, 11, 0.28);
+}
+
+/* Tactile Icon Well */
+.welcome-card-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: transform 0.16s ease;
+}
+
+.welcome-card-icon-wrap .material-symbols-outlined {
+  font-size: 22px;
+}
+
+.welcome-card:hover .welcome-card-icon-wrap {
+  transform: scale(1.08);
+}
+
+.icon-cyan {
+  background: linear-gradient(145deg, rgba(56, 189, 248, 0.22), rgba(14, 165, 233, 0.1));
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.icon-amber {
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.22), rgba(217, 119, 6, 0.1));
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.welcome-card-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 1;
+}
+
+.welcome-card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+.welcome-card-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #f1f5f9;
+  letter-spacing: -0.2px;
+}
+
+.welcome-card-badge {
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.welcome-card-desc {
+  font-size: 11.5px;
+  color: #64748b;
+  line-height: 1.45;
+  margin: 0;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
+}
+
+.welcome-card-arrow {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  font-size: 16px;
+  color: #475569;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: all 0.18s ease;
+}
+
+.welcome-card:hover .welcome-card-arrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: #cbd5e1;
+}
+
+/* ==========================================================================
+   Secondary Quick Action Buttons (Tactile Elevated Pills)
+   ========================================================================== */
+
+.welcome-secondary-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.welcome-sub-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #1e283b 0%, #111824 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.65);
+  box-shadow: 
+    0 4px 10px rgba(0, 0, 0, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+  font-family: inherit;
+}
+
+.welcome-sub-btn .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.welcome-sub-btn:hover {
+  transform: translateY(-1.5px);
+  color: #ffffff;
+  border-top-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 
+    0 8px 18px rgba(0, 0, 0, 0.5),
+    0 2px 4px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.welcome-sub-btn:active {
+  transform: translateY(1px);
+  border-bottom-width: 1px;
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* ==========================================================================
+   Recent Workspaces (Embedded Recessed Tray with Tactile Row Buttons)
+   ========================================================================== */
+
+.welcome-recent-section {
+  width: 100%;
+  margin-bottom: 22px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(8, 12, 19, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.welcome-recent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.welcome-recent-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.9);
+}
+
+.welcome-recent-clear-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #64748b;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: all 0.14s ease;
+}
+
+.welcome-recent-clear-btn:hover {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.welcome-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.welcome-recent-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(25, 33, 48, 0.7) 0%, rgba(13, 18, 27, 0.7) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+}
+
+.welcome-recent-item:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(180deg, rgba(32, 44, 64, 0.85) 0%, rgba(17, 24, 38, 0.85) 100%);
+  border-color: rgba(56, 189, 248, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.welcome-recent-item:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.welcome-recent-icon {
+  font-size: 16px;
+  color: #eab308;
+  flex-shrink: 0;
+}
+
+.welcome-recent-details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+}
+
+.welcome-recent-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #e2e8f0;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
+}
+
+.welcome-recent-path {
+  font-size: 10.5px;
+  color: #64748b;
+  font-family: var(--font-mono, monospace);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
+}
+
+.welcome-recent-arrow {
+  font-size: 15px;
+  color: #475569;
+  flex-shrink: 0;
+  transition: transform 0.14s ease, color 0.14s ease;
+}
+
+.welcome-recent-item:hover .welcome-recent-arrow {
+  transform: translateX(2px);
+  color: #94a3b8;
+}
+
+/* ==========================================================================
+   Keyboard Shortcuts Bar (Mechanical Chiclet Keycaps & Etched Labels)
+   ========================================================================== */
+
+.welcome-shortcuts-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  width: 100%;
+}
+
+.welcome-shortcut-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: #64748b;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.9);
+}
+
+.welcome-shortcut-item kbd {
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #1f2a3d 0%, #121825 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.7);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  color: #cbd5e1;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+}

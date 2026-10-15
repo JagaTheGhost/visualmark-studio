@@ -82,8 +82,18 @@ Thumbs.db
 *.dmp
 *.dump
 
+# Testing & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.cover
+.hypothesis/
+
 # Agent & System Generated
 .system_generated/
 scratch/
+.agents/
+.gemini/
 
 

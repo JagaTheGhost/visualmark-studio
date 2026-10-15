@@ -24,6 +24,7 @@
 @import './styles/sourceControl.css';
 @import './styles/settings.css';
 @import './styles/whatsNew.css';
+@import './styles/welcomeLauncher.css';
 
 /* Studio Environments */
 @import './styles/studios/common.css';

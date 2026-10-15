@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation & Architecture Guides
+    url: https://github.com/JagaTheGhost/visualmark-studio/blob/main/DOCUMENTATION.md
+    about: Read comprehensive guides on markdown architecture and visual studio workflows.
+  - name: Security Vulnerability Reporting
+    url: https://github.com/JagaTheGhost/visualmark-studio/security/advisories
+    about: Report security issues privately through GitHub Security Advisories.

@@ -15,7 +15,7 @@ export default function ChangelogStudioTab({
   onInsertChangelog = () => {},
   onBackToReadme = () => {}
 }) {
-  const [version, setVersion] = useState('1.1.0')
+  const [version, setVersion] = useState('1.1.1')
   const [releaseDate, setReleaseDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [isUnreleased, setIsUnreleased] = useState(false)
   const [copied, setCopied] = useState(false)
