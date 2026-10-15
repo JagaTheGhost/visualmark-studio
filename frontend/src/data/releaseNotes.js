@@ -17,6 +17,9 @@ export const RELEASE_HISTORY = [
       'Engraved Background Typography: Soft recessed text shadows giving headings, taglines, and labels an authentic embedded appearance',
       'Explorer Context & Dropdown Menus: Fixed unstyled browser-default popups with modern dark glassmorphism and elevated z-index',
       'Streamlined Workspace Workflow: Pruned redundant Create Project wizard from launcher in favor of direct local/remote workspace entry',
+      'Integrated Diagnostics Routing: Diverted intrusive runtime errors & warnings into bottom panel ProblemsTab with grouped origin cards',
+      'Modernized Windows Installer: Bypassed redundant all-users prompt, applied Fluent Slate-100 theme, and max LZMA2 compression',
+      'Cryptographic Release Verification: Embedded automated SHA-256 checksum generation into GitHub Releases',
       'Studio Scrolling Fixed: Resolved wheel event traps and flex layout bounds enabling smooth vertical scrolling across all studio tabs',
       'Electron IPC Security Hardening: Enforced double-dash argument delimiters, protocol validation, and executable launch blocks'
     ],

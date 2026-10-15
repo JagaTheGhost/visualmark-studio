@@ -15,6 +15,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.1] - 2026-10-15
 
+### Added
+- **Integrated Diagnostics & Runtime Error Routing**:
+  - Automatically redirected runtime error and warning notifications away from intrusive floating popup toasts and directly into the IDE **Problems** tab.
+  - Redesigned `ProblemsTab` with category grouping (Markdown, Git, Workspace, Export), line/column or timestamp badges, and inline dismiss.
+  - Status bar diagnostics badge counts now reflect merged markdown lint diagnostics and runtime errors with 1-click toggle.
+- **Modernized Windows NSIS Installer**:
+  - Streamlined installer flow by automatically bypassing the redundant "All users vs Only for me" choice and defaulting to per-user installation without UAC prompts.
+  - Modern Slate-100 theme tint (`#F1F5F9`) with Slate-800 typography (`#1E293B`) softening harsh white backgrounds while preserving native Windows control rendering.
+  - Custom high-resolution branded installer bitmaps (`installerSidebar.bmp`, `installerHeader.bmp`).
+  - Enabled maximum 7-Zip LZMA2 compression (`compression: "maximum"`).
+  - Windows App Paths registration for instant terminal/Run launch (`visualmark` and `vms`).
+- **Cryptographic Release Verification**:
+  - Automated SHA-256 checksum generation (`SHA256SUMS.txt`) embedded into CI/CD release workflow for verifiable release downloads.
+
 ### Changed
 - **Embedded Canvas Welcome Launcher**:
   - Replaced the generic floating rectangular modal card with an embedded canvas layout that integrates seamlessly into the dark IDE editor background (`background: transparent`, zero artificial container borders).
