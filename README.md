@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/version-1.1.1-6366f1.svg?style=for-the-badge" alt="Version 1.1.1" /></a>
+  <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/version-1.1.2-6366f1.svg?style=for-the-badge" alt="Version 1.1.2" /></a>
   <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/Download-Windows_.exe-22c55e?style=for-the-badge&logo=windows&logoColor=white" alt="Download Windows" /></a>
   <a href="https://electronjs.org"><img src="https://img.shields.io/badge/Electron-44.7+-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron" /></a>
   <a href="https://fastapi.tiangolo.com"><img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" /></a>
@@ -27,11 +27,11 @@
 
 Writing technical documentation is notoriously fragmented across disconnected browser tabs: drafting Markdown in basic text boxes, generating badges on web forms, drawing architecture diagrams on third-party whiteboards, building tables in online converters, and manually tracking release notes.
 
-**VisualMark Studio** unites all of this under a single, **100% offline native desktop IDE**. It pairs the industry-standard **Monaco code editor** (the engine powering VS Code) with **11 specialized interactive visual studios**, direct local disk I/O, rich documentation architecture tools, and automated documentation generation.
+**VisualMark Studio** unites all of this under a single, **100% offline native desktop IDE**. It pairs the industry-standard **Monaco code editor** (the engine powering VS Code) with **12 specialized interactive visual studios**, direct local disk I/O, rich documentation architecture tools, and automated documentation generation.
 
 | Traditional Documentation Workflow | The VisualMark Studio Experience |
 | :--- | :--- |
-| ❌ Jumping across 6+ web tabs to build badges, diagrams, and tables | ✅ **11 Integrated Visual Studios** right in the IDE workspace |
+| ❌ Jumping across 6+ web tabs to build badges, diagrams, and tables | ✅ **12 Integrated Visual Studios** right in the IDE workspace |
 | ❌ Generic web textareas with no multi-cursor or formatting | ✅ **Full Monaco Engine** with GFM syntax, multi-cursor, and hotkeys |
 | ❌ Manual formatting and hunting for syntax callouts | ✅ **Floating Selection HUD Toolbar** with live headings, callouts, and code fences |
 | ❌ Manual copy-pasting into local repositories | ✅ **Direct Local Disk I/O** (`Ctrl+S`, `Ctrl+O`) and real-time File Explorer |
@@ -54,17 +54,18 @@ Pre-compiled, standalone Windows binaries are available directly from the latest
 
 ---
 
-## 🎨 11 Specialized Visual Studio Suites
+## 🎨 12 Specialized Visual Studio Suites
 
 VisualMark Studio features dedicated, visual designer environments accessible as persistent IDE tabs:
 
 | Studio | Tab ID | Capabilities |
 | :--- | :--- | :--- |
 | 🛡️ **Shields.io Badges** | `badges.studio` | 100+ Devicon tech presets, custom hex pickers, styles (`for-the-badge`, `flat`), SVG download |
+| 💳 **GitHub Repo Cards** | `repocard.studio` | 100% client-side vector SVG repo cards, auto-adaptive dark/light themes, live GitHub sync, 4 layout templates |
 | 📊 **Mermaid Architecture** | `diagrams.studio` | Visual architecture maps, flowcharts, sequence diagrams, git graphs, high-res SVG & 2x PNG export |
 | 🧮 **Visual Tables** | `tables.studio` | Interactive spreadsheet grid, column alignment, CSV import/export, 1-click Markdown generation |
 | 🧩 **Snippets & Callouts** | `snippets.studio` | GitHub alert callouts (`[!NOTE]`, `[!TIP]`, `[!WARNING]`), collapsible `<details>`, shortcut tables |
-| 🖼️ **Images & Banners** | `images.studio` | Gradient hero banners, screenshot OS window frames (macOS / Windows mockups), image optimization |
+| 🖼️ **Images & Banners** | `images.studio` | Gradient hero banners, motion heroes (GIF/MP4), macOS/Windows window frames, image optimization |
 | 🌳 **Directory Trees** | `tree.studio` | Auto-scans workspace folders into ASCII, Unicode box-drawing, or Emoji visual directory trees |
 | 🌐 **REST API & Endpoints** | `api.studio` | Live interactive preview (REST Blueprint card & GFM render), route matrix, request/response schemas, cURL commands |
 | 🎨 **Icons & Emojis** | `icons.studio` | Dual-mode Material Symbols & developer emojis, color wheel customizer, live catalog tinting, colored SVG download & Iconify markdown |
@@ -72,15 +73,19 @@ VisualMark Studio features dedicated, visual designer environments accessible as
 | 📝 **Changelog & Releases** | `changelog.studio` | Keep-a-Changelog standard release notes with SemVer bumping (`Major`, `Minor`, `Patch`) |
 | 🔍 **README Auditor** | `audit.studio` | Documentation scorecard, A+ to F grade, section completeness check, 1-click boilerplate injector |
 
-👉 **For an exhaustive top-to-bottom manual of all 11 studios, consult [FEATURES.md](FEATURES.md).**
+👉 **For an exhaustive top-to-bottom manual of all 12 studios, consult [FEATURES.md](FEATURES.md).**
 
 ---
 
 ## ✨ Core Desktop IDE Highlights
 
 - 🖥️ **Monaco Editor Engine** — Multi-cursor editing, bracket matching, line numbers, soft word wrap toggle (`Alt+Z`), and full formatting.
+- 🌐 **Comprehensive Internationalization (i18n)** — Full UI localized across 10 world languages (EN, ZH-CN, ES, JA, DE, FR, RU, HI, PT-BR, IT) with custom language pack import/export.
+- 📑 **Chrome/Arc-Style Collapsible Tab Groups** — Workspace tab bar partitioning open documents and active studios into organized collapsible groups.
+- 🏗️ **Universal StudioShell Workspace Container** — Standardized 2-pane resizable container across all 12 studios with persistent action bars and live code drawers.
 - 🪄 **Floating Selection HUD Toolbar** — Notion/Word-style contextual quick-actions anchored to highlighted text (Headings, Code Fences, Links, Callouts, Lists).
 - ⚡ **Synchronized Split Preview** — Live GFM compilation with proportional scroll synchronization between editor and preview panes.
+- 🖼️ **Local Media Streaming** — Renders workspace relative images, SVGs, and videos directly in live preview with zero web servers.
 - 🎯 **Universal Command Palette** — Quick input (`F1` / `Ctrl+Shift+P` / `Ctrl+K`) with live search and **`⚙ Configure Keybinding`** button on hover (or `Alt+Enter`) matching modern IDE workflows.
 - ⌨️ **Keyboard Shortcuts Tab** — Deep-linked hotkey recorder modal to inspect, customize, and persist any keybinding across the IDE.
 - 📁 **Native Disk I/O & Workspaces** — Mount local folders, save directly to disk (`Ctrl+S`), create untitled files (`Ctrl+N`), and manage files with live context menus.
@@ -97,7 +102,7 @@ VisualMark Studio features dedicated, visual designer environments accessible as
 
 | Document | Description |
 | :--- | :--- |
-| 📖 **[FEATURES.md](FEATURES.md)** | **Complete Capabilities Tour** — Master guide detailing all 11 studios, Monaco ergonomics, HUD toolbar, and workflows. |
+| 📖 **[FEATURES.md](FEATURES.md)** | **Complete Capabilities Tour** — Master guide detailing all 12 studios, Monaco ergonomics, HUD toolbar, and workflows. |
 | 📘 **[DOCUMENTATION.md](DOCUMENTATION.md)** | **System & Architecture Guide** — Exhaustive architectural breakdown, user flows, and backend FastAPI specifications. |
 | 🛠️ **[SETUP.md](SETUP.md)** | **Developer Setup Guide** — Step-by-step instructions for running from source, prerequisites, and troubleshooting. |
 | 📦 **[DEPLOYMENT.md](DEPLOYMENT.md)** | **Packaging & Distribution** — Instructions for building standalone installers (.exe / portable) via Electron Builder. |

@@ -1,0 +1,225 @@
+/* ==========================================================================
+   VisualMark Studio - Chrome/Arc-Style Collapsible Tab Groups
+   ========================================================================== */
+
+/* Group Wrapper */
+.tab-group-wrapper {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Subtle separator between different groups */
+.tab-group-wrapper + .tab-group-wrapper {
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* Group Header Chip (Chrome-style Pill) */
+.tab-group-chip {
+  height: 25px;
+  align-self: center;
+  margin: 0 4px 0 5px;
+  padding: 0 7px 0 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #94a3b8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  flex-shrink: 0;
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.tab-group-chip:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #f1f5f9;
+}
+
+/* Group-Specific Accent Theming */
+.tab-group-chip.group-chip-documents {
+  border-color: rgba(16, 185, 129, 0.25);
+  background-color: rgba(16, 185, 129, 0.06);
+}
+
+.tab-group-chip.group-chip-documents:hover {
+  background-color: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.tab-group-chip.group-chip-studios {
+  border-color: rgba(129, 140, 248, 0.28);
+  background-color: rgba(129, 140, 248, 0.06);
+}
+
+.tab-group-chip.group-chip-studios:hover {
+  background-color: rgba(129, 140, 248, 0.12);
+  border-color: rgba(129, 140, 248, 0.45);
+}
+
+.tab-group-chip.group-chip-presets {
+  border-color: rgba(245, 158, 11, 0.25);
+  background-color: rgba(245, 158, 11, 0.06);
+}
+
+.tab-group-chip.group-chip-presets:hover {
+  background-color: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+/* Active State When Group Is Collapsed & Current Tab Is Inside It */
+.tab-group-chip.active-collapsed {
+  background-color: #1e1e1e !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.tab-group-chip.group-chip-documents.active-collapsed {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.22);
+}
+
+.tab-group-chip.group-chip-studios.active-collapsed {
+  border-color: #818cf8 !important;
+  box-shadow: 0 0 10px rgba(129, 140, 248, 0.22);
+}
+
+.tab-group-chip.group-chip-presets.active-collapsed {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.22);
+}
+
+/* Group Icon */
+.tab-group-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Group Title */
+.tab-group-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Count Badge Pill */
+.tab-group-badge {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+
+/* Active File Indicator on Collapsed Pill */
+.tab-group-active-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #e2e8f0;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab-group-active-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Chevron */
+.tab-group-chevron {
+  font-size: 14px !important;
+  color: #94a3b8;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-group-chevron.collapsed {
+  transform: rotate(0deg);
+}
+
+.tab-group-chevron.expanded {
+  transform: rotate(0deg);
+}
+
+/* Close All Group Members Button */
+.tab-group-close-all-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 1px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s, background-color 0.12s, color 0.12s;
+}
+
+.tab-group-chip:hover .tab-group-close-all-btn {
+  opacity: 0.7;
+  pointer-events: auto;
+}
+
+.tab-group-close-all-btn:hover {
+  opacity: 1 !important;
+  background-color: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+}
+
+/* Group Items Container (When Expanded) */
+.tab-group-items {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+}
+
+/* Distinct top accent subtle hint for studio tabs when grouped */
+.group-items-studios .editor-tab.studio-tool-tab {
+  border-top-color: rgba(129, 140, 248, 0.2);
+}
+
+.group-items-studios .editor-tab.studio-tool-tab:hover {
+  border-top-color: rgba(129, 140, 248, 0.5);
+}
+
+/* Grouping Toggle Button in TabBarControls */
+.btn-tab-ctrl.tab-grouping-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  position: relative;
+}
+
+.btn-tab-ctrl.tab-grouping-toggle-btn.active {
+  color: #38bdf8;
+  background-color: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.35);
+}

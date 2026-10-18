@@ -1,5 +1,6 @@
 import React from 'react'
 import { APP_CURRENT_VERSION } from '../data/releaseNotes'
+import { useI18n } from '../i18n/I18nContext'
 
 export default function StatusBar({
   cursorPosition = { line: 1, col: 1 },
@@ -19,12 +20,14 @@ export default function StatusBar({
   updateProgress = null,
   updateError = null,
   onOpenWhatsNew = () => {},
-  onRestartToUpdate = () => {}
+  onRestartToUpdate = () => {},
+  onOpenSettings = () => {}
 }) {
-
+  const { t, currentLanguage } = useI18n()
   const readMinutes = Math.max(1, Math.ceil(wordCount / 200))
   const isGitRepo = gitInfo?.isRepo ?? false
-  const branchName = isGitRepo ? gitInfo.branch : 'No Repo'
+  const branchName = isGitRepo ? gitInfo.branch : t('statusBar.noRepo', 'No Repo')
+
   const hasChanges = isGitRepo && (gitInfo.hasChanges || gitInfo.changesCount > 0)
   const gitTooltip = isGitRepo
     ? `Git Branch: ${branchName}${hasChanges ? ` (${gitInfo.changesCount} uncommitted changes)` : ' (clean)'}`
@@ -84,7 +87,7 @@ export default function StatusBar({
           data-tooltip="Go to Line/Column"
           data-tooltip-pos="top"
         >
-          <span>Ln {cursorPosition.line}, Col {cursorPosition.col}</span>
+          <span>{t('statusBar.lines', 'Ln')} {cursorPosition.line}, {t('statusBar.cols', 'Col')} {cursorPosition.col}</span>
         </div>
 
         <div className="status-item hide-mobile" data-tooltip="Select Indentation" data-tooltip-pos="top">
@@ -101,7 +104,7 @@ export default function StatusBar({
         </div>
 
         <div className="status-item stats-badge hide-tablet" data-tooltip="Total Words in Active Document" data-tooltip-pos="top">
-          <span>{wordCount.toLocaleString()} words</span>
+          <span>{wordCount.toLocaleString()} {t('statusBar.words', 'words')}</span>
         </div>
       </div>
 
@@ -109,12 +112,12 @@ export default function StatusBar({
       <div className="status-cluster-right">
         {/* Estimated Reading Time */}
         <div className="status-item hide-mobile" data-tooltip="Estimated Document Reading Time" data-tooltip-pos="top">
-          <span>⏱️ ~{readMinutes} min read</span>
+          <span>⏱️ ~{readMinutes} {t('statusBar.readTime', 'min read')}</span>
         </div>
 
         {/* Character Count */}
         <div className="status-item hide-tablet" data-tooltip="Total Characters in Active Document" data-tooltip-pos="top">
-          <span>{charCount.toLocaleString()} chars</span>
+          <span>{charCount.toLocaleString()} {t('statusBar.chars', 'chars')}</span>
         </div>
 
         {/* Auto-save & Dirty Status */}
@@ -126,12 +129,12 @@ export default function StatusBar({
           {isDirty ? (
             <>
               <span className="material-symbols-outlined status-icon text-amber">pending</span>
-              <span className="hide-mobile text-amber">Unsaved</span>
+              <span className="hide-mobile text-amber">{t('statusBar.unsaved', 'Unsaved')}</span>
             </>
           ) : (
             <>
               <span className="material-symbols-outlined status-icon text-emerald">check_circle</span>
-              <span className="hide-mobile">Saved</span>
+              <span className="hide-mobile">{t('statusBar.saved', 'Saved')}</span>
             </>
           )}
         </div>
@@ -200,6 +203,17 @@ export default function StatusBar({
             <span>Update v{updateDownloaded.version}</span>
           </div>
         )}
+
+        {/* Language Switcher Pill */}
+        <div
+          className="status-item language-pill"
+          onClick={onOpenSettings}
+          data-tooltip={`VisualMark Studio Language: ${currentLanguage?.label || 'English'} (Click to change in Settings)`}
+          data-tooltip-pos="top"
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+        >
+          <span>{currentLanguage?.flag || '🌐'} {currentLanguage?.code?.toUpperCase() || 'EN'}</span>
+        </div>
 
         {/* Version Pill (Click to open Release Notes tab) */}
         <div

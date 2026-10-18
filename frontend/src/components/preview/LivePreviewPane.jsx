@@ -17,7 +17,9 @@ export default function LivePreviewPane({
   onScroll,
   viewMode = 'split',
   orientation = 'vertical',
-  splitRatio = 50
+  splitRatio = 50,
+  workspaceDirectory = null,
+  activeFile = null
 }) {
   return (
     <div
@@ -91,7 +93,8 @@ export default function LivePreviewPane({
                 trimmed.startsWith('./') ||
                 trimmed.startsWith('../') ||
                 trimmed.startsWith('#') ||
-                trimmed.startsWith('mailto:')
+                trimmed.startsWith('mailto:') ||
+                (!trimmed.includes(':') && !trimmed.startsWith('//'))
               ) {
                 return trimmed
               }
@@ -233,9 +236,77 @@ export default function LivePreviewPane({
                 const actualSrc = src || (node && node.properties && node.properties.src) || ''
                 return (
                   <span data-source-line={node?.position?.start?.line} style={{ display: 'inline-block' }}>
-                    <MarkdownImage src={actualSrc} alt={alt} title={title} {...props} />
+                    <MarkdownImage
+                      src={actualSrc}
+                      alt={alt}
+                      title={title}
+                      workspaceDirectory={workspaceDirectory}
+                      activeFile={activeFile}
+                      {...props}
+                    />
                   </span>
                 )
+              },
+              video({ node, children, ...props }) {
+                return (
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    controls
+                    style={{ maxWidth: '100%', borderRadius: '8px', ...props.style }}
+                    {...props}
+                  >
+                    {children}
+                  </video>
+                )
+              },
+              svg({ node, children, ...props }) {
+                return (
+                  <svg
+                    data-source-line={node?.position?.start?.line}
+                    style={{ maxWidth: '100%', height: 'auto', ...props.style }}
+                    {...props}
+                  >
+                    {children}
+                  </svg>
+                )
+              },
+              text({ node, children, ...props }) {
+                const cleanProps = {}
+                const style = { ...(props.style || {}) }
+                for (const [k, v] of Object.entries(props)) {
+                  if (k === 'font-family') style.fontFamily = v
+                  else if (k === 'font-size') style.fontSize = v
+                  else if (k === 'font-weight') style.fontWeight = v
+                  else if (k === 'letter-spacing') style.letterSpacing = v
+                  else if (k === 'text-transform') style.textTransform = v
+                  else if (k === 'text-anchor') cleanProps.textAnchor = v
+                  else if (k === 'dominant-baseline') cleanProps.dominantBaseline = v
+                  else if (k === 'fill-opacity') cleanProps.fillOpacity = v
+                  else if (k === 'stroke-width') cleanProps.strokeWidth = v
+                  else if (k === 'stroke-opacity') cleanProps.strokeOpacity = v
+                  else cleanProps[k] = v
+                }
+                cleanProps.style = style
+                return <text {...cleanProps}>{children}</text>
+              },
+              tspan({ node, children, ...props }) {
+                const cleanProps = {}
+                const style = { ...(props.style || {}) }
+                for (const [k, v] of Object.entries(props)) {
+                  if (k === 'font-family') style.fontFamily = v
+                  else if (k === 'font-size') style.fontSize = v
+                  else if (k === 'font-weight') style.fontWeight = v
+                  else if (k === 'letter-spacing') style.letterSpacing = v
+                  else if (k === 'text-transform') style.textTransform = v
+                  else if (k === 'text-anchor') cleanProps.textAnchor = v
+                  else if (k === 'dominant-baseline') cleanProps.dominantBaseline = v
+                  else cleanProps[k] = v
+                }
+                cleanProps.style = style
+                return <tspan {...cleanProps}>{children}</tspan>
               },
               a({ node, href, children, ...props }) {
                 const trimmedHref = (typeof href === 'string') ? href.trim() : ''

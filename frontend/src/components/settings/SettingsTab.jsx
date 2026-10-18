@@ -60,7 +60,9 @@ export default function SettingsTab({
   updateError = null,
   pendingUpdateInfo = null,
   onStartDownloadUpdate = () => {},
-  onRestartToUpdate = () => {}
+  onRestartToUpdate = () => {},
+  tabGroupingEnabled = true,
+  setTabGroupingEnabled = () => {}
 }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('all')
@@ -267,6 +269,8 @@ export default function SettingsTab({
           setZoomLevel={setZoomLevel}
           orientation={orientation}
           setOrientation={setOrientation}
+          tabGroupingEnabled={tabGroupingEnabled}
+          setTabGroupingEnabled={setTabGroupingEnabled}
         />
 
         <ExportSettingsSection

@@ -12,6 +12,7 @@ export default function TabBarControls({
 }) {
   return (
     <div className="tab-controls-right">
+
       {activeFile && activeFile.startsWith('preset:') ? (
         /* Locked in Preview Mode for Preset blueprint comparison */
         <div className="preset-locked-mode-indicator" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 6px' }}>

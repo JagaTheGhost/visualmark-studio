@@ -1,5 +1,5 @@
 import React from 'react'
-import { FRAME_STYLES } from './imageStudioConstants'
+import { FRAME_STYLES, MOCKUP_GLOW_STYLES } from './imageStudioConstants'
 
 export default function VisualMockupForm({
   activeMode,
@@ -17,6 +17,10 @@ export default function VisualMockupForm({
   setBrowserUrl,
   terminalCommand,
   setTerminalCommand,
+  macWindowTitle,
+  setMacWindowTitle,
+  mockupGlow,
+  setMockupGlow,
   imageAlign,
   setImageAlign,
   imageWidth,
@@ -34,6 +38,7 @@ export default function VisualMockupForm({
   uploadedDataUrl,
   handleDownloadAsset
 }) {
+
   return (
     <>
       {activeMode === 'link' && (
@@ -102,6 +107,19 @@ export default function VisualMockupForm({
           </div>
 
           {/* Specific Frame Settings */}
+          {frameStyle === 'mac-window' && (
+            <div className="studio-section">
+              <label className="studio-section-label">macOS Window Title Bar Text</label>
+              <input
+                type="text"
+                className="studio-text-input"
+                value={macWindowTitle}
+                onChange={(e) => setMacWindowTitle(e.target.value)}
+                placeholder="e.g. VisualMark Studio - Pro Edition"
+              />
+            </div>
+          )}
+
           {frameStyle === 'browser-bar' && (
             <div className="studio-section">
               <label className="studio-section-label">Browser Address Bar URL</label>
@@ -127,6 +145,23 @@ export default function VisualMockupForm({
               />
             </div>
           )}
+
+          <div className="studio-section">
+            <label className="studio-section-label">Frame Shadow & Elevation Glow</label>
+            <div className="studio-segmented-styles">
+              {MOCKUP_GLOW_STYLES.map((g) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  className={`studio-style-btn ${mockupGlow === g.id ? 'active' : ''}`}
+                  onClick={() => setMockupGlow(g.id)}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
 
           <div className="studio-section">
             <label className="studio-section-label">Alignment & Width</label>

@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveBinaryDialog: (options) => ipcRenderer.invoke('dialog-save-binary', options),
   saveTextExportDialog: (options) => ipcRenderer.invoke('dialog-save-text-export', options),
   readFile: (filePath) => ipcRenderer.invoke('file-read', filePath),
+  readLocalMedia: (filePath) => ipcRenderer.invoke('read-local-media', filePath),
 
   // Workspace Directory Operations
   openFolderDialog: () => ipcRenderer.invoke('dialog-open-folder'),

@@ -219,6 +219,25 @@ Distributed under the MIT License.
   const [shortcutsInitialQuery, setShortcutsInitialQuery] = useState('')
   const [shortcutsAutoEditId, setShortcutsAutoEditId] = useState(null)
   const [dirtyFiles, setDirtyFiles] = useState({}) // Tracks unsaved modifications { [fileName]: true }
+  const [tabGroupingEnabled, setTabGroupingEnabled] = useState(() => {
+    try {
+      const saved = localStorage.getItem('visualmark_tab_grouping')
+      return saved !== null ? saved === 'true' : true
+    } catch {
+      return true
+    }
+  })
+
+  const handleToggleTabGrouping = (val) => {
+    setTabGroupingEnabled((prev) => {
+      const next = typeof val === 'boolean' ? val : !prev
+      try {
+        localStorage.setItem('visualmark_tab_grouping', String(next))
+      } catch {}
+      return next
+    })
+  }
+
   const [githubToken, setGithubToken] = useState(() => localStorage.getItem('readme_github_token') || '')
   const [recentWorkspaces, setRecentWorkspaces] = useState(() => {
     try {
@@ -2019,6 +2038,8 @@ Distributed under the MIT License.
                 onClosePresetTab={handleClosePresetTab}
                 updateProgress={updateProgress}
                 updateDownloaded={updateDownloaded}
+                isGroupingEnabled={tabGroupingEnabled}
+                onToggleGrouping={handleToggleTabGrouping}
               />
 
               {/* Central Workspace: Dedicated Studio Tabs or Markdown Preview */}
@@ -2100,6 +2121,8 @@ Distributed under the MIT License.
                 setFindReplaceOpen={setFindReplaceOpen}
                 findReplaceMode={findReplaceMode}
                 setFindReplaceMode={setFindReplaceMode}
+                tabGroupingEnabled={tabGroupingEnabled}
+                setTabGroupingEnabled={handleToggleTabGrouping}
               />
 
               {/* Integrated Bottom Panel Drawer (VS Code / Antigravity IDE) */}
@@ -2143,6 +2166,7 @@ Distributed under the MIT License.
             updateError={updateError}
             onOpenWhatsNew={handleOpenWhatsNewTab}
             onRestartToUpdate={handleRestartToUpdate}
+            onOpenSettings={handleOpenSettingsTab}
           />
 
           {/* Global IDE Tooltip System (Antigravity IDE / VS Code Style) */}

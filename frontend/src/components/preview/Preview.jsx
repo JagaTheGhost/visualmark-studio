@@ -428,6 +428,8 @@ export default function Preview({
         viewMode={viewMode}
         orientation={orientation}
         splitRatio={splitRatio}
+        workspaceDirectory={workspaceDirectory}
+        activeFile={activeFile}
       />
     </div>
   )

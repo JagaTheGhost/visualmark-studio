@@ -5,20 +5,19 @@
 
 // Studio Workflow Modes
 export const STUDIO_MODES = [
-  { id: 'single', label: 'Badge Designer', icon: 'shield' },
-  { id: 'rack', label: 'Tech Stack & Rack', icon: 'layers' },
-  { id: 'skillicons', label: 'SkillIcons Squircles', icon: 'grid_view' },
-  { id: 'github', label: 'Dynamic GitHub Metrics', icon: 'monitoring' },
-  { id: 'repocards', label: 'GitHub Repo Pin Cards', icon: 'featured_play_list' },
-  { id: 'packs', label: 'Curated Tech Packs', icon: 'collections_bookmark' }
+  { id: 'single', label: 'Single', icon: 'shield' },
+  { id: 'rack', label: 'Rack', icon: 'layers' },
+  { id: 'skillicons', label: 'SkillIcons', icon: 'grid_view' },
+  { id: 'github', label: 'Metrics', icon: 'monitoring' },
+  { id: 'packs', label: 'Packs', icon: 'inventory_2' }
 ]
 
 // Badge Format Architectures
 export const BADGE_FORMATS = [
   { id: 'split', title: 'Dual Segment', subtitle: 'Label | Value', icon: 'splitscreen' },
-  { id: 'brand-plate', title: 'Brand Plate', subtitle: 'Solid Branded Chip', icon: 'view_agenda' },
-  { id: 'icon-only', title: 'Micro Tile', subtitle: 'Logo Square Only', icon: 'crop_square' },
-  { id: 'badgen', title: 'Badgen.net', subtitle: 'Compact Micro SVG', icon: 'bolt' }
+  { id: 'brand-plate', title: 'Brand Plate', subtitle: 'Solid Chip', icon: 'view_agenda' },
+  { id: 'icon-only', title: 'Micro Tile', subtitle: 'Logo Only', icon: 'crop_square' },
+  { id: 'badgen', title: 'Badgen.net', subtitle: 'Micro SVG', icon: 'bolt' }
 ]
 
 // Shields.io Core Badge Geometry Styles
@@ -26,51 +25,51 @@ export const BADGE_STYLES = [
   {
     id: 'for-the-badge',
     label: 'For the Badge',
-    tag: 'Bold & Uppercase',
+    tag: 'Bold',
     desc: 'Heavy uppercase banner with generous horizontal padding. Industry standard for top-level README hero headers.'
   },
   {
     id: 'flat-square',
     label: 'Flat Square',
-    tag: 'Developer Standard',
+    tag: 'Square',
     desc: 'Sharp 90-degree square corners. Crisp, technical, and compact for dense tech stack matrices.'
   },
   {
     id: 'flat',
     label: 'Flat',
-    tag: 'Shields Default',
+    tag: 'Default',
     desc: 'Subtle 3px rounded rectangle corners with clean, balanced typography. Universally recognized.'
   },
   {
     id: 'plastic',
-    label: 'Plastic 3D',
-    tag: 'Glossy Highlight',
+    label: 'Plastic',
+    tag: 'Glossy',
     desc: 'Rounded corners with a subtle convex glossy gradient highlight along the upper half.'
   },
   {
     id: 'social',
-    label: 'Social Callout',
-    tag: 'GitHub Bubble',
+    label: 'Social',
+    tag: 'Bubble',
     desc: 'White arrow bubble callout counter modeled after GitHub native star and follower buttons.'
   }
 ]
 
 // 14 Curated Dual-Tone Color Themes (with Left Label and Right Message pairings)
 export const COLOR_THEMES = [
-  { id: 'cyberpunk', name: 'Cyberpunk Neon', labelColor: '180b33', color: 'ec4899', accent: '06b6d4' },
-  { id: 'emerald', name: 'Emerald Matrix', labelColor: '064e3b', color: '10b981', accent: '34d399' },
-  { id: 'indigo', name: 'Electric Indigo', labelColor: '1e1b4b', color: '6366f1', accent: '818cf8' },
-  { id: 'obsidian', name: 'Midnight Obsidian', labelColor: '090d16', color: '1e293b', accent: '38bdf8' },
-  { id: 'amber', name: 'Solar Amber', labelColor: '451a03', color: 'f59e0b', accent: 'fbbf24' },
-  { id: 'crimson', name: 'Rose Crimson', labelColor: '4c0519', color: 'ef4444', accent: 'f43f5e' },
-  { id: 'glacier', name: 'Nordic Glacier', labelColor: '082f49', color: '0ea5e9', accent: '38bdf8' },
-  { id: 'dracula', name: 'Dracula Purple', labelColor: '282a36', color: 'bd93f9', accent: 'ff79c6' },
-  { id: 'monokai', name: 'Monokai Neon', labelColor: '272822', color: 'a6e22e', accent: 'e6db74' },
-  { id: 'github', name: 'GitHub Primer', labelColor: '24292e', color: '0969da', accent: '2ea44f' },
-  { id: 'minimal', name: 'Minimal Mono', labelColor: '18181b', color: '52525b', accent: 'fafafa' },
-  { id: 'sunset', name: 'Sunset Horizon', labelColor: '7c2d12', color: 'ea580c', accent: 'fb923c' },
-  { id: 'vaporwave', name: 'Vaporwave Orchid', labelColor: '3b0764', color: 'c084fc', accent: 'f472b6' },
-  { id: 'teal', name: 'Deep Oceanic', labelColor: '042f2e', color: '0d9488', accent: '2dd4bf' }
+  { id: 'cyberpunk', name: 'Cyberpunk', labelColor: '180b33', color: 'ec4899', accent: '06b6d4' },
+  { id: 'emerald', name: 'Emerald', labelColor: '064e3b', color: '10b981', accent: '34d399' },
+  { id: 'indigo', name: 'Indigo', labelColor: '1e1b4b', color: '6366f1', accent: '818cf8' },
+  { id: 'obsidian', name: 'Obsidian', labelColor: '090d16', color: '1e293b', accent: '38bdf8' },
+  { id: 'amber', name: 'Amber', labelColor: '451a03', color: 'f59e0b', accent: 'fbbf24' },
+  { id: 'crimson', name: 'Crimson', labelColor: '4c0519', color: 'ef4444', accent: 'f43f5e' },
+  { id: 'glacier', name: 'Glacier', labelColor: '082f49', color: '0ea5e9', accent: '38bdf8' },
+  { id: 'dracula', name: 'Dracula', labelColor: '282a36', color: 'bd93f9', accent: 'ff79c6' },
+  { id: 'monokai', name: 'Monokai', labelColor: '272822', color: 'a6e22e', accent: 'e6db74' },
+  { id: 'github', name: 'GitHub', labelColor: '24292e', color: '0969da', accent: '2ea44f' },
+  { id: 'minimal', name: 'Mono', labelColor: '18181b', color: '52525b', accent: 'fafafa' },
+  { id: 'sunset', name: 'Sunset', labelColor: '7c2d12', color: 'ea580c', accent: 'fb923c' },
+  { id: 'vaporwave', name: 'Vaporwave', labelColor: '3b0764', color: 'c084fc', accent: 'f472b6' },
+  { id: 'teal', name: 'Oceanic', labelColor: '042f2e', color: '0d9488', accent: '2dd4bf' }
 ]
 
 // Categorized 36 Swatches Matrix
@@ -271,18 +270,18 @@ export const SKILL_ICONS_LIST = [
 
 // 12 Dynamic GitHub Metrics
 export const GITHUB_METRICS = [
-  { id: 'stars', title: 'GitHub Stars', path: 'stars', icon: 'star', color: 'f59e0b', defaultActive: true, linkSuffix: '/stargazers' },
-  { id: 'forks', title: 'GitHub Forks', path: 'forks', icon: 'call_split', color: '3b82f6', defaultActive: true, linkSuffix: '/network/members' },
+  { id: 'stars', title: 'Stars', path: 'stars', icon: 'star', color: 'f59e0b', defaultActive: true, linkSuffix: '/stargazers' },
+  { id: 'forks', title: 'Forks', path: 'forks', icon: 'call_split', color: '3b82f6', defaultActive: true, linkSuffix: '/network/members' },
   { id: 'issues', title: 'Open Issues', path: 'issues', icon: 'bug_report', color: '10b981', defaultActive: true, linkSuffix: '/issues' },
   { id: 'issues-closed', title: 'Closed Issues', path: 'issues-closed', icon: 'task_alt', color: '8b5cf6', defaultActive: false, linkSuffix: '/issues?q=is%3Aissue+is%3Aclosed' },
   { id: 'prs', title: 'Pull Requests', path: 'issues-pr', icon: 'merge', color: '06b6d4', defaultActive: true, linkSuffix: '/pulls' },
-  { id: 'release', title: 'Latest Release', path: 'v/release', icon: 'sell', color: '6366f1', defaultActive: true, linkSuffix: '/releases' },
+  { id: 'release', title: 'Release', path: 'v/release', icon: 'sell', color: '6366f1', defaultActive: true, linkSuffix: '/releases' },
   { id: 'license', title: 'License', path: 'license', icon: 'verified', color: '10b981', defaultActive: true, linkSuffix: '/blob/main/LICENSE' },
   { id: 'repo-size', title: 'Repo Size', path: 'repo-size', icon: 'folder_zip', color: '64748b', defaultActive: false, linkSuffix: '' },
   { id: 'languages-top', title: 'Top Language', path: 'languages/top', icon: 'code', color: 'f97316', defaultActive: false, linkSuffix: '' },
   { id: 'last-commit', title: 'Last Commit', path: 'last-commit', icon: 'schedule', color: 'a855f7', defaultActive: false, linkSuffix: '/commits' },
   { id: 'contributors', title: 'Contributors', path: 'contributors', icon: 'group', color: '14b8a6', defaultActive: false, linkSuffix: '/graphs/contributors' },
-  { id: 'actions', title: 'CI Build Status', path: 'actions/workflow/status', workflow: 'ci.yml', icon: 'rocket_launch', color: '22c55e', defaultActive: false, linkSuffix: '/actions' }
+  { id: 'actions', title: 'CI Build', path: 'actions/workflow/status', workflow: 'ci.yml', icon: 'rocket_launch', color: '22c55e', defaultActive: false, linkSuffix: '/actions' }
 ]
 
 // 10 Native High-Fidelity Vector SVG Card Architectures (100% Free, Local Generation)

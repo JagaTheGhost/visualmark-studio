@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 150" width="500" height="150">
+  <style>
+    
+    .card-bg { fill: #0d1117; stroke: #30363d; stroke-width: 1; }
+    .card-title { fill: #58a6ff; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+    .card-text { fill: #8b949e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+    .card-badge-bg { fill: #21262d; stroke: #30363d; }
+    .card-badge-text { fill: #8b949e; }
+    .card-icon { fill: #7d8590; }
+    .card-star-icon { fill: #e3b341; }
+    .card-chip-bg { fill: rgba(255, 255, 255, 0.04); stroke: rgba(255, 255, 255, 0.08); }
+    .card-chip-text { fill: #c9d1d9; }
+
+    @media (prefers-color-scheme: light) {
+      .card-bg { fill: #ffffff; stroke: #d0d7de; }
+      .card-title { fill: #0969da; }
+      .card-text { fill: #57606a; }
+      .card-badge-bg { fill: #f6f8fa; stroke: #d0d7de; }
+      .card-badge-text { fill: #57606a; }
+      .card-icon { fill: #57606a; }
+      .card-chip-bg { fill: rgba(0, 0, 0, 0.03); stroke: rgba(0, 0, 0, 0.08); }
+      .card-chip-text { fill: #24292f; }
+    }
+    
+  </style>
+  <rect width="500" height="150" rx="8" class="card-bg"/>
+
+  <g transform="translate(24, 24)">
+    <!-- Repo Book Icon -->
+    <path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 0 0 1.5h2.5v1.25a.25.25 0 0 1-.25.25H4.5A2.5 2.5 0 0 1 2 14.5v-12Zm10 12V1.5H4.5a1 1 0 0 0-1 1V14.5a1 1 0 0 0 1 1H11.5a2.25 2.25 0 0 1 .5-.05Z" class="card-icon" />
+    
+    <!-- Title -->
+    <text x="24" y="13" class="card-title" font-size="14">JagaTheGhost / visualmark-studio</text>
+    
+    <!-- Public Badge -->
+    <rect x="392" y="-4" width="58" height="20" rx="10" class="card-badge-bg"/>
+    <text x="421" y="10" class="card-badge-text" font-size="10.5" font-weight="500" text-anchor="middle">Public</text>
+
+    <!-- Description Lines -->
+    
+      <text x="0" y="40" class="card-text" font-size="12">The library for web and native user interfaces</text>
+    
+  </g>
+
+  <!-- Footer Stats -->
+  
+      <g transform="translate(24, 124)">
+        <circle cx="5" cy="5" r="5" fill="#f1e05a" />
+        <text x="16" y="9" class="card-chip-text" font-size="11.5" font-weight="500">JavaScript</text>
+      </g>
+    
+      <g transform="translate(139, 124)">
+        <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z" class="card-star-icon" />
+        <text x="18" y="9.5" class="card-text" font-size="11.5" font-weight="500">230k</text>
+      </g>
+    
+      <g transform="translate(219, 124)">
+        <path d="M5 3.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm0 2.122a2.25 2.25 0 1 0-1.5 0v.878A2.25 2.25 0 0 0 5.75 8.5h1.5v2.128a2.251 2.251 0 1 0 1.5 0V8.5h1.5a2.25 2.25 0 0 0 2.25-2.25v-.878a2.25 2.25 0 1 0-1.5 0v.878a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1-.75-.75v-.878Z" class="card-icon" />
+        <text x="18" y="9.5" class="card-text" font-size="11.5" font-weight="500">46k</text>
+      </g>
+    
+      <g transform="translate(299, 124)">
+        <path d="M8.75.75a.75.75 0 0 0-1.5 0V2h-.5C4.56 2 2.75 3.81 2.75 6.05v.2c0 .414.336.75.75.75h9a.75.75 0 0 0 .75-.75v-.2C13.25 3.81 11.44 2 9.25 2h-.5V.75Z" class="card-icon" />
+        <text x="16" y="9.5" class="card-text" font-size="11.5" font-weight="500">MIT</text>
+      </g>
+    
+</svg>

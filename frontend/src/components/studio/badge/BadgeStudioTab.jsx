@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react'
-import { useStudioSplit } from '../../../utils/useResizableSplit'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import StudioShell from '../common/StudioShell'
 import {
   STUDIO_MODES,
   SIMPLE_ICONS,
@@ -8,7 +8,6 @@ import {
   CURATED_PACKS
 } from '../../../data/badgeStudioData'
 import { escapeShieldsText } from '../../../utils/modernRepoCardEngine'
-import { useRepoCardState, RepoCardInspector } from '../RepoCardStudio'
 import SingleBadgeForm from './SingleBadgeForm'
 import SkillIconsForm from './SkillIconsForm'
 import BadgeRackForm from './BadgeRackForm'
@@ -35,7 +34,6 @@ export default function BadgeStudioTab({
   const [color, setColor] = useState('61dafb')
   const [labelColor, setLabelColor] = useState('18181b')
   const [twoTone, setTwoTone] = useState(false)
-  const { formWidth, isDragging, handleMouseDown, handleDoubleClick } = useStudioSplit(520)
   const [style, setStyle] = useState('for-the-badge')
   const [logo, setLogo] = useState('react')
   const [logoColor, setLogoColor] = useState('black')
@@ -52,12 +50,6 @@ export default function BadgeStudioTab({
   const [skillTheme, setSkillTheme] = useState('dark') // 'dark' | 'light'
   const [skillPerLine, setSkillPerLine] = useState('10')
   const [skillSearch, setSkillSearch] = useState('')
-
-  // GitHub Repo Card State (Modern Client-Side Vector Engine)
-  const repoCardState = useRepoCardState({
-    repoUrl,
-    onInsertBadge
-  })
 
   // Rack Mode State
   const [rackBadges, setRackBadges] = useState([
@@ -77,12 +69,10 @@ export default function BadgeStudioTab({
   // Curated Packs State
   const [selectedPackId, setSelectedPackId] = useState('pack-fullstack')
 
-  // Preview Settings
-  const [canvasBg, setCanvasBg] = useState('dark') // 'dark' | 'light'
-  const [syntaxView, setSyntaxView] = useState('markdown') // 'markdown' | 'html' | 'url'
-  const [copied, setCopied] = useState(false)
+  // Output Syntax view (markdown vs html vs url)
+  const [syntaxView, setSyntaxView] = useState('markdown')
 
-  // Preview Error / Offline Resilience States
+  // Error States
   const [singleBadgeError, setSingleBadgeError] = useState(false)
   const [skillIconsError, setSkillIconsError] = useState(false)
   const [metricsError, setMetricsError] = useState(false)
@@ -119,21 +109,18 @@ export default function BadgeStudioTab({
     if (formatType === 'icon-only') {
       let url = `https://img.shields.io/badge/--${cleanC}?style=${style}`
       if (logo.trim()) {
-        url += `&logo=${encodeURIComponent(logo.trim())}`
-        if (logoColor) url += `&logoColor=${encodeURIComponent(logoColor)}`
+        url += `&logo=${encodeURIComponent(logo.trim())}&logoColor=white`
       }
       return url
     }
 
     if (formatType === 'badgen') {
-      const cleanL = encodeURIComponent((label || 'badge').trim())
-      const cleanM = encodeURIComponent((message || 'value').trim())
-      let url = `https://badgen.net/badge/${cleanL}/${cleanM}/${cleanC}`
-      if (logo.trim()) url += `?icon=${encodeURIComponent(logo.trim())}`
-      return url
+      const bLabel = encodeURIComponent(label.trim() || 'badge')
+      const bStatus = encodeURIComponent(message.trim() || 'status')
+      return `https://badgen.net/badge/${bLabel}/${bStatus}/${cleanC}`
     }
 
-    // Default 'split' dual segment
+    // Default: 'split' dual-segment
     const cleanL = escapeShieldsText(label || 'badge')
     const cleanM = escapeShieldsText(message || 'value')
     let url = `https://img.shields.io/badge/${cleanL}-${cleanM}-${cleanC}?style=${style}`
@@ -145,78 +132,92 @@ export default function BadgeStudioTab({
       if (logoColor) url += `&logoColor=${encodeURIComponent(logoColor)}`
     }
     return url
-  }, [formatType, plateTitle, label, message, color, labelColor, twoTone, style, logo, logoColor])
+  }, [formatType, label, message, color, labelColor, style, logo, logoColor, plateTitle, twoTone])
 
-  // SkillIcons Image URL
+  // Single Badge Markdown code
+  const singleBadgeMarkdown = useMemo(() => {
+    const alt = plateTitle || `${label} ${message}`.trim() || 'Badge'
+    if (linkUrl.trim()) {
+      return `[![${alt}](${singleBadgeUrl})](${linkUrl.trim()})`
+    }
+    return `![${alt}](${singleBadgeUrl})`
+  }, [singleBadgeUrl, linkUrl, plateTitle, label, message])
+
+  // Single Badge HTML code
+  const singleBadgeHtml = useMemo(() => {
+    const alt = plateTitle || `${label} ${message}`.trim() || 'Badge'
+    if (linkUrl.trim()) {
+      return `<a href="${linkUrl.trim()}"><img src="${singleBadgeUrl}" alt="${alt}" /></a>`
+    }
+    return `<img src="${singleBadgeUrl}" alt="${alt}" />`
+  }, [singleBadgeUrl, linkUrl, plateTitle, label, message])
+
+  // SkillIcons Image URL generator
   const skillIconsUrl = useMemo(() => {
-    const iconsParam = selectedSkillIcons.join(',') || 'react,ts,py'
+    const iconsParam = selectedSkillIcons.join(',')
     return `https://skillicons.dev/icons?i=${iconsParam}&theme=${skillTheme}&perline=${skillPerLine}`
   }, [selectedSkillIcons, skillTheme, skillPerLine])
 
-  // Single Badge Markdown
-  const singleBadgeMarkdown = useMemo(() => {
-    const alt = formatType === 'brand-plate' ? plateTitle : `${label} - ${message}`
-    const target = linkUrl.trim() || repoUrl || '#'
-    return `[![${alt}](${singleBadgeUrl})](${target})`
-  }, [formatType, plateTitle, label, message, singleBadgeUrl, linkUrl, repoUrl])
+  // SkillIcons Markdown
+  const skillIconsMarkdown = useMemo(() => {
+    const link = repoUrl ? repoUrl : 'https://skillicons.dev'
+    return `<div align="center">\n  <a href="${link}">\n    <img src="${skillIconsUrl}" alt="My Skills" />\n  </a>\n</div>`
+  }, [skillIconsUrl, repoUrl])
 
-  // Single Badge HTML
-  const singleBadgeHtml = useMemo(() => {
-    const alt = formatType === 'brand-plate' ? plateTitle : `${label} - ${message}`
-    const target = linkUrl.trim() || repoUrl || '#'
-    return `<a href="${target}"><img src="${singleBadgeUrl}" alt="${alt}" /></a>`
-  }, [formatType, plateTitle, label, message, singleBadgeUrl, linkUrl, repoUrl])
+  // Rack Mode Item URL
+  const getRackItemUrl = (b) => {
+    const bC = (b.color || '6366f1').replace('#', '')
+    if (b.format === 'brand-plate') {
+      let u = `https://img.shields.io/badge/${escapeShieldsText(b.title || b.label)}-${bC}?style=${b.style || style}`
+      if (b.logo) u += `&logo=${encodeURIComponent(b.logo)}&logoColor=white`
+      return u
+    }
+    if (b.format === 'icon-only') {
+      let u = `https://img.shields.io/badge/--${bC}?style=${b.style || style}`
+      if (b.logo) u += `&logo=${encodeURIComponent(b.logo)}&logoColor=white`
+      return u
+    }
+    let u = `https://img.shields.io/badge/${escapeShieldsText(b.label)}-${escapeShieldsText(b.message)}-${bC}?style=${b.style || style}`
+    if (b.labelColor) u += `&labelColor=${encodeURIComponent(b.labelColor.replace('#', ''))}`
+    if (b.logo) u += `&logo=${encodeURIComponent(b.logo)}&logoColor=white`
+    return u
+  }
 
-  // Multi-Badge Rack Markdown
+  // Rack Markdown code
   const rackMarkdown = useMemo(() => {
-    if (!rackBadges.length) return ''
-
-    const lines = rackBadges.map((b) => {
-      const bC = (b.color || '6366f1').replace('#', '').trim()
-      let bUrl = ''
-      let alt = ''
-
-      if (b.format === 'brand-plate') {
-        const bT = escapeShieldsText(b.title || b.label)
-        bUrl = `https://img.shields.io/badge/${bT}-${bC}?style=${b.style || style}`
-        alt = b.title || b.label
-      } else if (b.format === 'icon-only') {
-        bUrl = `https://img.shields.io/badge/--${bC}?style=${b.style || style}`
-        alt = b.logo || 'icon'
-      } else {
-        const bL = escapeShieldsText(b.label || 'badge')
-        const bM = escapeShieldsText(b.message || 'value')
-        bUrl = `https://img.shields.io/badge/${bL}-${bM}-${bC}?style=${b.style || style}`
-        if (b.labelColor) bUrl += `&labelColor=${encodeURIComponent(b.labelColor.replace('#', ''))}`
-        alt = `${b.label} - ${b.message}`
-      }
-
-      if (b.logo) bUrl += `&logo=${encodeURIComponent(b.logo)}&logoColor=white`
-      const bLink = b.link || repoUrl || '#'
-      return `[![${alt}](${bUrl})](${bLink})`
+    if (rackBadges.length === 0) return '<!-- Empty Badge Rack -->'
+    const badgeMarkdownItems = rackBadges.map((b) => {
+      const url = getRackItemUrl(b)
+      const alt = b.title || `${b.label} ${b.message}`
+      return b.link ? `[![${alt}](${url})](${b.link})` : `![${alt}](${url})`
     })
 
     if (rackLayout === 'center-div') {
-      return `<div align="center">\n\n${lines.join('\n')}\n\n</div>`
-    } else if (rackLayout === 'lines') {
-      return lines.join('\n')
-    } else {
-      return lines.join(' ')
+      return `<div align="center">\n\n${badgeMarkdownItems.join('\n')}\n\n</div>`
     }
-  }, [rackBadges, rackLayout, style, repoUrl])
+    if (rackLayout === 'paragraph') {
+      return `<p align="center">\n  ${badgeMarkdownItems.join('\n  ')}\n</p>`
+    }
+    if (rackLayout === 'table') {
+      const headers = '| Technology | Status | Role |\n| :--- | :---: | :--- |'
+      const rows = rackBadges.map((b) => {
+        const url = getRackItemUrl(b)
+        const alt = b.title || `${b.label} ${b.message}`
+        const img = `![${alt}](${url})`
+        return `| **${b.title || b.label}** | ${img} | Core Stack |`
+      })
+      return `${headers}\n${rows.join('\n')}`
+    }
+    return badgeMarkdownItems.join(' ')
+  }, [rackBadges, rackLayout, style])
 
-  // SkillIcons Markdown
-  const skillIconsMarkdown = useMemo(() => {
-    return `<div align="center">\n\n[![My Skills](${skillIconsUrl})](https://skillicons.dev)\n\n</div>`
-  }, [skillIconsUrl])
-
-  // Dynamic GitHub Metrics Markdown
+  // GitHub Metrics Markdown
   const dynamicMetricsMarkdown = useMemo(() => {
     const metricsToRender = GITHUB_METRICS.filter((m) => selectedMetrics.includes(m.id))
     const lines = metricsToRender.map((m) => {
       let bUrl = ''
       if (m.id === 'actions') {
-        bUrl = `https://img.shields.io/github/actions/workflow/status/${cleanRepo}/${m.workflow}?style=${githubMetricsStyle}&logo=githubactions&logoColor=white`
+        bUrl = `https://img.shields.io/github/actions/workflow/status/${cleanRepo}/${m.workflow || 'ci.yml'}?style=${githubMetricsStyle}&logo=githubactions&logoColor=white`
       } else {
         bUrl = `https://img.shields.io/github/${m.path}/${cleanRepo}?style=${githubMetricsStyle}`
       }
@@ -225,31 +226,26 @@ export default function BadgeStudioTab({
     })
 
     return `<div align="center">\n\n${lines.join('\n')}\n\n</div>`
-  }, [cleanRepo, selectedMetrics, githubMetricsStyle])
+  }, [selectedMetrics, cleanRepo, githubMetricsStyle])
 
-  // Curated Pack Markdown Helper
-  const getPackMarkdown = (pack) => {
-    if (!pack) return ''
-    const lines = pack.badges.map((b) => {
-      const bL = escapeShieldsText(b.label)
-      const bM = escapeShieldsText(b.message)
-      let bUrl = `https://img.shields.io/badge/${bL}-${bM}-${b.color}?style=${b.style || style}`
-      if (b.logo) bUrl += `&logo=${encodeURIComponent(b.logo)}&logoColor=white`
-      const target = repoUrl || '#'
-      return `[![${b.label} - ${b.message}](${bUrl})](${target})`
-    })
-    return `<div align="center">\n\n${lines.join('\n')}\n\n</div>`
-  }
-
+  // Curated Pack selected
   const selectedPack = useMemo(() => {
     return CURATED_PACKS.find((p) => p.id === selectedPackId) || CURATED_PACKS[0]
   }, [selectedPackId])
 
+  // Curated Pack Markdown
   const packMarkdown = useMemo(() => {
-    return getPackMarkdown(selectedPack)
+    if (!selectedPack || !selectedPack.badges) return ''
+    const lines = selectedPack.badges.map((b) => {
+      const bC = (b.color || '6366f1').replace('#', '')
+      const bUrl = `https://img.shields.io/badge/${escapeShieldsText(b.label)}-${escapeShieldsText(b.message)}-${bC}?style=${b.style || style}&logo=${encodeURIComponent(b.logo || '')}&logoColor=white`
+      const alt = `${b.label} ${b.message}`
+      return repoUrl ? `[![${alt}](${bUrl})](${repoUrl})` : `![${alt}](${bUrl})`
+    })
+    return `<div align="center">\n\n${lines.join('\n')}\n\n</div>`
   }, [selectedPack, style, repoUrl])
 
-  // Active Output Snippet based on current studio mode
+  // Active Output Snippet based on current mode
   const activeSnippet = useMemo(() => {
     if (activeMode === 'single') {
       if (syntaxView === 'html') return singleBadgeHtml
@@ -258,11 +254,10 @@ export default function BadgeStudioTab({
     }
     if (activeMode === 'rack') return rackMarkdown
     if (activeMode === 'skillicons') return skillIconsMarkdown
-    if (activeMode === 'repocards') return repoCardState.generatedSnippet
     if (activeMode === 'github') return dynamicMetricsMarkdown
     if (activeMode === 'packs') return packMarkdown
     return singleBadgeMarkdown
-  }, [activeMode, syntaxView, singleBadgeHtml, singleBadgeUrl, singleBadgeMarkdown, rackMarkdown, skillIconsMarkdown, repoCardState.generatedSnippet, dynamicMetricsMarkdown, packMarkdown])
+  }, [activeMode, syntaxView, singleBadgeHtml, singleBadgeUrl, singleBadgeMarkdown, rackMarkdown, skillIconsMarkdown, dynamicMetricsMarkdown, packMarkdown])
 
   // Filtered SimpleIcons
   const filteredIcons = useMemo(() => {
@@ -284,32 +279,34 @@ export default function BadgeStudioTab({
     return SKILL_ICONS_LIST.filter((i) => i.name.toLowerCase().includes(q) || i.id.toLowerCase().includes(q))
   }, [skillSearch])
 
-  // Handlers
-  const handleCopy = () => {
-    navigator.clipboard.writeText(activeSnippet)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  const handleInsert = async () => {
-    if (activeMode === 'repocards') {
-      await repoCardState.handleInsertCard()
-      return
+  // Action Handlers
+  const handleInsert = useCallback(() => {
+    if (typeof onInsertBadge === 'function') {
+      onInsertBadge(activeSnippet)
     }
-    onInsertBadge(activeSnippet)
-  }
+  }, [onInsertBadge, activeSnippet])
 
-  const handleApplyTheme = (theme) => {
-    setColor(theme.color)
-    setLabelColor(theme.labelColor)
+  const handleReset = useCallback(() => {
+    setLabel('React')
+    setMessage('19.0')
+    setPlateTitle('React 19')
+    setColor('61dafb')
+    setLabelColor('18181b')
+    setStyle('for-the-badge')
+    setLogo('react')
+    setLogoColor('black')
+    setLinkUrl('')
+  }, [])
+
+  const handleApplyTheme = (th) => {
+    setColor(th.color)
+    setLabelColor(th.labelColor)
     setTwoTone(true)
   }
 
   const handleSelectIcon = (iconItem) => {
     setLogo(iconItem.slug)
-    if (iconItem.color) {
-      setColor(iconItem.color)
-    }
+    if (iconItem.color) setColor(iconItem.color)
     if (iconItem.label) setLabel(iconItem.label)
     if (iconItem.message) setMessage(iconItem.message)
     if (iconItem.name) setPlateTitle(iconItem.name)
@@ -346,12 +343,12 @@ export default function BadgeStudioTab({
     setRackBadges((prev) => prev.map((b) => ({ ...b, style: newStyle })))
   }
 
-  const handleApplyThemeToRack = (theme) => {
+  const handleApplyThemeToRack = (th) => {
     setRackBadges((prev) =>
       prev.map((b) => ({
         ...b,
-        color: theme.color,
-        labelColor: theme.labelColor
+        color: th.color,
+        labelColor: th.labelColor
       }))
     )
   }
@@ -387,105 +384,85 @@ export default function BadgeStudioTab({
     }
   }
 
+  // Syntax switcher pills for canvas header
+  const canvasHeaderExtras = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <span className="canvas-header-divider" />
+      {activeMode === 'single' && (
+        <div className="canvas-bg-switcher">
+          <button
+            type="button"
+            className={`bg-switch-btn ${syntaxView === 'markdown' ? 'active' : ''}`}
+            onClick={() => setSyntaxView('markdown')}
+          >
+            Markdown
+          </button>
+          <button
+            type="button"
+            className={`bg-switch-btn ${syntaxView === 'html' ? 'active' : ''}`}
+            onClick={() => setSyntaxView('html')}
+          >
+            HTML
+          </button>
+          <button
+            type="button"
+            className={`bg-switch-btn ${syntaxView === 'url' ? 'active' : ''}`}
+            onClick={() => setSyntaxView('url')}
+          >
+            URL
+          </button>
+        </div>
+      )}
+      <span className="canvas-mode-tag">
+        {activeMode === 'single'
+          ? `${formatType} • ${style}`
+          : activeMode === 'rack'
+          ? `${rackBadges.length} in rack`
+          : activeMode === 'skillicons'
+          ? `${selectedSkillIcons.length} skills • ${skillTheme}`
+          : activeMode === 'github'
+          ? `${selectedMetrics.length} metrics`
+          : selectedPack.title}
+      </span>
+    </div>
+  )
+
+  // Label for insert button
+  const insertLabel = useMemo(() => {
+    if (targetContext) return `Insert into ${targetContext.label}`
+    switch (activeMode) {
+      case 'rack': return 'Insert Badge Rack'
+      case 'skillicons': return 'Insert SkillIcons'
+      case 'github': return 'Insert GitHub Metrics'
+      case 'packs': return 'Insert Curated Pack'
+      default: return 'Insert Badge'
+    }
+  }, [activeMode, targetContext])
+
   return (
-    <div className="studio-tab-view select-none">
-      {/* Studio Top Navigation Strip */}
-      <div className="studio-top-bar">
-        <div className="studio-bar-left">
-          <div className="studio-badge-halo">
-            <span className="material-symbols-outlined text-secondary">shield</span>
-          </div>
-          <div>
-            <div className="studio-title-row">
-              <h2 className="studio-title">Shields.io & Badges Studio Pro</h2>
-              <span className="studio-tag" style={{ borderColor: 'rgba(99, 102, 241, 0.4)', color: '#38bdf8' }}>Visual Identity Studio</span>
-              {targetContext && (
-                <span className="studio-tag" style={{ borderColor: 'rgba(56, 189, 248, 0.4)', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)' }}>
-                  Target: {targetContext.label || 'Table Cell'}
-                </span>
-              )}
-            </div>
-            <p className="studio-subtitle">
-              Single brand plates, dual-segment badges, SkillIcons macOS squircles, GitHub repo pin cards, and Badgen.net micro-badges.
-            </p>
-          </div>
-        </div>
-
-        <div className="studio-bar-actions">
-          {onBackToReadme && (
-            <button
-              type="button"
-              className="btn-studio-secondary"
-              onClick={onBackToReadme}
-              title={targetContext ? 'Cancel and return' : 'Return to active markdown document'}
-            >
-              <span className="material-symbols-outlined icon-xs">arrow_back</span>
-              <span>{targetContext ? 'Cancel & Return' : 'Back to Editor'}</span>
-            </button>
-          )}
-          <button
-            type="button"
-            className="btn-studio-secondary"
-            onClick={handleCopy}
-            title="Copy formatted markdown to clipboard"
-          >
-            <span className="material-symbols-outlined icon-xs">
-              {copied ? 'check' : 'content_copy'}
-            </span>
-            <span>{copied ? 'Copied!' : 'Copy Markdown'}</span>
-          </button>
-          <button
-            type="button"
-            className="btn-studio-primary"
-            onClick={handleInsert}
-            title={targetContext ? `Insert selected badge into ${targetContext.label}` : 'Insert rendered badge into an open document'}
-          >
-            <span className="material-symbols-outlined icon-xs">add_circle</span>
-            <span>
-              {targetContext
-                ? `Insert into ${targetContext.label}`
-                : (activeMode === 'single'
-                  ? 'Insert Badge into Document'
-                  : activeMode === 'rack'
-                  ? 'Insert Badge Rack'
-                  : activeMode === 'skillicons'
-                  ? 'Insert SkillIcons Grid'
-                  : activeMode === 'repocards'
-                  ? 'Insert Repo Card'
-                  : activeMode === 'github'
-                  ? 'Insert GitHub Metrics'
-                  : 'Insert Tech Pack')}
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* Main Studio 2-Column Responsive Layout */}
-      <div className="studio-content-grid">
-        {/* Left Column: Form Controls */}
-        <div
-          className="studio-form-column custom-scrollbar"
-          style={{ width: `${formWidth}px`, minWidth: `${formWidth}px`, maxWidth: `${formWidth}px`, flex: 'none' }}
-        >
-          {/* Top Sub-Navigation Modes */}
-          <div className="studio-section">
-            <label className="studio-section-label">Studio Workflow Engine</label>
-            <div className="badge-mode-nav custom-scrollbar" data-horizontal-scroll="true">
-              {STUDIO_MODES.map((mode) => (
-                <button
-                  key={mode.id}
-                  type="button"
-                  className={`badge-mode-tab ${activeMode === mode.id ? 'active' : ''}`}
-                  onClick={() => setActiveMode(mode.id)}
-                >
-                  <span className="material-symbols-outlined icon-xs">{mode.icon}</span>
-                  <span>{mode.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Mode 1: Single Badge Designer */}
+    <StudioShell
+      studioId="badges.studio"
+      title="Shields.io Badge Studio"
+      subtitle="SVG shields, developer tech racks, and real-time repository metrics"
+      badge="Shields.io"
+      accentColor="#38bdf8"
+      icon={
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 0c-.3 0-.6.1-.8.3L2.4 3.7c-.3.2-.4.6-.4.9v5.2c0 3.8 2.6 7.1 6 8.2 3.4-1.1 6-4.4 6-8.2V4.6c0-.3-.1-.7-.4-.9L8.8.3C8.6.1 8.3 0 8 0zm0 1.5l4.5 2.5v4.8c0 3-2 5.7-4.5 6.6-2.5-.9-4.5-3.6-4.5-6.6V4L8 1.5z"/>
+        </svg>
+      }
+      modes={STUDIO_MODES}
+      activeMode={activeMode}
+      onModeChange={setActiveMode}
+      markdownCode={activeSnippet}
+      onInsert={handleInsert}
+      insertLabel={insertLabel}
+      onReset={activeMode === 'single' ? handleReset : null}
+      onBackToReadme={onBackToReadme}
+      canvasHeaderExtras={canvasHeaderExtras}
+      defaultSplitWidth={520}
+      inspectorContent={
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {activeMode === 'single' && (
             <SingleBadgeForm
               formatType={formatType}
@@ -518,11 +495,23 @@ export default function BadgeStudioTab({
               linkUrl={linkUrl}
               setLinkUrl={setLinkUrl}
               repoUrl={repoUrl}
-              handleAddCurrentToRack={handleAddCurrentToRack}
+              onAddToRack={handleAddCurrentToRack}
             />
           )}
 
-          {/* Mode 2: SkillIcons Squircles */}
+          {activeMode === 'rack' && (
+            <BadgeRackForm
+              rackBadges={rackBadges}
+              setRackBadges={setRackBadges}
+              handleRemoveRackBadge={handleRemoveRackBadge}
+              handleApplyStyleToRack={handleApplyStyleToRack}
+              handleApplyThemeToRack={handleApplyThemeToRack}
+              rackLayout={rackLayout}
+              setRackLayout={setRackLayout}
+              onSwitchToSingle={() => setActiveMode('single')}
+            />
+          )}
+
           {activeMode === 'skillicons' && (
             <SkillIconsForm
               selectedSkillIcons={selectedSkillIcons}
@@ -534,99 +523,61 @@ export default function BadgeStudioTab({
               skillSearch={skillSearch}
               setSkillSearch={setSkillSearch}
               filteredSkillIcons={filteredSkillIcons}
+              setSelectedSkillIcons={setSelectedSkillIcons}
             />
           )}
 
-          {/* Mode 3: GitHub Repo Pin & Activity Cards */}
-          {activeMode === 'repocards' && (
-            <RepoCardInspector {...repoCardState} />
-          )}
-
-          {/* Mode 4: Tech Stack & Rack Builder */}
-          {activeMode === 'rack' && (
-            <BadgeRackForm
-              rackBadges={rackBadges}
-              style={style}
-              setActiveMode={setActiveMode}
-              handleRemoveRackBadge={handleRemoveRackBadge}
-              rackLayout={rackLayout}
-              setRackLayout={setRackLayout}
-              handleApplyStyleToRack={handleApplyStyleToRack}
-              handleApplyThemeToRack={handleApplyThemeToRack}
-            />
-          )}
-
-          {/* Mode 5: Dynamic GitHub Repo Metrics */}
           {activeMode === 'github' && (
             <GithubMetricsForm
               customRepo={customRepo}
               cleanRepo={cleanRepo}
               setCustomRepo={setCustomRepo}
-              selectedMetrics={selectedMetrics}
-              toggleAllMetrics={toggleAllMetrics}
-              toggleMetric={toggleMetric}
+              repoUrl={repoUrl}
               githubMetricsStyle={githubMetricsStyle}
               setGithubMetricsStyle={setGithubMetricsStyle}
+              selectedMetrics={selectedMetrics}
+              toggleMetric={toggleMetric}
+              toggleAllMetrics={toggleAllMetrics}
             />
           )}
 
-          {/* Mode 6: Curated Tech Packs */}
           {activeMode === 'packs' && (
             <CuratedPacksForm
               selectedPackId={selectedPackId}
               setSelectedPackId={setSelectedPackId}
-              style={style}
               handleLoadPackIntoRack={handleLoadPackIntoRack}
-              onInsertBadge={onInsertBadge}
-              getPackMarkdown={getPackMarkdown}
             />
           )}
         </div>
-
-        {/* Resizer Splitter Handle */}
-        <div
-          className={`studio-resizer-handle ${isDragging ? 'is-dragging' : ''}`}
-          onMouseDown={handleMouseDown}
-          onDoubleClick={handleDoubleClick}
-          title="Drag to resize form and preview sections • Double-click to reset"
-        />
-
-        {/* Right Column: Live Render Canvas & Markdown Card */}
+      }
+      canvasContent={
         <BadgeLivePreview
           activeMode={activeMode}
           formatType={formatType}
           style={style}
-          selectedSkillIcons={selectedSkillIcons}
-          skillTheme={skillTheme}
-          repoCardState={repoCardState}
-          rackBadges={rackBadges}
-          selectedMetrics={selectedMetrics}
-          selectedPack={selectedPack}
-          canvasBg={canvasBg}
-          setCanvasBg={setCanvasBg}
-          singleBadgeError={singleBadgeError}
-          setSingleBadgeError={setSingleBadgeError}
           singleBadgeUrl={singleBadgeUrl}
           plateTitle={plateTitle}
           label={label}
           message={message}
           color={color}
           labelColor={labelColor}
+          singleBadgeError={singleBadgeError}
+          setSingleBadgeError={setSingleBadgeError}
+          skillIconsUrl={skillIconsUrl}
+          selectedSkillIcons={selectedSkillIcons}
+          skillTheme={skillTheme}
+          skillPerLine={skillPerLine}
           skillIconsError={skillIconsError}
           setSkillIconsError={setSkillIconsError}
-          skillIconsUrl={skillIconsUrl}
-          skillPerLine={skillPerLine}
-          cleanRepo={cleanRepo}
+          rackBadges={rackBadges}
+          selectedMetrics={selectedMetrics}
           githubMetricsStyle={githubMetricsStyle}
+          cleanRepo={cleanRepo}
           metricsError={metricsError}
           setMetricsError={setMetricsError}
-          syntaxView={syntaxView}
-          setSyntaxView={setSyntaxView}
-          copied={copied}
-          handleCopy={handleCopy}
-          activeSnippet={activeSnippet}
+          selectedPack={selectedPack}
         />
-      </div>
-    </div>
+      }
+    />
   )
 }

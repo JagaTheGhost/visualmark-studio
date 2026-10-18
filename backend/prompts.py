@@ -192,7 +192,7 @@ def fetch_github_repo_metadata(repo_url: str, custom_token: str = None) -> dict:
 
     headers = {
         "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "VisualMark-Studio-Engine/1.1.1",
+        "User-Agent": "VisualMark-Studio-Engine/1.1.2",
     }
     token = custom_token or os.environ.get("GITHUB_TOKEN")
     if token:

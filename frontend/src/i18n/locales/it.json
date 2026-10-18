@@ -1,0 +1,88 @@
+{
+  "app": {
+    "title": "VisualMark Studio",
+    "subtitle": "Editor Markdown Professionale, Visualizzatore di Architettura e Studio di Documentazione",
+    "version": "v1.1.2"
+  },
+  "menu": {
+    "file": "File",
+    "edit": "Modifica",
+    "selection": "Selezione",
+    "view": "Visualizza",
+    "go": "Vai",
+    "run": "Esegui",
+    "diagnostics": "Diagnostica",
+    "help": "Aiuto",
+    "newFile": "Nuovo File",
+    "openFile": "Apri File...",
+    "openFolder": "Apri Cartella...",
+    "cloneRepo": "Clona Repository...",
+    "save": "Salva",
+    "saveAs": "Salva come...",
+    "closeTab": "Chiudi Scheda",
+    "closeAll": "Chiudi Tutte le Schede",
+    "exit": "Esci"
+  },
+  "tabs": {
+    "studios": "Studi",
+    "docs": "Documenti",
+    "untitled": "Senza titolo",
+    "close": "Chiudi",
+    "closeOthers": "Chiudi Altre Schede",
+    "closeToRight": "Chiudi Schede a Destra",
+    "pin": "Fissa Scheda",
+    "unpin": "Sblocca Scheda"
+  },
+  "studios": {
+    "badges": "Badge Shields.io",
+    "repocard": "Scheda GitHub Repo",
+    "diagrams": "Diagrammi Mermaid",
+    "tables": "Progettazione Tabelle",
+    "snippets": "Codice ed Evidenziazioni",
+    "images": "Immagini e Banner",
+    "tree": "Albero Directory",
+    "api": "API ed Endpoint",
+    "audit": "Verifica Integrità Documenti",
+    "contributors": "Collaboratori",
+    "changelog": "Studio Registro Modifiche",
+    "icons": "Icone ed Emoji",
+    "i18n": "Multilingua e i18n"
+  },
+  "sidebar": {
+    "explorer": "Esplora risorse",
+    "sourceControl": "Controllo del codice sorgente",
+    "studios": "Strumenti di Studio",
+    "settings": "Impostazioni",
+    "outline": "Struttura documento",
+    "search": "Cerca nell'area di lavoro",
+    "allStudios": "Tutti gli Studi",
+    "architecture": "Architettura",
+    "visualDesign": "Design Visivo",
+    "documentation": "Documentazione",
+    "community": "Community e Qualità"
+  },
+  "statusBar": {
+    "lines": "Lin",
+    "cols": "Col",
+    "words": "parole",
+    "chars": "caratteri",
+    "saved": "Salvato",
+    "unsaved": "Modifiche non salvate",
+    "readTime": "min lettura",
+    "noRepo": "Nessun repository",
+    "feedback": "Feedback",
+    "logs": "Output e Registri"
+  },
+  "settings": {
+    "title": "Impostazioni",
+    "language": "Lingua dell'Applicazione",
+    "languageDesc": "Seleziona la lingua di visualizzazione dell'interfaccia per VisualMark Studio.",
+    "appearance": "Aspetto e Finestra",
+    "theme": "Tema",
+    "fontSize": "Dimensione del Carattere",
+    "wordWrap": "A capo automatico",
+    "lineNumbers": "Numeri di riga",
+    "tabGrouping": "Raggruppamento Schede",
+    "tabGroupingDesc": "Raggruppa automaticamente le schede di studi e documenti in categorie comprimibili."
+  }
+}

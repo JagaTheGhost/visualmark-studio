@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
-import { useStudioSplit } from '../../utils/useResizableSplit'
+import StudioShell from './common/StudioShell'
+import '../../styles/studios/extendedStudios.css'
 import {
   EMOJI_CATEGORIES,
   HEADING_PRESETS,
@@ -19,19 +20,20 @@ const VECTOR_COLOR_SWATCHES = [
   { label: 'Slate', color: '#94a3b8' }
 ]
 
-// Convert Google ligature name to Iconify kebab-case name
-// e.g. 'bug_report' -> 'bug-report', 'rocket_launch' -> 'rocket-launch', 'check_circle' -> 'check-circle', 'inventory_2' -> 'inventory-2'
 function toIconifyName(iconName) {
   if (!iconName) return ''
   return iconName.replace(/_/g, '-')
 }
 
+const ICON_MODES = [
+  { id: 'vector', label: 'Material Vector Icons', icon: 'palette' },
+  { id: 'emoji', label: 'Developer Emojis', icon: 'sentiment_satisfied' }
+]
+
 export default function IconEmojiStudioTab({
   onInsertEmoji = () => {},
   onBackToReadme = () => {}
 }) {
-  const { formWidth, isDragging, handleMouseDown, handleDoubleClick } = useStudioSplit(520)
-
   // Top-Level Studio Mode: 'vector' (Material Symbols) vs 'emoji' (Developer Emojis)
   const [studioMode, setStudioMode] = useState('vector')
 
@@ -103,7 +105,7 @@ export default function IconEmojiStudioTab({
     }
   }
 
-  // Download SVG Helper (with custom color baked in and sanitized iconify name)
+  // Download SVG Helper
   const handleDownloadSvg = useCallback(async (item) => {
     const iconName = item?.icon || 'icon'
     const iconifyId = toIconifyName(iconName)
@@ -270,385 +272,254 @@ export default function IconEmojiStudioTab({
 
   const selectedIconifyId = selectedItem?.icon ? toIconifyName(selectedItem.icon) : ''
 
-  return (
-    <div className="studio-tab-view select-none">
-      {/* Top Header Bar */}
-      <div className="studio-top-bar">
-        <div className="studio-bar-left">
-          <div
-            className="studio-badge-halo"
+  // Canvas Header Extras: Active Icon Chip, Color Picker, Size Selector, Download Button
+  const canvasHeaderExtras = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+      {/* Active Element Badge */}
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '5px',
+          padding: '2px 8px',
+          borderRadius: '4px',
+          background: 'var(--surface-mid, rgba(255,255,255,0.06))',
+          border: '1px solid var(--border-color)',
+          fontSize: '11px',
+          color: studioMode === 'vector' ? safeHexColor : '#f59e0b',
+          fontWeight: 600
+        }}
+      >
+        {selectedItem?.icon ? (
+          <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>
+            {selectedItem.icon}
+          </span>
+        ) : (
+          <span>{selectedItem?.char}</span>
+        )}
+        <span>{selectedItem?.name}</span>
+      </span>
+
+      {/* Vector Color Swatch indicator */}
+      {studioMode === 'vector' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span
             style={{
-              backgroundColor: studioMode === 'vector' ? 'rgba(56, 189, 248, 0.12)' : 'rgba(234, 179, 8, 0.12)',
-              borderColor: studioMode === 'vector' ? 'rgba(56, 189, 248, 0.3)' : 'rgba(234, 179, 8, 0.3)'
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              backgroundColor: safeHexColor,
+              display: 'inline-block',
+              border: '1px solid rgba(255,255,255,0.3)'
             }}
-          >
-            <span
-              className="material-symbols-outlined"
-              style={{
-                color: studioMode === 'vector' ? '#38bdf8' : '#eab308',
-                fontSize: '20px'
-              }}
-            >
-              {studioMode === 'vector' ? 'palette' : 'sentiment_satisfied'}
-            </span>
-          </div>
-          <div>
-            <div className="studio-title-row">
-              <h2 className="studio-title">Icons & Emoji Studio</h2>
-              <span className="studio-tag">
-                {studioMode === 'vector' ? 'Vector Material Icons' : 'Developer Emojis'}
-              </span>
-            </div>
-            <p className="studio-subtitle">
-              {studioMode === 'vector'
-                ? 'Customize color and insert crisp GitHub-compatible vector icons via <img /> or local SVG.'
-                : 'Browse and insert standard Unicode emojis and shortcodes for headings and lists.'}
-            </p>
-          </div>
+          />
+          <span style={{ fontSize: '10.5px', fontFamily: 'monospace', color: 'var(--text-muted, #94a3b8)' }}>
+            {safeHexColor}
+          </span>
         </div>
+      )}
 
-        <div className="studio-bar-actions">
-          {onBackToReadme && (
+      {/* Vector Size Selector */}
+      {studioMode === 'vector' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '10.5px', color: '#94a3b8' }}>
+          <span>Size:</span>
+          {[16, 20, 24, 32].map((sz) => (
             <button
+              key={sz}
               type="button"
-              className="btn-studio-secondary"
-              onClick={onBackToReadme}
-              title="Return to active markdown document"
+              className={`studio-style-btn ${svgSize === sz ? 'active' : ''}`}
+              onClick={() => setSvgSize(sz)}
+              style={{ padding: '1px 5px', fontSize: '10px' }}
             >
-              <span className="material-symbols-outlined icon-xs">arrow_back</span>
-              <span>Back to Editor</span>
+              {sz}px
             </button>
-          )}
-
-          <button
-            type="button"
-            className="btn-studio-secondary"
-            onClick={() => handleCopy(generatedHeadingSnippet, 'Heading Copied!')}
-            title="Copy decorated heading markdown to clipboard"
-          >
-            <span className="material-symbols-outlined icon-xs">
-              {copyFeedback === 'Heading Copied!' ? 'check' : 'content_copy'}
-            </span>
-            <span>{copyFeedback === 'Heading Copied!' ? 'Copied!' : 'Copy Heading'}</span>
-          </button>
-
-          <button
-            type="button"
-            className="btn-studio-primary"
-            onClick={handleInsertHeading}
-            title="Insert decorated heading into active document"
-          >
-            <span className="material-symbols-outlined icon-xs">add_circle</span>
-            <span>Insert Heading</span>
-          </button>
+          ))}
         </div>
-      </div>
+      )}
 
-      {/* Mode Switcher Nav Bar: Vector Icons vs Developer Emojis */}
-      <div className="emoji-studio-nav-bar">
+      {/* Vector Download SVG Button */}
+      {studioMode === 'vector' && selectedItem?.icon && (
         <button
           type="button"
-          className={`emoji-studio-nav-btn ${studioMode === 'vector' ? 'active' : ''}`}
-          onClick={() => handleSwitchMode('vector')}
+          className="btn-studio-secondary"
+          onClick={() => handleDownloadSvg(selectedItem)}
+          style={{ height: '24px', fontSize: '10.5px', padding: '0 8px' }}
+          title={`Download ${selectedIconifyId}.svg`}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
-            palette
-          </span>
-          <span>Vector Icons (Material Symbols)</span>
-          <span className="emoji-studio-nav-badge">{MATERIAL_ICONS.length}</span>
+          <span className="material-symbols-outlined icon-xs">download</span>
+          <span>Download SVG</span>
         </button>
+      )}
+    </div>
+  )
 
-        <button
-          type="button"
-          className={`emoji-studio-nav-btn ${studioMode === 'emoji' ? 'active' : ''}`}
-          onClick={() => handleSwitchMode('emoji')}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
-            sentiment_satisfied
-          </span>
-          <span>Developer Emojis</span>
-          <span className="emoji-studio-nav-badge">{EMOJI_ITEMS.length}</span>
-        </button>
-      </div>
-
-      {/* Main 2-Column Split Content */}
-      <div className="studio-content-grid">
-        {/* Left Form & Catalog Column */}
-        <div
-          className="studio-form-column custom-scrollbar"
-          style={{ width: `${formWidth}px`, flexShrink: 0 }}
-        >
-          {/* Section 1: Interactive Heading Decorator Tool */}
+  return (
+    <StudioShell
+      studioId="icons.studio"
+      title="Icons & Emoji Studio Pro"
+      subtitle="Customize color and insert crisp GitHub-compatible vector icons via <img /> or universal Unicode developer emojis."
+      icon={studioMode === 'vector' ? 'palette' : 'sentiment_satisfied'}
+      accentColor="#f59e0b"
+      badge={studioMode === 'vector' ? 'Material Symbols SVG' : 'Universal Emojis'}
+      modes={ICON_MODES}
+      activeMode={studioMode}
+      onModeChange={handleSwitchMode}
+      markdownCode={generatedHeadingSnippet}
+      codeLanguage="markdown"
+      onInsert={handleInsertHeading}
+      insertLabel="Insert Heading"
+      onBackToReadme={onBackToReadme}
+      canvasHeaderExtras={canvasHeaderExtras}
+      defaultSplitWidth={520}
+      minSplitWidth={380}
+      maxSplitWidth={880}
+      inspectorContent={
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Section 1: Popular Section Heading Presets */}
           <div className="studio-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span
-                className="studio-section-label"
-                style={{
-                  color: studioMode === 'vector' ? 'var(--secondary, #38bdf8)' : '#eab308',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
-                  title
-                </span>
-                Heading Decorator Tool
-              </span>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                {studioMode === 'vector' ? 'Vector SVG Headings' : 'Emoji Headings'}
-              </span>
-            </div>
-
-            <div className="emoji-studio-heading-box">
-              {/* Presets Chips Rack */}
-              <div>
-                <span
-                  style={{
-                    fontSize: '10.5px',
-                    color: 'var(--text-muted)',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    display: 'block',
-                    marginBottom: '6px'
-                  }}
-                >
-                  Popular Section Presets (1-Click)
-                </span>
-                <div className="emoji-presets-wrap custom-scrollbar">
-                  {HEADING_PRESETS.map((preset) => {
-                    const isCurrent = headingTitle === preset.title
-                    return (
-                      <button
-                        key={preset.title}
-                        type="button"
-                        className={`emoji-preset-pill ${isCurrent ? 'active' : ''}`}
-                        onClick={() => handleSelectPreset(preset)}
-                        title={`Apply preset: ${preset.title}`}
-                      >
-                        {studioMode === 'vector' ? (
-                          <span
-                            className="material-symbols-outlined"
-                            style={{
-                              fontSize: '13px',
-                              color: isCurrent ? safeHexColor : 'var(--text-secondary)'
-                            }}
-                          >
-                            {preset.icon || 'star'}
-                          </span>
-                        ) : (
-                          <span>{preset.emoji}</span>
-                        )}
-                        <span>{preset.title}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Title & Level Config Row */}
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-                <div style={{ width: '90px' }}>
-                  <span className="studio-field-label">Level</span>
-                  <select
-                    className="studio-text-input"
-                    value={headingLevel}
-                    onChange={(e) => setHeadingLevel(e.target.value)}
-                    style={{ height: '32px' }}
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '8px' }}>
+              1 • Popular Section Presets (1-Click)
+            </label>
+            <div className="emoji-presets-wrap custom-scrollbar">
+              {HEADING_PRESETS.map((preset) => {
+                const isCurrent = headingTitle === preset.title
+                return (
+                  <button
+                    key={preset.title}
+                    type="button"
+                    className={`emoji-preset-pill ${isCurrent ? 'active' : ''}`}
+                    onClick={() => handleSelectPreset(preset)}
+                    title={`Apply preset: ${preset.title}`}
                   >
-                    <option value="#">H1 (#)</option>
-                    <option value="##">H2 (##)</option>
-                    <option value="###">H3 (###)</option>
-                    <option value="####">H4 (####)</option>
-                  </select>
-                </div>
-
-                <div style={{ flex: 1 }}>
-                  <span className="studio-field-label">Heading Title</span>
-                  <input
-                    type="text"
-                    className="studio-text-input"
-                    value={headingTitle}
-                    onChange={(e) => setHeadingTitle(e.target.value)}
-                    placeholder="Section title..."
-                    style={{ height: '32px', fontWeight: 600 }}
-                  />
-                </div>
-
-                <div style={{ width: '64px', textAlign: 'center' }}>
-                  <span className="studio-field-label">Active Icon</span>
-                  <div
-                    style={{
-                      height: '32px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: 'var(--surface-base)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: 'var(--radius-xs)',
-                      fontSize: '18px'
-                    }}
-                    title={selectedItem?.name}
-                  >
-                    {studioMode === 'vector' && selectedItem?.icon ? (
+                    {studioMode === 'vector' ? (
                       <span
                         className="material-symbols-outlined"
-                        style={{ fontSize: '20px', color: safeHexColor }}
+                        style={{
+                          fontSize: '13px',
+                          color: isCurrent ? safeHexColor : 'var(--text-secondary)'
+                        }}
                       >
-                        {selectedItem.icon}
+                        {preset.icon || 'star'}
                       </span>
                     ) : (
-                      <span>{selectedItem?.char || '✨'}</span>
+                      <span>{preset.emoji}</span>
                     )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Vector Format Controls (Only in Vector Mode) */}
-              {studioMode === 'vector' ? (
-                <div className="emoji-format-controls">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                      Format:
-                    </span>
-                    <div className="studio-segmented-styles">
-                      <button
-                        type="button"
-                        className={`studio-style-btn ${iconFormat === 'vector-cdn' ? 'active' : ''}`}
-                        onClick={() => setIconFormat('vector-cdn')}
-                        title="Generates a vector SVG image tag via Iconify CDN (renders color on GitHub)"
-                      >
-                        🖼️ Vector SVG (&lt;img&gt;)
-                      </button>
-                      <button
-                        type="button"
-                        className={`studio-style-btn ${iconFormat === 'local-svg' ? 'active' : ''}`}
-                        onClick={() => setIconFormat('local-svg')}
-                        title="Generates local file path: ./assets/icons/icon.svg"
-                      >
-                        📁 Local SVG
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Size Selector */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Size:</span>
-                    {[16, 20, 24, 32].map((size) => (
-                      <button
-                        key={size}
-                        type="button"
-                        className={`studio-style-btn ${svgSize === size ? 'active' : ''}`}
-                        onClick={() => setSvgSize(size)}
-                        style={{ padding: '2px 6px', fontSize: '10px' }}
-                      >
-                        {size}px
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {/* Position & Boilerplate Toggles Row */}
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  paddingTop: '2px'
-                }}
-              >
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button
-                    type="button"
-                    className={`btn-studio-secondary ${headingPosition === 'prefix' ? 'active' : ''}`}
-                    onClick={() => setHeadingPosition('prefix')}
-                    style={{
-                      height: '24px',
-                      fontSize: '11px',
-                      borderColor: headingPosition === 'prefix' ? 'var(--primary)' : undefined,
-                      backgroundColor: headingPosition === 'prefix' ? 'var(--surface-high)' : undefined
-                    }}
-                  >
-                    Prefix: Icon Title
+                    <span>{preset.title}</span>
                   </button>
-                  <button
-                    type="button"
-                    className={`btn-studio-secondary ${headingPosition === 'suffix' ? 'active' : ''}`}
-                    onClick={() => setHeadingPosition('suffix')}
-                    style={{
-                      height: '24px',
-                      fontSize: '11px',
-                      borderColor: headingPosition === 'suffix' ? 'var(--primary)' : undefined,
-                      backgroundColor: headingPosition === 'suffix' ? 'var(--surface-high)' : undefined
-                    }}
-                  >
-                    Suffix: Title Icon
-                  </button>
-                </div>
-
-                <label
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '11.5px',
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={includeBoilerplate}
-                    onChange={(e) => setIncludeBoilerplate(e.target.checked)}
-                    style={{ cursor: 'pointer' }}
-                  />
-                  <span>Include starter template</span>
-                </label>
-              </div>
+                )
+              })}
             </div>
           </div>
 
-          {/* Section 2: Vector Color Modification Toolbar (Exclusive to Vector Mode) */}
-          {studioMode === 'vector' && (
-            <div className="studio-section" style={{ marginTop: '14px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '6px'
-                }}
-              >
-                <span
-                  className="studio-section-label"
-                  style={{
-                    color: 'var(--secondary, #38bdf8)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
+          {/* Section 2: Heading Customizer */}
+          <div className="studio-section">
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '8px' }}>
+              2 • Heading Title & Position Options
+            </label>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+              <div style={{ width: '90px' }}>
+                <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Level</span>
+                <select
+                  className="studio-text-input"
+                  value={headingLevel}
+                  onChange={(e) => setHeadingLevel(e.target.value)}
+                  style={{ height: '30px', fontSize: '11.5px' }}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
-                    colorize
-                  </span>
-                  Icon Color Modification
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '11px',
-                    color: safeHexColor,
-                    fontWeight: 600
-                  }}
-                >
-                  {safeHexColor}
-                </span>
+                  <option value="#">H1 (#)</option>
+                  <option value="##">H2 (##)</option>
+                  <option value="###">H3 (###)</option>
+                  <option value="####">H4 (####)</option>
+                </select>
               </div>
 
+              <div style={{ flex: 1 }}>
+                <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Heading Title</span>
+                <input
+                  type="text"
+                  className="studio-text-input"
+                  value={headingTitle}
+                  onChange={(e) => setHeadingTitle(e.target.value)}
+                  placeholder="Section title..."
+                  style={{ height: '30px', fontWeight: 600, fontSize: '11.5px' }}
+                />
+              </div>
+
+              <div style={{ width: '40px', textAlign: 'center' }}>
+                <div
+                  style={{
+                    height: '30px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'var(--surface-base)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '4px',
+                    fontSize: '16px'
+                  }}
+                  title={selectedItem?.name}
+                >
+                  {studioMode === 'vector' && selectedItem?.icon ? (
+                    <span
+                      className="material-symbols-outlined"
+                      style={{ fontSize: '18px', color: safeHexColor }}
+                    >
+                      {selectedItem.icon}
+                    </span>
+                  ) : (
+                    <span>{selectedItem?.char || '✨'}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  type="button"
+                  className={`btn-studio-secondary ${headingPosition === 'prefix' ? 'active' : ''}`}
+                  onClick={() => setHeadingPosition('prefix')}
+                  style={{
+                    height: '24px',
+                    fontSize: '10.5px',
+                    borderColor: headingPosition === 'prefix' ? 'var(--primary)' : undefined,
+                    backgroundColor: headingPosition === 'prefix' ? 'var(--surface-high)' : undefined
+                  }}
+                >
+                  Prefix: Icon Title
+                </button>
+                <button
+                  type="button"
+                  className={`btn-studio-secondary ${headingPosition === 'suffix' ? 'active' : ''}`}
+                  onClick={() => setHeadingPosition('suffix')}
+                  style={{
+                    height: '24px',
+                    fontSize: '10.5px',
+                    borderColor: headingPosition === 'suffix' ? 'var(--primary)' : undefined,
+                    backgroundColor: headingPosition === 'suffix' ? 'var(--surface-high)' : undefined
+                  }}
+                >
+                  Suffix: Title Icon
+                </button>
+              </div>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#cbd5e1', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={includeBoilerplate}
+                  onChange={(e) => setIncludeBoilerplate(e.target.checked)}
+                />
+                <span>Include starter template</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Section 3: Vector Color Modification Toolbar */}
+          {studioMode === 'vector' && (
+            <div className="studio-section">
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '8px' }}>
+                3 • Icon Color Modification
+              </label>
               <div className="vector-color-toolbar">
-                {/* Preset Color Swatches */}
                 <div className="vector-color-swatches">
                   {VECTOR_COLOR_SWATCHES.map((swatch) => {
                     const isSelected = safeHexColor.toLowerCase() === swatch.color.toLowerCase()
@@ -673,7 +544,6 @@ export default function IconEmojiStudioTab({
                   })}
                 </div>
 
-                {/* Custom Color Input & Native Picker */}
                 <div className="vector-color-custom-input">
                   <input
                     type="color"
@@ -700,7 +570,6 @@ export default function IconEmojiStudioTab({
                   />
                 </div>
 
-                {/* Catalog Tint Toggle */}
                 <label
                   style={{
                     display: 'flex',
@@ -710,7 +579,7 @@ export default function IconEmojiStudioTab({
                     color: 'var(--text-secondary)',
                     cursor: 'pointer',
                     width: '100%',
-                    paddingTop: '4px',
+                    paddingTop: '6px',
                     borderTop: '1px solid var(--border-color)'
                   }}
                 >
@@ -718,34 +587,22 @@ export default function IconEmojiStudioTab({
                     type="checkbox"
                     checked={tintCatalogGrid}
                     onChange={(e) => setTintCatalogGrid(e.target.checked)}
-                    style={{ cursor: 'pointer' }}
                   />
-                  <span>Tint catalog icons with selected color</span>
+                  <span>Tint catalog grid with active color</span>
                 </label>
               </div>
             </div>
           )}
 
-          {/* Section 3: Search & Category Navigation */}
-          <div className="studio-section" style={{ marginTop: studioMode === 'vector' ? '10px' : '14px' }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '8px'
-              }}
-            >
-              <span className="studio-section-label">
-                {studioMode === 'vector' ? 'Material Icons Catalog' : 'Developer Emojis Catalog'}
-              </span>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                {filteredItems.length} available
-              </span>
+          {/* Section 4: Search & Interactive Catalog Grid */}
+          <div className="studio-section">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', margin: 0 }}>
+                {studioMode === 'vector' ? '4 • Material Icons Catalog' : '3 • Developer Emojis Catalog'} ({filteredItems.length})
+              </label>
             </div>
 
-            {/* Search Input Bar */}
-            <div style={{ position: 'relative', marginBottom: studioMode === 'emoji' ? '10px' : '6px' }}>
+            <div style={{ position: 'relative', marginBottom: '8px' }}>
               <span
                 className="material-symbols-outlined"
                 style={{
@@ -772,7 +629,9 @@ export default function IconEmojiStudioTab({
                 style={{
                   paddingLeft: '32px',
                   paddingRight: searchQuery ? '30px' : '10px',
-                  height: '34px'
+                  height: '32px',
+                  fontSize: '11.5px',
+                  width: '100%'
                 }}
               />
               {searchQuery && (
@@ -796,9 +655,9 @@ export default function IconEmojiStudioTab({
               )}
             </div>
 
-            {/* Emoji Category Filter Pills (Only in Emoji Mode) */}
+            {/* Emoji Category Filter Pills */}
             {studioMode === 'emoji' && (
-              <div className="studio-chips-rack custom-scrollbar" style={{ paddingBottom: '6px' }}>
+              <div className="studio-chips-rack custom-scrollbar" style={{ paddingBottom: '6px', marginBottom: '8px' }}>
                 {EMOJI_CATEGORIES.map((cat) => (
                   <button
                     key={cat.id}
@@ -806,7 +665,7 @@ export default function IconEmojiStudioTab({
                     className={`studio-chip-btn ${activeEmojiCategory === cat.id ? 'active' : ''}`}
                     onClick={() => setActiveEmojiCategory(cat.id)}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>
                       {cat.icon}
                     </span>
                     <span>{cat.label}</span>
@@ -814,11 +673,9 @@ export default function IconEmojiStudioTab({
                 ))}
               </div>
             )}
-          </div>
 
-          {/* Section 4: Interactive Grid Catalog */}
-          <div className="studio-section" style={{ marginTop: '4px' }}>
-            <div className="emoji-catalog-grid custom-scrollbar">
+            {/* Interactive Grid Catalog */}
+            <div className="emoji-catalog-grid custom-scrollbar" style={{ maxHeight: '340px' }}>
               {filteredItems.map((item) => {
                 const isSelected =
                   selectedItem &&
@@ -860,25 +717,19 @@ export default function IconEmojiStudioTab({
                 <div
                   style={{
                     gridColumn: '1 / -1',
-                    padding: '32px 16px',
+                    padding: '24px 16px',
                     textAlign: 'center',
                     color: 'var(--text-muted)'
                   }}
                 >
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ fontSize: '36px', opacity: 0.5, display: 'block', marginBottom: '8px' }}
-                  >
-                    search_off
-                  </span>
-                  <p style={{ margin: 0, fontSize: '13px' }}>
+                  <p style={{ margin: 0, fontSize: '12px' }}>
                     No {studioMode === 'vector' ? 'vector icons' : 'emojis'} match "{searchQuery}"
                   </p>
                   <button
                     type="button"
                     className="btn-studio-secondary"
                     onClick={() => setSearchQuery('')}
-                    style={{ marginTop: '12px' }}
+                    style={{ marginTop: '8px', fontSize: '11px', height: '24px' }}
                   >
                     Reset Search
                   </button>
@@ -887,26 +738,22 @@ export default function IconEmojiStudioTab({
             </div>
           </div>
         </div>
-
-        {/* Resizer Splitter Handle */}
-        <div
-          className={`studio-resizer-handle ${isDragging ? 'is-dragging' : ''}`}
-          onMouseDown={handleMouseDown}
-          onDoubleClick={handleDoubleClick}
-          title="Drag to resize form and preview sections • Double-click to reset"
-        />
-
-        {/* Right Preview & Inspector Column */}
-        <div className="studio-preview-column custom-scrollbar" style={{ flex: 1, minWidth: 0 }}>
-          {/* Item Inspector Card */}
-          <div className="studio-card">
-            <div className="studio-card-header">
-              <span className="studio-card-title">Selected Element Inspector</span>
-              <span className="studio-card-tag">
-                {studioMode === 'vector' ? 'MATERIAL VECTOR' : 'DEVELOPER EMOJI'}
-              </span>
-            </div>
-
+      }
+      canvasContent={
+        <div style={{ width: '100%', maxWidth: '820px', padding: '24px', boxSizing: 'border-box' }}>
+          <div
+            className="emoji-stage-preview-card"
+            style={{
+              backgroundColor: 'var(--surface-base, #1e1e1e)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              padding: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}
+          >
+            {/* Inspector Showcase */}
             <div className="emoji-inspector-showcase">
               <div className="emoji-showcase-avatar">
                 {selectedItem?.icon ? (
@@ -941,10 +788,9 @@ export default function IconEmojiStudioTab({
               </div>
             </div>
 
-            {/* Quick Action Buttons Grid */}
-            <div className="emoji-action-buttons-grid" style={{ marginTop: '10px' }}>
-              {/* Vector Mode Specific Actions */}
-              {selectedItem?.icon && (
+            {/* Quick Actions Buttons */}
+            <div className="emoji-action-buttons-grid">
+              {selectedItem?.icon ? (
                 <>
                   <button
                     type="button"
@@ -953,17 +799,7 @@ export default function IconEmojiStudioTab({
                     title="Insert crisp Vector SVG <img /> markdown tag"
                   >
                     <span className="material-symbols-outlined icon-xs">image</span>
-                    <span>Insert Vector SVG (&lt;img&gt;)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn-studio-secondary"
-                    onClick={() => handleDownloadSvg(selectedItem)}
-                    title={`Download ${selectedIconifyId}.svg with ${safeHexColor} color baked in`}
-                  >
-                    <span className="material-symbols-outlined icon-xs">download</span>
-                    <span>Download {selectedIconifyId}.svg</span>
+                    <span>Insert &lt;img&gt; Tag</span>
                   </button>
 
                   <button
@@ -972,69 +808,44 @@ export default function IconEmojiStudioTab({
                     onClick={() => handleCopy(activeIconMarkdown, 'Tag Copied!')}
                     title="Copy vector <img /> markdown tag"
                   >
-                    <span className="material-symbols-outlined icon-xs">
-                      {copyFeedback === 'Tag Copied!' ? 'check' : 'content_copy'}
-                    </span>
+                    <span className="material-symbols-outlined icon-xs">content_copy</span>
                     <span>Copy &lt;img&gt; Tag</span>
                   </button>
-
-                  <button
-                    type="button"
-                    className="btn-studio-secondary"
-                    onClick={() =>
-                      handleCopy(
-                        `<span class="material-symbols-outlined">${selectedItem.icon}</span>`,
-                        'HTML Copied!'
-                      )
-                    }
-                    title="Copy HTML Material Symbol tag"
-                  >
-                    <span className="material-symbols-outlined icon-xs">html</span>
-                    <span>Copy HTML Tag</span>
-                  </button>
                 </>
-              )}
-
-              {/* Emoji Mode Specific Actions */}
-              {selectedItem?.char && !selectedItem?.icon && (
+              ) : (
                 <>
                   <button
                     type="button"
                     className="btn-studio-secondary"
-                    onClick={() => handleInsertRaw(selectedItem.char)}
-                    title={`Insert universal emoji (${selectedItem.char})`}
+                    onClick={() => handleInsertRaw(selectedItem?.char || '✨')}
+                    title={`Insert universal emoji (${selectedItem?.char})`}
                   >
                     <span className="material-symbols-outlined icon-xs">add</span>
-                    <span>Insert Emoji ({selectedItem.char})</span>
+                    <span>Insert Emoji ({selectedItem?.char})</span>
                   </button>
 
                   <button
                     type="button"
                     className="btn-studio-secondary"
-                    onClick={() => handleCopy(selectedItem.char, 'Character Copied!')}
+                    onClick={() => handleCopy(selectedItem?.char || '✨', 'Character Copied!')}
                     title="Copy character to clipboard"
                   >
-                    <span className="material-symbols-outlined icon-xs">
-                      {copyFeedback === 'Character Copied!' ? 'check' : 'content_copy'}
-                    </span>
+                    <span className="material-symbols-outlined icon-xs">content_copy</span>
                     <span>Copy Character</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn-studio-secondary"
-                    onClick={() => handleCopy(selectedItem.shortcode, 'Shortcode Copied!')}
-                    title="Copy markdown shortcode"
-                  >
-                    <span className="material-symbols-outlined icon-xs">
-                      {copyFeedback === 'Shortcode Copied!' ? 'check' : 'content_copy'}
-                    </span>
-                    <span>Copy Shortcode</span>
                   </button>
                 </>
               )}
 
-              {/* Shared Insert as Heading */}
+              <button
+                type="button"
+                className="btn-studio-secondary"
+                onClick={() => handleInsertRaw(`- ${activeIconMarkdown} **${selectedItem?.name}**: `)}
+                title="Insert as a markdown bullet list item"
+              >
+                <span className="material-symbols-outlined icon-xs">format_list_bulleted</span>
+                <span>Insert as Bullet Item</span>
+              </button>
+
               <button
                 type="button"
                 className="btn-studio-secondary"
@@ -1042,33 +853,11 @@ export default function IconEmojiStudioTab({
                 title="Insert formatted heading with this icon"
               >
                 <span className="material-symbols-outlined icon-xs">title</span>
-                <span>Insert as Heading</span>
-              </button>
-
-              {/* Shared Insert as Bullet Item */}
-              <button
-                type="button"
-                className="btn-studio-secondary"
-                onClick={() =>
-                  handleInsertRaw(`- ${activeIconMarkdown} **${selectedItem?.name}**: `)
-                }
-                title="Insert as a markdown bullet list item"
-              >
-                <span className="material-symbols-outlined icon-xs">format_list_bulleted</span>
-                <span>Insert Bullet Item</span>
+                <span>Insert Heading</span>
               </button>
             </div>
-          </div>
 
-          {/* Live Markdown Heading Preview */}
-          <div className="studio-card">
-            <div className="studio-card-header">
-              <span className="studio-card-title">Live Markdown Heading Preview</span>
-              <span className="studio-card-tag">
-                {studioMode === 'vector' ? 'Vector SVG Render' : 'Emoji Render'}
-              </span>
-            </div>
-
+            {/* Live Rendered Heading Box */}
             <div className="emoji-preview-markdown-box">
               <div className="emoji-preview-heading-rendered">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1112,7 +901,7 @@ export default function IconEmojiStudioTab({
                           ? '15px'
                           : '13px',
                       fontWeight: 700,
-                      color: 'var(--text-primary)'
+                      color: 'inherit'
                     }}
                   >
                     {headingTitle || 'Section Title'}
@@ -1150,69 +939,35 @@ export default function IconEmojiStudioTab({
               </div>
 
               {includeBoilerplate && (
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                   <p style={{ margin: 0 }}>
                     Sample starter documentation template is enabled and ready to be inserted.
                   </p>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Generated Code Block */}
-          <div className="studio-card">
-            <div className="studio-card-header">
-              <span className="studio-card-title">Generated Markdown Code</span>
-              <button
-                type="button"
-                className="snippet-copy-btn"
-                onClick={() => handleCopy(generatedHeadingSnippet, 'Markdown Copied!')}
-              >
-                <span className="material-symbols-outlined icon-xs">
-                  {copyFeedback === 'Markdown Copied!' ? 'check' : 'content_copy'}
-                </span>
-                <span>{copyFeedback === 'Markdown Copied!' ? 'Copied' : 'Copy'}</span>
-              </button>
-            </div>
-            <pre className="studio-code-block custom-scrollbar" style={{ maxHeight: '160px' }}>
-              <code>{generatedHeadingSnippet}</code>
-            </pre>
-          </div>
-
-          {/* Platform Capability Note */}
-          <div className="emoji-autocomplete-banner">
-            <span
-              className="material-symbols-outlined"
-              style={{ color: 'var(--secondary, #38bdf8)', fontSize: '18px' }}
-            >
-              verified
-            </span>
-            <div>
-              <strong style={{ color: 'var(--text-primary)' }}>
-                {studioMode === 'vector' ? 'GitHub Vector Compatible:' : 'Universal UTF-8 Support:'}
-              </strong>{' '}
-              {studioMode === 'vector' ? (
-                <>
-                  Using{' '}
-                  <code
-                    style={{
-                      color: 'var(--secondary)',
-                      background: 'var(--surface-base)',
-                      padding: '1px 5px',
-                      borderRadius: '3px'
-                    }}
-                  >
-                    &lt;img /&gt;
-                  </code>{' '}
-                  with color tags renders crisp vector icons on GitHub, GitLab, and web previews in your chosen theme color.
-                </>
-              ) : (
-                'Standard emojis render universally on all operating systems, markdown viewports, and terminals.'
-              )}
+            {/* Platform Compatibility Banner */}
+            <div className="emoji-autocomplete-banner">
+              <span className="material-symbols-outlined" style={{ color: '#38bdf8', fontSize: '18px' }}>
+                verified
+              </span>
+              <div>
+                <strong style={{ color: 'inherit' }}>
+                  {studioMode === 'vector' ? 'GitHub Vector Compatible:' : 'Universal UTF-8 Support:'}
+                </strong>{' '}
+                {studioMode === 'vector' ? (
+                  <>
+                    Using <code>&lt;img /&gt;</code> with color parameters renders crisp vector icons on GitHub, GitLab, and web previews in your chosen theme color.
+                  </>
+                ) : (
+                  'Standard emojis render universally on all operating systems, markdown viewports, and terminals.'
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      }
+    />
   )
 }

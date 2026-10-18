@@ -1,4 +1,5 @@
 import os
+import sys
 import math
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
@@ -7,6 +8,22 @@ def create_installer_bitmaps():
     electron_assets_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'electron', 'assets')
     os.makedirs(build_dir, exist_ok=True)
     os.makedirs(electron_assets_dir, exist_ok=True)
+
+    force = '--force' in sys.argv
+    existing_custom = [
+        os.path.join(electron_assets_dir, 'installerSidebar.bmp'),
+        os.path.join(electron_assets_dir, 'installerHeader.bmp')
+    ]
+    if not force and all(os.path.exists(p) for p in existing_custom):
+        print("Custom installer bitmaps already exist in frontend/electron/assets. Skipping generation (pass --force to overwrite).")
+        # Ensure build directory is synced with electron/assets
+        import shutil
+        for fname in ['installerSidebar.bmp', 'uninstallerSidebar.bmp', 'installerHeader.bmp']:
+            src = os.path.join(electron_assets_dir, fname)
+            dst = os.path.join(build_dir, fname)
+            if os.path.exists(src):
+                shutil.copy2(src, dst)
+        return
     
     icon_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'public', 'icon.png')
     
@@ -113,7 +130,7 @@ def create_installer_bitmaps():
     draw_side.line([(16, 288), (w_side - 16, 288)], fill=(30, 41, 59), width=1)
     
     # Footer
-    foot = "v1.1.1 Desktop"
+    foot = "v1.1.2 Desktop"
     tb_f = draw_side.textbbox((0, 0), foot, font=font_foot)
     draw_side.text(((w_side - (tb_f[2] - tb_f[0])) // 2, 294), foot, fill=(100, 116, 139), font=font_foot)
 

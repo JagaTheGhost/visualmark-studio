@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react'
-import { useStudioSplit } from '../../utils/useResizableSplit'
+import StudioShell from './common/StudioShell'
+import '../../styles/studios/snippetStudio.css'
 
 const SNIPPET_CATEGORIES = [
   { id: 'callouts', label: 'GitHub Alerts & Callouts', icon: 'campaign', desc: 'Official GFM alerts (Note, Tip, Warning, Caution)' },
-  { id: 'multipm', label: 'Multi-PM & CLI Sync', icon: 'sync', desc: 'npm, pnpm, yarn, bun, pip, poetry, cargo commands' },
+  { id: 'multipm', label: 'Multi-PM & CLI Sync', icon: 'sync', desc: 'npm, pnpm, yarn, bun, pip, poetry, uv, cargo commands' },
   { id: 'terminal', label: 'macOS CLI Window', icon: 'terminal', desc: 'Framed terminal window mockup with window controls' },
   { id: 'codeblock', label: 'Code & Diff Blocks', icon: 'code_blocks', desc: 'Language syntax blocks and migration git diffs' },
   { id: 'accordion', label: 'FAQ & Accordion List', icon: 'unfold_more', desc: 'Multi-item collapsible drawer sections' },
@@ -77,13 +78,20 @@ const CODE_LANGUAGES = [
   'bash', 'python', 'javascript', 'typescript', 'yaml', 'dockerfile', 'json', 'sql', 'rust', 'go', 'diff', 'html', 'css'
 ]
 
+const AVAILABLE_LICENSES = [
+  'MIT', 'Apache-2.0', 'GPL-3.0', 'BSD-3-Clause', 'MPL-2.0', 'Unlicense'
+]
+
+/**
+ * Code & Callouts Studio Pro
+ * High-density GFM markdown components: GitHub alerts, multi-package managers,
+ * macOS terminal mockups, code & diff blocks, FAQ accordions, and environment configs.
+ */
 export default function SnippetStudioTab({
   onInsertSnippet,
   onBackToReadme
 }) {
   const [activeCategory, setActiveCategory] = useState('callouts')
-  const [copied, setCopied] = useState(false)
-  const { formWidth, isDragging, handleMouseDown, handleDoubleClick } = useStudioSplit(520)
 
   // 1. Callouts State
   const [selectedCallout, setSelectedCallout] = useState('NOTE')
@@ -92,21 +100,21 @@ export default function SnippetStudioTab({
 
   // 2. Multi-Package Manager State
   const [pmAction, setPmAction] = useState('install') // 'install' | 'run' | 'create'
-  const [pmPackage, setPmPackage] = useState('auto-readme-generator')
+  const [pmPackage, setPmPackage] = useState('visualmark-studio')
   const [pmFormat, setPmFormat] = useState('collapsible') // 'collapsible' | 'stacked' | 'unified'
   const [activePmPreviewTab, setActivePmPreviewTab] = useState('npm')
 
   // 3. macOS Terminal State
   const [termTitle, setTermTitle] = useState('zsh — 80×24')
   const [termShell, setTermShell] = useState('$')
-  const [termCmd, setTermCmd] = useState('curl -fsSL https://get.readme.dev/install.sh | bash')
-  const [termOutput, setTermOutput] = useState('✓ Fetching latest studio bundle... Done\n✓ Verifying cryptographic SHA256 checksum\n🚀 Successfully installed to /usr/local/bin/readme-studio')
+  const [termCmd, setTermCmd] = useState('curl -fsSL https://get.visualmark.dev/install.sh | bash')
+  const [termOutput, setTermOutput] = useState('✓ Fetching latest studio bundle... Done\n✓ Verifying cryptographic SHA256 checksum\n🚀 Successfully installed to /usr/local/bin/visualmark')
 
   // 4. Code & Diff Blocks State
   const [codeBlockMode, setCodeBlockMode] = useState('standard') // 'standard' | 'diff'
   const [codeLang, setCodeLang] = useState('bash')
   const [codeTitle, setCodeTitle] = useState('Installation & Setup')
-  const [codeContent, setCodeContent] = useState(`# Clone the repository\ngit clone https://github.com/owner/project.git\ncd project\n\n# Install backend & frontend dependencies\npip install -r requirements.txt\nnpm --prefix frontend install\n\n# Start both local development servers\npython backend/main.py &\nnpm --prefix frontend run dev`)
+  const [codeContent, setCodeContent] = useState(`# Clone the repository\ngit clone https://github.com/owner/project.git\ncd project\n\n# Install backend & frontend dependencies\npip install -r requirements.txt\nnpm --prefix frontend install\n\n# Start development servers\npython backend/main.py &\nnpm --prefix frontend run dev`)
   const [diffContent, setDiffContent] = useState(`// API Client v1 to v2 Migration Guide\n- const client = new LegacyReadmeClient({ token: 'abc' });\n- const res = await client.generateMarkdown();\n+ const client = new ModernStudioClient({ apiKey: 'key_live_123' });\n+ const res = await client.streamReadme({\n+   template: 'modern-saas',\n+   badgeEngine: 'native-svg'\n+ });`)
 
   // 5. Accordion & FAQ State
@@ -114,12 +122,12 @@ export default function SnippetStudioTab({
   const [faqItems, setFaqItems] = useState([
     {
       id: '1',
-      summary: 'Is this studio 100% free and open-source?',
-      details: 'Yes! The entire studio engine is released under the permissive MIT license. You can self-host, customize, or contribute to it on GitHub.'
+      summary: 'Is VisualMark Studio 100% free and open-source?',
+      details: 'Yes! The entire studio suite is released under the permissive MIT license. You can self-host, customize, or contribute to it on GitHub.'
     },
     {
       id: '2',
-      summary: 'How do the Native Vector SVG badges prevent rate limits?',
+      summary: 'How do the Native Vector SVG cards avoid GitHub rate limits?',
       details: 'Native cards are generated client-side with pure SVG vector graphics and self-hosted in your repository assets/ folder, avoiding external serverless API quotas entirely.'
     },
     {
@@ -144,7 +152,7 @@ export default function SnippetStudioTab({
     { keys: ['Ctrl', 'Shift', 'P'], desc: 'Open Command Palette' },
     { keys: ['Ctrl', 'S'], desc: 'Save active README document' },
     { keys: ['⌘', 'K'], desc: 'Global Spotlight Search' },
-    { keys: ['Ctrl', 'Enter'], desc: 'Create Documentation Suite' }
+    { keys: ['Ctrl', 'Enter'], desc: 'Insert Studio Component' }
   ])
 
   // 8. License State
@@ -245,17 +253,12 @@ export default function SnippetStudioTab({
   ])
 
   // Handlers
-  const handleCopy = () => {
-    navigator.clipboard.writeText(generatedSnippet)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   const handleInsert = () => {
-    onInsertSnippet(generatedSnippet)
+    if (typeof onInsertSnippet === 'function') {
+      onInsertSnippet(generatedSnippet)
+    }
   }
 
-  // Preset Applicator for Callouts
   const handleApplyCalloutPreset = (preset) => {
     setSelectedCallout(preset.severity)
     setCalloutTitle(preset.title)
@@ -300,70 +303,122 @@ export default function SnippetStudioTab({
     setEnvVars(envVars.filter((_, i) => i !== index))
   }
 
+  // Active Category Meta
+  const activeCatMeta = SNIPPET_CATEGORIES.find((c) => c.id === activeCategory) || SNIPPET_CATEGORIES[0]
+
+  // Canvas Header Extras
+  const canvasHeaderExtras = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <span className="canvas-header-divider" />
+      <span className="canvas-mode-tag" style={{ color: '#f59e0b', borderColor: 'rgba(245, 158, 11, 0.3)', backgroundColor: 'rgba(245, 158, 11, 0.1)' }}>
+        {activeCatMeta.label.toUpperCase()}
+      </span>
+
+      {/* Quick Category Action Controls */}
+      {activeCategory === 'multipm' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', backgroundColor: 'rgba(0,0,0,0.25)', padding: '2px', borderRadius: '4px' }}>
+          <button
+            type="button"
+            className={`studio-style-btn ${pmFormat === 'collapsible' ? 'active' : ''}`}
+            onClick={() => setPmFormat('collapsible')}
+            style={{ padding: '2px 6px', fontSize: '10px' }}
+          >
+            Collapsible
+          </button>
+          <button
+            type="button"
+            className={`studio-style-btn ${pmFormat === 'stacked' ? 'active' : ''}`}
+            onClick={() => setPmFormat('stacked')}
+            style={{ padding: '2px 6px', fontSize: '10px' }}
+          >
+            Stacked
+          </button>
+          <button
+            type="button"
+            className={`studio-style-btn ${pmFormat === 'unified' ? 'active' : ''}`}
+            onClick={() => setPmFormat('unified')}
+            style={{ padding: '2px 6px', fontSize: '10px' }}
+          >
+            Matrix
+          </button>
+        </div>
+      )}
+
+      {activeCategory === 'codeblock' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', backgroundColor: 'rgba(0,0,0,0.25)', padding: '2px', borderRadius: '4px' }}>
+          <button
+            type="button"
+            className={`studio-style-btn ${codeBlockMode === 'standard' ? 'active' : ''}`}
+            onClick={() => setCodeBlockMode('standard')}
+            style={{ padding: '2px 6px', fontSize: '10px' }}
+          >
+            Standard Code
+          </button>
+          <button
+            type="button"
+            className={`studio-style-btn ${codeBlockMode === 'diff' ? 'active' : ''}`}
+            onClick={() => setCodeBlockMode('diff')}
+            style={{ padding: '2px 6px', fontSize: '10px' }}
+          >
+            Git Unified Diff
+          </button>
+        </div>
+      )}
+
+      {activeCategory === 'envvars' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', backgroundColor: 'rgba(0,0,0,0.25)', padding: '2px', borderRadius: '4px' }}>
+          <button
+            type="button"
+            className={`studio-style-btn ${envFormat === 'table' ? 'active' : ''}`}
+            onClick={() => setEnvFormat('table')}
+            style={{ padding: '2px 6px', fontSize: '10px' }}
+          >
+            Markdown Table
+          </button>
+          <button
+            type="button"
+            className={`studio-style-btn ${envFormat === 'envfile' ? 'active' : ''}`}
+            onClick={() => setEnvFormat('envfile')}
+            style={{ padding: '2px 6px', fontSize: '10px' }}
+          >
+            .env.example
+          </button>
+        </div>
+      )}
+    </div>
+  )
+
   return (
-    <div className="studio-tab-view select-none">
-      {/* Top Control Bar */}
-      <div className="studio-top-bar">
-        <div className="studio-bar-left">
-          <div className="studio-badge-halo">
-            <span className="material-symbols-outlined text-secondary" style={{ color: '#818cf8' }}>code_blocks</span>
-          </div>
-          <div>
-            <div className="studio-title-row">
-              <h2 className="studio-title">Code & Callouts Studio</h2>
-              <span className="studio-tag" style={{ borderColor: 'rgba(99, 102, 241, 0.4)', color: '#38bdf8' }}>GFM Snippets Suite</span>
-            </div>
-            <p className="studio-subtitle">
-              Build GitHub alerts, multi-package manager CLI switchers, macOS terminal mockups, diffs, and FAQ drawers.
-            </p>
-          </div>
-        </div>
-
-        <div className="studio-bar-actions">
-          {onBackToReadme && (
-            <button
-              type="button"
-              className="btn-studio-secondary"
-              onClick={onBackToReadme}
-              title="Return to active markdown document"
-            >
-              <span className="material-symbols-outlined icon-xs">arrow_back</span>
-              <span>Back to Editor</span>
-            </button>
-          )}
-          <button
-            type="button"
-            className="btn-studio-secondary"
-            onClick={handleCopy}
-          >
-            <span className="material-symbols-outlined icon-xs">
-              {copied ? 'check' : 'content_copy'}
-            </span>
-            <span>{copied ? 'Copied!' : 'Copy Snippet'}</span>
-          </button>
-          <button
-            type="button"
-            className="btn-studio-primary"
-            onClick={handleInsert}
-            title="Insert snippet into an open document"
-          >
-            <span className="material-symbols-outlined icon-xs">add_circle</span>
-            <span>Insert into Document</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Main Studio Body: 2-Column Responsive Layout */}
-      <div className="studio-content-grid">
-        {/* Left Column: Category Navigation & Interactive Configurator */}
-        <div
-          className="studio-form-column custom-scrollbar"
-          style={{ width: `${formWidth}px`, minWidth: `${formWidth}px`, maxWidth: `${formWidth}px`, flex: 'none' }}
-        >
-          {/* Category Tabs */}
+    <StudioShell
+      studioId="snippets.studio"
+      title="Code & Callouts Studio"
+      subtitle="High-density GFM markdown components: GitHub alerts, multi-package managers, terminal mockups, and FAQ accordions"
+      badge="GFM Components Pro"
+      accentColor="#f59e0b"
+      icon={<span className="material-symbols-outlined" style={{ fontSize: '20px' }}>code_blocks</span>}
+      markdownCode={generatedSnippet}
+      codeLanguage="markdown"
+      onInsert={handleInsert}
+      insertLabel="Insert Snippet"
+      onBackToReadme={onBackToReadme}
+      canvasHeaderExtras={canvasHeaderExtras}
+      defaultSplitWidth={520}
+      minSplitWidth={380}
+      maxSplitWidth={880}
+      inspectorContent={
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Section 1: Snippet Component Category Selector */}
           <div className="studio-section">
-            <label className="studio-section-label">Component Category ({SNIPPET_CATEGORIES.length})</label>
-            <div className="studio-category-tabs">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>
+                1 • Component Category ({SNIPPET_CATEGORIES.length})
+              </label>
+              <span style={{ fontSize: '10px', color: '#64748b' }}>
+                {activeCatMeta.label}
+              </span>
+            </div>
+
+            <div className="studio-category-tabs" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
               {SNIPPET_CATEGORIES.map((cat) => (
                 <button
                   key={cat.id}
@@ -371,350 +426,313 @@ export default function SnippetStudioTab({
                   className={`studio-category-tab ${activeCategory === cat.id ? 'active' : ''}`}
                   onClick={() => setActiveCategory(cat.id)}
                   title={cat.desc}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    textAlign: 'left',
+                    fontSize: '11px',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <span className="material-symbols-outlined icon-xs">{cat.icon}</span>
-                  <span>{cat.label}</span>
+                  <span className="material-symbols-outlined icon-xs" style={{ fontSize: '16px' }}>{cat.icon}</span>
+                  <span style={{ fontWeight: 500 }}>{cat.label}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* =========================================================================
-              CATEGORY 1: GITHUB ALERTS & CALLOUTS 2.0
-             ========================================================================= */}
-          {activeCategory === 'callouts' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {/* Severity Buttons */}
-              <div className="studio-section">
-                <label className="studio-section-label">Alert Severity Level</label>
-                <div className="callout-types-grid">
-                  {CALLOUT_TYPES.map((c) => (
-                    <button
-                      key={c.type}
-                      type="button"
-                      className={`callout-type-btn ${selectedCallout === c.type ? 'active' : ''}`}
-                      onClick={() => setSelectedCallout(c.type)}
-                      style={selectedCallout === c.type ? { borderColor: c.color, backgroundColor: `${c.color}15` } : {}}
-                    >
-                      <span className="material-symbols-outlined icon-xs" style={{ color: c.color }}>{c.icon}</span>
-                      <span>{c.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+          {/* Section 2: Active Category Configurator */}
+          <div className="studio-section">
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '10px' }}>
+              2 • Configure {activeCatMeta.label}
+            </label>
 
-              {/* Curated Presets Library */}
-              <div className="studio-section">
-                <label className="studio-section-label">Curated Advisory Presets</label>
-                <div className="diagram-preset-list">
-                  {CALLOUT_PRESETS.map((p) => (
-                    <div
-                      key={p.id}
-                      className="diagram-preset-card"
-                      onClick={() => handleApplyCalloutPreset(p)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <div className="preset-card-top">
-                        <span className="preset-card-title">{p.title}</span>
-                        <span className="preset-type-tag" style={{ color: CALLOUT_TYPES.find((c) => c.type === p.severity)?.color }}>
-                          [!{p.severity}]
-                        </span>
+            {/* CATEGORY 1: GITHUB ALERTS & CALLOUTS 2.0 */}
+            {activeCategory === 'callouts' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <span style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '6px' }}>
+                    Alert Severity Level
+                  </span>
+                  <div className="callout-types-grid">
+                    {CALLOUT_TYPES.map((c) => (
+                      <button
+                        key={c.type}
+                        type="button"
+                        className={`callout-type-btn ${selectedCallout === c.type ? 'active' : ''}`}
+                        onClick={() => setSelectedCallout(c.type)}
+                        style={selectedCallout === c.type ? { borderColor: c.color, backgroundColor: `${c.color}15`, color: '#ffffff' } : {}}
+                      >
+                        <span className="material-symbols-outlined icon-xs" style={{ color: c.color }}>{c.icon}</span>
+                        <span>{c.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Presets Library */}
+                <div>
+                  <span style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '6px' }}>
+                    Curated Advisory Presets
+                  </span>
+                  <div className="diagram-preset-list" style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
+                    {CALLOUT_PRESETS.map((p) => (
+                      <div
+                        key={p.id}
+                        className="diagram-preset-card"
+                        onClick={() => handleApplyCalloutPreset(p)}
+                        style={{ cursor: 'pointer', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--surface-base)' }}
+                      >
+                        <div className="preset-card-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span className="preset-card-title" style={{ fontWeight: 600, fontSize: '11.5px', color: '#f1f5f9' }}>{p.title}</span>
+                          <span className="preset-type-tag" style={{ color: CALLOUT_TYPES.find((c) => c.type === p.severity)?.color, fontSize: '10px', fontWeight: 600 }}>
+                            [!{p.severity}]
+                          </span>
+                        </div>
+                        <p className="preset-card-desc" style={{ fontSize: '11px', color: '#94a3b8', margin: '3px 0 0 0' }}>{p.body.slice(0, 85)}...</p>
                       </div>
-                      <p className="preset-card-desc">{p.body.slice(0, 90)}...</p>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Title & Body Inputs */}
-              <div className="studio-section">
+                {/* Inputs */}
                 <div className="studio-field">
-                  <span className="studio-field-label">Header Callout Title (Optional)</span>
+                  <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Header Callout Title (Optional)</span>
                   <input
                     type="text"
                     className="studio-text-input"
                     value={calloutTitle}
                     onChange={(e) => setCalloutTitle(e.target.value)}
                     placeholder="e.g. Prerequisites & Requirements"
+                    style={{ width: '100%', padding: '6px 10px', marginTop: '4px' }}
                   />
                 </div>
-                <div className="studio-field" style={{ marginTop: '8px' }}>
-                  <span className="studio-field-label">Callout Message Content</span>
+                <div className="studio-field">
+                  <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Callout Message Content</span>
                   <textarea
                     className="studio-text-area custom-scrollbar"
                     rows={4}
                     value={calloutText}
                     onChange={(e) => setCalloutText(e.target.value)}
                     placeholder="Enter callout markdown body..."
+                    style={{ width: '100%', padding: '8px 10px', marginTop: '4px', resize: 'vertical' }}
                   />
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* =========================================================================
-              CATEGORY 2: MULTI-PACKAGE MANAGER & CLI SYNC
-             ========================================================================= */}
-          {activeCategory === 'multipm' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className="studio-section">
-                <div className="repocard-fields-grid">
-                  <div className="studio-field">
-                    <span className="studio-field-label">CLI Action</span>
-                    <select
-                      className="studio-select-input"
-                      value={pmAction}
-                      onChange={(e) => setPmAction(e.target.value)}
-                    >
-                      <option value="install">Install Package (npm i, pnpm add, etc.)</option>
-                      <option value="run">Run Script (npm run, bun run, etc.)</option>
-                      <option value="create">Scaffold Project (create-vite, etc.)</option>
-                    </select>
+            {/* CATEGORY 2: MULTI-PACKAGE MANAGER CLI */}
+            {activeCategory === 'multipm' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="studio-field">
+                  <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>CLI Command Action</span>
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                    {['install', 'run', 'create'].map((act) => (
+                      <button
+                        key={act}
+                        type="button"
+                        className={`studio-style-btn ${pmAction === act ? 'active' : ''}`}
+                        onClick={() => setPmAction(act)}
+                        style={{ flex: 1, padding: '6px', fontSize: '11px' }}
+                      >
+                        {act.toUpperCase()}
+                      </button>
+                    ))}
                   </div>
-                  <div className="studio-field">
-                    <span className="studio-field-label">Package / Script Name</span>
-                    <input
-                      type="text"
-                      className="studio-text-input"
-                      value={pmPackage}
-                      onChange={(e) => setPmPackage(e.target.value)}
-                      placeholder="e.g. auto-readme-generator"
-                    />
+                </div>
+
+                <div className="studio-field">
+                  <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Package / Binary Name</span>
+                  <input
+                    type="text"
+                    className="studio-text-input"
+                    value={pmPackage}
+                    onChange={(e) => setPmPackage(e.target.value)}
+                    placeholder="e.g. visualmark-studio"
+                    style={{ width: '100%', padding: '6px 10px', marginTop: '4px' }}
+                  />
+                </div>
+
+                <div className="studio-field">
+                  <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Supported Package Managers Preview</span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                    {PM_OPTIONS.map((pm) => (
+                      <span
+                        key={pm.id}
+                        style={{
+                          fontSize: '10.5px',
+                          padding: '3px 7px',
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid var(--border-color)',
+                          color: '#94a3b8'
+                        }}
+                      >
+                        {pm.label}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
+            )}
 
-              <div className="studio-section">
-                <label className="studio-section-label">Presentation Layout</label>
-                <div className="studio-segmented-styles">
-                  <button
-                    type="button"
-                    className={`studio-style-btn ${pmFormat === 'collapsible' ? 'active' : ''}`}
-                    onClick={() => setPmFormat('collapsible')}
-                  >
-                    📂 Collapsible Tabs (&lt;details&gt;)
-                  </button>
-                  <button
-                    type="button"
-                    className={`studio-style-btn ${pmFormat === 'stacked' ? 'active' : ''}`}
-                    onClick={() => setPmFormat('stacked')}
-                  >
-                    📜 Single Stacked Codeblock
-                  </button>
-                  <button
-                    type="button"
-                    className={`studio-style-btn ${pmFormat === 'table' ? 'active' : ''}`}
-                    onClick={() => setPmFormat('table')}
-                  >
-                    📊 Matrix Comparison Table
-                  </button>
+            {/* CATEGORY 3: MACOS TERMINAL CLI WINDOW */}
+            {activeCategory === 'terminal' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="studio-field">
+                  <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Window Title Bar</span>
+                  <input
+                    type="text"
+                    className="studio-text-input"
+                    value={termTitle}
+                    onChange={(e) => setTermTitle(e.target.value)}
+                    placeholder="zsh — 80×24"
+                    style={{ width: '100%', padding: '6px 10px', marginTop: '4px' }}
+                  />
                 </div>
-              </div>
-            </div>
-          )}
 
-          {/* =========================================================================
-              CATEGORY 3: MACOS CLI TERMINAL WINDOW
-             ========================================================================= */}
-          {activeCategory === 'terminal' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className="studio-section">
-                <div className="repocard-fields-grid">
-                  <div className="studio-field">
-                    <span className="studio-field-label">Window Title</span>
-                    <input
-                      type="text"
-                      className="studio-text-input"
-                      value={termTitle}
-                      onChange={(e) => setTermTitle(e.target.value)}
-                      placeholder="zsh — 80×24"
-                    />
-                  </div>
-                  <div className="studio-field">
-                    <span className="studio-field-label">Shell Prompt Symbol</span>
+                <div className="studio-field">
+                  <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Prompt & Executed Command</span>
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
                     <input
                       type="text"
                       className="studio-text-input"
                       value={termShell}
                       onChange={(e) => setTermShell(e.target.value)}
-                      placeholder="$"
+                      style={{ width: '36px', textAlign: 'center' }}
                     />
-                  </div>
-                </div>
-              </div>
-
-              <div className="studio-section">
-                <div className="studio-field">
-                  <span className="studio-field-label">Input Command</span>
-                  <input
-                    type="text"
-                    className="studio-text-input"
-                    value={termCmd}
-                    onChange={(e) => setTermCmd(e.target.value)}
-                    placeholder="curl -fsSL https://... | bash"
-                  />
-                </div>
-                <div className="studio-field" style={{ marginTop: '8px' }}>
-                  <span className="studio-field-label">Command Output Log</span>
-                  <textarea
-                    className="studio-text-area studio-code-area custom-scrollbar"
-                    rows={5}
-                    value={termOutput}
-                    onChange={(e) => setTermOutput(e.target.value)}
-                    placeholder="Terminal output response..."
-                    spellCheck={false}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* =========================================================================
-              CATEGORY 4: CODE & DIFF BLOCKS
-             ========================================================================= */}
-          {activeCategory === 'codeblock' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className="studio-section">
-                <label className="studio-section-label">Block Subtype</label>
-                <div className="studio-segmented-styles">
-                  <button
-                    type="button"
-                    className={`studio-style-btn ${codeBlockMode === 'standard' ? 'active' : ''}`}
-                    onClick={() => setCodeBlockMode('standard')}
-                  >
-                    💻 Standard Code Block
-                  </button>
-                  <button
-                    type="button"
-                    className={`studio-style-btn ${codeBlockMode === 'diff' ? 'active' : ''}`}
-                    onClick={() => setCodeBlockMode('diff')}
-                  >
-                    🔄 Migration Git Diff Block
-                  </button>
-                </div>
-              </div>
-
-              {codeBlockMode === 'standard' ? (
-                <>
-                  <div className="studio-section">
-                    <div className="repocard-fields-grid">
-                      <div className="studio-field">
-                        <span className="studio-field-label">Section Heading</span>
-                        <input
-                          type="text"
-                          className="studio-text-input"
-                          value={codeTitle}
-                          onChange={(e) => setCodeTitle(e.target.value)}
-                          placeholder="e.g. Installation & Setup"
-                        />
-                      </div>
-                      <div className="studio-field">
-                        <span className="studio-field-label">Syntax Language</span>
-                        <select
-                          className="studio-select-input"
-                          value={codeLang}
-                          onChange={(e) => setCodeLang(e.target.value)}
-                        >
-                          {CODE_LANGUAGES.map((lang) => (
-                            <option key={lang} value={lang}>{lang}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="studio-section">
-                    <label className="studio-section-label">Code Contents</label>
-                    <textarea
-                      className="studio-text-area studio-code-area custom-scrollbar"
-                      rows={8}
-                      value={codeContent}
-                      onChange={(e) => setCodeContent(e.target.value)}
-                      placeholder="Enter source code..."
-                      spellCheck={false}
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="studio-section">
-                    <span className="studio-field-label">Migration Diff Title</span>
                     <input
                       type="text"
                       className="studio-text-input"
-                      value={codeTitle}
-                      onChange={(e) => setCodeTitle(e.target.value)}
-                      placeholder="e.g. v1 to v2 Upgrade Guide"
+                      value={termCmd}
+                      onChange={(e) => setTermCmd(e.target.value)}
+                      style={{ flex: 1, padding: '6px 10px' }}
                     />
                   </div>
+                </div>
 
-                  <div className="studio-section">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <label className="studio-section-label">Diff Code (+ for additions, - for removals)</label>
-                      <span style={{ fontSize: '10px', color: '#10b981' }}>+ Green / - Red</span>
+                <div className="studio-field">
+                  <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Terminal Output Body</span>
+                  <textarea
+                    className="studio-text-area custom-scrollbar"
+                    rows={5}
+                    value={termOutput}
+                    onChange={(e) => setTermOutput(e.target.value)}
+                    placeholder="Output text emitted by command..."
+                    style={{ width: '100%', padding: '8px 10px', marginTop: '4px', fontFamily: 'monospace', fontSize: '11px', resize: 'vertical' }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* CATEGORY 4: CODE & DIFF BLOCKS */}
+            {activeCategory === 'codeblock' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="studio-field">
+                  <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Block Header Title</span>
+                  <input
+                    type="text"
+                    className="studio-text-input"
+                    value={codeTitle}
+                    onChange={(e) => setCodeTitle(e.target.value)}
+                    placeholder="e.g. Installation & Setup"
+                    style={{ width: '100%', padding: '6px 10px', marginTop: '4px' }}
+                  />
+                </div>
+
+                {codeBlockMode === 'standard' ? (
+                  <>
+                    <div className="studio-field">
+                      <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Syntax Language</span>
+                      <select
+                        className="studio-text-input"
+                        value={codeLang}
+                        onChange={(e) => setCodeLang(e.target.value)}
+                        style={{ width: '100%', padding: '6px 10px', marginTop: '4px' }}
+                      >
+                        {CODE_LANGUAGES.map((l) => (
+                          <option key={l} value={l}>{l.toUpperCase()}</option>
+                        ))}
+                      </select>
                     </div>
+
+                    <div className="studio-field">
+                      <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Code Content</span>
+                      <textarea
+                        className="studio-text-area custom-scrollbar"
+                        rows={7}
+                        value={codeContent}
+                        onChange={(e) => setCodeContent(e.target.value)}
+                        placeholder="Enter snippet source code..."
+                        style={{ width: '100%', padding: '8px 10px', marginTop: '4px', fontFamily: 'monospace', fontSize: '11px', resize: 'vertical' }}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="studio-field">
+                    <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Unified Diff Content (+ additions, - deletions)</span>
                     <textarea
-                      className="studio-text-area studio-code-area custom-scrollbar"
+                      className="studio-text-area custom-scrollbar"
                       rows={8}
                       value={diffContent}
                       onChange={(e) => setDiffContent(e.target.value)}
-                      placeholder="+ Added line\n- Removed line"
-                      spellCheck={false}
+                      placeholder="- old code line\n+ new replacement line"
+                      style={{ width: '100%', padding: '8px 10px', marginTop: '4px', fontFamily: 'monospace', fontSize: '11px', resize: 'vertical' }}
                     />
                   </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* =========================================================================
-              CATEGORY 5: FAQ & ACCORDION LIST
-             ========================================================================= */}
-          {activeCategory === 'accordion' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className="studio-section">
-                <span className="studio-field-label">Section Heading</span>
-                <input
-                  type="text"
-                  className="studio-text-input"
-                  value={faqTitle}
-                  onChange={(e) => setFaqTitle(e.target.value)}
-                  placeholder="Frequently Asked Questions"
-                />
+                )}
               </div>
+            )}
 
-              <div className="studio-section">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label className="studio-section-label">Accordion Items ({faqItems.length})</label>
-                  <button
-                    type="button"
-                    className="btn-studio-secondary"
-                    onClick={handleAddFaqItem}
-                    style={{ height: '24px', fontSize: '10px' }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>add</span>
-                    <span>Add Item</span>
-                  </button>
+            {/* CATEGORY 5: FAQ ACCORDION LIST */}
+            {activeCategory === 'accordion' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="studio-field">
+                  <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Section Title</span>
+                  <input
+                    type="text"
+                    className="studio-text-input"
+                    value={faqTitle}
+                    onChange={(e) => setFaqTitle(e.target.value)}
+                    placeholder="Frequently Asked Questions"
+                    style={{ width: '100%', padding: '6px 10px', marginTop: '4px' }}
+                  />
                 </div>
 
-                <div className="accordion-items-list custom-scrollbar">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>Accordion Items ({faqItems.length})</span>
+                    <button
+                      type="button"
+                      className="studio-shell-btn studio-shell-btn-secondary"
+                      onClick={handleAddFaqItem}
+                      style={{ padding: '2px 8px', fontSize: '11px' }}
+                    >
+                      + Add Item
+                    </button>
+                  </div>
+
                   {faqItems.map((item, index) => (
-                    <div key={item.id} className="accordion-item-card">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '10.5px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>#{index + 1}</span>
+                    <div key={item.id} style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--surface-base)' }}>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '10px', fontFamily: 'monospace', color: '#64748b' }}>#{index + 1}</span>
                         <input
                           type="text"
                           className="studio-text-input"
                           value={item.summary}
                           onChange={(e) => handleUpdateFaqItem(item.id, 'summary', e.target.value)}
-                          placeholder="Question or summary heading..."
-                          style={{ flex: 1, fontWeight: 600 }}
+                          placeholder="Question / Summary"
+                          style={{ flex: 1, padding: '4px 8px', fontSize: '11px' }}
                         />
                         <button
                           type="button"
-                          className="diagram-edge-del-btn"
+                          className="diagram-card-del-btn"
                           onClick={() => handleDeleteFaqItem(item.id)}
-                          title="Remove item"
+                          title="Delete item"
+                          style={{ padding: '2px', background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}
                         >
                           <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
                         </button>
@@ -724,409 +742,389 @@ export default function SnippetStudioTab({
                         rows={2}
                         value={item.details}
                         onChange={(e) => handleUpdateFaqItem(item.id, 'details', e.target.value)}
-                        placeholder="Detailed markdown answer or content..."
+                        placeholder="Answer / Details content..."
+                        style={{ width: '100%', padding: '6px 8px', fontSize: '11px', resize: 'vertical' }}
                       />
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* =========================================================================
-              CATEGORY 6: ENVIRONMENT VARIABLES (.env.example)
-             ========================================================================= */}
-          {activeCategory === 'envvars' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className="studio-section">
-                <label className="studio-section-label">Output Style</label>
-                <div className="studio-segmented-styles">
-                  <button
-                    type="button"
-                    className={`studio-style-btn ${envFormat === 'table' ? 'active' : ''}`}
-                    onClick={() => setEnvFormat('table')}
-                  >
-                    📊 Markdown Table
-                  </button>
-                  <button
-                    type="button"
-                    className={`studio-style-btn ${envFormat === 'envfile' ? 'active' : ''}`}
-                    onClick={() => setEnvFormat('envfile')}
-                  >
-                    📄 .env.example Code Block
-                  </button>
-                </div>
-              </div>
-
-              <div className="studio-section">
+            {/* CATEGORY 6: ENVIRONMENT VARIABLES */}
+            {activeCategory === 'envvars' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label className="studio-section-label">Config Keys ({envVars.length})</label>
+                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>Variables List ({envVars.length})</span>
                   <button
                     type="button"
-                    className="btn-studio-secondary"
+                    className="studio-shell-btn studio-shell-btn-secondary"
                     onClick={handleAddEnvVar}
-                    style={{ height: '24px', fontSize: '10px' }}
+                    style={{ padding: '2px 8px', fontSize: '11px' }}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>add</span>
-                    <span>Add Variable</span>
+                    + Add Variable
                   </button>
                 </div>
 
-                <div className="env-vars-list custom-scrollbar">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '280px', overflowY: 'auto' }}>
                   {envVars.map((v, i) => (
-                    <div key={i} className="env-var-card">
-                      <input
-                        type="text"
-                        className="studio-text-input"
-                        value={v.key}
-                        onChange={(e) => handleUpdateEnvVar(i, 'key', e.target.value)}
-                        placeholder="VAR_NAME"
-                        style={{ width: '130px', fontFamily: 'monospace', fontWeight: 700 }}
-                      />
-                      <input
-                        type="text"
-                        className="studio-text-input"
-                        value={v.desc}
-                        onChange={(e) => handleUpdateEnvVar(i, 'desc', e.target.value)}
-                        placeholder="Description"
-                        style={{ flex: 1 }}
-                      />
-                      <input
-                        type="text"
-                        className="studio-text-input"
-                        value={v.defaultVal}
-                        onChange={(e) => handleUpdateEnvVar(i, 'defaultVal', e.target.value)}
-                        placeholder="Default"
-                        style={{ width: '90px', fontFamily: 'monospace' }}
-                      />
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                    <div key={i} style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--surface-base)' }}>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px' }}>
                         <input
-                          type="checkbox"
-                          checked={v.required}
-                          onChange={(e) => handleUpdateEnvVar(i, 'required', e.target.checked)}
+                          type="text"
+                          className="studio-text-input"
+                          value={v.key}
+                          onChange={(e) => handleUpdateEnvVar(i, 'key', e.target.value)}
+                          placeholder="KEY_NAME"
+                          style={{ flex: 1, padding: '4px 6px', fontFamily: 'monospace', fontSize: '11px' }}
                         />
-                        <span>Req</span>
-                      </label>
-                      <button
-                        type="button"
-                        className="diagram-edge-del-btn"
-                        onClick={() => handleDeleteEnvVar(i)}
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>close</span>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* =========================================================================
-              CATEGORY 7: KEYCAPS & SHORTCUTS (<kbd>)
-             ========================================================================= */}
-          {activeCategory === 'shortcuts' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className="studio-section">
-                <label className="studio-section-label">Configured Hotkeys</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {shortcuts.map((s, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', backgroundColor: 'var(--surface-base)', border: '1px solid var(--border-color)', borderRadius: '4px' }}>
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        {s.keys.map((k, ki) => (
-                          <span key={ki} className="kbd-chip">{k}</span>
-                        ))}
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: '#94a3b8', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={v.required}
+                            onChange={(e) => handleUpdateEnvVar(i, 'required', e.target.checked)}
+                          />
+                          Req
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteEnvVar(i)}
+                          title="Delete variable"
+                          style={{ padding: '2px', background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
+                        </button>
                       </div>
-                      <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', flex: 1 }}>{s.desc}</span>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <input
+                          type="text"
+                          className="studio-text-input"
+                          value={v.desc}
+                          onChange={(e) => handleUpdateEnvVar(i, 'desc', e.target.value)}
+                          placeholder="Description"
+                          style={{ flex: 2, padding: '4px 6px', fontSize: '11px' }}
+                        />
+                        <input
+                          type="text"
+                          className="studio-text-input"
+                          value={v.defaultVal}
+                          onChange={(e) => handleUpdateEnvVar(i, 'defaultVal', e.target.value)}
+                          placeholder="Default value"
+                          style={{ flex: 1, padding: '4px 6px', fontFamily: 'monospace', fontSize: '11px' }}
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* =========================================================================
-              CATEGORY 8: LICENSE & COPYRIGHT
-             ========================================================================= */}
-          {activeCategory === 'license' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className="studio-section">
-                <label className="studio-section-label">License Standard</label>
-                <div className="studio-segmented-styles">
-                  {['MIT', 'Apache-2.0', 'GPL-3.0', 'BSD-3-Clause', 'ISC', 'Unlicense'].map((lic) => (
-                    <button
-                      key={lic}
-                      type="button"
-                      className={`studio-style-btn ${licenseType === lic ? 'active' : ''}`}
-                      onClick={() => setLicenseType(lic)}
-                    >
-                      {lic}
-                    </button>
+            {/* CATEGORY 7: KEYBOARD SHORTCUTS */}
+            {activeCategory === 'shortcuts' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <span style={{ fontSize: '11px', color: '#94a3b8' }}>Keybindings Matrix ({shortcuts.length})</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {shortcuts.map((s, idx) => (
+                    <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--surface-base)' }}>
+                      <input
+                        type="text"
+                        className="studio-text-input"
+                        value={s.keys.join(', ')}
+                        onChange={(e) => {
+                          const updated = [...shortcuts]
+                          updated[idx] = { ...updated[idx], keys: e.target.value.split(',').map((k) => k.trim()) }
+                          setShortcuts(updated)
+                        }}
+                        placeholder="Ctrl, Shift, P"
+                        style={{ width: '130px', padding: '4px 8px', fontFamily: 'monospace', fontSize: '11px' }}
+                      />
+                      <input
+                        type="text"
+                        className="studio-text-input"
+                        value={s.desc}
+                        onChange={(e) => {
+                          const updated = [...shortcuts]
+                          updated[idx] = { ...updated[idx], desc: e.target.value }
+                          setShortcuts(updated)
+                        }}
+                        placeholder="Action Description"
+                        style={{ flex: 1, padding: '4px 8px', fontSize: '11px' }}
+                      />
+                    </div>
                   ))}
                 </div>
               </div>
+            )}
 
-              <div className="studio-section">
-                <div className="repocard-fields-grid">
-                  <div className="studio-field">
-                    <span className="studio-field-label">Copyright Holder / Organization</span>
-                    <input
-                      type="text"
-                      className="studio-text-input"
-                      value={licenseAuthor}
-                      onChange={(e) => setLicenseAuthor(e.target.value)}
-                      placeholder="e.g. Acme Corp / Maintainers"
-                    />
-                  </div>
-                  <div className="studio-field">
-                    <span className="studio-field-label">Copyright Year</span>
-                    <input
-                      type="text"
-                      className="studio-text-input"
-                      value={licenseYear}
-                      onChange={(e) => setLicenseYear(e.target.value)}
-                      placeholder="2026"
-                    />
-                  </div>
+            {/* CATEGORY 8: LICENSE & COPYRIGHT */}
+            {activeCategory === 'license' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="studio-field">
+                  <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Open-Source License</span>
+                  <select
+                    className="studio-text-input"
+                    value={licenseType}
+                    onChange={(e) => setLicenseType(e.target.value)}
+                    style={{ width: '100%', padding: '6px 10px', marginTop: '4px' }}
+                  >
+                    {AVAILABLE_LICENSES.map((lic) => (
+                      <option key={lic} value={lic}>{lic}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="studio-field">
+                  <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Copyright Year</span>
+                  <input
+                    type="text"
+                    className="studio-text-input"
+                    value={licenseYear}
+                    onChange={(e) => setLicenseYear(e.target.value)}
+                    style={{ width: '100%', padding: '6px 10px', marginTop: '4px' }}
+                  />
+                </div>
+
+                <div className="studio-field">
+                  <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Copyright Author / Organization</span>
+                  <input
+                    type="text"
+                    className="studio-text-input"
+                    value={licenseAuthor}
+                    onChange={(e) => setLicenseAuthor(e.target.value)}
+                    placeholder="Project Maintainers & Contributors"
+                    style={{ width: '100%', padding: '6px 10px', marginTop: '4px' }}
+                  />
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-
-        {/* Resizer Splitter Handle */}
+      }
+      canvasContent={
         <div
-          className={`studio-resizer-handle ${isDragging ? 'is-dragging' : ''}`}
-          onMouseDown={handleMouseDown}
-          onDoubleClick={handleDoubleClick}
-          title="Drag to resize form and preview sections • Double-click to reset"
-        />
-
-        {/* Right Column: True-to-Life Live Render & Markdown Output */}
-        <div className="studio-preview-column custom-scrollbar" style={{ flex: 1, minWidth: 0 }}>
-          {/* Live Render Card */}
-          <div className="studio-card">
-            <div className="studio-card-header">
-              <span className="studio-card-title">Live GitHub Visual Render</span>
-              <span className="studio-card-tag">{activeCategory}</span>
+          className="snippet-preview-stage custom-scrollbar"
+          style={{
+            width: '100%',
+            maxWidth: '820px',
+            padding: '24px',
+            boxSizing: 'border-box'
+          }}
+        >
+          {/* GitHub Callouts Render */}
+          {activeCategory === 'callouts' && (
+            <div className={`github-callout callout-${selectedCallout.toLowerCase()}`}>
+              <div className="callout-header" style={{ color: CALLOUT_TYPES.find((c) => c.type === selectedCallout)?.color }}>
+                <span className="material-symbols-outlined icon-xs">
+                  {CALLOUT_TYPES.find((c) => c.type === selectedCallout)?.icon}
+                </span>
+                <span>{selectedCallout}</span>
+              </div>
+              <div className="callout-body">
+                {calloutTitle && <strong style={{ display: 'block', marginBottom: '4px' }}>{calloutTitle}</strong>}
+                <p style={{ margin: 0 }}>{calloutText}</p>
+              </div>
             </div>
-            <div className="snippet-render-viewport custom-scrollbar">
-              {/* Callout Render */}
-              {activeCategory === 'callouts' && (
-                <div className={`github-callout callout-${selectedCallout.toLowerCase()}`}>
-                  <div className="callout-header">
-                    <span className="material-symbols-outlined icon-xs">
-                      {CALLOUT_TYPES.find((c) => c.type === selectedCallout)?.icon || 'info'}
-                    </span>
-                    <span className="callout-title">{selectedCallout}</span>
-                  </div>
-                  {calloutTitle && (
-                    <strong style={{ display: 'block', marginBottom: '4px', fontSize: '12px' }}>
-                      {calloutTitle}
-                    </strong>
-                  )}
-                  <p className="callout-body">{calloutText}</p>
+          )}
+
+          {/* Multi-PM Render */}
+          {activeCategory === 'multipm' && (
+            <div className="multipm-render-preview" style={{ borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--surface-base)', overflow: 'hidden' }}>
+              <div className="multipm-preview-tabs" style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--surface-low)', padding: '4px 6px', gap: '4px' }}>
+                {PM_OPTIONS.slice(0, 6).map((pm) => (
+                  <button
+                    key={pm.id}
+                    type="button"
+                    className={`multipm-tab-btn ${activePmPreviewTab === pm.id ? 'active' : ''}`}
+                    onClick={() => setActivePmPreviewTab(pm.id)}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: '4px',
+                      border: 'none',
+                      background: activePmPreviewTab === pm.id ? 'var(--surface-base)' : 'transparent',
+                      color: activePmPreviewTab === pm.id ? '#ffffff' : 'var(--text-muted)',
+                      fontSize: '11px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {pm.label}
+                  </button>
+                ))}
+              </div>
+              <div style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontFamily: 'monospace', fontSize: '12px' }}>
+                <code>{PM_OPTIONS.find((p) => p.id === activePmPreviewTab)?.cmd(pmPackage, pmAction)}</code>
+                <button
+                  type="button"
+                  className="studio-shell-btn studio-shell-btn-secondary"
+                  onClick={() => {
+                    const cmd = PM_OPTIONS.find((p) => p.id === activePmPreviewTab)?.cmd(pmPackage, pmAction)
+                    if (cmd) navigator.clipboard.writeText(cmd)
+                  }}
+                  style={{ padding: '3px 8px', fontSize: '10px' }}
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* macOS Terminal Render */}
+          {activeCategory === 'terminal' && (
+            <div className="terminal-window-mockup">
+              <div className="terminal-window-header">
+                <div className="terminal-window-dots">
+                  <span className="terminal-dot red" />
+                  <span className="terminal-dot yellow" />
+                  <span className="terminal-dot green" />
                 </div>
-              )}
-
-              {/* Multi-PM Render */}
-              {activeCategory === 'multipm' && (
-                <div className="multipm-preview-box">
-                  <div className="multipm-tabs-bar">
-                    {PM_OPTIONS.slice(0, 4).map((pm) => (
-                      <button
-                        key={pm.id}
-                        type="button"
-                        className={`multipm-tab-btn ${activePmPreviewTab === pm.id ? 'active' : ''}`}
-                        onClick={() => setActivePmPreviewTab(pm.id)}
-                      >
-                        {pm.label}
-                      </button>
-                    ))}
-                  </div>
-                  <pre className="multipm-code-area">
-                    <code>{PM_OPTIONS.find((pm) => pm.id === activePmPreviewTab)?.cmd(pmPackage, pmAction)}</code>
-                  </pre>
+                <span className="terminal-window-title">{termTitle}</span>
+                <div style={{ width: '40px' }} />
+              </div>
+              <pre className="terminal-window-body">
+                <div>
+                  <span className="terminal-prompt-sym">{termShell}</span>
+                  <span className="terminal-cmd-text">{termCmd}</span>
                 </div>
-              )}
-
-              {/* macOS Terminal Render */}
-              {activeCategory === 'terminal' && (
-                <div className="terminal-window-mockup">
-                  <div className="terminal-window-header">
-                    <div className="terminal-window-dots">
-                      <span className="terminal-dot red" />
-                      <span className="terminal-dot yellow" />
-                      <span className="terminal-dot green" />
-                    </div>
-                    <span className="terminal-window-title">{termTitle}</span>
-                    <div style={{ width: '40px' }} />
-                  </div>
-                  <pre className="terminal-window-body">
-                    <div>
-                      <span className="terminal-prompt-sym">{termShell}</span>
-                      <span className="terminal-cmd-text">{termCmd}</span>
-                    </div>
-                    <div className="terminal-output-text" style={{ marginTop: '6px' }}>
-                      {termOutput}
-                    </div>
-                  </pre>
+                <div className="terminal-output-text" style={{ marginTop: '6px' }}>
+                  {termOutput}
                 </div>
-              )}
+              </pre>
+            </div>
+          )}
 
-              {/* Code & Diff Render */}
-              {activeCategory === 'codeblock' && (
-                codeBlockMode === 'diff' ? (
-                  <div className="diff-render-box">
-                    <div style={{ borderBottom: '1px solid #30363d', paddingBottom: '4px', marginBottom: '8px', color: '#8b949e', fontSize: '10.5px' }}>
-                      {codeTitle} (Unified Diff)
-                    </div>
-                    {diffContent.split('\n').map((line, idx) => {
-                      if (line.startsWith('+')) {
-                        return <span key={idx} className="diff-line-add">{line}</span>
-                      }
-                      if (line.startsWith('-')) {
-                        return <span key={idx} className="diff-line-del">{line}</span>
-                      }
-                      return <span key={idx} className="diff-line-ctx">{line}</span>
-                    })}
-                  </div>
-                ) : (
-                  <div className="code-render-preview">
-                    <div className="code-render-header">
-                      <span className="code-title-tag">{codeTitle}</span>
-                      <span className="code-lang-tag">{codeLang}</span>
-                    </div>
-                    <pre className="code-render-body"><code>{codeContent}</code></pre>
-                  </div>
-                )
-              )}
-
-              {/* Accordion FAQ Render */}
-              {activeCategory === 'accordion' && (
-                <div className="details-render-preview">
-                  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', color: 'var(--text-primary)' }}>{faqTitle}</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {faqItems.map((item, idx) => (
-                      <details key={item.id} open={idx === 0} style={{ padding: '6px 8px', backgroundColor: 'var(--surface-base)', borderRadius: '4px' }}>
-                        <summary className="details-summary"><b>{item.summary}</b></summary>
-                        <div className="details-content">
-                          <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{item.details}</p>
-                        </div>
-                      </details>
-                    ))}
-                  </div>
+          {/* Code & Diff Render */}
+          {activeCategory === 'codeblock' && (
+            codeBlockMode === 'diff' ? (
+              <div className="diff-render-box">
+                <div style={{ borderBottom: '1px solid #30363d', paddingBottom: '4px', marginBottom: '8px', color: '#8b949e', fontSize: '10.5px' }}>
+                  {codeTitle} (Unified Diff)
                 </div>
-              )}
-
-              {/* Env Vars Render */}
-              {activeCategory === 'envvars' && (
-                <div style={{ padding: '4px' }}>
-                  {envFormat === 'table' ? (
-                    <div style={{ overflowX: 'auto' }}>
-                      <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', textAlign: 'left' }}>
-                        <thead>
-                          <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
-                            <th style={{ padding: '6px 8px' }}>Variable</th>
-                            <th style={{ padding: '6px 8px' }}>Description</th>
-                            <th style={{ padding: '6px 8px' }}>Default</th>
-                            <th style={{ padding: '6px 8px' }}>Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {envVars.map((v, i) => (
-                            <tr key={i} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                              <td style={{ padding: '6px 8px', fontFamily: 'monospace', color: '#58a6ff', fontWeight: 600 }}>{v.key}</td>
-                              <td style={{ padding: '6px 8px', color: 'var(--text-primary)' }}>{v.desc}</td>
-                              <td style={{ padding: '6px 8px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{v.defaultVal || '-'}</td>
-                              <td style={{ padding: '6px 8px' }}>
-                                {v.required ? (
-                                  <span style={{ color: '#ef4444', fontWeight: 600 }}>Required</span>
-                                ) : (
-                                  <span style={{ color: 'var(--text-muted)' }}>Optional</span>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <pre className="code-render-body" style={{ backgroundColor: '#070a0e', borderRadius: '4px', padding: '10px' }}>
-                      <code>
-                        {envVars.map((v) => `# ${v.desc}\n${v.key}=${v.defaultVal}\n`).join('\n')}
-                      </code>
-                    </pre>
-                  )}
+                {diffContent.split('\n').map((line, idx) => {
+                  if (line.startsWith('+')) {
+                    return <span key={idx} className="diff-line-add">{line}</span>
+                  }
+                  if (line.startsWith('-')) {
+                    return <span key={idx} className="diff-line-del">{line}</span>
+                  }
+                  return <span key={idx} className="diff-line-ctx">{line}</span>
+                })}
+              </div>
+            ) : (
+              <div className="code-render-preview">
+                <div className="code-render-header">
+                  <span className="code-title-tag">{codeTitle}</span>
+                  <span className="code-lang-tag">{codeLang}</span>
                 </div>
-              )}
+                <pre className="code-render-body"><code>{codeContent}</code></pre>
+              </div>
+            )
+          )}
 
-              {/* Shortcuts Render */}
-              {activeCategory === 'shortcuts' && (
-                <div style={{ padding: '6px' }}>
-                  <table style={{ width: '100%', fontSize: '11.5px', borderCollapse: 'collapse' }}>
+          {/* Accordion FAQ Render */}
+          {activeCategory === 'accordion' && (
+            <div className="details-render-preview">
+              <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', color: 'var(--text-primary)' }}>{faqTitle}</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {faqItems.map((item, idx) => (
+                  <details key={item.id} open={idx === 0} style={{ padding: '8px 10px', backgroundColor: 'var(--surface-base)', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+                    <summary className="details-summary"><b>{item.summary}</b></summary>
+                    <div className="details-content" style={{ marginTop: '6px' }}>
+                      <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{item.details}</p>
+                    </div>
+                  </details>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Env Vars Render */}
+          {activeCategory === 'envvars' && (
+            <div style={{ padding: '4px' }}>
+              {envFormat === 'table' ? (
+                <div style={{ overflowX: 'auto', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--surface-base)' }}>
+                  <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead>
-                      <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--text-secondary)' }}>
-                        <th style={{ padding: '6px 8px' }}>Shortcut</th>
-                        <th style={{ padding: '6px 8px' }}>Action</th>
+                      <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--surface-low)', color: 'var(--text-secondary)' }}>
+                        <th style={{ padding: '8px 10px' }}>Variable</th>
+                        <th style={{ padding: '8px 10px' }}>Description</th>
+                        <th style={{ padding: '8px 10px' }}>Default</th>
+                        <th style={{ padding: '8px 10px' }}>Requirement</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {shortcuts.map((s, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                          <td style={{ padding: '6px 8px' }}>
-                            <div style={{ display: 'flex', gap: '3px' }}>
-                              {s.keys.map((k, ki) => (
-                                <span key={ki} className="kbd-chip">{k}</span>
-                              ))}
-                            </div>
+                      {envVars.map((v, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                          <td style={{ padding: '8px 10px', fontFamily: 'monospace', color: '#58a6ff', fontWeight: 600 }}>{v.key}</td>
+                          <td style={{ padding: '8px 10px', color: 'var(--text-primary)' }}>{v.desc}</td>
+                          <td style={{ padding: '8px 10px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{v.defaultVal || '-'}</td>
+                          <td style={{ padding: '8px 10px' }}>
+                            {v.required ? (
+                              <span style={{ color: '#ef4444', fontWeight: 600, fontSize: '10px' }}>Required</span>
+                            ) : (
+                              <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>Optional</span>
+                            )}
                           </td>
-                          <td style={{ padding: '6px 8px', color: 'var(--text-primary)' }}>{s.desc}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              )}
-
-              {/* License Render */}
-              {activeCategory === 'license' && (
-                <div className="license-render-preview">
-                  <div className="license-header">
-                    <span className="material-symbols-outlined text-emerald">verified</span>
-                    <span className="license-title">{licenseType} License</span>
-                  </div>
-                  <p className="license-text">
-                    Distributed under the <strong>{licenseType} License</strong>. See <code>LICENSE</code> for full details.
-                  </p>
-                  <p className="license-subtext">
-                    Copyright (c) {licenseYear} {licenseAuthor}.
-                  </p>
-                </div>
+              ) : (
+                <pre className="code-render-body" style={{ backgroundColor: '#070a0e', borderRadius: '6px', padding: '12px', border: '1px solid var(--border-color)' }}>
+                  <code>
+                    {envVars.map((v) => `# ${v.desc}\n${v.key}=${v.defaultVal}\n`).join('\n')}
+                  </code>
+                </pre>
               )}
             </div>
-          </div>
+          )}
 
-          {/* Generated Markdown Syntax Block */}
-          <div className="studio-card">
-            <div className="studio-card-header">
-              <span className="studio-card-title">Generated Markdown Code</span>
-              <button
-                type="button"
-                className="snippet-copy-btn"
-                onClick={handleCopy}
-              >
-                <span className="material-symbols-outlined icon-xs">
-                  {copied ? 'check' : 'content_copy'}
-                </span>
-                <span>{copied ? 'Copied' : 'Copy'}</span>
-              </button>
+          {/* Shortcuts Render */}
+          {activeCategory === 'shortcuts' && (
+            <div style={{ padding: '6px' }}>
+              <div style={{ borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--surface-base)', overflow: 'hidden' }}>
+                <table style={{ width: '100%', fontSize: '11.5px', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--surface-low)', textAlign: 'left', color: 'var(--text-secondary)' }}>
+                      <th style={{ padding: '8px 10px' }}>Shortcut</th>
+                      <th style={{ padding: '8px 10px' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {shortcuts.map((s, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                        <td style={{ padding: '8px 10px' }}>
+                          <div style={{ display: 'flex', gap: '3px' }}>
+                            {s.keys.map((k, ki) => (
+                              <span key={ki} className="kbd-chip">{k}</span>
+                            ))}
+                          </div>
+                        </td>
+                        <td style={{ padding: '8px 10px', color: 'var(--text-primary)' }}>{s.desc}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <pre className="studio-code-block custom-scrollbar">
-              <code>{generatedSnippet}</code>
-            </pre>
-          </div>
+          )}
+
+          {/* License Render */}
+          {activeCategory === 'license' && (
+            <div className="license-render-preview" style={{ borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--surface-base)' }}>
+              <div className="license-header">
+                <span className="material-symbols-outlined text-emerald" style={{ color: '#10b981' }}>verified</span>
+                <span className="license-title">{licenseType} License</span>
+              </div>
+              <p className="license-text">
+                Distributed under the <strong>{licenseType} License</strong>. See <code>LICENSE</code> for full details.
+              </p>
+              <p className="license-subtext">
+                Copyright (c) {licenseYear} {licenseAuthor}.
+              </p>
+            </div>
+          )}
         </div>
-      </div>
-    </div>
+      }
+    />
   )
 }

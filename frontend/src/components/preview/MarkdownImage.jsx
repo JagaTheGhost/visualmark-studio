@@ -149,12 +149,13 @@ function isBadgeImage(src, alt = '', props = {}) {
   return false
 }
 
-export default function MarkdownImage({ src, alt, title, ...props }) {
+export default function MarkdownImage({ src, alt, title, workspaceDirectory, activeFile, ...props }) {
   const cleanSrc = typeof src === 'string' ? src.replace(/[\r\n\t]/g, '').trim() : ''
   const isDataUri = cleanSrc.startsWith('data:')
   const cleanInitialSrc = isDataUri ? cleanSrc : getOptimizedImageUrl(src)
 
   const [currentSrc, setCurrentSrc] = useState(cleanInitialSrc)
+  const [localSvgRaw, setLocalSvgRaw] = useState(null)
   const [isLoading, setIsLoading] = useState(!isDataUri)
   const [hasError, setHasError] = useState(false)
   const [hasAttemptedResolution, setHasAttemptedResolution] = useState(false)
@@ -188,9 +189,34 @@ export default function MarkdownImage({ src, alt, title, ...props }) {
 
   // Attempt to decode inline SVG data URI if present and sanitize it
   const inlineSvgCode = useMemo(() => {
+    if (localSvgRaw) {
+      return sanitizeSvg(localSvgRaw)
+    }
     const raw = decodeSvgDataUri(cleanSrc) || decodeSvgDataUri(currentSrc) || decodeSvgDataUri(src)
     return raw ? sanitizeSvg(raw) : null
-  }, [cleanSrc, currentSrc, src])
+  }, [localSvgRaw, cleanSrc, currentSrc, src])
+
+  // Resolve relative workspace paths (e.g. assets/banner.svg) to absolute disk path
+  const resolveLocalPath = (relativePath) => {
+    if (!relativePath || typeof relativePath !== 'string') return null
+    if (/^(https?:|\/\/|data:)/i.test(relativePath)) return null
+
+    // Absolute Windows or Unix path
+    if (/^[a-zA-Z]:[\\/]/.test(relativePath) || relativePath.startsWith('/')) {
+      return relativePath
+    }
+
+    const cleanRel = relativePath.replace(/^\.[\\/]/, '')
+    const wsPath = workspaceDirectory?.path || (typeof workspaceDirectory === 'string' ? workspaceDirectory : null)
+
+    if (wsPath) {
+      const sep = wsPath.includes('\\') ? '\\' : '/'
+      const normalizedWs = wsPath.replace(/[\\/]+$/, '')
+      const normalizedRel = cleanRel.replace(/[\\/]+/g, sep)
+      return `${normalizedWs}${sep}${normalizedRel}`
+    }
+    return null
+  }
 
   useEffect(() => {
     isMountedRef.current = true
@@ -202,10 +228,70 @@ export default function MarkdownImage({ src, alt, title, ...props }) {
   useEffect(() => {
     let active = true
     const isData = typeof src === 'string' && src.trim().startsWith('data:')
+    const isRemote = /^(https?:|\/\/|data:)/i.test(cleanSrc)
     const optimized = isData ? src.replace(/[\r\n\t]/g, '').trim() : getOptimizedImageUrl(src)
+
+    setLocalSvgRaw(null)
     setCurrentSrc(optimized)
     setHasError(false)
     setIsLoading(!isData)
+
+    // Handle Local Workspace Media in Electron
+    if (!isData && !isRemote) {
+      const localPath = resolveLocalPath(cleanSrc)
+      if (localPath && typeof window !== 'undefined') {
+        if (window.electronAPI?.readLocalMedia) {
+          window.electronAPI.readLocalMedia(localPath).then((res) => {
+            if (!active) return
+            if (res && res.success) {
+              if (res.isSvg && res.content) {
+                setLocalSvgRaw(res.content)
+              } else if (res.dataUrl) {
+                setCurrentSrc(res.dataUrl)
+              }
+              setIsLoading(false)
+              setHasError(false)
+            } else {
+              // Try fallback to readFile if it is an SVG file
+              if (cleanSrc.toLowerCase().endsWith('.svg') && window.electronAPI?.readFile) {
+                window.electronAPI.readFile(localPath).then((readRes) => {
+                  if (!active) return
+                  if (readRes && readRes.success && readRes.content) {
+                    setLocalSvgRaw(readRes.content)
+                    setIsLoading(false)
+                    setHasError(false)
+                    return
+                  }
+                  setIsLoading(false)
+                  setHasError(true)
+                })
+                return
+              }
+              setIsLoading(false)
+              setHasError(true)
+            }
+          })
+          return () => {
+            active = false
+          }
+        } else if (window.electronAPI?.readFile && cleanSrc.toLowerCase().endsWith('.svg')) {
+          window.electronAPI.readFile(localPath).then((res) => {
+            if (!active) return
+            if (res && res.success && res.content) {
+              setLocalSvgRaw(res.content)
+              setIsLoading(false)
+              setHasError(false)
+            } else {
+              setIsLoading(false)
+              setHasError(true)
+            }
+          })
+          return () => {
+            active = false
+          }
+        }
+      }
+    }
 
     if (!isData && requiresAsyncResolution(src)) {
       resolveRedirectImageUrl(src, API_BASE_URL).then((resolved) => {
@@ -219,7 +305,8 @@ export default function MarkdownImage({ src, alt, title, ...props }) {
     return () => {
       active = false
     }
-  }, [src, API_BASE_URL])
+  }, [src, cleanSrc, workspaceDirectory, API_BASE_URL])
+
 
   const handleImageError = async () => {
     if (isDataUri || (typeof src === 'string' && src.trim().startsWith('data:')) || isBadge) {

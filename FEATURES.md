@@ -15,7 +15,7 @@
 - [2. Dual-Engine Editor & Workspace Architecture](#2-dual-engine-editor--workspace-architecture)
   - [2.1 Monaco Code Engine](#21-monaco-code-engine)
   - [2.2 Proportional Synchronized Split Preview](#22-proportional-synchronized-split-preview)
-  - [2.3 Multi-Document Tab System & Hot-Exit Protection](#23-multi-document-tab-system--hot-exit-protection)
+  - [2.3 Multi-Document Tab System, Collapsible Tab Groups & Hot-Exit](#23-multi-document-tab-system-collapsible-tab-groups--hot-exit)
   - [2.4 Native Workspace Explorer & File Management](#24-native-workspace-explorer--file-management)
   - [2.5 Zen / Distraction-Free Mode](#25-zen--distraction-free-mode)
   - [2.6 Advanced Find & Replace](#26-advanced-find--replace)
@@ -29,12 +29,13 @@
   - [4.3 Visual Markdown Table Studio (`tables.studio`)](#43-visual-markdown-table-studio-tablesstudio)
   - [4.4 Code Snippets & GitHub Callouts Studio (`snippets.studio`)](#44-code-snippets--github-callouts-studio-snippetsstudio)
   - [4.5 Hero Images, Banners & Window Frames (`images.studio`)](#45-hero-images-banners--window-frames-imagesstudio)
-  - [4.6 Directory Tree Studio (`tree.studio`)](#46-directory-tree-studio-treestudio)
-  - [4.7 REST API & Endpoints Designer (`api.studio`)](#47-rest-api--endpoints-designer-apistudio)
-  - [4.8 Contributors & Team Grid Studio (`contributors.studio`)](#48-contributors--team-grid-studio-contributorsstudio)
-  - [4.9 Changelog & SemVer Release Studio (`changelog.studio`)](#49-changelog--semver-release-studio-changelogstudio)
-  - [4.10 README Health Auditor & Linter (`audit.studio`)](#410-readme-health-auditor--linter-auditstudio)
-  - [4.11 Vector Icons & Developer Emojis Studio (`icons.studio`)](#411-vector-icons--developer-emojis-studio-iconsstudio)
+  - [4.6 GitHub Repository Showcase Card Studio (`repocard.studio`)](#46-github-repository-showcase-card-studio-repocardstudio)
+  - [4.7 Directory Tree Studio (`tree.studio`)](#47-directory-tree-studio-treestudio)
+  - [4.8 REST API & Endpoints Designer (`api.studio`)](#48-rest-api--endpoints-designer-apistudio)
+  - [4.9 Contributors & Team Grid Studio (`contributors.studio`)](#49-contributors--team-grid-studio-contributorsstudio)
+  - [4.10 Changelog & SemVer Release Studio (`changelog.studio`)](#410-changelog--semver-release-studio-changelogstudio)
+  - [4.11 README Health Auditor & Linter (`audit.studio`)](#411-readme-health-auditor--linter-auditstudio)
+  - [4.12 Vector Icons & Developer Emojis Studio (`icons.studio`)](#412-vector-icons--developer-emojis-studio-iconsstudio)
 - [5. Automated Documentation Engine & Template Presets](#5-automated-documentation-engine--template-presets)
   - [5.1 Full Documentation Suite Generator](#51-full-documentation-suite-generator)
   - [5.2 Production Template Presets](#52-production-template-presets)
@@ -54,7 +55,7 @@
 
 Technical documentation is often fragmented across multiple disparate tools: developers draft Markdown in basic text editors, build architecture diagrams on third-party SaaS whiteboards, generate badges across browser tabs, construct Markdown tables in online converters, and manually stitch together release notes.
 
-**VisualMark Studio** transforms documentation authoring into a unified, **native desktop IDE experience**. It marries the code-editing power of the **Monaco editor** (the core of VS Code) with **11 dedicated interactive visual studios**, direct local disk I/O, and an automated documentation engine.
+**VisualMark Studio** transforms documentation authoring into a unified, **native desktop IDE experience**. It marries the code-editing power of the **Monaco editor** (the core of VS Code) with **12 dedicated interactive visual studios**, direct local disk I/O, and an automated documentation engine.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -62,15 +63,17 @@ Technical documentation is often fragmented across multiple disparate tools: dev
 ├───────────────────────────────────┬────────────────────────────────────┤
 │         CODE WORKSPACE            │          VISUAL STUDIOS            │
 │  • Monaco Engine (VS Code core)   │  • Shields.io Badge Designer       │
-│  • Synchronized Split Preview     │  • Mermaid Architecture Studio     │
-│  • Multi-Tab Document Buffers     │  • Visual Table Spreadsheet        │
-│  • Direct Local Disk I/O          │  • Code Snippets & GitHub Alerts   │
-│  • Live Workspace File Explorer   │  • Mockup Frames & Hero Banners    │
-│  • In-Buffer Find & Replace       │  • Directory Tree Visualizer       │
-│  • Distraction-Free Zen Mode      │  • REST API Route Designer         │
+│  • Synchronized Split Preview     │  • GitHub Repo Card Studio         │
+│  • Collapsible Tab Groups         │  • Mermaid Architecture Studio     │
+│  • Direct Local Disk I/O          │  • Visual Table Spreadsheet        │
+│  • Live Workspace File Explorer   │  • Code Snippets & GitHub Alerts   │
+│  • In-Buffer Find & Replace       │  • Motion Heroes & Hero Banners    │
+│  • Distraction-Free Zen Mode      │  • Directory Tree Visualizer       │
+│  • Multi-Language i18n Engine     │  • REST API Route Designer         │
 ├───────────────────────────────────┴────────────────────────────────────┤
 │                       PLATFORM INFRASTRUCTURE                          │
 │  • Universal Command Palette (F1 / Ctrl+Shift+P) with Key Config (⚙️)  │
+│  • Universal StudioShell 2-Pane Resizable Workspace Container          │
 │  • Integrated Bottom Panel (Terminal, Markdown Problems, System Logs)  │
 │  • Multi-Format Publisher (Native Disk, Vector PDF, HTML, ZIP Suite)   │
 │  • 100% Local-First Engine (Zero telemetry, zero cloud dependency)    │
@@ -99,8 +102,12 @@ VisualMark Studio features a synchronized side-by-side rendering engine:
   - **Preview-Only**: Pure document presentation and review mode.
   - **Split Orientation**: Instant toggle between side-by-side vertical split and top-and-bottom horizontal split (`Ctrl+\`).
 
-### 2.3 Multi-Document Tab System & Hot-Exit Protection
+### 2.3 Multi-Document Tab System, Collapsible Tab Groups & Hot-Exit Protection
 - **Simultaneous Document Buffers**: Open and work across multiple documentation files simultaneously (e.g., `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `LICENSE.md`, and Studio tabs).
+- **Chrome/Arc-Style Collapsible Tab Groups**: Automatically partitions open workspace tabs into distinct groups:
+  - **Documents Group**: Houses active Markdown, text, and code document buffers.
+  - **Studios Group**: Houses active visual designer suites.
+  - **Accordion Collapse & Badges**: Each tab group features an accent header chip with active item counts and one-click collapse/expand toggling to eliminate clutter in complex workspaces.
 - **Tab Reordering & Management**: Drag-and-drop tab reordering, middle-click to close, and instant untitled file creation (`Ctrl+N`).
 - **Dirty Indicators & Hot-Exit**: Visual indicators highlight unsaved buffers. Automatic draft caching prevents data loss during sudden window closes or power failures.
 
@@ -159,11 +166,15 @@ VisualMark Studio bundles 10 dedicated visual environments accessible as tabs:
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        VISUALMARK STUDIO TABS                          │
 ├──────────────┬──────────────┬──────────────┬─────────────┬─────────────┤
-│ 🛡️ Badges    │ 📊 Mermaid   │ 🧮 Tables    │ 🧩 Snippets │ 🖼️ Banners  │
+│ 🛡️ Badges    │ 💳 Repo Card │ 📊 Mermaid   │ 🧮 Tables    │ 🧩 Snippets │
 ├──────────────┼──────────────┼──────────────┼─────────────┼─────────────┤
-│ 🌳 Tree      │ 🌐 REST API  │ 👥 Team      │ 📝 Releases │ 🔍 Auditor  │
-└──────────────┴──────────────┴──────────────┴─────────────┴─────────────┘
+│ 🖼️ Banners   │ 🌳 Tree      │ 🌐 REST API  │ 🎨 Icons    │ 👥 Team     │
+├──────────────┼──────────────┴──────────────┴─────────────┴─────────────┤
+│ 📝 Releases  │ 🔍 README Auditor                                       │
+└──────────────┴─────────────────────────────────────────────────────────┘
 ```
+
+> **Universal StudioShell Architecture**: All 12 visual studios are housed within the standardized **StudioShell** container—featuring a resizable 2-pane split (inspector form & canvas stage), persistent universal action bar (`Insert at Cursor (Ctrl+Enter)`, `Copy Markdown`, `Reset`, `Back to Readme`), canvas backdrop theming (Dark, Midnight, Light, Grid), and an expandable live code drawer with character and line count telemetry.
 
 ### 4.1 Shields.io Badges Studio (`badges.studio`)
 - **100+ Curated Tech Devicons**: Language, framework, database, cloud, and tool presets.
@@ -191,11 +202,23 @@ VisualMark Studio bundles 10 dedicated visual environments accessible as tabs:
 
 ### 4.5 Hero Images, Banners & Window Frames (`images.studio`)
 - **Hero Header Banners**: Design gradient banners with custom titles, subtitles, and badges.
+- **Motion Hero & Video Generator**: Embed animated GIFs and MP4/WebM videos wrapped inside realistic browser and app frames with configurable autoplay, loop, mute, controls, glow accents, and custom URLs.
 - **OS Screenshot Window Frames**: Wrap raw application screenshots in realistic macOS (traffic lights) or Windows 11 titlebar chrome with drop shadows.
 - **Side-by-Side Comparison Grids**: Layout before/after or light/dark comparison images.
 - **Asset Optimizer**: Automatically scale and compress images for GitHub repository rendering.
 
-### 4.6 Directory Tree Studio (`tree.studio`)
+### 4.6 GitHub Repository Showcase Card Studio (`repocard.studio`)
+- **100% Client-Side Vector Engine**: Generates self-contained, high-DPI vector SVG cards with live GitHub repository statistics and zero external server dependencies.
+- **Auto-Adaptive Theming**: Dual dark and light auto-adaptive SVGs via `@media (prefers-color-scheme)` alongside themes (Official GitHub Dark, GitHub Light, Obsidian Slate, Nord Frost, Dracula).
+- **Official GitHub Octicons**: Renders official vector Octicons for stars, forks, open issues, repo book, and license badges.
+- **4 Production Templates**:
+  - **Official Pin**: Classic GitHub repository card format with language color dot.
+  - **Bento Telemetry**: Multi-cell modern dashboard showcasing stars, forks, issues, and language ribbon.
+  - **Language Distribution**: Horizontal color-segmented language percentage bar.
+  - **Minimal Compact**: Sleek single-line repository badge card.
+- **1-Click Export & Embed**: Copy ready-to-paste centered Markdown image syntax or download standalone `.svg` vector files directly to your workspace.
+
+### 4.7 Directory Tree Studio (`tree.studio`)
 - **Directory Structure Scanning**: Auto-scans the active workspace folder to generate real-time directory trees.
 - **Multiple Visual Styles**:
   - Classic ASCII (`|--`, `\--`)
@@ -203,7 +226,7 @@ VisualMark Studio bundles 10 dedicated visual environments accessible as tabs:
   - Emoji-annotated directory trees (📁, 📄, ⚙️)
 - **Selective Depth & Exclusions**: Filter out `node_modules`, `.git`, `dist`, `__pycache__`, and configure maximum scan depth.
 
-### 4.7 REST API & Endpoints Designer (`api.studio`)
+### 4.8 REST API & Endpoints Designer (`api.studio`)
 - **Route Matrix**: Define endpoints with HTTP verbs (`GET`, `POST`, `PUT`, `DELETE`, `PATCH`) with distinctive color badges.
 - **Parameters & Request Bodies**: Visual tables for path parameters, query parameters, header requirements, and JSON request bodies.
 - **Response Payloads**: Define 200 OK, 400 Bad Request, 401 Unauthorized, and 500 error schema mocks.
@@ -214,24 +237,24 @@ VisualMark Studio bundles 10 dedicated visual environments accessible as tabs:
   - **GitHub GFM Render**: Pixel-perfect rendering of the GitHub Markdown tables using `ReactMarkdown`.
   - **1-Click Insert**: Directly injects generated API specs into the active document buffer.
 
-### 4.8 Contributors & Team Grid Studio (`contributors.studio`)
+### 4.9 Contributors & Team Grid Studio (`contributors.studio`)
 - **All-Contributors Standard**: Adheres to the official specification for open-source recognition.
 - **Visual Avatar Matrix**: Input GitHub usernames to automatically fetch avatars and profile links.
 - **Contribution Badges**: Assign roles (Code 💻, Docs 📖, Design 🎨, Maintenance 🚧, Bug Reports 🐛).
 - **Responsive Table Generation**: Generates clean HTML/Markdown tables optimized for GitHub rendering.
 
-### 4.9 Changelog & SemVer Release Studio (`changelog.studio`)
+### 4.10 Changelog & SemVer Release Studio (`changelog.studio`)
 - **Keep-a-Changelog Standard**: Strictly implements standard changelog formatting (`[Unreleased]`, Version headers, Dates).
 - **Category Badges**: Organized by `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, and `Security`.
 - **SemVer Version Bumping**: 1-click version bumping for Major, Minor, and Patch releases.
 - **Release Notes Exporter**: Extracts single-version release notes ready for GitHub Releases.
 
-### 4.10 README Health Auditor & Linter (`audit.studio`)
+### 4.11 README Health Auditor & Linter (`audit.studio`)
 - **Automated Scorecard & Letter Grade**: Scores your documentation from **A+ to F** based on completeness, structure, and readability.
 - **Missing Section Detection**: Flags missing essential sections (License, Installation, Contributing, Prerequisites, Architecture, Testing).
 - **1-Click Boilerplate Injection**: Injects missing section boilerplates directly into your document buffer with a single click.
 
-### 4.11 Vector Icons & Developer Emojis Studio (`icons.studio`)
+### 4.12 Vector Icons & Developer Emojis Studio (`icons.studio`)
 - **Dual-Mode Studio Workspace**: Dedicated clean partitioning between **Vector Material Icons (Material Symbols)** and **Developer Emojis**.
 - **Vector Icon Color Customizer**: 9 curated theme swatches (Slate, Indigo, Emerald, Sky, Amber, Rose, Purple, GitHub Dark, GitHub Light), HTML5 native color wheel, and direct HEX code input with auto-formatting.
 - **Live Catalog Tinting (`[x] Tint catalog preview`)**: Dynamically applies selected custom color in real time across the entire browsable vector icon catalog.
@@ -306,7 +329,8 @@ Located at the bottom of the IDE window:
 - **Cursor Position**: Live line and column tracking (`Ln 42, Col 18`).
 - **Document Statistics**: Live word count and estimated reading time.
 - **Encoding & Indentation**: Displays active encoding (`UTF-8`) and tab size (`Spaces: 2`).
-- **Language Mode**: Displays and switches document language mode.
+- **Language Mode Switcher**: Interactive Status Bar pill opening the `LanguageModeModal` to quickly search and switch syntax highlighting across 30+ supported modes with intelligent auto-detection.
+- **Internationalization (i18n) Popover**: Quick language selector popover displaying current locale flag (🇺🇸, 🇨🇳, 🇪🇸, 🇯🇵, 🇩🇪, 🇫🇷, 🇷🇺, 🇮🇳, 🇧🇷, 🇮🇹) with 1-click language switching and custom language pack import/export.
 - **Notification Trigger**: Displays bell icon with unread badge count.
 
 ### 6.6 Notification Center & Toast Viewport

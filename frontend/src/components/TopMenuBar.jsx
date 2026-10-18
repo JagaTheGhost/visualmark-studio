@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { APP_CURRENT_VERSION } from '../data/releaseNotes'
 import appLogo from '../assets/logo.png'
 import { useToast } from '../context/ToastContext'
+import { useI18n } from '../i18n/I18nContext'
 
 export default function TopMenuBar({
   activeFile,
@@ -55,6 +56,7 @@ export default function TopMenuBar({
   const [isMaximized, setIsMaximized] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const topBarRef = useRef(null)
+  const { t } = useI18n()
 
   let toastCtx = null
   try {
@@ -146,7 +148,7 @@ export default function TopMenuBar({
               onClick={() => handleMenuClick('file')}
               onMouseEnter={() => handleMenuMouseEnter('file')}
             >
-              File
+              {t('menu.file', 'File')}
             </button>
             {activeMenu === 'file' && (
               <div className="menubar-dropdown">
@@ -275,7 +277,7 @@ export default function TopMenuBar({
               onClick={() => handleMenuClick('edit')}
               onMouseEnter={() => handleMenuMouseEnter('edit')}
             >
-              Edit
+              {t('menu.edit', 'Edit')}
             </button>
             {activeMenu === 'edit' && (
               <div className="menubar-dropdown">
@@ -317,7 +319,7 @@ export default function TopMenuBar({
               onClick={() => handleMenuClick('selection')}
               onMouseEnter={() => handleMenuMouseEnter('selection')}
             >
-              Selection
+              {t('menu.selection', 'Selection')}
             </button>
             {activeMenu === 'selection' && (
               <div className="menubar-dropdown">
@@ -341,7 +343,7 @@ export default function TopMenuBar({
               onClick={() => handleMenuClick('view')}
               onMouseEnter={() => handleMenuMouseEnter('view')}
             >
-              View
+              {t('menu.view', 'View')}
             </button>
             {activeMenu === 'view' && (
               <div className="menubar-dropdown">
@@ -408,7 +410,7 @@ export default function TopMenuBar({
               onClick={() => handleMenuClick('go')}
               onMouseEnter={() => handleMenuMouseEnter('go')}
             >
-              Go
+              {t('menu.go', 'Go')}
             </button>
             {activeMenu === 'go' && (
               <div className="menubar-dropdown">
@@ -432,7 +434,7 @@ export default function TopMenuBar({
               onClick={() => handleMenuClick('run')}
               onMouseEnter={() => handleMenuMouseEnter('run')}
             >
-              Run
+              {t('menu.run', 'Run')}
             </button>
             {activeMenu === 'run' && (
               <div className="menubar-dropdown">
@@ -458,7 +460,7 @@ export default function TopMenuBar({
               onClick={() => handleMenuClick('diagnostics')}
               onMouseEnter={() => handleMenuMouseEnter('diagnostics')}
             >
-              Diagnostics
+              {t('menu.diagnostics', 'Diagnostics')}
             </button>
             {activeMenu === 'diagnostics' && (
               <div className="menubar-dropdown">
@@ -520,7 +522,7 @@ export default function TopMenuBar({
               onClick={() => handleMenuClick('help')}
               onMouseEnter={() => handleMenuMouseEnter('help')}
             >
-              Help
+              {t('menu.help', 'Help')}
             </button>
             {activeMenu === 'help' && (
               <div className="menubar-dropdown">

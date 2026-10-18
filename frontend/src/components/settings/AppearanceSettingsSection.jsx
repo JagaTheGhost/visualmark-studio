@@ -1,4 +1,5 @@
 import React from 'react'
+import { useI18n } from '../../i18n/I18nContext'
 
 export default function AppearanceSettingsSection({
   activeCategory,
@@ -8,16 +9,46 @@ export default function AppearanceSettingsSection({
   zoomLevel,
   setZoomLevel,
   orientation,
-  setOrientation
+  setOrientation,
+  tabGroupingEnabled = true,
+  setTabGroupingEnabled = () => {}
 }) {
+  const { locale, setLocale, supportedLanguages, t } = useI18n()
+
   if (activeCategory !== 'all' && activeCategory !== 'appearance') return null
 
   return (
     <section className="settings-group-section">
       <div className="settings-group-header">
         <span className="material-symbols-outlined">palette</span>
-        <h3>Appearance & Window</h3>
+        <h3>{t('settings.appearance', 'Appearance & Window')}</h3>
       </div>
+
+      {/* Application Language (i18n) */}
+      {matchesSearch('language locale i18n translation english chinese spanish japanese german french russian hindi portuguese italian') && (
+        <div className="settings-card">
+          <div className="settings-card-info">
+            <div className="settings-card-label">{t('settings.language', 'Application Language')}</div>
+            <div className="settings-card-sublabel">
+              {t('settings.languageDesc', 'Select the interface display language for VisualMark Studio.')}
+            </div>
+          </div>
+          <div className="settings-card-control">
+            <select
+              className="settings-input-select"
+              value={locale}
+              onChange={(e) => setLocale(e.target.value)}
+            >
+              {supportedLanguages.map((lang) => (
+                <option key={lang.code} value={lang.code}>
+                  {lang.flag} {lang.native} ({lang.label})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
 
       {/* Color Theme */}
       {matchesSearch('theme color dark modern slate light') && (
@@ -35,6 +66,28 @@ export default function AppearanceSettingsSection({
               <option value="dark">Dark Modern (Antigravity IDE / VS Code Default)</option>
               <option value="slate">Sleek Slate (#10141a)</option>
               <option value="light">Crisp Light Mode</option>
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* Workbench Tab Grouping */}
+      {matchesSearch('tab grouping categories studio documents tabs flat') && (
+        <div className="settings-card">
+          <div className="settings-card-info">
+            <div className="settings-card-label">Workbench: Tab Grouping</div>
+            <div className="settings-card-sublabel">
+              Organize open studio tools, markdown documents, and presets into collapsible Chrome/Arc-style categories.
+            </div>
+          </div>
+          <div className="settings-card-control">
+            <select
+              className="settings-input-select"
+              value={tabGroupingEnabled ? 'enabled' : 'disabled'}
+              onChange={(e) => setTabGroupingEnabled(e.target.value === 'enabled')}
+            >
+              <option value="enabled">Enabled (Categorize into Docs & Studios)</option>
+              <option value="disabled">Disabled (Flat Traditional Tabs)</option>
             </select>
           </div>
         </div>

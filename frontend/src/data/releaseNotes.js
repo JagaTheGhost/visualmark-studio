@@ -2,15 +2,151 @@
  * VisualMark Studio - Release Notes & Update History Dataset
  * Powers the "What's New" modal dialog, update notifications, and in-IDE release history.
  */
-export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.1.1'
+export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.1.2'
 
 export const RELEASE_HISTORY = [
+  {
+    version: '1.1.2',
+    type: 'patch',
+    title: 'VisualMark Studio 1.1.2 — GitHub Repo Card Studio, Internationalization (i18n), Collapsible Tab Groups & StudioShell Architecture',
+    date: 'October 2026',
+    isCurrent: true,
+    highlights: [
+      'GitHub Repo Card Studio: Standalone first-class visual studio generating 100% client-side vector SVG repo cards with live telemetry and auto-adaptive dark/light themes',
+      'Comprehensive Internationalization (i18n): Native multi-language support across 10 locales (English, Simplified Chinese, Spanish, Japanese, German, French, Russian, Hindi, Portuguese-BR, Italian) with custom language pack import/export',
+      'Syntax & Document Language Mode Switcher: Interactive Status Bar picker modal supporting instant switching and extension-based detection for 30+ language modes',
+      'Chrome/Arc-Style Collapsible Tab Groups: Visual workspace tab bar separating Open Documents and Active Visual Studios with individual accent chips, counters, and accordion collapse states',
+      'Universal StudioShell Architecture: Unified 2-pane resizable layout container across all 12 visual studios with persistent action bars (Insert at Cursor, Copy, Reset, Back) and live code drawers',
+      'Motion Hero & Animated Media Studio: New animated GIF and MP4/WebM motion hero generator with framed macOS/Windows 11 app mockups, autoplay, and ambient glow accents',
+      'Local Workspace Media Engine: Native Electron IPC channel resolving and rendering local workspace SVGs, PNGs, and videos directly in Markdown Live Preview with zero external servers',
+      'Tactile Unsupported File Screen: Seamless embedded canvas view for binary and media assets with file metadata specs, reveal in Explorer, and system app launcher buttons',
+      'FastAPI Sidecar Lifecycle Resiliency: Startup health check polling and reliable Windows taskkill process tree termination on application exit preventing orphaned daemons'
+    ],
+    sections: [
+      {
+        category: 'New: GitHub Repo Card Studio',
+        icon: 'credit_card',
+        badge: 'New Studio',
+        color: '#58a6ff',
+        items: [
+          {
+            title: '100% Client-Side Vector SVG Generation',
+            desc: 'Generates self-contained, high-DPI vector repository cards without external API dependencies or rate limits.'
+          },
+          {
+            title: 'Auto-Adaptive Dark & Light Theming',
+            desc: 'Dynamic SVGs leveraging @media (prefers-color-scheme) alongside curated presets: Official GitHub Dark, GitHub Light, Obsidian Slate, Nord Frost, and Dracula.'
+          },
+          {
+            title: '4 Production Layout Templates',
+            desc: 'Choose from Official Pin, Bento Telemetry, Language Distribution Ribbon, and Minimal Compact layouts.'
+          },
+          {
+            title: '1-Click Snippet & Vector Download',
+            desc: 'Instantly insert markdown image links at the cursor or download standalone SVG cards directly to your workspace assets folder.'
+          }
+        ]
+      },
+      {
+        category: 'New: Internationalization (i18n) & Language Modes',
+        icon: 'translate',
+        badge: 'i18n',
+        color: '#10b981',
+        items: [
+          {
+            title: '10 Built-In World Languages',
+            desc: 'Full UI localization in English, 简体中文, Español, 日本語, Deutsch, Français, Русский, हिन्दी, Português (BR), and Italiano with automatic browser/system language detection.'
+          },
+          {
+            title: 'Custom Language Pack Import & Export',
+            desc: 'Export current translation dictionaries or import community JSON language packs with live hot-reloading and localStorage persistence.'
+          },
+          {
+            title: 'Document & Syntax Language Mode Picker',
+            desc: 'Interactive Status Bar button and modal dialog for switching syntax highlighting across Markdown, MDX, LaTeX, Plain Text, Mermaid, HTML, CSS, JavaScript, TypeScript, Python, Rust, Go, and more.'
+          }
+        ]
+      },
+      {
+        category: 'New: Collapsible Tab Groups',
+        icon: 'tab_group',
+        badge: 'Workspace',
+        color: '#8b5cf6',
+        items: [
+          {
+            title: 'Documents vs Studios Partitioning',
+            desc: 'Automatically groups open files and active studio tabs into distinct collapsible groups to keep complex workspaces organized.'
+          },
+          {
+            title: 'Accent-Themed Header Chips & Badges',
+            desc: 'Chrome and Arc-inspired pill headers with status dots, item counters, and smooth collapse/expand transitions.'
+          }
+        ]
+      },
+      {
+        category: 'Architecture: Universal StudioShell Container',
+        icon: 'dashboard',
+        badge: 'Refactor',
+        color: '#38bdf8',
+        items: [
+          {
+            title: 'Unified 2-Pane Resizable Layout',
+            desc: 'Refactored all 12 visual studios to use StudioShell, providing consistent property inspectors, WYSIWYG preview stages, and resizable dividers.'
+          },
+          {
+            title: 'Persistent Universal Action Bar',
+            desc: 'Standardized [Insert into Document (Ctrl+Enter)], [Copy Markdown], [Reset], and [Back to Readme] buttons across every studio tab.'
+          },
+          {
+            title: 'Preview Stage Theming & Live Code Drawer',
+            desc: 'Toggle canvas backgrounds (Dark, Midnight, Light, Grid) and inspect real-time character and line count statistics in the expandable code drawer.'
+          }
+        ]
+      },
+      {
+        category: 'Enhanced: Image Studio & Motion Heroes',
+        icon: 'movie',
+        badge: 'Visual Design',
+        color: '#ec4899',
+        items: [
+          {
+            title: 'Motion Hero & Video Banner Generator',
+            desc: 'Embed animated GIFs and MP4/WebM videos wrapped in authentic macOS or Windows 11 browser frames with configurable autoplay, loop, mute, and controls.'
+          },
+          {
+            title: 'Animated SVG Vectors & Visual Sweeps',
+            desc: 'Enhanced SVG banner generators with sweeping gradient animations and modern aesthetic presets.'
+          }
+        ]
+      },
+      {
+        category: 'Reliability: Media Engine & Sidecar Daemon',
+        icon: 'bolt',
+        badge: 'Reliability',
+        color: '#f59e0b',
+        items: [
+          {
+            title: 'Direct Workspace Media Streaming',
+            desc: 'New read-local-media Electron IPC resolves and renders relative workspace images, SVGs, and videos in the Live Preview Pane.'
+          },
+          {
+            title: 'Embedded Unsupported File Screen',
+            desc: 'Tactile embedded canvas view for binary formats with metadata inspection, Reveal in Explorer, and system app launching.'
+          },
+          {
+            title: 'Sidecar Health Polling & Teardown',
+            desc: 'FastAPI sidecar startup now polls health checks before accepting requests, and Windows taskkill cleanly terminates the process tree on shutdown.'
+          }
+        ]
+      }
+    ]
+  },
   {
     version: '1.1.1',
     type: 'patch',
     title: 'VisualMark Studio 1.1.1 — Embedded Canvas Launcher, Tactile Physical Depth UI & Security Hardening',
     date: 'October 2026',
-    isCurrent: true,
+    isCurrent: false,
     highlights: [
       'Embedded Canvas Launcher: Eliminated generic floating card container; launcher now merges seamlessly into the background canvas',
       'Tactile Physical Depth Controls: Multi-layered ambient drop shadows, top rim light-catch bevel highlights, and mechanical press animations',

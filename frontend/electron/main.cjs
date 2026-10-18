@@ -15,6 +15,7 @@ let sidecarProcess = null
 const DEFAULT_BACKEND_PORT = 8000
 let activeBackendPort = DEFAULT_BACKEND_PORT
 const isDev = !app.isPackaged || process.env.NODE_ENV === 'development'
+const activeTerminals = new Map()
 
 // Helper to extract file or directory path from command line arguments (e.g. from Explorer context menu)
 function parsePathFromArgv(args) {
@@ -148,12 +149,35 @@ async function ensureSidecar() {
   if (bundledExe) {
     console.log('[Sidecar] Launching bundled sidecar binary:', bundledExe)
     try {
+      const sidecarCwd = path.dirname(bundledExe)
       sidecarProcess = spawn(bundledExe, ['--port', String(activeBackendPort)], {
-        stdio: 'ignore',
+        cwd: sidecarCwd,
+        stdio: ['ignore', 'pipe', 'pipe'],
         windowsHide: true,
         detached: false
       })
+      sidecarProcess.stdout?.on('data', (chunk) => {
+        const text = chunk.toString('utf-8').trim()
+        if (text) console.log(`[Sidecar] ${text}`)
+      })
+      sidecarProcess.stderr?.on('data', (chunk) => {
+        const text = chunk.toString('utf-8').trim()
+        if (text) console.warn(`[Sidecar Err] ${text}`)
+      })
       sidecarProcess.on('error', (err) => console.error('[Sidecar Error]', err))
+      sidecarProcess.on('exit', (code, signal) => {
+        console.warn(`[Sidecar Exit] Sidecar exited with code ${code}, signal ${signal}`)
+      })
+
+      // Poll for backend to be healthy before continuing (up to 4s)
+      for (let attempt = 0; attempt < 16; attempt++) {
+        const ok = await checkBackendHealth(activeBackendPort)
+        if (ok) {
+          console.log(`[Sidecar] Successfully connected to backend daemon on port ${activeBackendPort} (attempt ${attempt + 1})`)
+          break
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250))
+      }
     } catch (err) {
       console.error('[Sidecar Spawn Failed]', err)
     }
@@ -164,13 +188,31 @@ async function ensureSidecar() {
       console.log('[Sidecar Dev] Spawning python daemon:', pythonScript)
       try {
         sidecarProcess = spawn('python', [pythonScript, '--port', String(activeBackendPort)], {
-          stdio: 'ignore',
+          cwd: path.dirname(pythonScript),
+          stdio: ['ignore', 'pipe', 'pipe'],
           windowsHide: true,
           detached: false
+        })
+        sidecarProcess.stdout?.on('data', (chunk) => {
+          const text = chunk.toString('utf-8').trim()
+          if (text) console.log(`[Sidecar Dev] ${text}`)
+        })
+        sidecarProcess.stderr?.on('data', (chunk) => {
+          const text = chunk.toString('utf-8').trim()
+          if (text) console.warn(`[Sidecar Dev Err] ${text}`)
         })
         sidecarProcess.on('error', () => {
           console.log('[Sidecar Dev] Python direct spawn skipped (external terminal might be running).')
         })
+
+        for (let attempt = 0; attempt < 12; attempt++) {
+          const ok = await checkBackendHealth(activeBackendPort)
+          if (ok) {
+            console.log(`[Sidecar Dev] Backend ready on port ${activeBackendPort}`)
+            break
+          }
+          await new Promise((resolve) => setTimeout(resolve, 250))
+        }
       } catch {}
     }
   }
@@ -510,6 +552,49 @@ ipcMain.handle('file-read', async (_event, filePath) => {
     return { success: false, error: err.message }
   }
 })
+
+// Read workspace media file (SVG, PNG, JPG, GIF, WebP, MP4) for Markdown Preview
+ipcMain.handle('read-local-media', async (_event, filePath) => {
+  try {
+    if (!filePath || typeof filePath !== 'string') {
+      return { success: false, error: 'Invalid path' }
+    }
+    if (!fs.existsSync(filePath)) {
+      return { success: false, error: 'File does not exist' }
+    }
+    const stat = await fs.promises.stat(filePath)
+    if (stat.isDirectory()) {
+      return { success: false, error: 'Target is a directory' }
+    }
+    if (stat.size > 30 * 1024 * 1024) {
+      return { success: false, error: 'File exceeds size limit (>30MB)' }
+    }
+    const ext = path.extname(filePath).toLowerCase().replace(/^\./, '')
+    if (ext === 'svg') {
+      const content = await fs.promises.readFile(filePath, 'utf-8')
+      return { success: true, isSvg: true, content, filePath }
+    }
+
+    const mimeMap = {
+      png: 'image/png',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      gif: 'image/gif',
+      webp: 'image/webp',
+      bmp: 'image/bmp',
+      ico: 'image/x-icon',
+      mp4: 'video/mp4',
+      webm: 'video/webm'
+    }
+    const mime = mimeMap[ext] || 'image/png'
+    const buffer = await fs.promises.readFile(filePath)
+    const base64 = buffer.toString('base64')
+    return { success: true, isSvg: false, dataUrl: `data:${mime};base64,${base64}`, filePath }
+  } catch (err) {
+    return { success: false, error: err.message }
+  }
+})
+
 
 // Native Open Folder / Workspace Dialog
 ipcMain.handle('dialog-open-folder', async () => {
@@ -1574,26 +1659,41 @@ app.on('window-all-closed', () => {
   }
 })
 
-app.on('before-quit', () => {
-  for (const [_id, item] of activeTerminals.entries()) {
+function terminateSidecar() {
+  if (sidecarProcess && sidecarProcess.pid) {
     try {
-      if (process.platform === 'win32') {
-        spawn('taskkill', ['/pid', String(item.proc.pid), '/f', '/t'])
-      } else {
-        item.proc.kill('SIGTERM')
-      }
-    } catch {}
-  }
-  activeTerminals.clear()
-
-  if (sidecarProcess) {
-    try {
-      console.log('[Sidecar] Terminating sidecar child process...')
+      console.log('[Sidecar] Terminating sidecar child process PID:', sidecarProcess.pid)
       if (process.platform === 'win32') {
         spawn('taskkill', ['/pid', String(sidecarProcess.pid), '/f', '/t'])
       } else {
         sidecarProcess.kill('SIGTERM')
       }
-    } catch {}
+    } catch (err) {
+      console.warn('[Sidecar Cleanup Error]', err)
+    }
+    sidecarProcess = null
   }
+}
+
+app.on('before-quit', () => {
+  if (typeof activeTerminals !== 'undefined' && activeTerminals) {
+    for (const [_id, item] of activeTerminals.entries()) {
+      try {
+        if (item?.proc?.pid) {
+          if (process.platform === 'win32') {
+            spawn('taskkill', ['/pid', String(item.proc.pid), '/f', '/t'])
+          } else {
+            item.proc.kill('SIGTERM')
+          }
+        }
+      } catch {}
+    }
+    activeTerminals.clear()
+  }
+
+  terminateSidecar()
+})
+
+app.on('will-quit', () => {
+  terminateSidecar()
 })

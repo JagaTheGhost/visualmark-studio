@@ -9,7 +9,7 @@
 1. [Product Overview](#1-product-overview)
 2. [Desktop System Architecture](#2-desktop-system-architecture)
 3. [Dual-Engine Monaco Code Workspace](#3-dual-engine-monaco-code-workspace)
-4. [The 11 Specialized Visual Studio Suites](#4-the-11-specialized-visual-studio-suites)
+4. [The 12 Specialized Visual Studio Suites](#4-the-12-specialized-visual-studio-suites)
 5. [Contextual Floating Selection HUD Toolbar](#5-contextual-floating-selection-hud-toolbar)
 6. [Universal Command Palette & Keybinding Engine](#6-universal-command-palette--keybinding-engine)
 7. [Integrated Diagnostics, Terminals & System Telemetry](#7-integrated-diagnostics-terminals--system-telemetry)
@@ -23,7 +23,7 @@
 
 ### What is VisualMark Studio?
 
-**VisualMark Studio** is a local-first, offline-capable desktop IDE engineered specifically for technical documentation, Markdown architecture, and multi-format publishing. It replaces disjointed web tools with a unified environment that pairs the **VS Code Monaco Editor** with **11 dedicated interactive visual studios**, native local filesystem I/O, embedded terminal sessions, and an automated documentation engine.
+**VisualMark Studio** is a local-first, offline-capable desktop IDE engineered specifically for technical documentation, Markdown architecture, and multi-format publishing. It replaces disjointed web tools with a unified environment that pairs the **VS Code Monaco Editor** with **12 dedicated interactive visual studios**, native local filesystem I/O, embedded terminal sessions, and an automated documentation engine.
 
 ### Core Value Proposition
 
@@ -49,7 +49,7 @@ VisualMark Studio employs a three-tier local architecture: an **Electron Main Pr
 │  │   • VS Code Monaco Editor Engine with Indentation Folding & Minimap     │  │
 │  │   • Proportional Synchronized Split Preview Canvas                      │  │
 │  │   • Floating Selection HUD Toolbar (Headings, Code, Callouts, Lists)     │  │
-│  │   • 11 Specialized Visual Studios (Badges, Diagrams, APIs, Icons, etc.)  │  │
+│  │   • 12 Specialized Visual Studios (Badges, Repo Cards, Diagrams, etc.)  │  │
 │  │   • Bottom Drawer: Terminals (PowerShell/CMD), Linter Problems, Output  │  │
 │  │                                                                         │  │
 │  └─────────────────────────────────────────────────────────────────────────┘  │
@@ -84,6 +84,7 @@ The React renderer communicates with native operating system primitives via secu
 | `openFolderDialog` | `() => Promise<{ canceled, folderPath, files }>` | Mounts local repository and scans workspace tree |
 | `saveDirectFile` | `(filePath, content) => Promise<{ success, error }>` | Writes document buffer directly to local disk |
 | `saveFileDialog` | `(defaultName, content) => Promise<{ success, filePath }>` | Invokes native OS Save-As dialog |
+| `readLocalMedia` | `(filePath) => Promise<{ success, isSvg, content, dataUrl, error }>` | Reads local workspace media (SVG, images, video) for Markdown Live Preview |
 | `getBackendUrl` | `() => Promise<string>` | Retrieves negotiated FastAPI sidecar localhost URL |
 | `spawnTerminal` | `(sessionId, shellType, cwd) => void` | Spawns local PowerShell or CMD session |
 | `getAppVersion` | `() => Promise<string>` | Retrieves application SemVer version string |
@@ -107,41 +108,49 @@ The React renderer communicates with native operating system primitives via secu
 
 ---
 
-## 4. The 11 Specialized Visual Studio Suites
+## 4. The 12 Specialized Visual Studio Suites
 
-VisualMark Studio features 11 dedicated visual designer environments accessible via the Activity Bar, Studios menu, or Command Palette:
+VisualMark Studio features 12 dedicated visual designer environments accessible via the Activity Bar, Studios menu, or Command Palette. All studios are housed within the standardized **StudioShell** architecture—providing resizable 2-pane inspector/canvas stages, persistent universal action bars (`Insert at Cursor (Ctrl+Enter)`, `Copy Markdown`, `Reset`, `Back to Readme`), canvas stage backdrop theming (Dark, Midnight, Light, Grid), and expandable live code drawers with character/line count telemetry.
 
 ### 4.1 Shields.io Badges Studio (`badges.studio`)
 - **100+ Technology Presets:** Pre-configured badges covering languages, frameworks, cloud providers, and databases.
 - **Visual Styler:** Custom label, message, color picker, and official badge styles (`for-the-badge`, `flat`, `flat-square`, `plastic`, `social`).
 - **1-Click Actions:** Insert into document buffer, copy raw Markdown image syntax, or download vector SVG.
 
-### 4.2 Mermaid Architecture Studio (`diagrams.studio`)
+### 4.2 GitHub Repository Showcase Cards (`repocard.studio`)
+- **100% Client-Side Vector Engine:** Generates self-contained, high-DPI vector SVG repo cards with zero external API dependencies or rate limits.
+- **Auto-Adaptive Theming:** Dual dark and light auto-adaptive SVGs powered by `@media (prefers-color-scheme)` alongside themes (Official GitHub Dark, GitHub Light, Obsidian Slate, Nord Frost, Dracula).
+- **Official GitHub Octicons:** Vector Octicons for stars, forks, open issues, repo book, and license badges.
+- **4 Layout Templates:** Official Pin, Bento Telemetry, Language Distribution Ribbon, and Minimal Compact.
+- **1-Click Actions:** Insert centered Markdown embed links into the active document or download standalone `.svg` vector files.
+
+### 4.3 Mermaid Architecture Studio (`diagrams.studio`)
 - **15+ Diagram Topologies:** Architecture maps, flowcharts, sequence diagrams, state machines, entity relationship diagrams, class diagrams, Git graphs, and user journeys.
 - **Live Vector Engine:** Real-time syntax validation, pan-and-zoom preview canvas, and instant syntax error line highlighting.
 - **High-DPI Export:** Export directly as production-ready `.svg` or 2x resolution `.png` images.
 
-### 4.3 Visual Markdown Table Studio (`tables.studio`)
+### 4.4 Visual Markdown Table Studio (`tables.studio`)
 - **Interactive Spreadsheet Grid:** Add, remove, and reorder rows and columns with click-to-edit cells.
 - **Column Alignment Matrix:** Set left, center, or right alignment per column with visual preview.
 - **CSV & JSON Import/Export:** Import existing spreadsheets or export tables to CSV and formatted GFM Markdown.
 
-### 4.4 Code Snippets & GitHub Callouts Studio (`snippets.studio`)
+### 4.5 Code Snippets & GitHub Callouts Studio (`snippets.studio`)
 - **GitHub Alert Callouts:** Standard callout generator for `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, and `[!CAUTION]`.
 - **Collapsible `<details>` Blocks:** Interactive disclosure blocks with custom summaries for deep technical details and logs.
 - **Multilingual Fences:** Syntax-highlighted code fences covering 30+ programming languages.
 
-### 4.5 Hero Images, Banners & Window Frames (`images.studio`)
+### 4.6 Hero Images, Banners & Motion Heroes (`images.studio`)
 - **OS Window Frame Mockups:** Wrap screenshots in macOS dark/light titlebars with realistic traffic light buttons, or clean Windows 11 window frames.
+- **Motion Hero & Video Generator:** Wrap animated GIFs and MP4/WebM videos in authentic window mockups with autoplay, loop, mute, and glow effects.
 - **Gradient Hero Banners:** Canvas-rendered hero banners with custom typography, radial glow accents, and aspect ratio controls.
 - **Optimization:** Automatic image compression and local asset directory saving.
 
-### 4.6 Directory Tree Studio (`tree.studio`)
+### 4.7 Directory Tree Studio (`tree.studio`)
 - **Automated Workspace Scanning:** Reads mounted workspace folder and recursively builds directory trees.
 - **Rendering Formats:** Classic ASCII (`|--`, `\--`), modern Unicode box-drawing (`├──`, `└──`), or Emoji-annotated directory trees.
 - **Custom Exclusions:** Filter out `node_modules`, `.git`, `dist`, `__pycache__`, and configure maximum scan depth.
 
-### 4.7 REST API & Endpoints Designer (`api.studio`)
+### 4.8 REST API & Endpoints Designer (`api.studio`)
 - **Interactive Multi-Mode Preview:**
   - **Live Preview:** Full-width interactive documentation view.
   - **Split View:** Side-by-side builder on the left and live rendered spec on the right.
@@ -151,24 +160,24 @@ VisualMark Studio features 11 dedicated visual designer environments accessible 
   - **GitHub GFM Render:** Exact Markdown output rendered via `ReactMarkdown`.
 - **cURL Command Generator:** Automatically constructs ready-to-run `curl` commands for each endpoint.
 
-### 4.8 Vector Icons & Developer Emojis Studio (`icons.studio`)
+### 4.9 Vector Icons & Developer Emojis Studio (`icons.studio`)
 - **Dual-Mode Partitioning:** Cleanly separates **Vector Material Icons (Material Symbols)** and **Developer Emojis**.
 - **Vector Icon Color Customizer:** 9 curated theme swatches (Slate, Indigo, Emerald, Sky, Amber, Rose, Purple, GitHub Dark, GitHub Light), HTML5 color wheel, and direct HEX input.
 - **Live Catalog Tinting:** Toggling `[x] Tint catalog preview` dynamically updates every icon card in the catalog with the selected custom color.
 - **Dual-Flavor SVG Export Engine:** Download colored `.svg` vector files locally with baked fills, generate remote Iconify Markdown syntax (`<img src="https://api.iconify.design/material-symbols:...svg?color=..." />`), or copy raw SVG code.
 - **Monaco Autocomplete Provider:** Triggering `:` in the editor provides inline suggestions for both emojis and Material vector icons.
 
-### 4.9 Contributors & Team Grid Studio (`contributors.studio`)
+### 4.10 Contributors & Team Grid Studio (`contributors.studio`)
 - **All-Contributors Specification:** Standard open-source recognition format.
 - **Avatar Auto-Fetch:** Enter GitHub usernames to fetch profile avatars and links automatically.
 - **Contribution Badges:** Assign roles (Code 💻, Docs 📖, Design 🎨, Maintenance 🚧, Bug Reports 🐛).
 
-### 4.10 Changelog & SemVer Release Studio (`changelog.studio`)
+### 4.11 Changelog & SemVer Release Studio (`changelog.studio`)
 - **Keep-a-Changelog Standard:** Formats entries strictly under `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, and `Security`.
 - **SemVer Version Bumping:** 1-click version bumping for Major, Minor, and Patch releases.
 - **Release Notes Exporter:** Extracts single-version release notes ready for GitHub Releases.
 
-### 4.11 README Health Auditor & Linter (`audit.studio`)
+### 4.12 README Health Auditor & Linter (`audit.studio`)
 - **Automated Scorecard:** Evaluates documentation completeness from **A+ to F**.
 - **Missing Section Detector:** Identifies missing essential sections (License, Installation, Architecture, Contributing).
 - **1-Click Boilerplate Injector:** Injects missing section boilerplates directly into your document buffer.

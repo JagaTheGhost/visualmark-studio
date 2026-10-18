@@ -1,14 +1,16 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
-import { useStudioSplit } from '../../utils/useResizableSplit'
+import StudioShell from './common/StudioShell'
 import BadgeStudioTab from './badge/BadgeStudioTab'
+import '../../styles/studios/tableStudio.css'
 
 const TABLE_PRESETS = [
   {
     id: 'conventional-commits',
-    title: 'Conventional Commits Reference',
+    title: 'Conventional Commits',
+    category: 'Git Workflow',
     description: 'Standard git commit types with colorful status badges, scopes, and SemVer release bumps.',
     headers: ['Type', 'Badge', 'Scope & Description', 'SemVer Bump'],
     alignments: ['left', 'center', 'left', 'center'],
@@ -26,7 +28,8 @@ const TABLE_PRESETS = [
   {
     id: 'features',
     title: 'Feature Matrix & Modules',
-    description: 'Feature name, implementation module, status badge, and readiness.',
+    category: 'Architecture',
+    description: 'Feature name, implementation module, status badge, and readiness level.',
     headers: ['Module / Feature', 'Architecture Role', 'Status', 'Readiness'],
     alignments: ['left', 'left', 'center', 'center'],
     rows: [
@@ -39,6 +42,7 @@ const TABLE_PRESETS = [
   {
     id: 'api-endpoints',
     title: 'REST API Endpoints',
+    category: 'API Spec',
     description: 'HTTP method, path, authentication requirement, and summary.',
     headers: ['Method', 'Endpoint', 'Auth Required', 'Description'],
     alignments: ['center', 'left', 'center', 'left'],
@@ -52,6 +56,7 @@ const TABLE_PRESETS = [
   {
     id: 'env-vars',
     title: 'Environment Variables (.env)',
+    category: 'Configuration',
     description: 'Configuration options, variable types, defaults, and necessity.',
     headers: ['Variable', 'Type', 'Default', 'Required', 'Description'],
     alignments: ['left', 'center', 'center', 'center', 'left'],
@@ -65,6 +70,7 @@ const TABLE_PRESETS = [
   {
     id: 'tech-stack',
     title: 'Tech Stack Specifications',
+    category: 'Architecture',
     description: 'Architecture layer, technology, version requirements, and role.',
     headers: ['Layer', 'Technology', 'Badge', 'Version', 'Role'],
     alignments: ['left', 'left', 'center', 'center', 'left'],
@@ -77,7 +83,8 @@ const TABLE_PRESETS = [
   },
   {
     id: 'compatibility',
-    title: 'Runtime & Platform Compatibility',
+    title: 'Platform Compatibility',
+    category: 'Support',
     description: 'Operating systems, runtimes, tested versions, and support tier.',
     headers: ['Platform / Runtime', 'Engine', 'Tested Version', 'Status'],
     alignments: ['left', 'center', 'center', 'center'],
@@ -88,9 +95,68 @@ const TABLE_PRESETS = [
       ['macOS', 'Apple Silicon / Intel', 'macOS 13+ (Ventura+)', '![Supported](https://img.shields.io/badge/Tier-Tier_1-blue?style=flat-square)'],
       ['Linux', 'glibc >= 2.31', 'Ubuntu 22.04 LTS+', '![Supported](https://img.shields.io/badge/Tier-Tier_1-blue?style=flat-square)']
     ]
+  },
+  {
+    id: 'roadmap-milestones',
+    title: 'Roadmap & Milestones',
+    category: 'Project Plan',
+    description: 'Quarterly delivery goals, priority levels, status badges, and module owners.',
+    headers: ['Quarter', 'Milestone Goal', 'Priority', 'Status', 'Lead'],
+    alignments: ['center', 'left', 'center', 'center', 'left'],
+    rows: [
+      ['`Q1 2025`', 'Native Desktop Workspace Engine', '![High](https://img.shields.io/badge/Priority-High-red?style=flat-square)', '![Done](https://img.shields.io/badge/Status-Complete-success?style=flat-square)', '@team-core'],
+      ['`Q2 2025`', 'Full Shields.io & Repo Card Vector Suite', '![High](https://img.shields.io/badge/Priority-High-red?style=flat-square)', '![Active](https://img.shields.io/badge/Status-Active-blue?style=flat-square)', '@team-ui'],
+      ['`Q3 2025`', 'Interactive Mermaid Flowchart Studio', '![Medium](https://img.shields.io/badge/Priority-Med-orange?style=flat-square)', '![WIP](https://img.shields.io/badge/Status-In_Progress-yellow?style=flat-square)', '@team-diagrams'],
+      ['`Q4 2025`', 'Cloud Sync & GitHub Pull Request Bot', '![Low](https://img.shields.io/badge/Priority-Low-lightgrey?style=flat-square)', '![Planned](https://img.shields.io/badge/Status-Planned-purple?style=flat-square)', '@team-cloud']
+    ]
+  },
+  {
+    id: 'pricing-matrix',
+    title: 'Plan & Feature Matrix',
+    category: 'Comparison',
+    description: 'Feature tiers, limits, user seats, and support guarantees.',
+    headers: ['Feature / Capability', 'Community', 'Pro Tier', 'Enterprise'],
+    alignments: ['left', 'center', 'center', 'center'],
+    rows: [
+      ['Markdown & Table Studios', '✅ Free Forever', '✅ Free Forever', '✅ Free Forever'],
+      ['Custom Vector Themes', '3 Included', 'Unlimited', 'Unlimited'],
+      ['Team Collaboration Seats', '1 User', 'Up to 10', 'Unlimited'],
+      ['Priority GitHub CI Support', '❌ Community', '24h Response', 'Dedicated SLA']
+    ]
+  },
+  {
+    id: 'performance-benchmarks',
+    title: 'Performance Benchmarks',
+    category: 'Benchmarks',
+    description: 'Throughput, latency (p99), memory footprint, and cold boot benchmark scores.',
+    headers: ['Engine', 'Throughput (req/s)', 'p99 Latency', 'Memory', 'Score'],
+    alignments: ['left', 'center', 'center', 'center', 'center'],
+    rows: [
+      ['VisualMark V2 (Wasm)', '48,200', '1.4 ms', '18 MB', '![Grade](https://img.shields.io/badge/Score-A%2B-brightgreen?style=flat-square)'],
+      ['Legacy Generator V1', '12,400', '6.8 ms', '74 MB', '![Grade](https://img.shields.io/badge/Score-B-yellow?style=flat-square)'],
+      ['Standard AST CLI', '8,900', '14.2 ms', '112 MB', '![Grade](https://img.shields.io/badge/Score-C-orange?style=flat-square)']
+    ]
+  },
+  {
+    id: 'faq-documentation',
+    title: 'FAQ & Troubleshooting Reference',
+    category: 'Documentation',
+    description: 'Frequently encountered developer questions, error codes, and quick resolution steps.',
+    headers: ['Topic / Error', 'Impact', 'Root Cause', 'Resolution'],
+    alignments: ['left', 'center', 'left', 'left'],
+    rows: [
+      ['`E_BADGE_OVERFLOW`', '⚠️ Warning', 'Badge URL string exceeds GitHub character limit', 'Switch to SVG vector embed or short URL'],
+      ['`E_GFM_ESCAPE`', '❌ Fatal', 'Unescaped pipe `|` in raw cell text breaks markdown table', 'Use `\\|` or enclose expression inside code backticks'],
+      ['`E_TOKEN_EXPIRED`', '🔒 Auth', 'GitHub personal access token expired', 'Regenerate token with `repo` scope in settings']
+    ]
   }
 ]
 
+/**
+ * Markdown Table Studio Pro
+ * High-density interactive tabular data designer with Shields.io badges,
+ * CSV/TSV paste import, GFM alignment cycling, and live WYSIWYG render.
+ */
 export default function TableStudioTab({
   onInsertTable,
   onBackToReadme
@@ -98,10 +164,9 @@ export default function TableStudioTab({
   const [headers, setHeaders] = useState(TABLE_PRESETS[0].headers)
   const [alignments, setAlignments] = useState(TABLE_PRESETS[0].alignments)
   const [rows, setRows] = useState(TABLE_PRESETS[0].rows)
-  const [copied, setCopied] = useState(false)
+
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false)
   const [isBadgeStudioModalOpen, setIsBadgeStudioModalOpen] = useState(false)
-  const { formWidth, isDragging, handleMouseDown, handleDoubleClick } = useStudioSplit(540)
   const [csvText, setCsvText] = useState('')
   const [csvDelimiter, setCsvDelimiter] = useState('auto')
   const [csvError, setCsvError] = useState('')
@@ -112,8 +177,8 @@ export default function TableStudioTab({
   // Count cells with badges wrapped in backticks (e.g. `![Feat](...)`)
   const backtickBadges = useMemo(() => {
     let count = 0
-    rows.forEach((r, rIdx) => {
-      r.forEach((c, cIdx) => {
+    rows.forEach((r) => {
+      r.forEach((c) => {
         if (typeof c === 'string' && /^`\s*(!\[.*?\]\(.*?\))\s*`$/.test(c.trim())) {
           count++
         }
@@ -137,7 +202,7 @@ export default function TableStudioTab({
     )
   }
 
-  // Import CSV / TSV
+  // Import CSV / TSV / Excel
   const handleImportCsv = () => {
     if (!csvText.trim()) {
       setCsvError('Please paste some CSV, TSV, or spreadsheet text.')
@@ -293,6 +358,18 @@ export default function TableStudioTab({
     setActiveCell({ rowIndex: rowIndex + 1, colIndex: activeCell.colIndex })
   }
 
+  const handleClearTable = () => {
+    if (window.confirm('Reset table grid to blank 3x3 template?')) {
+      setHeaders(['Column 1', 'Column 2', 'Column 3'])
+      setAlignments(['left', 'left', 'left'])
+      setRows([
+        ['', '', ''],
+        ['', '', '']
+      ])
+      setActiveCell({ rowIndex: 0, colIndex: 0 })
+    }
+  }
+
   const handleHeaderChange = (idx, value) => {
     setHeaders((prev) => {
       const next = [...prev]
@@ -324,7 +401,7 @@ export default function TableStudioTab({
     })
   }
 
-  // Auto-clean any existing broken cells in state (e.g. if loaded with multi-line packs)
+  // Auto-clean any existing broken cells in state
   useEffect(() => {
     let hasDirtyCell = false
     const sanitized = rows.map((r) =>
@@ -342,20 +419,10 @@ export default function TableStudioTab({
   }, [rows])
 
   const handleApplyPreset = (preset) => {
-    const formCol = document.querySelector('.studio-form-column')
-    const savedTop = formCol ? formCol.scrollTop : 0
     setHeaders(preset.headers)
     setAlignments(preset.alignments)
     setRows(preset.rows)
     setActiveCell({ rowIndex: 0, colIndex: 0 })
-    if (formCol) {
-      window.requestAnimationFrame(() => {
-        formCol.scrollTop = savedTop
-      })
-      setTimeout(() => {
-        if (formCol) formCol.scrollTop = savedTop
-      }, 50)
-    }
   }
 
   // Active cell quick formatting
@@ -377,6 +444,32 @@ export default function TableStudioTab({
       handleCellChange(rowIndex, colIndex, val.slice(1, -1))
     } else {
       handleCellChange(rowIndex, colIndex, `\`${val}\``)
+    }
+  }
+
+  const handleToggleBoldOnActiveCell = () => {
+    const { rowIndex, colIndex } = activeCell
+    if (rowIndex >= rows.length || colIndex >= headers.length) return
+    const val = (rows[rowIndex][colIndex] || '').trim()
+    if (!val) return
+
+    if (val.startsWith('**') && val.endsWith('**') && val.length > 3) {
+      handleCellChange(rowIndex, colIndex, val.slice(2, -2))
+    } else {
+      handleCellChange(rowIndex, colIndex, `**${val}**`)
+    }
+  }
+
+  const handleToggleItalicOnActiveCell = () => {
+    const { rowIndex, colIndex } = activeCell
+    if (rowIndex >= rows.length || colIndex >= headers.length) return
+    const val = (rows[rowIndex][colIndex] || '').trim()
+    if (!val) return
+
+    if (val.startsWith('*') && val.endsWith('*') && !val.startsWith('**') && val.length > 2) {
+      handleCellChange(rowIndex, colIndex, val.slice(1, -1))
+    } else {
+      handleCellChange(rowIndex, colIndex, `*${val}*`)
     }
   }
 
@@ -404,14 +497,8 @@ export default function TableStudioTab({
     return `${headerLine}\n${dividerLine}\n${bodyLines.join('\n')}\n`
   }, [headers, alignments, rows])
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(markdownTable)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   const handleInsert = () => {
-    if (onInsertTable) {
+    if (typeof onInsertTable === 'function') {
       onInsertTable(markdownTable)
     }
   }
@@ -430,194 +517,105 @@ export default function TableStudioTab({
     URL.revokeObjectURL(url)
   }
 
-  return (
-    <div className="studio-tab-view select-none">
-      {/* Top Control Bar */}
-      <div className="studio-top-bar">
-        <div className="studio-bar-left">
-          <div className="studio-badge-halo">
-            <span className="material-symbols-outlined text-secondary" style={{ color: '#818cf8' }}>
-              table_chart
-            </span>
-          </div>
-          <div>
-            <div className="studio-title-row">
-              <h2 className="studio-title">Visual Markdown Table Studio Pro</h2>
-              <span className="studio-tag" style={{ borderColor: 'rgba(99, 102, 241, 0.4)', color: '#38bdf8' }}>
-                Badge & Grid Engine
-              </span>
-            </div>
-            <p className="studio-subtitle">
-              Construct high-contrast technical tables with Shields.io badges, status tags, CSV import, and live Markdown render.
-            </p>
-          </div>
-        </div>
+  // Extra action: Export CSV button in top shell toolbar
+  const extraHeaderActions = (
+    <button
+      type="button"
+      className="studio-shell-btn studio-shell-btn-secondary"
+      onClick={handleExportCsv}
+      title="Download table data as CSV spreadsheet"
+    >
+      <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>download</span>
+      <span>Export CSV</span>
+    </button>
+  )
 
-        <div className="studio-bar-actions">
-          {onBackToReadme && (
-            <button
-              type="button"
-              className="btn-studio-secondary"
-              onClick={onBackToReadme}
-              title="Return to active markdown document"
-            >
-              <span className="material-symbols-outlined icon-xs">arrow_back</span>
-              <span>Back to Editor</span>
-            </button>
-          )}
-          <button
-            type="button"
-            className="btn-studio-secondary"
-            onClick={handleExportCsv}
-            title="Download table data as CSV file"
-          >
-            <span className="material-symbols-outlined icon-xs">download</span>
-            <span>Export CSV</span>
-          </button>
-          <button
-            type="button"
-            className="btn-studio-secondary"
-            onClick={handleCopy}
-            title="Copy Markdown code to clipboard"
-          >
-            <span className="material-symbols-outlined icon-xs">
-              {copied ? 'check' : 'content_copy'}
-            </span>
-            <span>{copied ? 'Copied!' : 'Copy Table'}</span>
-          </button>
-          <button
-            type="button"
-            className="btn-studio-primary"
-            onClick={handleInsert}
-            title="Insert table into an open document"
-          >
-            <span className="material-symbols-outlined icon-xs">add_circle</span>
-            <span>Insert into Document</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Backtick Badge Warning & 1-Click Fixer Alert Banner */}
+  // Status & fix pills in canvas header
+  const canvasHeaderExtras = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <span className="canvas-header-divider" />
+      <span className="canvas-mode-tag">
+        {headers.length} COLS × {rows.length} ROWS
+      </span>
       {backtickBadges > 0 && (
-        <div className="table-badge-warning-banner">
-          <div className="warning-banner-text">
-            <span className="material-symbols-outlined warning-icon">warning</span>
-            <div>
-              <strong>{backtickBadges} Badge(s) Wrapped in Backticks Detected!</strong>
-              <div className="warning-desc">
-                In Markdown, wrapping badges in backticks like <code>`![Feat](...)`</code> prints raw code text instead of rendering the graphical badge.
+        <button
+          type="button"
+          onClick={handleUnwrapAllBadges}
+          className="studio-shell-btn studio-shell-btn-secondary"
+          style={{
+            fontSize: '11px',
+            padding: '3px 8px',
+            color: '#f59e0b',
+            borderColor: 'rgba(245, 158, 11, 0.4)',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            gap: '4px'
+          }}
+          title="Unwrap backticks around badges so they render as graphics"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>auto_fix_high</span>
+          <span>Fix {backtickBadges} Badges</span>
+        </button>
+      )}
+    </div>
+  )
+
+  return (
+    <>
+      <StudioShell
+        studioId="tables.studio"
+        title="Markdown Table Studio"
+        subtitle="High-density interactive tabular data designer with Shields.io badges, CSV/TSV paste, and GFM alignment"
+        badge="GFM Table Pro"
+        accentColor="#38bdf8"
+        icon={<span className="material-symbols-outlined" style={{ fontSize: '20px' }}>table_chart</span>}
+        markdownCode={markdownTable}
+        onInsert={handleInsert}
+        insertLabel="Insert Table"
+        onBackToReadme={onBackToReadme}
+        extraHeaderActions={extraHeaderActions}
+        canvasHeaderExtras={canvasHeaderExtras}
+        defaultSplitWidth={560}
+        minSplitWidth={380}
+        maxSplitWidth={880}
+        inspectorContent={
+          <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* 1. Quick Presets Bar */}
+            <div className="studio-section">
+              <div className="section-header-row" style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <label className="studio-section-label" style={{ fontWeight: 600, fontSize: '12px', color: '#94a3b8' }}>
+                  1 • Table Presets Catalog
+                </label>
+                <span className="preset-count-tag" style={{ fontSize: '10px', color: '#64748b' }}>
+                  {TABLE_PRESETS.length} Templates
+                </span>
+              </div>
+              <div className="studio-presets-row" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {TABLE_PRESETS.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className="studio-preset-pill"
+                    onClick={() => handleApplyPreset(p)}
+                    title={p.description}
+                  >
+                    <span>{p.title}</span>
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
-          <button
-            type="button"
-            className="btn-unwrap-badges"
-            onClick={handleUnwrapAllBadges}
-            title="Unwrap backticks so badges render as live graphics"
-          >
-            <span className="material-symbols-outlined icon-xs">auto_fix_high</span>
-            <span>Fix All Badges (Unwrap Backticks)</span>
-          </button>
-        </div>
-      )}
 
-      {/* Main Studio Body: 2-Column Responsive Layout */}
-      <div className="studio-content-grid">
-        {/* Left Column: Visual Grid Editor & Controls */}
-        <div
-          className="studio-form-column custom-scrollbar"
-          style={{ width: `${formWidth}px`, minWidth: `${formWidth}px`, maxWidth: `${formWidth}px`, flex: 'none' }}
-        >
-          {/* Quick Presets Bar */}
-          <div className="studio-section">
-            <div className="section-header-row">
-              <label className="studio-section-label">Table Presets</label>
-              <span className="preset-count-tag">{TABLE_PRESETS.length} Templates</span>
-            </div>
-            <div className="studio-presets-row">
-              {TABLE_PRESETS.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  className="studio-preset-pill"
-                  onClick={() => handleApplyPreset(p)}
-                  title={p.description}
-                >
-                  <span>{p.title}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Active Cell Quick Tools Bar */}
-          <div className="studio-section table-quick-tools-card">
-            <div className="quick-tools-header">
-              <span className="quick-tools-title">
-                <span className="material-symbols-outlined icon-xs" style={{ color: '#38bdf8' }}>
-                  edit_attributes
+            {/* 2. Grid Dimension & Import Controls */}
+            <div className="studio-section">
+              <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <label className="studio-section-label" style={{ fontWeight: 600, fontSize: '12px', color: '#94a3b8' }}>
+                  2 • Dimensions & Import
+                </label>
+                <span className="dimension-stats" style={{ fontSize: '11px', color: '#64748b' }}>
+                  {headers.length} columns × {rows.length} rows
                 </span>
-                Cell Formatting Tools (Row {activeCell.rowIndex + 1}, Col {activeCell.colIndex + 1})
-              </span>
-              <span className="quick-tools-tip">Click any cell to edit & format</span>
-            </div>
+              </div>
 
-            <div className="quick-tools-buttons">
-              <button
-                type="button"
-                className="btn-quick-tool badge-tool"
-                onClick={() => setIsBadgeStudioModalOpen(true)}
-                title="Launch Shields.io Badges Studio to design and insert any badge into this cell"
-              >
-                <span className="material-symbols-outlined icon-xs">shield</span>
-                <span>+ Insert Badge (Badge Studio)</span>
-              </button>
-
-              <button
-                type="button"
-                className="btn-quick-tool"
-                onClick={handleToggleCodeOnActiveCell}
-                title="Toggle backticks `code` on current cell value"
-              >
-                <span className="material-symbols-outlined icon-xs">code</span>
-                <span>Toggle `Code`</span>
-              </button>
-
-              <button
-                type="button"
-                className="btn-quick-tool"
-                onClick={() => handleInsertStatusToActiveCell('✅ Ready')}
-                title="Insert ready status tag"
-              >
-                <span>✅ Ready</span>
-              </button>
-
-              <button
-                type="button"
-                className="btn-quick-tool"
-                onClick={() => handleInsertStatusToActiveCell('⚠️ In Progress')}
-                title="Insert in-progress status tag"
-              >
-                <span>⚠️ WIP</span>
-              </button>
-
-              <button
-                type="button"
-                className="btn-quick-tool"
-                onClick={() => handleInsertStatusToActiveCell('❌ Deprecated')}
-                title="Insert deprecated status tag"
-              >
-                <span>❌ Deprecated</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Grid Dimension Controls */}
-          <div className="studio-section">
-            <div className="table-controls-bar">
-              <span className="dimension-stats">
-                {headers.length} columns × {rows.length} rows
-              </span>
-              <div className="table-btn-group">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 <button
                   type="button"
                   className="table-action-pill"
@@ -645,203 +643,279 @@ export default function TableStudioTab({
                   <span className="material-symbols-outlined icon-xs">content_paste</span>
                   <span>Paste CSV / Excel</span>
                 </button>
+                <button
+                  type="button"
+                  className="table-action-pill"
+                  onClick={handleClearTable}
+                  title="Reset table grid to blank template"
+                  style={{ marginLeft: 'auto' }}
+                >
+                  <span className="material-symbols-outlined icon-xs">restart_alt</span>
+                  <span>Reset Grid</span>
+                </button>
               </div>
             </div>
-          </div>
 
-          {/* Interactive Editable Visual Table */}
-          <div className="studio-section table-grid-container custom-scrollbar">
-            <table className="interactive-table-editor">
-              <thead>
-                <tr>
-                  <th className="row-number-header">#</th>
-                  {headers.map((header, colIdx) => (
-                    <th key={colIdx} className="table-header-cell">
-                      <div className="header-cell-inner">
-                        <input
-                          type="text"
-                          className="table-header-input"
-                          value={header}
-                          onChange={(e) => handleHeaderChange(colIdx, e.target.value)}
-                          placeholder={`Col ${colIdx + 1}`}
-                        />
-                        <button
-                          type="button"
-                          className="align-cycle-btn"
-                          onClick={() => cycleAlignment(colIdx)}
-                          title={`Alignment: ${alignments[colIdx] || 'left'} (Click to cycle)`}
-                        >
-                          <span className="material-symbols-outlined icon-xs">
-                            {alignments[colIdx] === 'center'
-                              ? 'format_align_center'
-                              : alignments[colIdx] === 'right'
-                              ? 'format_align_right'
-                              : 'format_align_left'}
-                          </span>
-                        </button>
-                        {headers.length > 1 && (
-                          <button
-                            type="button"
-                            className="col-delete-btn"
-                            onClick={() => handleRemoveColumn(colIdx)}
-                            title="Remove this column"
-                          >
-                            <span className="material-symbols-outlined icon-xs">close</span>
-                          </button>
-                        )}
-                      </div>
-                    </th>
-                  ))}
-                  <th className="row-action-header">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, rowIdx) => (
-                  <tr key={rowIdx}>
-                    <td className="row-number-cell">{rowIdx + 1}</td>
-                    {headers.map((_, colIdx) => {
-                      const cellVal = row[colIdx] || ''
-                      const isFocused = activeCell.rowIndex === rowIdx && activeCell.colIndex === colIdx
-                      const isBacktickBadge = /^`\s*(!\[.*?\]\(.*?\))\s*`$/.test(cellVal.trim())
+            {/* 3. Active Cell Quick Formatting Tools */}
+            <div className="studio-section table-quick-tools-card">
+              <div className="quick-tools-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span className="quick-tools-title" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: '#f1f5f9' }}>
+                  <span className="material-symbols-outlined icon-xs" style={{ color: '#38bdf8' }}>
+                    edit_attributes
+                  </span>
+                  Cell Tools (Row {activeCell.rowIndex + 1}, Col {activeCell.colIndex + 1})
+                </span>
+                <span className="quick-tools-tip" style={{ fontSize: '11px', color: '#64748b' }}>
+                  Click any cell to edit & format
+                </span>
+              </div>
 
-                      return (
-                        <td
-                          key={colIdx}
-                          className={`table-data-cell ${isFocused ? 'cell-active' : ''} ${
-                            isBacktickBadge ? 'cell-warning-badge' : ''
-                          }`}
-                        >
-                          <div className="table-cell-wrapper">
+              <div className="quick-tools-buttons" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                <button
+                  type="button"
+                  className="btn-quick-tool badge-tool"
+                  onClick={() => setIsBadgeStudioModalOpen(true)}
+                  title="Launch Shields.io Badges Studio to design and insert any badge into this cell"
+                  style={{
+                    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                    borderColor: 'rgba(56, 189, 248, 0.4)',
+                    color: '#38bdf8'
+                  }}
+                >
+                  <span className="material-symbols-outlined icon-xs">shield</span>
+                  <span>+ Badge Studio</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-quick-tool"
+                  onClick={handleToggleCodeOnActiveCell}
+                  title="Toggle backticks `code` on current cell value"
+                >
+                  <span className="material-symbols-outlined icon-xs">code</span>
+                  <span>`Code`</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-quick-tool"
+                  onClick={handleToggleBoldOnActiveCell}
+                  title="Toggle bold **text** on current cell value"
+                >
+                  <span className="material-symbols-outlined icon-xs">format_bold</span>
+                  <span>Bold</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-quick-tool"
+                  onClick={handleToggleItalicOnActiveCell}
+                  title="Toggle italic *text* on current cell value"
+                >
+                  <span className="material-symbols-outlined icon-xs">format_italic</span>
+                  <span>Italic</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-quick-tool"
+                  onClick={() => handleInsertStatusToActiveCell('✅ Ready')}
+                  title="Insert ready status tag"
+                >
+                  <span>✅ Ready</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-quick-tool"
+                  onClick={() => handleInsertStatusToActiveCell('⚠️ WIP')}
+                  title="Insert in-progress status tag"
+                >
+                  <span>⚠️ WIP</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-quick-tool"
+                  onClick={() => handleInsertStatusToActiveCell('❌ Deprecated')}
+                  title="Insert deprecated status tag"
+                >
+                  <span>❌ Deprecated</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 4. Interactive Editable Visual Table Grid */}
+            <div className="studio-section">
+              <label className="studio-section-label" style={{ display: 'block', fontWeight: 600, fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>
+                3 • Interactive Table Grid
+              </label>
+
+              <div className="table-grid-container custom-scrollbar">
+                <table className="interactive-table-editor">
+                  <thead>
+                    <tr>
+                      <th className="row-number-header">#</th>
+                      {headers.map((header, colIdx) => (
+                        <th key={colIdx} className="table-header-cell">
+                          <div className="header-cell-inner">
                             <input
                               type="text"
-                              className="table-cell-input"
-                              value={cellVal}
-                              onFocus={() => setActiveCell({ rowIndex: rowIdx, colIndex: colIdx })}
-                              onChange={(e) => handleCellChange(rowIdx, colIdx, e.target.value)}
-                              placeholder="Cell text or badge..."
+                              className="table-header-input"
+                              value={header}
+                              onChange={(e) => handleHeaderChange(colIdx, e.target.value)}
+                              placeholder={`Col ${colIdx + 1}`}
                             />
-                            {isBacktickBadge && (
+                            <button
+                              type="button"
+                              className="align-cycle-btn"
+                              onClick={() => cycleAlignment(colIdx)}
+                              title={`Alignment: ${alignments[colIdx] || 'left'} (Click to cycle)`}
+                            >
+                              <span className="material-symbols-outlined icon-xs">
+                                {alignments[colIdx] === 'center'
+                                  ? 'format_align_center'
+                                  : alignments[colIdx] === 'right'
+                                  ? 'format_align_right'
+                                  : 'format_align_left'}
+                              </span>
+                            </button>
+                            {headers.length > 1 && (
                               <button
                                 type="button"
-                                className="cell-quick-fix-btn"
-                                onClick={() => {
-                                  const match = cellVal.trim().match(/^`\s*(!\[.*?\]\(.*?\))\s*`$/)
-                                  if (match) handleCellChange(rowIdx, colIdx, match[1])
-                                }}
-                                title="Click to unwrap backticks so badge renders as graphic"
+                                className="col-delete-btn"
+                                onClick={() => handleRemoveColumn(colIdx)}
+                                title="Remove this column"
                               >
-                                Fix
+                                <span className="material-symbols-outlined icon-xs">close</span>
+                              </button>
+                            )}
+                          </div>
+                        </th>
+                      ))}
+                      <th className="row-action-header">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row, rowIdx) => (
+                      <tr key={rowIdx}>
+                        <td className="row-number-cell">{rowIdx + 1}</td>
+                        {headers.map((_, colIdx) => {
+                          const cellVal = row[colIdx] || ''
+                          const isFocused = activeCell.rowIndex === rowIdx && activeCell.colIndex === colIdx
+                          const isBacktickBadge = /^`\s*(!\[.*?\]\(.*?\))\s*`$/.test(cellVal.trim())
+
+                          return (
+                            <td
+                              key={colIdx}
+                              className={`table-data-cell ${isFocused ? 'cell-active' : ''} ${
+                                isBacktickBadge ? 'cell-warning-badge' : ''
+                              }`}
+                            >
+                              <div className="table-cell-wrapper">
+                                <input
+                                  type="text"
+                                  className="table-cell-input"
+                                  value={cellVal}
+                                  onFocus={() => setActiveCell({ rowIndex: rowIdx, colIndex: colIdx })}
+                                  onChange={(e) => handleCellChange(rowIdx, colIdx, e.target.value)}
+                                  placeholder="Cell text or badge..."
+                                />
+                                {isBacktickBadge && (
+                                  <button
+                                    type="button"
+                                    className="cell-quick-fix-btn"
+                                    onClick={() => {
+                                      const match = cellVal.trim().match(/^`\s*(!\[.*?\]\(.*?\))\s*`$/)
+                                      if (match) handleCellChange(rowIdx, colIdx, match[1])
+                                    }}
+                                    title="Click to unwrap backticks so badge renders as graphic"
+                                  >
+                                    Fix
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          )
+                        })}
+                        <td className="row-delete-cell">
+                          <div className="row-actions-group">
+                            <button
+                              type="button"
+                              className="row-tool-btn"
+                              disabled={rowIdx === 0}
+                              onClick={() => handleMoveRow(rowIdx, -1)}
+                              title="Move row up"
+                            >
+                              <span className="material-symbols-outlined icon-xs">arrow_upward</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="row-tool-btn"
+                              disabled={rowIdx === rows.length - 1}
+                              onClick={() => handleMoveRow(rowIdx, 1)}
+                              title="Move row down"
+                            >
+                              <span className="material-symbols-outlined icon-xs">arrow_downward</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="row-tool-btn"
+                              onClick={() => handleDuplicateRow(rowIdx)}
+                              title="Duplicate row"
+                            >
+                              <span className="material-symbols-outlined icon-xs">content_copy</span>
+                            </button>
+                            {rows.length > 1 && (
+                              <button
+                                type="button"
+                                className="row-tool-btn danger"
+                                onClick={() => handleRemoveRow(rowIdx)}
+                                title="Remove this row"
+                              >
+                                <span className="material-symbols-outlined icon-xs">delete</span>
                               </button>
                             )}
                           </div>
                         </td>
-                      )
-                    })}
-                    <td className="row-delete-cell">
-                      <div className="row-actions-group">
-                        <button
-                          type="button"
-                          className="row-tool-btn"
-                          disabled={rowIdx === 0}
-                          onClick={() => handleMoveRow(rowIdx, -1)}
-                          title="Move row up"
-                        >
-                          <span className="material-symbols-outlined icon-xs">arrow_upward</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="row-tool-btn"
-                          disabled={rowIdx === rows.length - 1}
-                          onClick={() => handleMoveRow(rowIdx, 1)}
-                          title="Move row down"
-                        >
-                          <span className="material-symbols-outlined icon-xs">arrow_downward</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="row-tool-btn"
-                          onClick={() => handleDuplicateRow(rowIdx)}
-                          title="Duplicate row"
-                        >
-                          <span className="material-symbols-outlined icon-xs">content_copy</span>
-                        </button>
-                        {rows.length > 1 && (
-                          <button
-                            type="button"
-                            className="row-tool-btn danger"
-                            onClick={() => handleRemoveRow(rowIdx)}
-                            title="Remove this row"
-                          >
-                            <span className="material-symbols-outlined icon-xs">delete</span>
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Resizer Splitter Handle */}
-        <div
-          className={`studio-resizer-handle ${isDragging ? 'is-dragging' : ''}`}
-          onMouseDown={handleMouseDown}
-          onDoubleClick={handleDoubleClick}
-          title="Drag to resize form and preview sections • Double-click to reset"
-        />
-
-        {/* Right Column: Live Render & Markdown Output */}
-        <div className="studio-preview-column custom-scrollbar" style={{ flex: 1, minWidth: 0 }}>
-          {/* Live Markdown Render Card with Real ReactMarkdown */}
-          <div className="studio-card">
-            <div className="studio-card-header">
-              <span className="studio-card-title">Live Markdown Table Render</span>
-              <span className="studio-card-tag">Interactive GFM Engine</span>
-            </div>
-            <div className="table-render-viewport custom-scrollbar">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]}
-                components={{
-                  table({ node, children, ...props }) {
-                    return (
-                      <div className="preview-table-container">
-                        <table className="preview-table rendered-markdown-table" {...props}>
-                          {children}
-                        </table>
-                      </div>
-                    )
-                  }
-                }}
-              >
-                {markdownTable}
-              </ReactMarkdown>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-
-          {/* Generated Markdown Syntax Block */}
-          <div className="studio-card">
-            <div className="studio-card-header">
-              <span className="studio-card-title">Generated Markdown Code</span>
-              <button
-                type="button"
-                className="snippet-copy-btn"
-                onClick={handleCopy}
-              >
-                <span className="material-symbols-outlined icon-xs">
-                  {copied ? 'check' : 'content_copy'}
-                </span>
-                <span>{copied ? 'Copied' : 'Copy'}</span>
-              </button>
-            </div>
-            <pre className="studio-code-block custom-scrollbar">
-              <code>{markdownTable}</code>
-            </pre>
+        }
+        canvasContent={
+          <div
+            className="table-render-viewport custom-scrollbar"
+            style={{
+              width: '100%',
+              maxWidth: '100%',
+              padding: '24px',
+              boxSizing: 'border-box'
+            }}
+          >
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeRaw]}
+              components={{
+                table({ node, children, ...props }) {
+                  return (
+                    <div className="preview-table-container">
+                      <table className="preview-table rendered-markdown-table" {...props}>
+                        {children}
+                      </table>
+                    </div>
+                  )
+                }
+              }}
+            >
+              {markdownTable}
+            </ReactMarkdown>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* ==================== FULL-FIDELITY SHIELDS.IO BADGES STUDIO MODAL ==================== */}
       {isBadgeStudioModalOpen && (
@@ -952,6 +1026,6 @@ export default function TableStudioTab({
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }

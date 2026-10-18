@@ -365,3 +365,66 @@
   color: #c9d1d9;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
 }
+
+/* StudioShell Integration for Code & Snippets Studio */
+.studio-shell-snippets-studio .studio-canvas-content-wrapper {
+  width: 100%;
+  max-width: 840px;
+}
+
+.studio-shell-snippets-studio .snippet-preview-stage {
+  width: 100%;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* Light Stage Adaptation */
+.stage-bg-light .terminal-window-mockup {
+  background-color: #ffffff;
+  border-color: #d0d7de;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.stage-bg-light .terminal-window-header {
+  background-color: #f6f8fa;
+  border-color: #d0d7de;
+}
+
+.stage-bg-light .terminal-window-title {
+  color: #24292f;
+}
+
+.stage-bg-light .terminal-cmd-text {
+  color: #0969da;
+}
+
+.stage-bg-light .terminal-output-text {
+  color: #57606a;
+}
+
+.stage-bg-light .code-render-preview {
+  background-color: #ffffff;
+  border-color: #d0d7de;
+}
+
+.stage-bg-light .code-render-header {
+  background-color: #f6f8fa;
+  border-color: #d0d7de;
+}
+
+.stage-bg-light .code-render-body {
+  color: #24292f;
+}
+
+.stage-bg-light .diff-render-box {
+  background-color: #ffffff;
+  border-color: #d0d7de;
+}
+
+.stage-bg-light .kbd-chip {
+  background-color: #f6f8fa;
+  border-color: #d0d7de;
+  border-bottom-color: #afb8c1;
+  color: #24292f;
+}
+

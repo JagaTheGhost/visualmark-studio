@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { STUDIO_TOOLS_LIST } from './sidebarConstants'
 
 export default function StudioToolsPanel({
@@ -10,6 +11,9 @@ export default function StudioToolsPanel({
 }) {
   const [studioCategory, setStudioCategory] = useState('All')
   const [studioSearch, setStudioSearch] = useState('')
+  const [hoveredTool, setHoveredTool] = useState(null)
+  const [hoverPos, setHoverPos] = useState({ top: 0, left: 0 })
+  const hoverTimeoutRef = useRef(null)
 
   const studioCategories = useMemo(() => [
     { id: 'All', label: 'All', count: STUDIO_TOOLS_LIST.length },
@@ -40,8 +44,27 @@ export default function StudioToolsPanel({
     })
   }, [studioSearch, studioCategory, openStudioTabs])
 
+  const handleMouseEnter = (tool, e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    clearTimeout(hoverTimeoutRef.current)
+    hoverTimeoutRef.current = setTimeout(() => {
+      const popoverHeight = 220
+      let top = rect.top - 6
+      if (top + popoverHeight > window.innerHeight - 15) {
+        top = Math.max(10, window.innerHeight - popoverHeight - 15)
+      }
+      setHoverPos({ top, left: rect.right + 8 })
+      setHoveredTool(tool)
+    }, 130)
+  }
+
+  const handleMouseLeave = () => {
+    clearTimeout(hoverTimeoutRef.current)
+    setHoveredTool(null)
+  }
+
   return (
-    <div className="tools-panel">
+    <div className="tools-panel" onMouseLeave={handleMouseLeave}>
       {/* Header info & Stats banner */}
       <div className="tools-intro">
         <div className="tools-intro-top">
@@ -50,19 +73,16 @@ export default function StudioToolsPanel({
             {openStudioTabs.length > 0 ? (
               <>
                 <span className="pulse-dot-green" />
-                {openStudioTabs.length} active in tabs
+                {openStudioTabs.length} in tabs
               </>
             ) : (
-              `${STUDIO_TOOLS_LIST.length} studios ready`
+              `${STUDIO_TOOLS_LIST.length} studios`
             )}
           </span>
         </div>
-        <p className="tools-sub">
-          Interactive designers to visually assemble and configure badges, architecture flowcharts, tables, directory trees, and APIs.
-        </p>
 
         {/* Search Bar */}
-        <div className="templates-search-box" style={{ marginTop: '10px' }}>
+        <div className="templates-search-box" style={{ marginTop: '8px' }}>
           <span className="material-symbols-outlined search-icon">search</span>
           <input
             type="text"
@@ -83,8 +103,8 @@ export default function StudioToolsPanel({
           )}
         </div>
 
-        {/* Category Filter Pills (with mouse wheel horizontal scroll) */}
-        <div className="templates-category-pills custom-scrollbar" data-horizontal-scroll="true" style={{ marginTop: '8px' }}>
+        {/* Category Filter Pills */}
+        <div className="templates-category-pills custom-scrollbar" data-horizontal-scroll="true" style={{ marginTop: '7px' }}>
           {studioCategories.map((cat) => (
             <button
               key={cat.id}
@@ -98,7 +118,7 @@ export default function StudioToolsPanel({
         </div>
       </div>
 
-      {/* Studio Tools Grid */}
+      {/* Minimal Studio Tools List */}
       <div className="tools-grid-list">
         {filteredStudioTools.length === 0 ? (
           <div className="templates-empty-state">
@@ -124,7 +144,7 @@ export default function StudioToolsPanel({
             return (
               <div
                 key={tool.id}
-                className={`studio-tool-card ${isOpen ? 'is-open' : ''} ${isActive ? 'is-active' : ''}`}
+                className={`studio-item-row ${isOpen ? 'is-open' : ''} ${isActive ? 'is-active' : ''}`}
                 onClick={() => {
                   if (isOpen) {
                     onSelectFile(tool.id)
@@ -132,86 +152,59 @@ export default function StudioToolsPanel({
                     onOpenStudioTab(tool.id)
                   }
                 }}
-                title={isOpen ? `Switch to ${tool.title}` : `Open ${tool.title} tab`}
+                onMouseEnter={(e) => handleMouseEnter(tool, e)}
+                onMouseLeave={handleMouseLeave}
               >
-                <div className="tool-card-top">
-                  <div
-                    className="tool-card-icon-wrap"
-                    style={{
-                      backgroundColor: `${tool.color}15`,
-                      borderColor: `${tool.color}45`,
-                      boxShadow: `0 0 14px ${tool.color}25`
-                    }}
-                  >
-                    <span className="material-symbols-outlined" style={{ color: tool.color }}>
-                      {tool.icon}
-                    </span>
-                  </div>
-                  <div className="tool-card-info">
-                    <div className="tool-card-title-row">
-                      <span className="tool-card-title">{tool.title}</span>
-                      {isActive ? (
-                        <span className="status-badge-active">
-                          <span className="pulse-dot" /> Active
-                        </span>
-                      ) : isOpen ? (
-                        <span className="status-badge-open">
-                          <span className="pulse-dot-green" /> In Tabs
-                        </span>
-                      ) : (
-                        <span className="status-badge-category">{tool.category}</span>
-                      )}
-                    </div>
-                    <span className="tool-card-id">{tool.id}</span>
+                {/* Colored Icon Box */}
+                <div
+                  className="studio-item-icon-box"
+                  style={{
+                    backgroundColor: `${tool.color}15`,
+                    borderColor: `${tool.color}35`,
+                    color: tool.color
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
+                    {tool.icon}
+                  </span>
+                </div>
+
+                {/* Title & Subtitle */}
+                <div className="studio-item-text">
+                  <span className="studio-item-name">{tool.title}</span>
+                  <div className="studio-item-sub">
+                    <span className="studio-item-category">{tool.category}</span>
+                    <span className="studio-item-dot">•</span>
+                    <span className="studio-item-id">{tool.id}</span>
                   </div>
                 </div>
 
-                <p className="tool-card-desc">{tool.description}</p>
-
-                <div className="tool-card-features">
-                  {tool.features.map((feat, i) => (
-                    <span key={i} className="tool-feat-pill">
-                      <span className="material-symbols-outlined icon-xs" style={{ color: tool.color }}>
-                        auto_awesome
-                      </span>
-                      {feat}
+                {/* Trailing Quick Status / Action */}
+                <div className="studio-item-trailing" onClick={(e) => e.stopPropagation()}>
+                  {isActive ? (
+                    <span className="studio-row-active-pill" title="Currently Active in Workspace">
+                      <span className="pulse-dot-green" /> Active
                     </span>
-                  ))}
-                </div>
-
-                <div className="tool-card-actions" onClick={(e) => e.stopPropagation()}>
-                  {isOpen ? (
+                  ) : isOpen ? (
                     <>
+                      <span className="studio-row-open-pill">In Tabs</span>
                       <button
                         type="button"
-                        className={`tool-action-btn primary ${isActive ? 'current' : ''}`}
-                        onClick={() => onSelectFile(tool.id)}
-                        title={isActive ? `Currently viewing ${tool.title}` : `Switch to ${tool.title} tab`}
-                      >
-                        <span className="material-symbols-outlined icon-xs">
-                          {isActive ? 'visibility' : 'tab'}
-                        </span>
-                        {isActive ? 'Currently Active' : 'Switch to Tab'}
-                      </button>
-                      <button
-                        type="button"
-                        className="tool-action-btn remove-btn"
+                        className="studio-row-btn close-btn"
                         onClick={() => onCloseStudioTab(tool.id)}
-                        title="Close tab from top bar"
+                        title={`Close ${tool.title} tab`}
                       >
-                        <span className="material-symbols-outlined icon-xs">close</span>
-                        Close Tab
+                        <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>close</span>
                       </button>
                     </>
                   ) : (
                     <button
                       type="button"
-                      className="tool-action-btn primary launch-btn"
+                      className="studio-row-btn"
                       onClick={() => onOpenStudioTab(tool.id)}
-                      title="Open dedicated studio workspace tab in top bar"
+                      title={`Open ${tool.title} tab`}
                     >
-                      <span className="material-symbols-outlined icon-xs">open_in_new</span>
-                      Launch Studio Tab
+                      <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>open_in_new</span>
                     </button>
                   )}
                 </div>
@@ -220,6 +213,92 @@ export default function StudioToolsPanel({
           })
         )}
       </div>
+
+      {/* Floating Rich Hover Popover (like VS Code hover widget) */}
+      {hoveredTool &&
+        createPortal(
+          <div
+            className="studio-hover-popover"
+            style={{
+              top: `${hoverPos.top}px`,
+              left: `${hoverPos.left}px`,
+              borderColor: `${hoveredTool.color}45`,
+              boxShadow: `0 16px 40px rgba(0, 0, 0, 0.75), 0 0 16px ${hoveredTool.color}20`
+            }}
+          >
+            {/* Popover Arrow */}
+            <div className="studio-hover-arrow" style={{ borderColor: `${hoveredTool.color}45` }} />
+
+            {/* Header */}
+            <div className="studio-hover-header">
+              <div
+                className="studio-hover-icon"
+                style={{
+                  backgroundColor: `${hoveredTool.color}18`,
+                  borderColor: `${hoveredTool.color}45`,
+                  color: hoveredTool.color
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                  {hoveredTool.icon}
+                </span>
+              </div>
+              <div className="studio-hover-titles">
+                <div className="studio-hover-title-row">
+                  <span className="studio-hover-title">{hoveredTool.title}</span>
+                  <span
+                    className="studio-hover-badge"
+                    style={{
+                      color: hoveredTool.color,
+                      borderColor: `${hoveredTool.color}35`,
+                      backgroundColor: `${hoveredTool.color}12`
+                    }}
+                  >
+                    {hoveredTool.category}
+                  </span>
+                </div>
+                <span className="studio-hover-id">{hoveredTool.id}</span>
+              </div>
+            </div>
+
+            {/* Description */}
+            <p className="studio-hover-desc">{hoveredTool.description}</p>
+
+            {/* Capabilities */}
+            {hoveredTool.features && hoveredTool.features.length > 0 && (
+              <div className="studio-hover-features">
+                <div className="studio-hover-features-title">KEY CAPABILITIES</div>
+                <div className="studio-hover-pill-list">
+                  {hoveredTool.features.map((feat, i) => (
+                    <span key={i} className="studio-hover-pill">
+                      <span className="material-symbols-outlined" style={{ fontSize: '12px', color: hoveredTool.color }}>
+                        check_circle
+                      </span>
+                      {feat}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="studio-hover-footer">
+              <span>
+                {openStudioTabs.includes(hoveredTool.id) ? (
+                  activeFile === hoveredTool.id ? (
+                    <span style={{ color: '#818cf8', fontWeight: 600 }}>● Currently active in workspace</span>
+                  ) : (
+                    <span style={{ color: '#10b981', fontWeight: 500 }}>✓ In tabs • Click item to switch</span>
+                  )
+                ) : (
+                  <span>Click to launch studio workspace</span>
+                )}
+              </span>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   )
 }
+

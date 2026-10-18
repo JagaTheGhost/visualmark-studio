@@ -467,9 +467,10 @@
 
 .badge-style-card {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px 10px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
   background-color: var(--surface-base);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-xs);
@@ -484,15 +485,9 @@
 }
 
 .badge-style-card.active {
-  border-color: var(--primary);
-  background-color: var(--surface-mid);
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.25);
-}
-
-.badge-style-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  border-color: #38bdf8;
+  background-color: rgba(56, 189, 248, 0.12);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
 }
 
 .badge-style-card-title {
@@ -500,22 +495,24 @@
   font-size: 11px;
   font-weight: 600;
   color: var(--text-primary);
+  white-space: nowrap;
 }
 
 .badge-style-card-tag {
   font-family: var(--font-mono);
   font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   padding: 1px 5px;
   border-radius: 3px;
-  background-color: rgba(99, 102, 241, 0.15);
-  color: var(--secondary, #38bdf8);
+  background-color: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  white-space: nowrap;
 }
 
 .badge-style-card-desc {
-  font-family: var(--font-sans);
-  font-size: 9.5px;
-  color: var(--text-muted);
-  line-height: 1.25;
+  display: none;
 }
 
 /* Curated Color Themes Grid */
@@ -529,7 +526,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
+  padding: 5px 8px;
   background-color: var(--surface-base);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-xs);
@@ -544,9 +541,9 @@
 }
 
 .badge-theme-card.active {
-  border-color: var(--primary);
-  background-color: var(--surface-mid);
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+  border-color: #38bdf8;
+  background-color: rgba(56, 189, 248, 0.12);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
 }
 
 .badge-theme-duo-swatch {

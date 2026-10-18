@@ -107,14 +107,18 @@ class RootErrorBoundary extends Component {
 }
 
 import { ToastProvider } from './context/ToastContext'
+import { I18nProvider } from './i18n/I18nContext'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <RootErrorBoundary>
-      <ToastProvider>
-        <App />
-      </ToastProvider>
+      <I18nProvider>
+        <ToastProvider>
+          <App />
+        </ToastProvider>
+      </I18nProvider>
     </RootErrorBoundary>
   </React.StrictMode>,
 )
+
 

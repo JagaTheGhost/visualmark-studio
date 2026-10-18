@@ -5,6 +5,7 @@ import UnsupportedFileViewer from '../UnsupportedFileViewer'
 
 // Code-split heavy studio tooling and modal workspaces to shrink main bundle
 const BadgeStudioTab = lazy(() => import('../studio/badge/BadgeStudioTab'))
+const RepoCardStudioTab = lazy(() => import('../studio/RepoCardStudioTab'))
 const DiagramStudioTab = lazy(() => import('../studio/DiagramStudioTab'))
 const TableStudioTab = lazy(() => import('../studio/TableStudioTab'))
 const SnippetStudioTab = lazy(() => import('../studio/SnippetStudioTab'))
@@ -116,7 +117,9 @@ export default function StudioWorkspaceRenderer({
   findReplaceOpen,
   setFindReplaceOpen,
   findReplaceMode,
-  setFindReplaceMode = () => {}
+  setFindReplaceMode = () => {},
+  tabGroupingEnabled = true,
+  setTabGroupingEnabled = () => {}
 }) {
   return (
     <div className="ide-editor-container">
@@ -148,6 +151,14 @@ export default function StudioWorkspaceRenderer({
           <BadgeStudioTab
             repoUrl={repoUrl}
             onInsertBadge={(badgeMd) => handleRequestInsertSnippet(badgeMd, 'Badge')}
+            onBackToReadme={handleBackToReadme}
+          />
+        </Suspense>
+      ) : activeFile === 'repocard.studio' ? (
+        <Suspense fallback={<StudioLoadingFallback title="GitHub Repo Card Studio" />}>
+          <RepoCardStudioTab
+            repoUrl={repoUrl}
+            onInsertCard={(cardMd) => handleRequestInsertSnippet(cardMd, 'GitHub Repo Card')}
             onBackToReadme={handleBackToReadme}
           />
         </Suspense>
@@ -268,6 +279,8 @@ export default function StudioWorkspaceRenderer({
             pendingUpdateInfo={pendingUpdateInfo}
             onStartDownloadUpdate={handleStartDownloadUpdate}
             onRestartToUpdate={handleRestartToUpdate}
+            tabGroupingEnabled={tabGroupingEnabled}
+            setTabGroupingEnabled={setTabGroupingEnabled}
           />
         </Suspense>
       ) : activeFile === 'shortcuts' ? (
@@ -313,6 +326,7 @@ export default function StudioWorkspaceRenderer({
         <UnsupportedFileViewer
           fileInfo={unsupportedFilesMap[activeFile]}
           onCloseTab={() => handleCloseFile(activeFile)}
+          onOpenStudioTab={handleOpenStudioTab}
         />
       ) : (
         <Preview

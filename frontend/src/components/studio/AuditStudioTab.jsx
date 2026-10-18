@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react'
-import { useStudioSplit } from '../../utils/useResizableSplit'
+import StudioShell from './common/StudioShell'
+import '../../styles/studios/extendedStudios.css'
 
 const STANDARDS = [
   {
@@ -67,6 +68,16 @@ const STANDARDS = [
   }
 ]
 
+const AUDIT_MODES = [
+  { id: 'readme', label: 'README Gateway', icon: 'stars' },
+  { id: 'contributing', label: 'Contributing', icon: 'handshake' },
+  { id: 'setup', label: 'Setup Guide', icon: 'construction' },
+  { id: 'architecture', label: 'Architecture', icon: 'account_tree' },
+  { id: 'changelog', label: 'Changelog', icon: 'history' },
+  { id: 'api', label: 'REST API', icon: 'api' },
+  { id: 'general', label: 'Universal', icon: 'description' }
+]
+
 function detectStandardForFile(filename) {
   if (!filename) return 'general'
   const lower = filename.toLowerCase()
@@ -118,14 +129,14 @@ const SECTION_TEMPLATES = {
   // Changelog Templates
   cl_notice: `## 📌 Format & Specification Notice\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n`,
   cl_unreleased: `## [Unreleased]\n\n### Added\n- Staged experimental feature flags for upcoming release.\n\n### Fixed\n- Addressed edge-case bug in input validator.\n`,
-  cl_version: `## [1.0.0] - 2026-10-11\n\n### Added\n- Initial production release.\n- Full documentation suite and interactive developer tools.\n\n### Fixed\n- Resolved cross-platform layout discrepancies.\n`,
+  cl_version: `## [1.0.0] - 2026-10-18\n\n### Added\n- Initial production release.\n- Full documentation suite and interactive developer tools.\n\n### Fixed\n- Resolved cross-platform layout discrepancies.\n`,
   cl_categories: `### Added\n- New configuration preference settings.\n\n### Changed\n- Optimized caching layer for 35% faster rendering.\n\n### Fixed\n- Fixed listener leak on component unmount.\n\n### Security\n- Upgraded external dependencies to resolve security advisories.\n`,
   cl_links: `[unreleased]: https://github.com/your-org/your-repo/compare/v1.0.0...HEAD\n[1.0.0]: https://github.com/your-org/your-repo/releases/tag/v1.0.0\n`,
 
   // API Spec Templates
   api_auth: `## 🔐 Authentication & Headers\n\nAll authenticated API requests require a valid token in the \`Authorization\` header:\n\n\`\`\`http\nAuthorization: Bearer YOUR_API_KEY_HERE\nContent-Type: application/json\nAccept: application/json\n\`\`\`\n`,
   api_routes: `## 📡 Endpoints Matrix\n\n| Method | Endpoint | Description | Auth Required |\n| :---: | :--- | :--- | :---: |\n| \`GET\` | \`/api/v1/health\` | Service health status check | No |\n| \`GET\` | \`/api/v1/items\` | Retrieve paginated item collection | Yes |\n| \`POST\` | \`/api/v1/items\` | Create a new item resource | Yes |\n| \`GET\` | \`/api/v1/items/:id\` | Fetch item details by identifier | Yes |\n| \`DELETE\` | \`/api/v1/items/:id\` | Delete existing item resource | Yes |\n`,
-  api_schemas: `## 📦 Request & Response Schemas\n\n### Create Resource\n\`POST /api/v1/items\`\n\n**Request Body:**\n\`\`\`json\n{\n  "name": "Production Cluster",\n  "category": "infrastructure",\n  "enabled": true\n}\n\`\`\`\n\n**Response (\`201 Created\`):**\n\`\`\`json\n{\n  "id": "item_82931",\n  "name": "Production Cluster",\n  "category": "infrastructure",\n  "enabled": true,\n  "createdAt": "2026-10-11T10:00:00Z"\n}\n\`\`\`\n`,
+  api_schemas: `## 📦 Request & Response Schemas\n\n### Create Resource\n\`POST /api/v1/items\`\n\n**Request Body:**\n\`\`\`json\n{\n  "name": "Production Cluster",\n  "category": "infrastructure",\n  "enabled": true\n}\n\`\`\`\n\n**Response (\`201 Created\`):**\n\`\`\`json\n{\n  "id": "item_82931",\n  "name": "Production Cluster",\n  "category": "infrastructure",\n  "enabled": true,\n  "createdAt": "2026-10-18T10:00:00Z"\n}\n\`\`\`\n`,
   api_errors: `## ⚠️ Error Responses & Status Codes\n\nErrors return a standardized JSON error structure:\n\n\`\`\`json\n{\n  "error": {\n    "code": "RESOURCE_NOT_FOUND",\n    "message": "The requested item was not found.",\n    "status": 404\n  }\n}\n\`\`\`\n\n| HTTP Code | Description |\n| :---: | :--- |\n| \`400 Bad Request\` | Invalid payload or missing parameters |\n| \`401 Unauthorized\` | Missing or invalid authentication token |\n| \`404 Not Found\` | Requested resource does not exist |\n| \`429 Too Many Requests\` | Rate limit threshold exceeded |\n`,
   api_ratelimits: `## ⏱️ Rate Limiting & Pagination\n\n- **Rate Limiting:** Requests are limited to \`100 requests per minute\` per API key. Exceeding returns HTTP \`429\`.\n- **Pagination:** Query collection endpoints with \`?page=1&limit=25\`. Total counts are returned in \`X-Total-Count\`.\n`,
 
@@ -146,15 +157,19 @@ export default function AuditStudioTab({
   onInsertSection = () => {},
   onBackToReadme = () => {}
 }) {
-  const [copied, setCopied] = useState(false)
-  const { formWidth, isDragging, handleMouseDown, handleDoubleClick } = useStudioSplit(480)
-
-  // Calculate available files for auditing
+  // Available files for auditing
   const availableFiles = useMemo(() => {
     const keys = Object.keys(allFiles || {})
     if (keys.length > 0) return keys
     if (openDocTabs && openDocTabs.length > 0) {
-      return openDocTabs.filter(f => !f.endsWith('.studio') && f !== 'settings' && f !== 'shortcuts' && f !== 'whats-new' && f !== 'release-notes')
+      return openDocTabs.filter(
+        (f) =>
+          !f.endsWith('.studio') &&
+          f !== 'settings' &&
+          f !== 'shortcuts' &&
+          f !== 'whats-new' &&
+          f !== 'release-notes'
+      )
     }
     return [activeFile || initialFile || 'README.md']
   }, [allFiles, openDocTabs, activeFile, initialFile])
@@ -183,6 +198,7 @@ export default function AuditStudioTab({
   // Standard Profile state with auto-detection
   const [selectedStandard, setSelectedStandard] = useState(() => detectStandardForFile(selectedFile))
   const [isManualStandard, setIsManualStandard] = useState(false)
+  const [checkFilter, setCheckFilter] = useState('all') // 'all' | 'missing' | 'passed'
 
   // Auto-switch standard when selectedFile changes (unless user manually locked a choice)
   const handleSelectFile = (file) => {
@@ -213,9 +229,9 @@ export default function AuditStudioTab({
     return ''
   }, [allFiles, selectedFile, markdown])
 
-  // Get active standard configuration
+  // Active standard configuration
   const activeStandardConfig = useMemo(() => {
-    return STANDARDS.find(s => s.id === selectedStandard) || STANDARDS[0]
+    return STANDARDS.find((s) => s.id === selectedStandard) || STANDARDS[0]
   }, [selectedStandard])
 
   // Rule-based audit evaluation against active standard
@@ -299,17 +315,17 @@ export default function AuditStudioTab({
         {
           id: 'contributing',
           label: 'Contributing Guidelines Link',
-          passed: /^#{1,3}\s+.*contribut/im.test(text) || /CONTRIBUTING\.md/i.test(text),
+          passed: /contribut/i.test(text),
           weight: 6,
-          tip: 'Welcome open-source PRs and link to CONTRIBUTING.md',
+          tip: 'Reference CONTRIBUTING.md for community contributors',
           templateKey: 'contributing'
         },
         {
           id: 'license',
-          label: 'Open-Source License Notice',
-          passed: /^#{1,3}\s+.*license/im.test(text) || /MIT License|Apache-2\.0|GPL/i.test(text),
+          label: 'License Specification',
+          passed: /license/i.test(text),
           weight: 6,
-          tip: 'Declare the software distribution terms and license',
+          tip: 'Specify open-source license (MIT, Apache, GPL)',
           templateKey: 'license'
         }
       ]
@@ -317,115 +333,99 @@ export default function AuditStudioTab({
       checks = [
         {
           id: 'contributing_title',
-          label: 'Contributing Welcome Heading (H1)',
-          passed: /^#\s+.*(contribut|welcome|guideline)/im.test(text) || /^#\s+.+/m.test(text),
-          weight: 10,
-          tip: 'Add a welcoming # Contributing Guidelines heading at the top'
+          label: 'Contributing Guide Heading (H1)',
+          passed: /^#\s+.*(contribut|guideline)/im.test(text) || /^#\s+.+/m.test(text),
+          weight: 15,
+          tip: 'State # Contributing to [Project]'
         },
         {
           id: 'contributing_coc',
           label: 'Code of Conduct Reference',
-          passed: /code of conduct|conduct|covenant|be respectful/i.test(text),
-          weight: 12,
-          tip: 'Reference the Contributor Covenant or project code of conduct',
+          passed: /code of conduct|contributor covenant/i.test(text),
+          weight: 15,
+          tip: 'Adopt Contributor Covenant or standard CoC guidelines',
           templateKey: 'contributing_coc'
         },
         {
           id: 'contributing_setup',
-          label: 'Local Dev Environment Setup',
-          passed: /^#{1,3}\s+.*(setup|prerequisite|environment|install|clone)/im.test(text) || /git clone/i.test(text),
-          weight: 16,
-          tip: 'Provide clear instructions to clone, install, and run locally',
+          label: 'Local Development Environment Setup',
+          passed: /^#{1,3}\s+.*(setup|environment|getting started|install)/im.test(text),
+          weight: 20,
+          tip: 'Explain step-by-step dev fork, clone, and dependency install',
           templateKey: 'contributing_setup'
         },
         {
           id: 'contributing_workflow',
-          label: 'Branching & Git Workflow Rules',
-          passed: /git (checkout|branch|flow|rebase)|fork/i.test(text) || /^#{1,3}\s+.*(branch|workflow|git)/im.test(text),
-          weight: 14,
-          tip: 'Specify branch naming conventions (feat/..., fix/...) and fork flow',
+          label: 'Git Branching & PR Guidelines',
+          passed: /^#{1,3}\s+.*(branch|workflow|git|pull request)/im.test(text),
+          weight: 15,
+          tip: 'Describe feature branch conventions and PR scopes',
           templateKey: 'contributing_workflow'
         },
         {
           id: 'contributing_commits',
           label: 'Commit Message Conventions',
-          passed: /conventional commit|commit message|feat:|fix:|chore:/i.test(text) || /^#{1,3}\s+.*(commit|message)/im.test(text),
-          weight: 14,
-          tip: 'Document commit guidelines (e.g., Conventional Commits)',
+          passed: /conventional commit|commit message|feat:|fix:/i.test(text),
+          weight: 15,
+          tip: 'Specify Conventional Commits (feat:, fix:, chore:)',
           templateKey: 'contributing_commits'
         },
         {
           id: 'contributing_tests',
-          label: 'Testing & Quality Gates',
-          passed: /^#{1,3}\s+.*(test|lint|typecheck|quality|qa)/im.test(text) || /(npm|yarn|pnpm|pytest|cargo)\s+(test|run lint)/i.test(text),
-          weight: 16,
-          tip: 'Detail commands to run unit tests, integration tests, and linters',
+          label: 'Testing & Quality Checks',
+          passed: /^#{1,3}\s+.*(test|quality|lint)/im.test(text) || /npm test|pytest|go test/i.test(text),
+          weight: 20,
+          tip: 'Document how contributors run tests before pushing',
           templateKey: 'contributing_tests'
-        },
-        {
-          id: 'contributing_pr',
-          label: 'Pull Request Checklist & Review Flow',
-          passed: /^#{1,3}\s+.*(pull request|pr process|submitting|review)/im.test(text) || /- \[[ x]\].*pr/i.test(text),
-          weight: 18,
-          tip: 'Provide a step-by-step PR checklist for contributors',
-          templateKey: 'contributing_pr'
         }
       ]
     } else if (selectedStandard === 'setup') {
       checks = [
         {
           id: 'setup_title',
-          label: 'Setup Guide Heading (H1)',
-          passed: /^#\s+.+/m.test(text),
-          weight: 10,
-          tip: 'Add a clear # Setup & Installation Guide heading'
+          label: 'Installation & Setup Heading (H1)',
+          passed: /^#\s+.*(setup|install|getting started|deploy)/im.test(text) || /^#\s+.+/m.test(text),
+          weight: 15,
+          tip: 'Provide a clear # Setup & Installation Guide heading'
         },
         {
           id: 'setup_prereq',
-          label: 'Prerequisites & Version Matrix',
-          passed: /^#{1,3}\s+.*(prerequisite|requirement|system requirement|dependenc)/im.test(text) || /node(\.js)?\s*>=\s*\d+/i.test(text),
-          weight: 15,
-          tip: 'List required runtimes (Node, Python, Docker) and minimum versions',
+          label: 'Prerequisites & Runtime Matrix',
+          passed: /^#{1,3}\s+.*(prerequisite|requirement|system)/im.test(text),
+          weight: 20,
+          tip: 'List required Node, Python, Docker, or OS versions',
           templateKey: 'setup_prereq'
         },
         {
           id: 'setup_steps',
           label: 'Step-by-Step Installation Commands',
-          passed: /```(bash|sh|shell|zsh|powershell|cmd)[\s\S]*?(npm|pnpm|yarn|pip|cargo|go|docker)[\s\S]*?```/i.test(text) || /```bash/i.test(text),
-          weight: 18,
-          tip: 'Provide copy-pasteable terminal commands to clone and install dependencies',
+          passed: /```bash[\s\S]*?```/i.test(text) || /```shell[\s\S]*?```/i.test(text),
+          weight: 20,
+          tip: 'Use copy-pasteable bash code blocks for installation',
           templateKey: 'setup_steps'
         },
         {
           id: 'setup_env',
-          label: 'Environment (.env) Configuration Table',
-          passed: /\|[\s-:]+\|[\s\S]*?(\.env|PORT|KEY|URL|SECRET)/i.test(text) || /^#{1,3}\s+.*(environment|config|\.env)/im.test(text),
-          weight: 18,
-          tip: 'Detail every required and optional environment variable in a table',
+          label: 'Environment Variables Reference (.env)',
+          passed: /\.env|environment variable/i.test(text),
+          weight: 15,
+          tip: 'Document all configuration variables with default values',
           templateKey: 'setup_env'
         },
         {
           id: 'setup_services',
-          label: 'Database & Services Initialization',
-          passed: /^#{1,3}\s+.*(database|migration|seed|docker|service|redis|postgres)/im.test(text) || /docker compose|db:migrate/i.test(text),
+          label: 'Database & Service Initialization',
+          passed: /docker|database|migration|redis|postgres|seed/i.test(text),
           weight: 15,
-          tip: 'Explain database migration, seeding, and container setup',
+          tip: 'Explain database seeding, migration, or Docker commands',
           templateKey: 'setup_services'
         },
         {
-          id: 'setup_verify',
-          label: 'Verification & Health Check',
-          passed: /^#{1,3}\s+.*(verif|health|smoke test|check|test run)/im.test(text) || /localhost:\d+|curl\s+/i.test(text),
-          weight: 12,
-          tip: 'Give a quick command or URL to verify successful startup',
-          templateKey: 'setup_verify'
-        },
-        {
           id: 'setup_troubleshoot',
-          label: 'Troubleshooting & FAQ Section',
-          passed: /^#{1,3}\s+.*(troubleshoot|faq|common issues|error|problem)/im.test(text),
-          weight: 12,
-          tip: 'Document known gotchas, port conflicts, permissions, and solutions',
+          label: 'Troubleshooting & Common Gotchas',
+          passed: /^#{1,3}\s+.*(troubleshoot|faq|gotcha|issue)/im.test(text),
+          weight: 15,
+          tip: 'List common port conflicts, version mismatches, and solutions',
           templateKey: 'setup_troubleshoot'
         }
       ]
@@ -433,69 +433,54 @@ export default function AuditStudioTab({
       checks = [
         {
           id: 'arch_title',
-          label: 'Architecture Title & Scope (H1)',
-          passed: /^#\s+.+/m.test(text),
-          weight: 10,
-          tip: 'Add a # System Architecture & Technical Design heading'
+          label: 'System Architecture Heading (H1)',
+          passed: /^#\s+.*(architecture|system|design|spec)/im.test(text) || /^#\s+.+/m.test(text),
+          weight: 15,
+          tip: 'Add a clear # Architecture Specification title'
         },
         {
           id: 'arch_diagram',
-          label: 'Visual Architecture Diagram',
-          passed: /```mermaid[\s\S]*?```/i.test(text) || /!\[.*?arch.*?\]/i.test(text) || /```[\s\S]*?┌───[\s\S]*?```/i.test(text),
-          weight: 20,
-          tip: 'Include a Mermaid flowchart, sequence diagram, or topology visual',
+          label: 'Mermaid System Diagram',
+          passed: /```mermaid[\s\S]*?```/i.test(text),
+          weight: 25,
+          tip: 'Embed a Mermaid flowchart or sequence diagram showing component interactions',
           templateKey: 'arch_diagram'
         },
         {
           id: 'arch_principles',
-          label: 'Core Design Principles & Philosophy',
-          passed: /^#{1,3}\s+.*(principle|goal|philosophy|overview|foundation)/im.test(text),
-          weight: 14,
-          tip: 'List foundational architectural principles (modularity, resilience, isolation)',
+          label: 'Core Design Principles',
+          passed: /^#{1,3}\s+.*(principle|concept|philosophy|overview)/im.test(text),
+          weight: 15,
+          tip: 'Outline architectural philosophy, separation of concerns, and invariants',
           templateKey: 'arch_principles'
         },
         {
           id: 'arch_components',
-          label: 'Component & Layer Boundaries',
-          passed: /^#{1,3}\s+.*(component|layer|module|boundary|service|package)/im.test(text),
-          weight: 16,
-          tip: 'Define presentation, business logic, and storage tier responsibilities',
+          label: 'Component & Module Boundaries',
+          passed: /^#{1,3}\s+.*(component|module|package|layer|service)/im.test(text),
+          weight: 15,
+          tip: 'Define module responsibilities and cross-layer interfaces',
           templateKey: 'arch_components'
         },
         {
           id: 'arch_dataflow',
-          label: 'Data Flow & Request Lifecycle',
-          passed: /^#{1,3}\s+.*(data flow|lifecycle|pipeline|flow|state)/im.test(text) || /sequenceDiagram/i.test(text),
-          weight: 16,
-          tip: 'Trace how data moves from user action to database and response',
+          label: 'Data Flow & State Lifecycle',
+          passed: /^#{1,3}\s+.*(data flow|lifecycle|state|sequence)/im.test(text),
+          weight: 15,
+          tip: 'Document how requests or events traverse the system stack',
           templateKey: 'arch_dataflow'
         },
         {
           id: 'arch_security',
-          label: 'Security & Access Isolation',
-          passed: /^#{1,3}\s+.*(security|auth|encryption|rbac|isolation|compliance)/im.test(text),
-          weight: 14,
-          tip: 'Specify authentication, encryption at rest/transit, and access control',
+          label: 'Security & Boundary Isolation',
+          passed: /^#{1,3}\s+.*(security|auth|isolation|boundary)/im.test(text),
+          weight: 15,
+          tip: 'Document encryption, sanitization, and access controls',
           templateKey: 'arch_security'
-        },
-        {
-          id: 'arch_tree',
-          label: 'Directory Structure / Codebase Map',
-          passed: /^#{1,3}\s+.*(directory|tree|folder|structure)/im.test(text) || /├──\s+/m.test(text),
-          weight: 10,
-          tip: 'Provide an annotated directory tree showing where modules live',
-          templateKey: 'arch_tree'
         }
       ]
     } else if (selectedStandard === 'changelog') {
       checks = [
-        {
-          id: 'cl_title',
-          label: 'Changelog Heading (H1)',
-          passed: /^#\s+.*(changelog|release|history)/im.test(text) || /^#\s+.+/m.test(text),
-          weight: 10,
-          tip: 'Add a clear # Changelog heading at line 1'
-        },
         {
           id: 'cl_notice',
           label: 'SemVer & Keep a Changelog Notice',
@@ -531,7 +516,10 @@ export default function AuditStudioTab({
         {
           id: 'cl_links',
           label: 'Version Comparison Diff Links',
-          passed: /\[\d+\.\d+\.\d+\]:\s+https?:\/\/github\.com/i.test(text) || /\[unreleased\]:\s+https?:\/\//i.test(text) || /\[.*?\]:\s+http/i.test(text),
+          passed:
+            /\[\d+\.\d+\.\d+\]:\s+https?:\/\/github\.com/i.test(text) ||
+            /\[unreleased\]:\s+https?:\/\//i.test(text) ||
+            /\[.*?\]:\s+http/i.test(text),
           weight: 15,
           tip: 'Add Markdown comparison links at the footer comparing release tags',
           templateKey: 'cl_links'
@@ -549,7 +537,9 @@ export default function AuditStudioTab({
         {
           id: 'api_auth',
           label: 'Authentication & Headers Specification',
-          passed: /^#{1,3}\s+.*(auth|bearer|token|header|api key)/im.test(text) || /Authorization:\s+Bearer/i.test(text),
+          passed:
+            /^#{1,3}\s+.*(auth|bearer|token|header|api key)/im.test(text) ||
+            /Authorization:\s+Bearer/i.test(text),
           weight: 15,
           tip: 'Document Authorization headers, Bearer tokens, or API Keys',
           templateKey: 'api_auth'
@@ -565,7 +555,9 @@ export default function AuditStudioTab({
         {
           id: 'api_schemas',
           label: 'Request & Response JSON Schemas',
-          passed: /```json[\s\S]*?```/i.test(text) || /\|[\s-:]+\|[\s\S]*?(body|param|type|field)/i.test(text),
+          passed:
+            /```json[\s\S]*?```/i.test(text) ||
+            /\|[\s-:]+\|[\s\S]*?(body|param|type|field)/i.test(text),
           weight: 20,
           tip: 'Provide sample JSON request bodies and response payloads',
           templateKey: 'api_schemas'
@@ -573,7 +565,9 @@ export default function AuditStudioTab({
         {
           id: 'api_errors',
           label: 'Error Codes & HTTP Status Matrix',
-          passed: /400|401|403|404|422|500/m.test(text) || /^#{1,3}\s+.*(error|status code|response code)/im.test(text),
+          passed:
+            /400|401|403|404|422|500/m.test(text) ||
+            /^#{1,3}\s+.*(error|status code|response code)/im.test(text),
           weight: 15,
           tip: 'Include a status matrix with common error codes and explanations',
           templateKey: 'api_errors'
@@ -654,31 +648,50 @@ export default function AuditStudioTab({
 
     let grade = 'F'
     let gradeColor = '#ef4444'
-    if (scorePct >= 92) { grade = 'A+'; gradeColor = '#10b981' }
-    else if (scorePct >= 84) { grade = 'A'; gradeColor = '#10b981' }
-    else if (scorePct >= 75) { grade = 'B'; gradeColor = '#38bdf8' }
-    else if (scorePct >= 62) { grade = 'C'; gradeColor = '#f59e0b' }
-    else if (scorePct >= 50) { grade = 'D'; gradeColor = '#f97316' }
+    if (scorePct >= 92) {
+      grade = 'A+'
+      gradeColor = '#10b981'
+    } else if (scorePct >= 84) {
+      grade = 'A'
+      gradeColor = '#10b981'
+    } else if (scorePct >= 75) {
+      grade = 'B'
+      gradeColor = '#38bdf8'
+    } else if (scorePct >= 62) {
+      grade = 'C'
+      gradeColor = '#f59e0b'
+    } else if (scorePct >= 50) {
+      grade = 'D'
+      gradeColor = '#f97316'
+    }
 
-    // Readability metrics
+    // Metrics
     const codeBlocksCount = (text.match(/```/g) || []).length / 2
     const tablesCount = (text.match(/\|[\s-:]+\|/g) || []).length
     const headingsCount = (text.match(/^#{1,6}\s+/gm) || []).length
     const readingMinutes = Math.max(1, Math.ceil(words / 200))
 
     // Warnings
-    const hasExamplePlaceholders = /your-org|your-repo|username\/project|alex@example\.com|\bTODO\b|\bFIXME\b/i.test(text)
+    const hasExamplePlaceholders = /your-org|your-repo|username\/project|alex@example\.com|\bTODO\b|\bFIXME\b/i.test(
+      text
+    )
     const emptyLinks = /\[.*?\]\(\s*\)/.test(text)
 
     const warnings = []
     if (hasExamplePlaceholders) {
-      warnings.push('Detected generic placeholders or TODOs (e.g., your-org/your-repo, TODO). Replace with project details.')
+      warnings.push(
+        'Detected generic placeholders or TODOs (e.g., your-org/your-repo, TODO). Replace with project details.'
+      )
     }
     if (emptyLinks) {
-      warnings.push('Detected empty link targets [text](). Ensure all links have valid relative or absolute URLs.')
+      warnings.push(
+        'Detected empty link targets [text](). Ensure all links have valid relative or absolute URLs.'
+      )
     }
     if (words === 0) {
-      warnings.push(`The document "${selectedFile}" is currently empty. Add content or boilerplate to begin auditing.`)
+      warnings.push(
+        `The document "${selectedFile}" is currently empty. Add content or boilerplate to begin auditing.`
+      )
     } else if (words < 80) {
       warnings.push('Word count is under 80 words. Consider providing more context, examples, and instructions.')
     }
@@ -700,194 +713,218 @@ export default function AuditStudioTab({
     }
   }, [currentContent, selectedStandard, selectedFile])
 
-  // Formatted report for copying
+  // Formatted report for copying / insertion
   const reportText = useMemo(() => {
-    return `## 📋 Documentation Health Audit Report (${selectedFile})\n` +
+    return (
+      `## 📋 Documentation Health Audit Report (${selectedFile})\n` +
       `**Standard Profile:** ${activeStandardConfig.name} (${activeStandardConfig.badge})\n\n` +
       `- **Overall Grade:** ${auditReport.grade} (${auditReport.scorePct}/100)\n` +
       `- **Total Words:** ${auditReport.metrics.words.toLocaleString()} (~${auditReport.metrics.readingMinutes} min read)\n` +
       `- **Lines:** ${auditReport.metrics.lines} | **Headings:** ${auditReport.metrics.headingsCount} | **Code Blocks:** ${auditReport.metrics.codeBlocksCount} | **Tables:** ${auditReport.metrics.tablesCount}\n\n` +
       `### Passed Checks\n` +
-      auditReport.checks.filter(c => c.passed).map(c => `- ✅ ${c.label}`).join('\n') + '\n\n' +
+      auditReport.checks
+        .filter((c) => c.passed)
+        .map((c) => `- ✅ ${c.label}`)
+        .join('\n') +
+      '\n\n' +
       `### Missing Elements\n` +
-      (auditReport.checks.filter(c => !c.passed).map(c => `- ⚠️ ${c.label} (${c.tip})`).join('\n') || '- None! All checks passed.')
+      (auditReport.checks
+        .filter((c) => !c.passed)
+        .map((c) => `- ⚠️ ${c.label} (${c.tip})`)
+        .join('\n') || '- None! All checks passed.')
+    )
   }, [auditReport, selectedFile, activeStandardConfig])
 
-  const handleCopyReport = () => {
-    navigator.clipboard.writeText(reportText)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  const passedChecksCount = auditReport.checks.filter((c) => c.passed).length
+  const missingChecks = auditReport.checks.filter((c) => !c.passed)
+  const passedChecks = auditReport.checks.filter((c) => c.passed)
+
+  // Filtered checks for display
+  const displayedChecks = useMemo(() => {
+    if (checkFilter === 'missing') return missingChecks
+    if (checkFilter === 'passed') return passedChecks
+    return auditReport.checks
+  }, [checkFilter, auditReport.checks, missingChecks, passedChecks])
+
+  const handleInsertReport = () => {
+    onInsertSection(reportText, selectedFile)
   }
 
-  const passedChecksCount = auditReport.checks.filter(c => c.passed).length
+  // Canvas Header Extras: Document Pill, Auto Badge, Score Pill, Filter Control
+  const canvasHeaderExtras = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+      {/* Target Document Tag */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '3px 8px',
+          borderRadius: '4px',
+          background: 'var(--surface-mid, rgba(255,255,255,0.06))',
+          border: '1px solid var(--border-color)',
+          fontSize: '11px',
+          fontFamily: 'var(--font-mono, monospace)',
+          color: '#38bdf8'
+        }}
+        title={`Active Document: ${selectedFile}`}
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>description</span>
+        <span style={{ fontWeight: 600 }}>{selectedFile}</span>
+        <span style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '10px' }}>
+          ({auditReport.metrics.words}w)
+        </span>
+      </div>
+
+      {/* Auto / Manual Standard Indicator */}
+      {isManualStandard ? (
+        <button
+          type="button"
+          onClick={handleResetAutoStandard}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '2px 7px',
+            fontSize: '10.5px',
+            fontWeight: 600,
+            borderRadius: '4px',
+            background: 'rgba(245, 158, 11, 0.15)',
+            border: '1px solid rgba(245, 158, 11, 0.4)',
+            color: '#f59e0b',
+            cursor: 'pointer'
+          }}
+          title="Custom profile chosen. Click to reset to auto-detect."
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>sync</span>
+          <span>Custom Profile (Reset)</span>
+        </button>
+      ) : (
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '2px 7px',
+            fontSize: '10.5px',
+            fontWeight: 600,
+            borderRadius: '4px',
+            background: 'rgba(16, 185, 129, 0.12)',
+            border: '1px solid rgba(16, 185, 129, 0.35)',
+            color: '#34d399'
+          }}
+          title="Standard profile automatically detected from filename"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>bolt</span>
+          <span>Auto-Detected</span>
+        </span>
+      )}
+
+      {/* Score Pill */}
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          fontSize: '11px',
+          fontWeight: 700,
+          padding: '2px 8px',
+          borderRadius: '4px',
+          backgroundColor: `${auditReport.gradeColor}18`,
+          color: auditReport.gradeColor,
+          border: `1px solid ${auditReport.gradeColor}44`,
+          fontFamily: 'var(--font-mono, monospace)'
+        }}
+      >
+        <span>Grade {auditReport.grade}</span>
+        <span style={{ opacity: 0.8 }}>({auditReport.scorePct}%)</span>
+      </span>
+
+      {/* Filter Segmented Control */}
+      <div className="studio-segmented-styles" style={{ transform: 'scale(0.92)', transformOrigin: 'right center' }}>
+        <button
+          type="button"
+          className={`studio-style-btn ${checkFilter === 'all' ? 'active' : ''}`}
+          onClick={() => setCheckFilter('all')}
+        >
+          All ({auditReport.checks.length})
+        </button>
+        <button
+          type="button"
+          className={`studio-style-btn ${checkFilter === 'missing' ? 'active' : ''}`}
+          onClick={() => setCheckFilter('missing')}
+          style={{ color: missingChecks.length > 0 ? '#f59e0b' : undefined }}
+        >
+          Missing ({missingChecks.length})
+        </button>
+        <button
+          type="button"
+          className={`studio-style-btn ${checkFilter === 'passed' ? 'active' : ''}`}
+          onClick={() => setCheckFilter('passed')}
+          style={{ color: '#10b981' }}
+        >
+          Passed ({passedChecks.length})
+        </button>
+      </div>
+    </div>
+  )
 
   return (
-    <div className="studio-tab-view select-none">
-      {/* Studio Top Control Strip */}
-      <div className="studio-top-bar">
-        <div className="studio-bar-left">
-          <div
-            className="studio-badge-halo"
-            style={{
-              backgroundColor: `${activeStandardConfig.color}22`,
-              borderColor: `${activeStandardConfig.color}55`,
-              boxShadow: `0 0 12px ${activeStandardConfig.color}33`
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ color: activeStandardConfig.color }}>
-              {activeStandardConfig.icon || 'verified_user'}
-            </span>
-          </div>
-          <div>
-            <div className="studio-title-row">
-              <h2 className="studio-title">Documentation Health & Quality Auditor</h2>
-              <span
-                className="studio-tag"
-                style={{
-                  borderColor: `${activeStandardConfig.color}55`,
-                  color: activeStandardConfig.color,
-                  backgroundColor: `${activeStandardConfig.color}15`
-                }}
-              >
-                {activeStandardConfig.badge}
-              </span>
-            </div>
-            <p className="studio-subtitle">
-              Audit structure, onboarding clarity, and quality standards for README and any documentation file.
-            </p>
-          </div>
-        </div>
-
-        <div className="studio-bar-actions">
-          {onBackToReadme && (
-            <button
-              type="button"
-              className="btn-studio-secondary"
-              onClick={() => onBackToReadme(selectedFile)}
-              title={`Return to active editor (${selectedFile})`}
-            >
-              <span className="material-symbols-outlined icon-xs">arrow_back</span>
-              <span>Back to Editor</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="btn-studio-secondary"
-            onClick={handleCopyReport}
-            title="Copy audit report markdown to clipboard"
-          >
-            <span className="material-symbols-outlined icon-xs">
-              {copied ? 'check' : 'content_copy'}
-            </span>
-            <span>{copied ? 'Copied!' : 'Copy Audit Summary'}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Target File & Documentation Standard Bar */}
-      <div className="audit-control-bar">
-        {/* Left: Document Selector */}
-        <div className="audit-control-group audit-doc-selector-group">
-          <div className="audit-control-label">
-            <span className="material-symbols-outlined" style={{ fontSize: '15px', color: '#38bdf8' }}>
-              description
-            </span>
-            <span>Target Document:</span>
-          </div>
-
-          {/* Quick File Pills */}
-          <div className="audit-file-pills custom-scrollbar">
-            {availableFiles.map((filename) => {
-              const isSelected = selectedFile === filename
-              const fileContent = allFiles?.[filename] ?? ''
-              const wordCount = fileContent.trim() ? fileContent.trim().split(/\s+/).length : 0
-              return (
-                <button
-                  key={filename}
-                  type="button"
-                  className={`audit-file-pill ${isSelected ? 'active' : ''}`}
-                  onClick={() => handleSelectFile(filename)}
-                  title={`Audit ${filename} (${wordCount} words)`}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>
-                    {isSelected ? 'check' : 'article'}
-                  </span>
-                  <span className="audit-file-pill-name">{filename}</span>
-                  <span className="audit-file-pill-words">{wordCount}w</span>
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Dropdown fallback for wide workspaces */}
-          <select
-            className="audit-select audit-doc-select"
-            value={selectedFile}
-            onChange={(e) => handleSelectFile(e.target.value)}
-            title="Select target document file to audit"
-          >
-            {availableFiles.map((f) => (
-              <option key={f} value={f}>
-                📄 {f}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Right: Standards Profile Switcher */}
-        <div className="audit-control-group audit-standard-group">
-          <div className="audit-control-label">
-            <span className="material-symbols-outlined" style={{ fontSize: '15px', color: activeStandardConfig.color }}>
-              fact_check
-            </span>
-            <span>Standard Profile:</span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <select
-              className="audit-select audit-standard-select"
-              value={selectedStandard}
-              onChange={(e) => handleSelectStandard(e.target.value)}
-              title="Select documentation audit standard ruleset"
-            >
-              {STANDARDS.map((std) => (
-                <option key={std.id} value={std.id}>
-                  {std.name}
-                </option>
-              ))}
-            </select>
-
-            {isManualStandard ? (
-              <button
-                type="button"
-                className="audit-auto-badge manual"
-                onClick={handleResetAutoStandard}
-                title="Custom profile chosen. Click to reset to auto-detect."
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>sync</span>
-                <span>Custom (Reset)</span>
-              </button>
-            ) : (
-              <span className="audit-auto-badge auto" title="Automatically detected from filename">
-                <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>bolt</span>
-                <span>Auto-Detected</span>
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Studio Body: 2-Column Responsive Layout */}
-      <div className="studio-content-grid">
-        {/* Left Column: Grade Scorecard, Metrics, and Warnings */}
-        <div
-          className="studio-form-column custom-scrollbar"
-          style={{ width: `${formWidth}px`, minWidth: `${formWidth}px`, maxWidth: `${formWidth}px`, flex: 'none' }}
-        >
-          {/* Grade Hero Scorecard */}
+    <StudioShell
+      studioId="audit.studio"
+      title="Documentation Auditor Pro"
+      subtitle="Evaluate structure, completeness, readability metrics, and standard profiles across workspace documentation."
+      icon="verified_user"
+      accentColor="#10b981"
+      badge={`Grade ${auditReport.grade} (${auditReport.scorePct}%)`}
+      modes={AUDIT_MODES}
+      activeMode={selectedStandard}
+      onModeChange={handleSelectStandard}
+      markdownCode={reportText}
+      codeLanguage="markdown"
+      onInsert={handleInsertReport}
+      insertLabel="Insert Audit Report"
+      onBackToReadme={() => onBackToReadme(selectedFile)}
+      canvasHeaderExtras={canvasHeaderExtras}
+      defaultSplitWidth={500}
+      minSplitWidth={380}
+      maxSplitWidth={880}
+      inspectorContent={
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Section 1: Target Document Selection */}
           <div className="studio-section">
-            <label className="studio-section-label">Documentation Scorecard</label>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '8px' }}>
+              1 • Target Document ({availableFiles.length})
+            </label>
+            <div className="audit-file-pills custom-scrollbar" style={{ flexWrap: 'wrap', maxWidth: '100%' }}>
+              {availableFiles.map((filename) => {
+                const isSelected = selectedFile === filename
+                const fileContent = allFiles?.[filename] ?? ''
+                const wordCount = fileContent.trim() ? fileContent.trim().split(/\s+/).length : 0
+                return (
+                  <button
+                    key={filename}
+                    type="button"
+                    className={`audit-file-pill ${isSelected ? 'active' : ''}`}
+                    onClick={() => handleSelectFile(filename)}
+                    title={`Audit ${filename} (${wordCount} words)`}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>
+                      {isSelected ? 'check' : 'article'}
+                    </span>
+                    <span className="audit-file-pill-name">{filename}</span>
+                    <span className="audit-file-pill-words">{wordCount}w</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Section 2: Scorecard & Grade */}
+          <div className="studio-section">
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '8px' }}>
+              2 • Overall Quality Scorecard
+            </label>
             <div className="audit-grade-container">
               <div
                 className="audit-grade-ring"
@@ -900,23 +937,25 @@ export default function AuditStudioTab({
               </div>
 
               <div className="audit-score-info">
-                <span className="audit-score-title">
+                <span className="audit-score-title" style={{ fontSize: '14.5px' }}>
                   {auditReport.scorePct >= 85
                     ? 'Production Ready Documentation'
                     : auditReport.scorePct >= 65
                     ? 'Good Baseline, Needs Polish'
                     : 'Incomplete Documentation'}
                 </span>
-                <span className="audit-score-summary">
-                  Auditing <strong>{selectedFile}</strong> against <em>{activeStandardConfig.shortName}</em> standards ({passedChecksCount}/{auditReport.checks.length} criteria passed).
+                <span className="audit-score-summary" style={{ fontSize: '11.5px', color: '#94a3b8' }}>
+                  Auditing <strong>{selectedFile}</strong> against <em>{activeStandardConfig.shortName}</em> ({passedChecksCount}/{auditReport.checks.length} criteria passed).
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Metrics Grid */}
+          {/* Section 3: Readability & Content Metrics */}
           <div className="studio-section">
-            <label className="studio-section-label">Readability & Content Metrics</label>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '8px' }}>
+              3 • Readability & Structure Metrics
+            </label>
             <div className="audit-metrics-grid">
               <div className="audit-metric-card">
                 <div className="audit-metric-value">{auditReport.metrics.words.toLocaleString()}</div>
@@ -950,10 +989,12 @@ export default function AuditStudioTab({
             </div>
           </div>
 
-          {/* Quality Warnings */}
+          {/* Section 4: Quality Warnings */}
           {auditReport.warnings.length > 0 && (
             <div className="studio-section">
-              <label className="studio-section-label">Audit Quality Warnings ({auditReport.warnings.length})</label>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#f59e0b', marginBottom: '8px' }}>
+                4 • Quality Warnings ({auditReport.warnings.length})
+              </label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {auditReport.warnings.map((w, idx) => (
                   <div
@@ -966,7 +1007,7 @@ export default function AuditStudioTab({
                       backgroundColor: 'rgba(245, 158, 11, 0.1)',
                       border: '1px solid rgba(245, 158, 11, 0.25)',
                       borderRadius: '6px',
-                      fontSize: '11.5px',
+                      fontSize: '11px',
                       color: '#f59e0b'
                     }}
                   >
@@ -980,58 +1021,123 @@ export default function AuditStudioTab({
             </div>
           )}
 
-          {/* Generated Audit Report Card */}
-          <div className="studio-card" style={{ marginTop: '4px' }}>
-            <div className="studio-card-header">
-              <span className="studio-card-title">Generated Audit Summary Report</span>
-              <button
-                type="button"
-                className="snippet-copy-btn"
-                onClick={handleCopyReport}
-              >
-                <span className="material-symbols-outlined icon-xs">
-                  {copied ? 'check' : 'content_copy'}
-                </span>
-                <span>{copied ? 'Copied' : 'Copy'}</span>
-              </button>
-            </div>
-            <pre className="studio-code-block custom-scrollbar" style={{ maxHeight: '140px' }}>
-              <code>{reportText}</code>
-            </pre>
-          </div>
-        </div>
-
-        {/* Resizer Splitter Handle */}
-        <div
-          className={`studio-resizer-handle ${isDragging ? 'is-dragging' : ''}`}
-          onMouseDown={handleMouseDown}
-          onDoubleClick={handleDoubleClick}
-          title="Drag to resize form and preview sections • Double-click to reset"
-        />
-
-        {/* Right Column: Detailed Checklist & Quick Section Fixes */}
-        <div className="studio-preview-column custom-scrollbar" style={{ flex: 1, minWidth: 0 }}>
-          <div className="studio-card">
-            <div className="studio-card-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="mac-dot dot-red" />
-                <span className="mac-dot dot-yellow" />
-                <span className="mac-dot dot-green" />
-                <span className="studio-card-title">{activeStandardConfig.name} Checklist</span>
+          {/* Section 5: Missing Sections Quick-Fix Catalog */}
+          {missingChecks.filter((c) => c.templateKey && SECTION_TEMPLATES[c.templateKey]).length > 0 && (
+            <div className="studio-section">
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#38bdf8', marginBottom: '8px' }}>
+                5 • Quick-Fix Starter Sections ({missingChecks.filter((c) => c.templateKey && SECTION_TEMPLATES[c.templateKey]).length})
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {missingChecks
+                  .filter((c) => c.templateKey && SECTION_TEMPLATES[c.templateKey])
+                  .map((check) => (
+                    <div
+                      key={check.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '6px 10px',
+                        background: 'var(--surface-base)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '6px'
+                      }}
+                    >
+                      <div style={{ minWidth: 0 }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#f1f5f9', display: 'block' }}>
+                          {check.label}
+                        </span>
+                        <span style={{ fontSize: '10px', color: '#94a3b8' }}>
+                          +{check.weight} pts boost
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="audit-fix-btn"
+                        onClick={() => onInsertSection(SECTION_TEMPLATES[check.templateKey], selectedFile)}
+                        title={`Insert ${check.label} starter boilerplate into ${selectedFile}`}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>add</span>
+                        <span>Insert Boilerplate</span>
+                      </button>
+                    </div>
+                  ))}
               </div>
-              <span
-                className="studio-card-tag"
+            </div>
+          )}
+        </div>
+      }
+      canvasContent={
+        <div style={{ width: '100%', maxWidth: '820px', padding: '24px', boxSizing: 'border-box' }}>
+          {/* Main Audit Checklist Card */}
+          <div
+            className="audit-checklist-stage-card"
+            style={{
+              backgroundColor: 'var(--surface-base, #1e1e1e)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Header with Title & Progress Bar */}
+            <div
+              style={{
+                padding: '16px 20px',
+                borderBottom: '1px solid var(--border-color)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary, #ffffff)' }}>
+                    {activeStandardConfig.name} Standards Checklist
+                  </h3>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)' }}>
+                    Auditing quality criteria for <strong>{selectedFile}</strong>
+                  </span>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: auditReport.gradeColor }}>
+                    {passedChecksCount} / {auditReport.checks.length} Passed
+                  </span>
+                  <span style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted, #94a3b8)' }}>
+                    {auditReport.scorePct}% Score
+                  </span>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div
                 style={{
-                  color: passedChecksCount === auditReport.checks.length ? '#10b981' : '#38bdf8'
+                  width: '100%',
+                  height: '6px',
+                  backgroundColor: 'var(--surface-mid, rgba(255, 255, 255, 0.08))',
+                  borderRadius: '3px',
+                  overflow: 'hidden'
                 }}
               >
-                {passedChecksCount} / {auditReport.checks.length} Passed
-              </span>
+                <div
+                  style={{
+                    width: `${auditReport.scorePct}%`,
+                    height: '100%',
+                    background: `linear-gradient(90deg, #6366f1 0%, ${auditReport.gradeColor} 100%)`,
+                    borderRadius: '3px',
+                    transition: 'width 0.3s ease'
+                  }}
+                />
+              </div>
             </div>
 
-            <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div className="audit-check-grid">
-                {auditReport.checks.map((check) => (
+            {/* Checklist Items */}
+            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {displayedChecks.length === 0 ? (
+                <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
+                  No criteria match the current filter.
+                </div>
+              ) : (
+                displayedChecks.map((check) => (
                   <div
                     key={check.id}
                     className={`audit-check-card ${check.passed ? 'passed' : 'missing'}`}
@@ -1054,8 +1160,8 @@ export default function AuditStudioTab({
                             style={{
                               fontSize: '10px',
                               fontFamily: 'monospace',
-                              color: 'var(--text-muted)',
-                              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                              color: 'var(--text-muted, #94a3b8)',
+                              backgroundColor: 'rgba(255, 255, 255, 0.06)',
                               padding: '1px 5px',
                               borderRadius: '3px'
                             }}
@@ -1079,12 +1185,12 @@ export default function AuditStudioTab({
                       </button>
                     )}
                   </div>
-                ))}
-              </div>
+                ))
+              )}
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      }
+    />
   )
 }

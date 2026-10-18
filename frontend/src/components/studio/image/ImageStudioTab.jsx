@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { saveAs } from 'file-saver'
 import { getOptimizedImageUrl, requiresAsyncResolution, resolveRedirectImageUrl } from '../../../utils/imageUtils'
-import { useStudioSplit } from '../../../utils/useResizableSplit'
+import StudioShell from '../common/StudioShell'
 import {
   STUDIO_MODES,
   LOCAL_SVG_TYPES,
@@ -10,6 +10,7 @@ import {
 } from './imageStudioConstants'
 import { getActiveSvgCode } from './svgBannerGenerators'
 import HeroBannerForm from './HeroBannerForm'
+import MotionHeroForm from './MotionHeroForm'
 import VisualMockupForm from './VisualMockupForm'
 import AdaptiveThemeForm from './AdaptiveThemeForm'
 import ComparisonForm from './ComparisonForm'
@@ -21,8 +22,6 @@ export default function ImageStudioTab({
   onBackToReadme = () => {}
 }) {
   const [activeMode, setActiveMode] = useState('banner')
-  const [copied, setCopied] = useState(false)
-  const { formWidth, isDragging: isSplitDragging, handleMouseDown, handleDoubleClick } = useStudioSplit(520)
 
   // Parse repo owner and name if available
   const parsedRepo = (() => {
@@ -40,21 +39,47 @@ export default function ImageStudioTab({
   const [bannerTitle, setBannerTitle] = useState('README Studio')
   const [bannerSubtitle, setBannerSubtitle] = useState('State-of-the-Art Markdown Documentation Platform')
   const [bannerTheme, setBannerTheme] = useState(COLOR_THEMES[0])
-  const [bannerTags, setBannerTags] = useState('FastAPI, React, Vite, Tailwind')
+  const [isCustomColor, setIsCustomColor] = useState(false)
+  const [customHex1, setCustomHex1] = useState('#4f46e5')
+  const [customHex2, setCustomHex2] = useState('#db2777')
+  const [capsuleFontColor, setCapsuleFontColor] = useState('ffffff')
+  const [capsuleDescColor, setCapsuleDescColor] = useState('e0e7ff')
+  const [capsuleAnimation, setCapsuleAnimation] = useState('fadeIn')
+  const [capsuleTitleSize, setCapsuleTitleSize] = useState('70')
+  const [capsuleDescSize, setCapsuleDescSize] = useState('20')
+  const [capsuleFontAlignY, setCapsuleFontAlignY] = useState('38')
+  const [capsuleDescAlignY, setCapsuleDescAlignY] = useState('60')
+  const [capsuleStroke, setCapsuleStroke] = useState('none')
   const [bannerHeight, setBannerHeight] = useState('220')
 
   // Stitch HUD Telemetry Specific State
   const [hudVersion, setHudVersion] = useState('v2.4.0')
   const [hudStatus, setHudStatus] = useState('SYSTEM NOMINAL')
+  const [hudMetric1, setHudMetric1] = useState('CPU: 12% // 4.8GHz')
+  const [hudMetric2, setHudMetric2] = useState('MEM: 1.4GB / 32GB')
+  const [hudMetric3, setHudMetric3] = useState('STATUS: ENCLAVE_SECURE')
 
   // Neofetch Specific State
   const [neofetchOs, setNeofetchOs] = useState('GitHub / Linux x86_64')
   const [neofetchLicense, setNeofetchLicense] = useState('MIT License')
+  const [neofetchPrompt, setNeofetchPrompt] = useState('user@visualmark:~#')
+  const [neofetchShell, setNeofetchShell] = useState('zsh 5.9 (x86_64)')
 
-  // GitHub Stats Card Specific State
-  const [githubRepoOwner, setGithubRepoOwner] = useState(parsedRepo.owner)
-  const [githubRepoName, setGithubRepoName] = useState(parsedRepo.repo)
-  const [githubStatsTheme, setGithubStatsTheme] = useState('tokyonight')
+  // Motion & Video / GIF State
+  const [motionUrl, setMotionUrl] = useState('https://raw.githubusercontent.com/charmbracelet/vhs/main/examples/demo.gif')
+  const [motionType, setMotionType] = useState('gif')
+  const [motionFrameStyle, setMotionFrameStyle] = useState('mac-window')
+  const [motionTitle, setMotionTitle] = useState('VisualMark Studio - Live Demo')
+  const [motionCaption, setMotionCaption] = useState('Interactive developer workflow demonstration')
+  const [motionAlign, setMotionAlign] = useState('center')
+  const [motionWidth, setMotionWidth] = useState('100%')
+  const [motionAutoplay, setMotionAutoplay] = useState(true)
+  const [motionLoop, setMotionLoop] = useState(true)
+  const [motionMuted, setMotionMuted] = useState(true)
+  const [motionControls, setMotionControls] = useState(false)
+  const [motionGlow, setMotionGlow] = useState('deep')
+  const [motionBrowserUrl, setMotionBrowserUrl] = useState('https://visualmark.dev/demo')
+
 
   // Typing SVG State
   const [typingLines, setTypingLines] = useState(
@@ -81,6 +106,8 @@ export default function ImageStudioTab({
   const [terminalCommand, setTerminalCommand] = useState('$ npm run start')
   const [imageAlign, setImageAlign] = useState('center')
   const [imageWidth, setImageWidth] = useState('800')
+  const [macWindowTitle, setMacWindowTitle] = useState('VisualMark Studio')
+  const [mockupGlow, setMockupGlow] = useState('soft')
 
   // 3. Theme Adaptive State (Light & Dark Pair)
   const [darkThemeUrl, setDarkThemeUrl] = useState('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&auto=format&fit=crop&q=80')
@@ -199,264 +226,328 @@ export default function ImageStudioTab({
     const { compressedData, meta } = await compressImage(file)
     setUploadedDataUrl(compressedData)
     setUploadMeta(meta)
-    setUploadRelativePath(`assets/${meta.name}`)
+    const suggestedPath = `assets/${meta.name}`
+    setUploadRelativePath(suggestedPath)
   }
 
-  const handlePaste = (e) => {
-    if (e.clipboardData && e.clipboardData.items) {
-      for (const item of e.clipboardData.items) {
-        if (item.type.startsWith('image/')) {
-          const file = item.getAsFile()
-          if (file) handleFileUpload(file)
+  // Native Clipboard Paste Handler
+  const handlePaste = async (e) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile()
+        if (file) {
+          setActiveMode('upload')
+          await handleFileUpload(file)
           break
         }
       }
     }
   }
 
-  // Toggle tech tag in rack
-  const handleToggleTechTag = (tech) => {
-    const tagsArr = bannerTags.split(',').map((t) => t.trim()).filter(Boolean)
-    const exists = tagsArr.some((t) => t.toLowerCase() === tech.toLowerCase())
-    if (exists) {
-      setBannerTags(tagsArr.filter((t) => t.toLowerCase() !== tech.toLowerCase()).join(', '))
-    } else {
-      setBannerTags([...tagsArr, tech].join(', '))
-    }
-  }
 
-  // Capsule render URL generator
+
+  // Compute live Capsule Render URL
   const getCapsuleUrl = () => {
-    const textParam = encodeURIComponent(bannerTitle.trim() || 'Project')
-    const descParam = encodeURIComponent(bannerSubtitle.trim())
-    const hex1 = (bannerTheme.hex1 || '#6366f1').replace('#', '')
-    const hex2 = (bannerTheme.hex2 || '#38bdf8').replace('#', '')
-    return `https://capsule-render.vercel.app/api?type=${capsuleShape}&color=0:${hex1},100:${hex2}&height=${bannerHeight}&section=header&text=${textParam}&fontSize=40&fontAlignY=38${descParam ? `&desc=${descParam}&descAlignY=62` : ''}`
+    const params = new URLSearchParams()
+    params.set('type', capsuleShape)
+
+    if (isCustomColor) {
+      const h1 = (customHex1 || '#4f46e5').replace('#', '')
+      const h2 = (customHex2 || '#db2777').replace('#', '')
+      params.set('color', `0:${h1},100:${h2}`)
+    } else {
+      params.set('color', bannerTheme?.colorParam || bannerTheme?.capsuleList || '0:4f46e5,100:db2777')
+    }
+
+    params.set('height', bannerHeight || '220')
+    params.set('section', 'header')
+    params.set('text', bannerTitle || 'Project Title')
+    if (bannerSubtitle.trim()) {
+      params.set('desc', bannerSubtitle.trim())
+    }
+
+    params.set('fontSize', capsuleTitleSize || '70')
+    params.set('fontColor', (capsuleFontColor || 'ffffff').replace('#', ''))
+    params.set('fontAlignY', capsuleFontAlignY || '38')
+
+    if (bannerSubtitle.trim()) {
+      params.set('descSize', capsuleDescSize || '20')
+      params.set('descColor', (capsuleDescColor || 'e0e7ff').replace('#', ''))
+      params.set('descAlignY', capsuleDescAlignY || '60')
+    }
+
+    if (capsuleAnimation && capsuleAnimation !== 'none') {
+      params.set('animation', capsuleAnimation)
+    }
+
+    if (capsuleStroke && capsuleStroke !== 'none') {
+      params.set('stroke', capsuleStroke.replace('#', ''))
+      params.set('strokeWidth', '2')
+    }
+
+    return `https://capsule-render.vercel.app/api?${params.toString()}`
   }
 
-  // Typing SVG URL generator
+
+  // Compute live Typing SVG URL
   const getTypingUrl = () => {
-    const formattedLines = typingLines
-      .split(';')
-      .map((l) => l.trim())
-      .filter(Boolean)
-      .join(';')
-    const encoded = encodeURIComponent(formattedLines)
-    return `https://readme-typing-svg.demolab.com?font=${encodeURIComponent(typingFont)}&pause=${typingPause}&color=${typingColor}&center=true&vCenter=true&width=650&lines=${encoded}`
+    const params = new URLSearchParams()
+    params.set('font', typingFont)
+    params.set('color', typingColor.replace('#', ''))
+    params.set('size', '28')
+    params.set('pause', typingPause)
+    params.set('lines', typingLines)
+    params.set('center', 'true')
+    params.set('width', '800')
+    params.set('height', '100')
+    params.set('vCenter', 'true')
+    return `https://readme-typing-svg.demolab.com?${params.toString()}`
   }
 
-  // GitHub Pin Card URL generator
-  const getGithubPinUrl = () => {
-    return `https://github-readme-stats.vercel.app/api/pin/?username=${encodeURIComponent(githubRepoOwner)}&repo=${encodeURIComponent(githubRepoName)}&theme=${githubStatsTheme}&show_owner=true`
-  }
 
-  const currentSvgParams = {
-    bannerTitle,
-    bannerSubtitle,
-    hudStatus,
-    hudVersion,
-    bannerTags,
-    bannerTheme,
-    neofetchOs,
-    neofetchLicense
-  }
 
-  const currentActiveSvgCode = () => getActiveSvgCode(bannerType, currentSvgParams)
 
-  // Generate standard RFC 2397 Data URI with charset=utf-8
-  const getActiveSvgDataUri = () => {
-    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(currentActiveSvgCode())}`
-  }
-
-  // Generate badge chips markdown for tags
-  const getBadgeChipsMarkdown = () => {
-    const tags = bannerTags.split(',').map((t) => t.trim()).filter(Boolean)
-    if (tags.length === 0) return ''
-    const badges = tags.map((t) => {
-      const clean = encodeURIComponent(t)
-      return `<img src="https://img.shields.io/badge/${clean}-21262d?style=flat-square&logoColor=white" alt="${t}" />`
-    })
-    return `<p align="center">\n  ${badges.join('\n  ')}\n</p>`
-  }
-
-  // Export asset (PNG/SVG/WebP) directly
+  // Download active graphic as standalone file
   const handleDownloadAsset = async () => {
-    try {
-      const isLocalSvg = LOCAL_SVG_TYPES.includes(bannerType)
-      if (activeMode === 'banner' && isLocalSvg) {
-        const svgCode = currentActiveSvgCode()
-        const safeName = bannerTitle.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'hero'
-        const fileName = `${safeName}-${bannerType}.svg`
+    if (activeMode === 'banner') {
+      if (LOCAL_SVG_TYPES.includes(bannerType) || bannerType === 'capsule') {
+        const activeTheme = isCustomColor
+          ? {
+              id: 'custom',
+              name: 'Custom Gradient',
+              bg: `linear-gradient(135deg, ${customHex1} 0%, ${customHex2} 100%)`,
+              hex1: customHex1,
+              hex2: customHex2,
+              colorParam: `0:${customHex1.replace('#', '')},100:${customHex2.replace('#', '')}`,
+              coverUrl: bannerTheme?.coverUrl || ''
+            }
+          : bannerTheme
+
+        const svgCode = getActiveSvgCode({
+          bannerType,
+          bannerTitle,
+          bannerSubtitle,
+          capsuleShape,
+          hudStatus,
+          hudVersion,
+          hudMetric1,
+          hudMetric2,
+          hudMetric3,
+          bannerTheme: activeTheme,
+          customHex1,
+          customHex2,
+          isCustomColor,
+          fontColor: capsuleFontColor,
+          descColor: capsuleDescColor,
+          bannerHeight,
+          fontSize: capsuleTitleSize,
+          descSize: capsuleDescSize,
+          fontAlignY: capsuleFontAlignY,
+          descAlignY: capsuleDescAlignY,
+          capsuleAnimation,
+          neofetchOs,
+          neofetchLicense,
+          neofetchPrompt,
+          neofetchShell
+        })
+        const fileName = `${(bannerTitle.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'hero')}-${bannerType}-banner.svg`
+
         if (typeof window !== 'undefined' && window.electronAPI?.saveTextExportDialog) {
           await window.electronAPI.saveTextExportDialog({
             defaultPath: fileName,
-            filters: [{ name: 'SVG Image', extensions: ['svg'] }, { name: 'All Files', extensions: ['*'] }],
+            filters: [{ name: 'SVG Vector Image', extensions: ['svg'] }, { name: 'All Files', extensions: ['*'] }],
             content: svgCode
           })
           return
         }
         const blob = new Blob([svgCode], { type: 'image/svg+xml;charset=utf-8' })
         saveAs(blob, fileName)
+      }
+    } else if (activeMode === 'upload' && uploadedDataUrl) {
+      const fileName = uploadMeta?.name || 'screenshot.webp'
+      if (typeof window !== 'undefined' && window.electronAPI?.saveBinaryDialog) {
+        const base64Data = uploadedDataUrl.split(',')[1]
+        await window.electronAPI.saveBinaryDialog({
+          defaultPath: fileName,
+          filters: [{ name: 'WebP Image', extensions: ['webp'] }, { name: 'All Files', extensions: ['*'] }],
+          base64Data
+        })
         return
       }
-
-      if (activeMode === 'upload' && uploadedDataUrl) {
-        const fileName = uploadMeta?.name || 'screenshot.webp'
-        if (typeof window !== 'undefined' && window.electronAPI?.saveBinaryDialog && uploadedDataUrl.includes(',')) {
-          const base64Data = uploadedDataUrl.split(',')[1]
-          await window.electronAPI.saveBinaryDialog({
-            defaultPath: fileName,
-            filters: [{ name: 'Image', extensions: ['webp', 'png', 'jpg'] }, { name: 'All Files', extensions: ['*'] }],
-            base64Data
-          })
-          return
-        }
-        const res = await fetch(uploadedDataUrl)
-        const blob = await res.blob()
-        saveAs(blob, fileName)
-        return
+      const byteString = atob(uploadedDataUrl.split(',')[1])
+      const ab = new ArrayBuffer(byteString.length)
+      const ia = new Uint8Array(ab)
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i)
       }
-
-      const targetUrl =
-        activeMode === 'banner' && bannerType === 'capsule'
-          ? getCapsuleUrl()
-          : activeMode === 'banner' && bannerType === 'typing'
-          ? getTypingUrl()
-          : activeMode === 'banner' && bannerType === 'github-stats'
-          ? getGithubPinUrl()
-          : activeMode === 'banner' && bannerType === 'cover'
-          ? bannerTheme.coverUrl
-          : resolvedUrl || imageUrl
-
-      if (targetUrl) {
-        const res = await fetch(targetUrl)
-        if (res.ok) {
-          const blob = await res.blob()
-          const ext = blob.type.includes('svg') ? 'svg' : 'png'
-          const defaultName = `${bannerTitle.toLowerCase().replace(/\s+/g, '-')}-asset.${ext}`
-          if (typeof window !== 'undefined' && window.electronAPI?.saveBinaryDialog) {
-            const buffer = await blob.arrayBuffer()
-            const bytes = new Uint8Array(buffer)
-            let binary = ''
-            for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i])
-            const base64Data = window.btoa(binary)
-            await window.electronAPI.saveBinaryDialog({
-              defaultPath: defaultName,
-              filters: [{ name: 'Image Asset', extensions: [ext] }, { name: 'All Files', extensions: ['*'] }],
-              base64Data
-            })
-            return
-          }
-          saveAs(blob, defaultName)
-        } else {
-          if (window.electronAPI?.openExternalUrl) {
-            window.electronAPI.openExternalUrl(targetUrl)
-          } else {
-            window.open(targetUrl, '_blank')
-          }
-        }
-      }
-    } catch {
-      const fallbackUrl =
-        activeMode === 'banner' && bannerType === 'capsule'
-          ? getCapsuleUrl()
-          : activeMode === 'banner' && bannerType === 'typing'
-          ? getTypingUrl()
-          : resolvedUrl || imageUrl
-      if (fallbackUrl) {
-        if (window.electronAPI?.openExternalUrl) {
-          window.electronAPI.openExternalUrl(fallbackUrl)
-        } else {
-          window.open(fallbackUrl, '_blank')
-        }
-      }
+      const blob = new Blob([ab], { type: 'image/webp' })
+      saveAs(blob, fileName)
     }
   }
 
-  // Helper to generate framed markdown syntax - 100% GitHub-compatible without stripped CSS
-  const generateFramedMarkdown = (rawTargetSrc, altText) => {
-    const targetSrc = getOptimizedImageUrl(rawTargetSrc)
+  // Generate Framed Markdown snippet for device mockups
+  const generateFramedMarkdown = (src, alt) => {
     const widthAttr = imageWidth ? ` width="${imageWidth}"` : ''
-    const safeAlt = escapeXml(altText || 'Project Image')
+    const captionHtml = imageCaption.trim()
+      ? `\n  <br/>\n  <sub align="center"><em>${escapeXml(imageCaption.trim())}</em></sub>`
+      : ''
 
     if (frameStyle === 'mac-window') {
+      const windowTitleText = macWindowTitle ? ` &nbsp; ${escapeXml(macWindowTitle)}` : ''
       return `<div align="${imageAlign}">
-  <p><sub><strong>🔴 🟡 🟢 &nbsp; ${safeAlt}</strong></sub></p>
-  <img src="${targetSrc}" alt="${safeAlt}"${widthAttr} />${imageCaption ? `\n  <p><em>${escapeXml(imageCaption)}</em></p>` : ''}
+  <table border="0" cellpadding="0" cellspacing="0">
+    <thead>
+      <tr>
+        <th bgcolor="#161b22" align="left" style="padding: 7px 12px; border-radius: 6px 6px 0 0; color: #8b949e; font-family: -apple-system,BlinkMacSystemFont,monospace; font-size: 11px;">
+          <span style="color: #ef4444;">●</span> <span style="color: #eab308;">●</span> <span style="color: #22c55e;">●</span>${windowTitleText}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td bgcolor="#0d1117" align="center" style="padding: 0; border-radius: 0 0 6px 6px;">
+          <img src="${src}" alt="${escapeXml(alt)}"${widthAttr} />
+        </td>
+      </tr>
+    </tbody>
+  </table>${captionHtml}
 </div>`
     }
 
+
     if (frameStyle === 'browser-bar') {
-      const safeUrl = escapeXml(browserUrl || 'https://my-app.dev')
       return `<div align="${imageAlign}">
-  <p><sub>🔒 <code>${safeUrl}</code></sub></p>
-  <img src="${targetSrc}" alt="${safeAlt}"${widthAttr} />${imageCaption ? `\n  <p><em>${escapeXml(imageCaption)}</em></p>` : ''}
+  <table border="0" cellpadding="0" cellspacing="0">
+    <thead>
+      <tr>
+        <th bgcolor="#1e293b" align="center" style="padding: 8px 12px; border-radius: 6px 6px 0 0; color: #94a3b8; font-family: monospace; font-size: 11px;">
+          🔒 ${escapeXml(browserUrl)}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td bgcolor="#0f172a" align="center" style="padding: 0; border-radius: 0 0 6px 6px;">
+          <img src="${src}" alt="${escapeXml(alt)}"${widthAttr} />
+        </td>
+      </tr>
+    </tbody>
+  </table>${captionHtml}
 </div>`
     }
 
     if (frameStyle === 'terminal') {
-      const cleanCmd = escapeXml(terminalCommand.replace(/^\$\s*/, '') || 'npm run dev')
       return `<div align="${imageAlign}">
-  <p><code>$ ${cleanCmd}</code></p>
-  <img src="${targetSrc}" alt="${safeAlt}"${widthAttr} />${imageCaption ? `\n  <p><em>${escapeXml(imageCaption)}</em></p>` : ''}
+  <table border="0" cellpadding="0" cellspacing="0">
+    <thead>
+      <tr>
+        <th bgcolor="#000000" align="left" style="padding: 6px 12px; border-radius: 6px 6px 0 0; color: #10b981; font-family: monospace; font-size: 11px;">
+          ${escapeXml(terminalCommand)}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td bgcolor="#000000" align="center" style="padding: 0; border-radius: 0 0 6px 6px;">
+          <img src="${src}" alt="${escapeXml(alt)}"${widthAttr} />
+        </td>
+      </tr>
+    </tbody>
+  </table>${captionHtml}
 </div>`
     }
 
-    if (frameStyle === 'mobile') {
-      return `<div align="${imageAlign}">
-  <p><sub>📱 <em>${safeAlt}</em></sub></p>
-  <img src="${targetSrc}" alt="${safeAlt}"${widthAttr} />${imageCaption ? `\n  <p><em>${escapeXml(imageCaption)}</em></p>` : ''}
-</div>`
-    }
-
-    if (frameStyle === 'rounded-card') {
-      return `<div align="${imageAlign}">
-  <img src="${targetSrc}" alt="${safeAlt}"${widthAttr} />${imageCaption ? `\n  <p><em>${escapeXml(imageCaption)}</em></p>` : ''}
-</div>`
-    }
-
-    // Clean Borderless (Default)
-    if (imageAlign === 'center') {
-      return `<p align="center">\n  <img src="${targetSrc}" alt="${safeAlt}"${widthAttr} />${imageCaption ? `\n  <br/>\n  <em>${escapeXml(imageCaption)}</em>` : ''}\n</p>`
-    }
-    return `![${safeAlt}](${targetSrc})`
+    return `<p align="${imageAlign}">\n  <img src="${src}" alt="${escapeXml(alt)}"${widthAttr} />${captionHtml}\n</p>`
   }
 
-  // Compute final Markdown Snippet based on active mode
+  // Master Generated Markdown Snippet
   const getGeneratedMarkdown = () => {
     if (activeMode === 'banner') {
       if (LOCAL_SVG_TYPES.includes(bannerType)) {
-        const safeName = bannerTitle.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'hero'
-        const fileName = `${safeName}-${bannerType}.svg`
         if (bannerSyntaxMode === 'asset-path') {
-          return `<p align="center">\n  <img src="assets/${fileName}" alt="${bannerTitle} Banner" width="100%" />\n</p>`
+          return `<div align="center">\n  <img src="assets/${bannerType}-banner.svg" alt="${bannerTitle} Banner" width="100%" />\n</div>`
         }
-        const svgUri = getActiveSvgDataUri()
-        return `<p align="center">\n  <img src="${svgUri}" alt="${bannerTitle} Banner" width="100%" />\n</p>`
-      }
-
-      if (bannerType === 'github-stats') {
-        const pinUrl = getGithubPinUrl()
-        const chipsMd = getBadgeChipsMarkdown()
-        return `<p align="center">\n  <a href="https://github.com/${githubRepoOwner}/${githubRepoName}">\n    <img src="${pinUrl}" alt="${githubRepoName} GitHub Stats" />\n  </a>\n</p>${chipsMd ? `\n\n${chipsMd}` : ''}`
+        const svgCode = getActiveSvgCode({
+          bannerType,
+          bannerTitle,
+          bannerSubtitle,
+          hudStatus,
+          hudVersion,
+          bannerTheme,
+          customHex1,
+          customHex2,
+          isCustomColor,
+          hudMetric1,
+          hudMetric2,
+          hudMetric3,
+          neofetchOs,
+          neofetchLicense,
+          neofetchPrompt,
+          neofetchShell
+        })
+        return `<!-- Save as assets/${bannerType}-banner.svg -->\n${svgCode}`
       }
 
       if (bannerType === 'capsule') {
         const capsuleUrl = getCapsuleUrl()
-        const chipsMd = getBadgeChipsMarkdown()
-        return `<p align="center">\n  <img src="${capsuleUrl}" alt="${bannerTitle} Banner" width="100%" />\n</p>${chipsMd ? `\n\n${chipsMd}` : ''}`
+        return `<div align="center">\n  <img src="${capsuleUrl}" alt="${bannerTitle} Header" width="100%" />\n</div>`
       }
 
       if (bannerType === 'typing') {
         const typingUrl = getTypingUrl()
-        const chipsMd = getBadgeChipsMarkdown()
-        return `<p align="center">\n  <img src="${typingUrl}" alt="${bannerTitle} Typing" />\n</p>${chipsMd ? `\n\n${chipsMd}` : ''}`
+        return `<p align="center">\n  <img src="${typingUrl}" alt="${bannerTitle} Typing" />\n</p>`
       }
 
       if (bannerType === 'cover') {
-        const chipsMd = getBadgeChipsMarkdown()
-        return `<p align="center">\n  <img src="${bannerTheme.coverUrl}" alt="${bannerTitle} Cover" width="100%" />\n</p>${chipsMd ? `\n\n${chipsMd}` : ''}`
+        return `<p align="center">\n  <img src="${bannerTheme.coverUrl}" alt="${bannerTitle} Cover" width="100%" />\n</p>`
       }
+    }
+
+    if (activeMode === 'motion') {
+      const targetSrc = motionUrl || 'assets/demo.mp4'
+      const widthAttr = motionWidth === '100%' ? 'width="100%"' : `width="${motionWidth}"`
+      const captionSub = motionCaption ? `\n  <br/>\n  <sub><em>${motionCaption}</em></sub>` : ''
+
+      if (motionType === 'video') {
+        const autoplayAttr = motionAutoplay ? 'autoplay ' : ''
+        const loopAttr = motionLoop ? 'loop ' : ''
+        const mutedAttr = motionMuted ? 'muted ' : ''
+        const controlsAttr = motionControls ? 'controls ' : ''
+
+        return `<div align="${motionAlign}">
+  <video ${autoplayAttr}${loopAttr}${mutedAttr}${controlsAttr}playsinline ${widthAttr}>
+    <source src="${targetSrc}" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>${captionSub}
+</div>`
+      }
+
+      if (motionFrameStyle === 'mac-window') {
+        return `<div align="${motionAlign}">
+  <table border="0" cellpadding="0" cellspacing="0">
+    <thead>
+      <tr>
+        <th bgcolor="#161b22" align="left" style="padding: 6px 12px; border-radius: 6px 6px 0 0; color: #8b949e; font-family: monospace; font-size: 11px;">
+          <span style="color: #ef4444;">●</span> <span style="color: #eab308;">●</span> <span style="color: #22c55e;">●</span> &nbsp; ${escapeXml(motionTitle || 'Demo')}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td bgcolor="#000000" align="center" style="padding: 0; border-radius: 0 0 6px 6px;">
+          <img src="${targetSrc}" alt="${escapeXml(motionTitle || 'Demo')}" ${widthAttr} />
+        </td>
+      </tr>
+    </tbody>
+  </table>${captionSub}
+</div>`
+      }
+
+      return `<div align="${motionAlign}">
+  <img src="${targetSrc}" alt="${escapeXml(motionTitle || 'Demo')}" ${widthAttr} />${captionSub}
+</div>`
     }
 
     if (activeMode === 'link') {
@@ -505,274 +596,308 @@ export default function ImageStudioTab({
 
   const markdownSnippet = getGeneratedMarkdown()
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(markdownSnippet)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  const handleInsert = () => {
+    if (typeof onInsertImage === 'function') {
+      onInsertImage(markdownSnippet)
+    }
   }
 
-  const handleInsert = () => {
-    onInsertImage(markdownSnippet)
-  }
+  // Download asset action button in top header
+  const extraHeaderActions = (
+    <button
+      type="button"
+      className="studio-shell-btn studio-shell-btn-secondary"
+      onClick={handleDownloadAsset}
+      title="Download active graphic as standalone file"
+    >
+      <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>download</span>
+      <span>Download</span>
+    </button>
+  )
+
+  // Status tag in canvas header
+  const canvasHeaderExtras = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <span className="canvas-header-divider" />
+      <span className="canvas-mode-tag">
+        {activeMode.toUpperCase()}{activeMode === 'banner' ? ` • ${bannerType.toUpperCase()}` : ''}
+      </span>
+    </div>
+  )
 
   return (
-    <div className="studio-tab-view select-none" onPaste={handlePaste}>
-      {/* Studio Top Control Strip */}
-      <div className="studio-top-bar">
-        <div className="studio-bar-left">
-          <div className="studio-badge-halo">
-            <span className="material-symbols-outlined text-secondary" style={{ color: '#818cf8' }}>image</span>
+    <div onPaste={handlePaste} style={{ width: '100%', height: '100%' }}>
+      <StudioShell
+        studioId="images.studio"
+        title="Image & Asset Studio"
+        subtitle="Hero banners, CLI terminals, Stitch HUDs, device frames & optimizer"
+        badge="Visual Assets Pro"
+        accentColor="#38bdf8"
+        icon={<span className="material-symbols-outlined" style={{ fontSize: '20px' }}>image</span>}
+        modes={STUDIO_MODES}
+        activeMode={activeMode}
+        onModeChange={setActiveMode}
+        markdownCode={markdownSnippet}
+        codeLanguage="markdown"
+        onInsert={handleInsert}
+        insertLabel="Insert Graphic"
+        onBackToReadme={onBackToReadme}
+        extraHeaderActions={extraHeaderActions}
+        canvasHeaderExtras={canvasHeaderExtras}
+        defaultSplitWidth={520}
+        minSplitWidth={380}
+        maxSplitWidth={880}
+        inspectorContent={
+          <div style={{ padding: '16px' }}>
+            {/* 1. HERO BANNER MODE */}
+            {activeMode === 'banner' && (
+              <HeroBannerForm
+                bannerType={bannerType}
+                setBannerType={setBannerType}
+                bannerSyntaxMode={bannerSyntaxMode}
+                setBannerSyntaxMode={setBannerSyntaxMode}
+                bannerTitle={bannerTitle}
+                setBannerTitle={setBannerTitle}
+                bannerSubtitle={bannerSubtitle}
+                setBannerSubtitle={setBannerSubtitle}
+                bannerTheme={bannerTheme}
+                setBannerTheme={setBannerTheme}
+                isCustomColor={isCustomColor}
+                setIsCustomColor={setIsCustomColor}
+                customHex1={customHex1}
+                setCustomHex1={setCustomHex1}
+                customHex2={customHex2}
+                setCustomHex2={setCustomHex2}
+                capsuleFontColor={capsuleFontColor}
+                setCapsuleFontColor={setCapsuleFontColor}
+                capsuleDescColor={capsuleDescColor}
+                setCapsuleDescColor={setCapsuleDescColor}
+                capsuleAnimation={capsuleAnimation}
+                setCapsuleAnimation={setCapsuleAnimation}
+                capsuleTitleSize={capsuleTitleSize}
+                setCapsuleTitleSize={setCapsuleTitleSize}
+                capsuleDescSize={capsuleDescSize}
+                setCapsuleDescSize={setCapsuleDescSize}
+                capsuleFontAlignY={capsuleFontAlignY}
+                setCapsuleFontAlignY={setCapsuleFontAlignY}
+                capsuleDescAlignY={capsuleDescAlignY}
+                setCapsuleDescAlignY={setCapsuleDescAlignY}
+                capsuleStroke={capsuleStroke}
+                setCapsuleStroke={setCapsuleStroke}
+                hudVersion={hudVersion}
+                setHudVersion={setHudVersion}
+                hudStatus={hudStatus}
+                setHudStatus={setHudStatus}
+                hudMetric1={hudMetric1}
+                setHudMetric1={setHudMetric1}
+                hudMetric2={hudMetric2}
+                setHudMetric2={setHudMetric2}
+                hudMetric3={hudMetric3}
+                setHudMetric3={setHudMetric3}
+                neofetchOs={neofetchOs}
+                setNeofetchOs={setNeofetchOs}
+                neofetchLicense={neofetchLicense}
+                setNeofetchLicense={setNeofetchLicense}
+                neofetchPrompt={neofetchPrompt}
+                setNeofetchPrompt={setNeofetchPrompt}
+                neofetchShell={neofetchShell}
+                setNeofetchShell={setNeofetchShell}
+                typingLines={typingLines}
+                setTypingLines={setTypingLines}
+                typingFont={typingFont}
+                setTypingFont={setTypingFont}
+                typingPause={typingPause}
+                setTypingPause={setTypingPause}
+                typingColor={typingColor}
+                setTypingColor={setTypingColor}
+                capsuleShape={capsuleShape}
+                setCapsuleShape={setCapsuleShape}
+                bannerHeight={bannerHeight}
+                setBannerHeight={setBannerHeight}
+                handleDownloadAsset={handleDownloadAsset}
+              />
+            )}
+
+            {/* MOTION & VIDEO / GIF MODE */}
+            {activeMode === 'motion' && (
+              <MotionHeroForm
+                motionUrl={motionUrl}
+                setMotionUrl={setMotionUrl}
+                motionType={motionType}
+                setMotionType={setMotionType}
+                motionFrameStyle={motionFrameStyle}
+                setMotionFrameStyle={setMotionFrameStyle}
+                motionTitle={motionTitle}
+                setMotionTitle={setMotionTitle}
+                motionCaption={motionCaption}
+                setMotionCaption={setMotionCaption}
+                motionAlign={motionAlign}
+                setMotionAlign={setMotionAlign}
+                motionWidth={motionWidth}
+                setMotionWidth={setMotionWidth}
+                motionAutoplay={motionAutoplay}
+                setMotionAutoplay={setMotionAutoplay}
+                motionLoop={motionLoop}
+                setMotionLoop={setMotionLoop}
+                motionMuted={motionMuted}
+                setMotionMuted={setMotionMuted}
+                motionControls={motionControls}
+                setMotionControls={setMotionControls}
+                motionGlow={motionGlow}
+                setMotionGlow={setMotionGlow}
+                motionBrowserUrl={motionBrowserUrl}
+                setMotionBrowserUrl={setMotionBrowserUrl}
+              />
+            )}
+
+            {/* 2 & 3. DEVICE MOCKUP FRAMES (LINK & UPLOAD MODES) */}
+            {(activeMode === 'link' || activeMode === 'upload') && (
+              <VisualMockupForm
+                activeMode={activeMode}
+                imageUrl={imageUrl}
+                setImageUrl={setImageUrl}
+                resolveNote={resolveNote}
+                isResolving={isResolving}
+                imageAlt={imageAlt}
+                setImageAlt={setImageAlt}
+                imageCaption={imageCaption}
+                setImageCaption={setImageCaption}
+                frameStyle={frameStyle}
+                setFrameStyle={setFrameStyle}
+                browserUrl={browserUrl}
+                setBrowserUrl={setBrowserUrl}
+                terminalCommand={terminalCommand}
+                setTerminalCommand={setTerminalCommand}
+                macWindowTitle={macWindowTitle}
+                setMacWindowTitle={setMacWindowTitle}
+                mockupGlow={mockupGlow}
+                setMockupGlow={setMockupGlow}
+                imageAlign={imageAlign}
+                setImageAlign={setImageAlign}
+                imageWidth={imageWidth}
+                setImageWidth={setImageWidth}
+                isDragging={isDragging}
+                setIsDragging={setIsDragging}
+                handleFileUpload={handleFileUpload}
+                uploadMeta={uploadMeta}
+                uploadAlt={uploadAlt}
+                setUploadAlt={setUploadAlt}
+                uploadSyntaxChoice={uploadSyntaxChoice}
+                setUploadSyntaxChoice={setUploadSyntaxChoice}
+                uploadRelativePath={uploadRelativePath}
+                setUploadRelativePath={setUploadRelativePath}
+                uploadedDataUrl={uploadedDataUrl}
+                handleDownloadAsset={handleDownloadAsset}
+              />
+            )}
+
+            {/* 4. THEME ADAPTIVE MODE (LIGHT & DARK PAIR) */}
+            {activeMode === 'adaptive' && (
+              <AdaptiveThemeForm
+                darkThemeUrl={darkThemeUrl}
+                setDarkThemeUrl={setDarkThemeUrl}
+                lightThemeUrl={lightThemeUrl}
+                setLightThemeUrl={setLightThemeUrl}
+                adaptiveAlt={adaptiveAlt}
+                setAdaptiveAlt={setAdaptiveAlt}
+                adaptiveFormat={adaptiveFormat}
+                setAdaptiveFormat={setAdaptiveFormat}
+                imageAlign={imageAlign}
+                setImageAlign={setImageAlign}
+                imageWidth={imageWidth}
+                setImageWidth={setImageWidth}
+              />
+            )}
+
+            {/* 5. COMPARISON MODE */}
+            {activeMode === 'comparison' && (
+              <ComparisonForm
+                compTitle1={compTitle1}
+                setCompTitle1={setCompTitle1}
+                compUrl1={compUrl1}
+                setCompUrl1={setCompUrl1}
+                compTitle2={compTitle2}
+                setCompTitle2={setCompTitle2}
+                compUrl2={compUrl2}
+                setCompUrl2={setCompUrl2}
+              />
+            )}
           </div>
-          <div>
-            <div className="studio-title-row">
-              <h2 className="studio-title">Image & Banner Studio</h2>
-              <span className="studio-tag" style={{ borderColor: 'rgba(99, 102, 241, 0.4)', color: '#38bdf8' }}>Visual Assets Pro</span>
-            </div>
-            <p className="studio-subtitle">
-              Stitch HUD telemetry, Neofetch terminal, Swiss grids, device mockups, and screenshot compression.
-            </p>
-          </div>
-        </div>
+        }
+        canvasContent={
+          <ImageStudioLivePreview
+            activeMode={activeMode}
+            bannerType={bannerType}
+            bannerTitle={bannerTitle}
+            bannerSubtitle={bannerSubtitle}
+            hudStatus={hudStatus}
+            hudVersion={hudVersion}
+            bannerTheme={bannerTheme}
+            isCustomColor={isCustomColor}
+            customHex1={customHex1}
+            customHex2={customHex2}
+            hudMetric1={hudMetric1}
+            hudMetric2={hudMetric2}
+            hudMetric3={hudMetric3}
+            neofetchPrompt={neofetchPrompt}
+            neofetchShell={neofetchShell}
+            capsuleFontColor={capsuleFontColor}
+            capsuleDescColor={capsuleDescColor}
+            capsuleAnimation={capsuleAnimation}
+            capsuleTitleSize={capsuleTitleSize}
+            capsuleDescSize={capsuleDescSize}
+            capsuleFontAlignY={capsuleFontAlignY}
+            capsuleDescAlignY={capsuleDescAlignY}
+            capsuleShape={capsuleShape}
+            bannerHeight={bannerHeight}
+            neofetchOs={neofetchOs}
+            neofetchLicense={neofetchLicense}
+            getCapsuleUrl={getCapsuleUrl}
+            getTypingUrl={getTypingUrl}
+            typingError={typingError}
+            setTypingError={setTypingError}
+            typingColor={typingColor}
+            typingFont={typingFont}
+            typingLines={typingLines}
+            resolvedUrl={resolvedUrl}
+            imageUrl={imageUrl}
+            imageAlt={imageAlt}
+            imageAlign={imageAlign}
+            imageWidth={imageWidth}
+            imageCaption={imageCaption}
+            frameStyle={frameStyle}
+            browserUrl={browserUrl}
+            terminalCommand={terminalCommand}
+            macWindowTitle={macWindowTitle}
+            mockupGlow={mockupGlow}
+            previewThemeMode={previewThemeMode}
+            setPreviewThemeMode={setPreviewThemeMode}
+            darkThemeUrl={darkThemeUrl}
+            lightThemeUrl={lightThemeUrl}
+            adaptiveAlt={adaptiveAlt}
+            uploadedDataUrl={uploadedDataUrl}
+            uploadAlt={uploadAlt}
+            compTitle1={compTitle1}
+            compUrl1={compUrl1}
+            compTitle2={compTitle2}
+            compUrl2={compUrl2}
+            motionUrl={motionUrl}
+            motionType={motionType}
+            motionFrameStyle={motionFrameStyle}
+            motionTitle={motionTitle}
+            motionCaption={motionCaption}
+            motionAlign={motionAlign}
+            motionWidth={motionWidth}
+            motionAutoplay={motionAutoplay}
+            motionLoop={motionLoop}
+            motionMuted={motionMuted}
+            motionControls={motionControls}
+            motionGlow={motionGlow}
+            motionBrowserUrl={motionBrowserUrl}
+          />
+        }
 
-        <div className="studio-bar-actions">
-          {onBackToReadme && (
-            <button
-              type="button"
-              className="btn-studio-secondary"
-              onClick={onBackToReadme}
-              title="Return to active markdown document"
-            >
-              <span className="material-symbols-outlined icon-xs">arrow_back</span>
-              <span>Back to Editor</span>
-            </button>
-          )}
-          <button
-            type="button"
-            className="btn-studio-secondary"
-            onClick={handleDownloadAsset}
-            title="Download active graphic as standalone file"
-          >
-            <span className="material-symbols-outlined icon-xs">download</span>
-            <span>Download Asset</span>
-          </button>
-          <button
-            type="button"
-            className="btn-studio-secondary"
-            onClick={handleCopy}
-            title="Copy snippet to clipboard"
-          >
-            <span className="material-symbols-outlined icon-xs">
-              {copied ? 'check' : 'content_copy'}
-            </span>
-            <span>{copied ? 'Copied!' : 'Copy Markdown'}</span>
-          </button>
-          <button
-            type="button"
-            className="btn-studio-primary"
-            onClick={handleInsert}
-            title="Insert rendered image into an open document"
-          >
-            <span className="material-symbols-outlined icon-xs">add_circle</span>
-            <span>Insert into Document</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Main Studio Body: 2-Column Responsive Layout */}
-      <div className="studio-content-grid">
-        {/* Left Column: Form Controls */}
-        <div
-          className="studio-form-column custom-scrollbar"
-          style={{ width: `${formWidth}px`, minWidth: `${formWidth}px`, maxWidth: `${formWidth}px`, flex: 'none' }}
-        >
-          {/* Sub-Mode Selector */}
-          <div className="studio-section">
-            <label className="studio-section-label">Studio Mode</label>
-            <div className="studio-category-tabs">
-              {STUDIO_MODES.map((mode) => (
-                <button
-                  key={mode.id}
-                  type="button"
-                  className={`studio-category-tab ${activeMode === mode.id ? 'active' : ''}`}
-                  onClick={() => setActiveMode(mode.id)}
-                >
-                  <span className="material-symbols-outlined icon-xs">{mode.icon}</span>
-                  <span>{mode.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 1. HERO BANNER MODE */}
-          {activeMode === 'banner' && (
-            <HeroBannerForm
-              bannerType={bannerType}
-              setBannerType={setBannerType}
-              bannerSyntaxMode={bannerSyntaxMode}
-              setBannerSyntaxMode={setBannerSyntaxMode}
-              bannerTitle={bannerTitle}
-              setBannerTitle={setBannerTitle}
-              bannerSubtitle={bannerSubtitle}
-              setBannerSubtitle={setBannerSubtitle}
-              bannerTheme={bannerTheme}
-              setBannerTheme={setBannerTheme}
-              bannerTags={bannerTags}
-              setBannerTags={setBannerTags}
-              handleToggleTechTag={handleToggleTechTag}
-              hudVersion={hudVersion}
-              setHudVersion={setHudVersion}
-              hudStatus={hudStatus}
-              setHudStatus={setHudStatus}
-              neofetchOs={neofetchOs}
-              setNeofetchOs={setNeofetchOs}
-              neofetchLicense={neofetchLicense}
-              setNeofetchLicense={setNeofetchLicense}
-              githubRepoOwner={githubRepoOwner}
-              setGithubRepoOwner={setGithubRepoOwner}
-              githubRepoName={githubRepoName}
-              setGithubRepoName={setGithubRepoName}
-              githubStatsTheme={githubStatsTheme}
-              setGithubStatsTheme={setGithubStatsTheme}
-              typingLines={typingLines}
-              setTypingLines={setTypingLines}
-              typingFont={typingFont}
-              setTypingFont={setTypingFont}
-              typingPause={typingPause}
-              setTypingPause={setTypingPause}
-              typingColor={typingColor}
-              setTypingColor={setTypingColor}
-              capsuleShape={capsuleShape}
-              setCapsuleShape={setCapsuleShape}
-              bannerHeight={bannerHeight}
-              setBannerHeight={setBannerHeight}
-              handleDownloadAsset={handleDownloadAsset}
-            />
-          )}
-
-          {/* 2 & 3. DEVICE MOCKUP FRAMES (LINK & UPLOAD MODES) */}
-          {(activeMode === 'link' || activeMode === 'upload') && (
-            <VisualMockupForm
-              activeMode={activeMode}
-              imageUrl={imageUrl}
-              setImageUrl={setImageUrl}
-              resolveNote={resolveNote}
-              isResolving={isResolving}
-              imageAlt={imageAlt}
-              setImageAlt={setImageAlt}
-              imageCaption={imageCaption}
-              setImageCaption={setImageCaption}
-              frameStyle={frameStyle}
-              setFrameStyle={setFrameStyle}
-              browserUrl={browserUrl}
-              setBrowserUrl={setBrowserUrl}
-              terminalCommand={terminalCommand}
-              setTerminalCommand={setTerminalCommand}
-              imageAlign={imageAlign}
-              setImageAlign={setImageAlign}
-              imageWidth={imageWidth}
-              setImageWidth={setImageWidth}
-              isDragging={isDragging}
-              setIsDragging={setIsDragging}
-              handleFileUpload={handleFileUpload}
-              uploadMeta={uploadMeta}
-              uploadAlt={uploadAlt}
-              setUploadAlt={setUploadAlt}
-              uploadSyntaxChoice={uploadSyntaxChoice}
-              setUploadSyntaxChoice={setUploadSyntaxChoice}
-              uploadRelativePath={uploadRelativePath}
-              setUploadRelativePath={setUploadRelativePath}
-              uploadedDataUrl={uploadedDataUrl}
-              handleDownloadAsset={handleDownloadAsset}
-            />
-          )}
-
-          {/* 4. THEME ADAPTIVE MODE (LIGHT & DARK PAIR) */}
-          {activeMode === 'adaptive' && (
-            <AdaptiveThemeForm
-              darkThemeUrl={darkThemeUrl}
-              setDarkThemeUrl={setDarkThemeUrl}
-              lightThemeUrl={lightThemeUrl}
-              setLightThemeUrl={setLightThemeUrl}
-              adaptiveAlt={adaptiveAlt}
-              setAdaptiveAlt={setAdaptiveAlt}
-              adaptiveFormat={adaptiveFormat}
-              setAdaptiveFormat={setAdaptiveFormat}
-              imageAlign={imageAlign}
-              setImageAlign={setImageAlign}
-              imageWidth={imageWidth}
-              setImageWidth={setImageWidth}
-            />
-          )}
-
-          {/* 5. COMPARISON MODE */}
-          {activeMode === 'comparison' && (
-            <ComparisonForm
-              compTitle1={compTitle1}
-              setCompTitle1={setCompTitle1}
-              compUrl1={compUrl1}
-              setCompUrl1={setCompUrl1}
-              compTitle2={compTitle2}
-              setCompTitle2={setCompTitle2}
-              compUrl2={compUrl2}
-              setCompUrl2={setCompUrl2}
-            />
-          )}
-        </div>
-
-        {/* Resizer Splitter Handle */}
-        <div
-          className={`studio-resizer-handle ${isSplitDragging ? 'is-dragging' : ''}`}
-          onMouseDown={handleMouseDown}
-          onDoubleClick={handleDoubleClick}
-          title="Drag to resize form and preview sections • Double-click to reset"
-        />
-
-        {/* Right Column: Visual Render & Syntax */}
-        <ImageStudioLivePreview
-          activeMode={activeMode}
-          bannerType={bannerType}
-          bannerTitle={bannerTitle}
-          bannerSubtitle={bannerSubtitle}
-          hudStatus={hudStatus}
-          hudVersion={hudVersion}
-          bannerTags={bannerTags}
-          bannerTheme={bannerTheme}
-          neofetchOs={neofetchOs}
-          neofetchLicense={neofetchLicense}
-          githubRepoName={githubRepoName}
-          getGithubPinUrl={getGithubPinUrl}
-          getCapsuleUrl={getCapsuleUrl}
-          getTypingUrl={getTypingUrl}
-          typingError={typingError}
-          setTypingError={setTypingError}
-          typingColor={typingColor}
-          typingFont={typingFont}
-          typingLines={typingLines}
-          resolvedUrl={resolvedUrl}
-          imageUrl={imageUrl}
-          imageAlt={imageAlt}
-          imageAlign={imageAlign}
-          imageWidth={imageWidth}
-          imageCaption={imageCaption}
-          frameStyle={frameStyle}
-          browserUrl={browserUrl}
-          terminalCommand={terminalCommand}
-          previewThemeMode={previewThemeMode}
-          setPreviewThemeMode={setPreviewThemeMode}
-          darkThemeUrl={darkThemeUrl}
-          lightThemeUrl={lightThemeUrl}
-          adaptiveAlt={adaptiveAlt}
-          uploadedDataUrl={uploadedDataUrl}
-          uploadAlt={uploadAlt}
-          compTitle1={compTitle1}
-          compUrl1={compUrl1}
-          compTitle2={compTitle2}
-          compUrl2={compUrl2}
-          markdownSnippet={markdownSnippet}
-          copied={copied}
-          handleCopy={handleCopy}
-        />
-      </div>
+      />
     </div>
   )
 }

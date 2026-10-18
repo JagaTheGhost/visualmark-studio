@@ -108,7 +108,7 @@ export default function SingleBadgeForm({
       {/* Badge Geometry Style Selector (for Shields.io) */}
       {formatType !== 'badgen' && (
         <div className="studio-section">
-          <label className="studio-section-label">Geometry Style ({BADGE_STYLES.length} Styles)</label>
+          <label className="studio-section-label">Geometry Style</label>
           <div className="badge-styles-card-grid">
             {BADGE_STYLES.map((st) => (
               <button
@@ -116,12 +116,10 @@ export default function SingleBadgeForm({
                 type="button"
                 className={`badge-style-card ${style === st.id ? 'active' : ''}`}
                 onClick={() => setStyle(st.id)}
+                title={st.desc}
               >
-                <div className="badge-style-card-header">
-                  <span className="badge-style-card-title">{st.label}</span>
-                  <span className="badge-style-card-tag">{st.tag}</span>
-                </div>
-                <span className="badge-style-card-desc">{st.desc}</span>
+                <span className="badge-style-card-title">{st.label}</span>
+                <span className="badge-style-card-tag">{st.tag}</span>
               </button>
             ))}
           </div>

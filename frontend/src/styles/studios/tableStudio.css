@@ -561,3 +561,39 @@
   border-color: #818cf8;
   color: #ffffff;
 }
+
+/* StudioShell Integration for Markdown Table Studio */
+.studio-shell-tables-studio .studio-canvas-content-wrapper {
+  width: 100%;
+  align-items: stretch;
+}
+
+.studio-shell-tables-studio .table-render-viewport {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.stage-bg-light .preview-table-container {
+  background-color: #ffffff;
+  border-color: #d0d7de;
+}
+
+.stage-bg-light .table-render-viewport th {
+  background-color: #f6f8fa !important;
+  color: #24292f !important;
+  border-color: #d0d7de !important;
+}
+
+.stage-bg-light .table-render-viewport td {
+  color: #24292f !important;
+  border-color: #d0d7de !important;
+}
+
+.stage-bg-light .table-render-viewport tr:nth-child(even) {
+  background-color: #f6f8fa;
+}
+
+.stage-bg-light .table-render-viewport tr:hover {
+  background-color: #eaeef2;
+}
+

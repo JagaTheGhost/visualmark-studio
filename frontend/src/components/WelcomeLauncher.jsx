@@ -15,7 +15,7 @@ export default function WelcomeLauncher({
   recentWorkspaces = [],
   onOpenRecentWorkspace = () => {},
   onClearRecentWorkspaces = () => {},
-  appVersion = '1.1.1'
+  appVersion = '1.1.2'
 }) {
   return (
     <div className="welcome-launcher-container custom-scrollbar">

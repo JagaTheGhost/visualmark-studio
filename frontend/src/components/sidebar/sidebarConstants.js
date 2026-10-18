@@ -9,6 +9,15 @@ export const STUDIO_TOOLS_LIST = [
     features: ['100+ Devicon Presets', 'Custom Hex Swatches', 'Flat / Plastic / Social Styles']
   },
   {
+    id: 'repocard.studio',
+    title: 'GitHub Repo Card Studio',
+    category: 'Visual Design',
+    icon: 'credit_card',
+    color: '#58a6ff',
+    description: 'Render beautiful standalone vector GitHub repository cards, bento metrics, and language ribbons with live API data.',
+    features: ['Official Pin & Bento Layouts', 'Live GitHub Sync', 'Vector SVG Output']
+  },
+  {
     id: 'diagrams.studio',
     title: 'Mermaid Diagram Studio',
     category: 'Architecture',

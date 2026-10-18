@@ -1,0 +1,88 @@
+{
+  "app": {
+    "title": "VisualMark Studio",
+    "subtitle": "Editor Markdown Profissional, Visualizador de Arquitetura e Estúdio de Documentação",
+    "version": "v1.1.2"
+  },
+  "menu": {
+    "file": "Arquivo",
+    "edit": "Editar",
+    "selection": "Seleção",
+    "view": "Exibir",
+    "go": "Ir",
+    "run": "Executar",
+    "diagnostics": "Diagnósticos",
+    "help": "Ajuda",
+    "newFile": "Novo Arquivo",
+    "openFile": "Abrir Arquivo...",
+    "openFolder": "Abrir Pasta...",
+    "cloneRepo": "Clonar Repositório...",
+    "save": "Salvar",
+    "saveAs": "Salvar Como...",
+    "closeTab": "Fechar Aba",
+    "closeAll": "Fechar Todas as Abas",
+    "exit": "Sair"
+  },
+  "tabs": {
+    "studios": "Estúdios",
+    "docs": "Documentos",
+    "untitled": "Sem título",
+    "close": "Fechar",
+    "closeOthers": "Fechar Outras Abas",
+    "closeToRight": "Fechar Abas à Direita",
+    "pin": "Fixar Aba",
+    "unpin": "Desafixar Aba"
+  },
+  "studios": {
+    "badges": "Badges Shields.io",
+    "repocard": "Cartão GitHub Repo",
+    "diagrams": "Diagramas Mermaid",
+    "tables": "Designer de Tabelas",
+    "snippets": "Código e Destaques",
+    "images": "Imagens e Banners",
+    "tree": "Árvore de Diretórios",
+    "api": "API e Endpoints",
+    "audit": "Auditoria de Documentação",
+    "contributors": "Contribuidores",
+    "changelog": "Estúdio de Changelog",
+    "icons": "Ícones e Emojis",
+    "i18n": "Multilíngue e i18n"
+  },
+  "sidebar": {
+    "explorer": "Explorador",
+    "sourceControl": "Controle de Versão",
+    "studios": "Ferramentas de Estúdio",
+    "settings": "Configurações",
+    "outline": "Estrutura do Documento",
+    "search": "Pesquisar",
+    "allStudios": "Todos os Estúdios",
+    "architecture": "Arquitetura",
+    "visualDesign": "Design Visual",
+    "documentation": "Documentação",
+    "community": "Comunidade e Qualidade"
+  },
+  "statusBar": {
+    "lines": "Lin",
+    "cols": "Col",
+    "words": "palavras",
+    "chars": "caracteres",
+    "saved": "Salvo",
+    "unsaved": "Alterações não salvas",
+    "readTime": "min de leitura",
+    "noRepo": "Sem Repositório",
+    "feedback": "Feedback",
+    "logs": "Saída e Logs"
+  },
+  "settings": {
+    "title": "Configurações",
+    "language": "Idioma do Aplicativo",
+    "languageDesc": "Selecione o idioma de exibição do VisualMark Studio.",
+    "appearance": "Aparência e Janela",
+    "theme": "Modo de Tema",
+    "fontSize": "Tamanho da Fonte",
+    "wordWrap": "Quebra de Linha",
+    "lineNumbers": "Números de Linha",
+    "tabGrouping": "Agrupamento de Abas",
+    "tabGroupingDesc": "Agrupar automaticamente as abas de estúdios e documentos em categorias recolhíveis."
+  }
+}

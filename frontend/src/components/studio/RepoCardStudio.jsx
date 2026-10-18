@@ -5,7 +5,11 @@ import {
   generateOfficialPinSvg,
   generateBentoSpecSvg,
   generateLanguagesBarSvg,
-  generateMinimalCompactSvg
+  generateMinimalCompactSvg,
+  generateCyberGlowSvg,
+  generateGlassFrostedSvg,
+  generateSocialHeroSvg,
+  generateTerminalCliSvg
 } from '../../utils/modernRepoCardEngine'
 import { GITHUB_LANG_COLORS } from '../../data/badgeStudioData'
 
@@ -192,6 +196,14 @@ export function useRepoCardState({
         return generateLanguagesBarSvg(params)
       case 'minimal-compact':
         return generateMinimalCompactSvg(params)
+      case 'cyber-glow':
+        return generateCyberGlowSvg(params)
+      case 'glass-frosted':
+        return generateGlassFrostedSvg(params)
+      case 'social-hero':
+        return generateSocialHeroSvg(params)
+      case 'terminal-cli':
+        return generateTerminalCliSvg(params)
       default:
         return generateOfficialPinSvg(params)
     }
@@ -328,6 +340,7 @@ export function useRepoCardState({
  * Left Inspector Panel Component (3-Step Guided Workflow)
  */
 export function RepoCardInspector(props) {
+  const resolved = props.cardState || props
   const {
     targetRepo,
     setTargetRepo,
@@ -360,7 +373,7 @@ export function RepoCardInspector(props) {
     setLangColor,
     showDataOverrides,
     setShowDataOverrides
-  } = props
+  } = resolved
 
   return (
     <div className="repo-card-inspector custom-scrollbar">

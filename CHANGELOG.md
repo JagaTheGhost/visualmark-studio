@@ -13,6 +13,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.2] - 2026-10-18
+
+### Added
+- **GitHub Repository Showcase Card Studio (`repocard.studio`)**:
+  - Elevated Repo Card generator into a standalone, first-class visual studio tab.
+  - **100% Client-Side Vector Engine**: Generates self-contained, high-DPI vector SVG repo cards with zero external API dependencies or rate limits.
+  - **Auto-Adaptive Theming**: Dual dark and light auto-adaptive SVGs powered by `@media (prefers-color-scheme)` alongside handcrafted themes (Official GitHub Dark, GitHub Light, Obsidian Slate, Nord Frost, Dracula).
+  - **4 Production Layout Templates**: Official Pin, Bento Telemetry, Language Distribution Ribbon, and Minimal Compact.
+  - One-click copy Markdown snippet or download standalone `.svg` vector asset.
+- **Comprehensive Internationalization (i18n) Engine**:
+  - Native multi-language UI localization across 10 languages: English (`en`), Simplified Chinese (`zh-CN`), Spanish (`es`), Japanese (`ja`), German (`de`), French (`fr`), Russian (`ru`), Hindi (`hi`), Portuguese (Brazil) (`pt-BR`), and Italian (`it`).
+  - Automatic detection of browser and system locale on launch.
+  - **Status Bar Language Menu Popover**: Instant UI language switcher with flags, native names, and direct link to Settings.
+  - **Extensible Language Packs**: Import and export custom community JSON language packs with live hot-reloading and persistent `localStorage` storage.
+- **Document & Syntax Language Mode Switcher**:
+  - Interactive Status Bar button and modal dialog (`LanguageModeModal`) supporting instant syntax highlighting switching across 30+ language modes (Markdown, MDX, LaTeX, Plain Text, Mermaid, HTML, CSS, JavaScript, TypeScript, Python, Rust, Go, and more).
+  - Intelligent file-extension detection with manual override and quick search.
+- **Chrome/Arc-Style Collapsible Tab Groups**:
+  - Visual workspace tab bar partitioning separating open documents from active visual studios.
+  - Accent-themed pill header chips with status dots, active item count badges, and smooth accordion collapse/expand transitions.
+- **Motion Hero & Animated Media Studio**:
+  - New Motion Hero generator (`MotionHeroForm.jsx`) supporting animated GIFs and MP4/WebM videos.
+  - Wrap motion media in realistic macOS dark/light or Windows 11 browser and app window mockups.
+  - Configurable autoplay, loop, mute, controls, glow accents, and custom browser URL bars.
+- **Local Workspace Media Engine in Live Preview**:
+  - Added `read-local-media` Electron IPC channel for streaming local workspace media files directly to the renderer.
+  - Markdown Live Preview Pane and `MarkdownImage` now resolve and render relative local images, SVGs, and videos (`assets/*.svg`, `images/*.png`) with zero external servers.
+- **Tactile Unsupported File Screen**:
+  - Embedded canvas view for binary and unsupported file formats matching the WelcomeLauncher design system.
+  - Displays file metadata, format icons, formatted byte sizes, and provides direct action buttons: Reveal in Explorer, Open in System Default App, Copy File Path, and Quick Studio Launchers.
+
+### Changed
+- **Universal StudioShell Workspace Container**:
+  - Refactored all 12 visual studios to adopt the standardized `StudioShell` container architecture.
+  - Smooth 2-pane resizable layout (left inspector form and right WYSIWYG canvas stage) with persistent splitter drag state.
+  - Persistent universal action bar: `Insert into Document (Ctrl+Enter)`, `Copy Markdown`, `Reset`, and `Back to Readme`.
+  - Preview stage background theme switcher: Dark, Midnight, Light, and Grid preview canvas backdrops.
+  - Expandable live code drawer with character and line count telemetry.
+- **Expanded Visual Studio Suite**: VisualMark Studio now features **12 specialized visual studios** (Badges, Repo Cards, Diagrams, Tables, Snippets, Images, Directory Trees, REST APIs, Contributors, Changelog, Health Auditor, Developer Icons & Emojis).
+
+### Reliability & Performance
+- **FastAPI Sidecar Process Resiliency**:
+  - Sidecar daemon startup now polls health checks (`checkBackendHealth`) before accepting API requests.
+  - Implemented clean process tree termination on Windows using `taskkill /pid ... /f /t` upon `before-quit` and `will-quit` to eliminate orphan background daemons.
+  - Captured sidecar stdout/stderr streams for integrated diagnostic output.
+
+---
+
 ## [1.1.1] - 2026-10-15
 
 ### Added

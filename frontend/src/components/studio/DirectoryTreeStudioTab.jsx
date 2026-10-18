@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { useStudioSplit } from '../../utils/useResizableSplit'
+import StudioShell from './common/StudioShell'
+import '../../styles/studios/extendedStudios.css'
 
 const PRESET_TREES = {
   'fullstack': {
@@ -64,14 +65,83 @@ const PRESET_TREES = {
       { path: 'turbo.json', type: 'file', comment: 'Turborepo pipeline orchestration' },
       { path: 'package.json', type: 'file', comment: 'Root monorepo workspace dependencies' }
     ]
+  },
+  'electron-desktop': {
+    name: 'Native Desktop App',
+    badge: 'Electron + Vite',
+    icon: 'desktop_windows',
+    tree: [
+      { path: 'electron', type: 'dir', comment: 'Main process & IPC handlers' },
+      { path: 'electron/main.cjs', type: 'file', comment: 'Native window lifecycle' },
+      { path: 'electron/preload.cjs', type: 'file', comment: 'Context isolation bridge' },
+      { path: 'frontend', type: 'dir', comment: 'Renderer process (React UI)' },
+      { path: 'frontend/src', type: 'dir', comment: 'IDE tabs & studio workspaces' },
+      { path: 'frontend/vite.config.js', type: 'file', comment: 'Vite build bundling' },
+      { path: 'package.json', type: 'file', comment: 'Scripts & cross-platform packaging' },
+      { path: 'README.md', type: 'file', comment: 'Desktop installation guide' }
+    ]
+  },
+  'microservices-go': {
+    name: 'Go Microservices & Docker',
+    badge: 'Go 1.23 + gRPC',
+    icon: 'dns',
+    tree: [
+      { path: 'cmd', type: 'dir', comment: 'Service binary entrypoints' },
+      { path: 'cmd/server/main.go', type: 'file', comment: 'gRPC server startup' },
+      { path: 'internal', type: 'dir', comment: 'Private business logic' },
+      { path: 'internal/auth', type: 'dir', comment: 'Authentication handlers' },
+      { path: 'internal/db', type: 'dir', comment: 'Database connection & migrations' },
+      { path: 'proto', type: 'dir', comment: 'Protobuf interface definitions' },
+      { path: 'Dockerfile', type: 'file', comment: 'Multi-stage scratch container' },
+      { path: 'go.mod', type: 'file', comment: 'Go dependency modules' }
+    ]
+  },
+  'mobile-app': {
+    name: 'Cross-Platform Mobile App',
+    badge: 'React Native / Expo',
+    icon: 'smartphone',
+    tree: [
+      { path: 'app', type: 'dir', comment: 'Expo file-based router pages' },
+      { path: 'app/(tabs)', type: 'dir', comment: 'Bottom tab navigation screens' },
+      { path: 'app/_layout.tsx', type: 'file', comment: 'Root navigation provider' },
+      { path: 'components', type: 'dir', comment: 'Native mobile UI components' },
+      { path: 'hooks', type: 'dir', comment: 'Custom device sensors & state hooks' },
+      { path: 'app.json', type: 'file', comment: 'Expo build & splash configuration' },
+      { path: 'package.json', type: 'file', comment: 'React Native dependencies' }
+    ]
+  },
+  'ai-agent-rag': {
+    name: 'AI Agent & RAG Pipeline',
+    badge: 'Python + LangChain',
+    icon: 'smart_toy',
+    tree: [
+      { path: 'agent', type: 'dir', comment: 'Autonomous LLM agent runtime' },
+      { path: 'agent/tools', type: 'dir', comment: 'External tool execution plugins' },
+      { path: 'agent/prompts', type: 'dir', comment: 'System instruction templates' },
+      { path: 'rag', type: 'dir', comment: 'Retrieval augmented generation' },
+      { path: 'rag/embedder.py', type: 'file', comment: 'Vector embeddings pipeline' },
+      { path: 'rag/vector_store.py', type: 'file', comment: 'ChromaDB / Qdrant interface' },
+      { path: 'evals', type: 'dir', comment: 'Automated hallucination benchmarks' },
+      { path: 'requirements.txt', type: 'file', comment: 'LangChain & PyTorch dependencies' }
+    ]
   }
 }
 
+const TREE_MODES = [
+  { id: 'preset', label: 'Architecture Presets', icon: 'bolt' },
+  { id: 'workspace', label: 'Workspace Files', icon: 'folder_open' },
+  { id: 'custom', label: 'Custom Tree Builder', icon: 'edit' }
+]
+
+/**
+ * Interactive Directory Tree Studio Pro
+ * Assemble clean, annotated project architecture trees in Unicode, ASCII, or Emoji format.
+ */
 export default function DirectoryTreeStudioTab({
   workspaceDirectory = null,
   allFiles = {},
-  onInsertTree = () => {},
-  onBackToReadme = () => {}
+  onInsertTree = () => { },
+  onBackToReadme = () => { }
 }) {
   const [activeSource, setActiveSource] = useState('preset') // 'preset' | 'workspace' | 'custom'
   const [selectedPreset, setSelectedPreset] = useState('fullstack')
@@ -80,8 +150,6 @@ export default function DirectoryTreeStudioTab({
   const [maxDepth, setMaxDepth] = useState(3)
   const [hideBuildFolders, setHideBuildFolders] = useState(true)
   const [rootLabel, setRootLabel] = useState('my-project')
-  const [copied, setCopied] = useState(false)
-  const { formWidth, isDragging, handleMouseDown, handleDoubleClick } = useStudioSplit(520)
 
   // Custom user items list
   const [customItems, setCustomItems] = useState([
@@ -210,14 +278,10 @@ export default function DirectoryTreeStudioTab({
     return `\`\`\`bash\n${renderedTreeText}\n\`\`\``
   }, [renderedTreeText])
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(fullMarkdownBlock)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   const handleInsert = () => {
-    onInsertTree(fullMarkdownBlock)
+    if (typeof onInsertTree === 'function') {
+      onInsertTree(fullMarkdownBlock)
+    }
   }
 
   const handleAddCustomItem = (e) => {
@@ -239,106 +303,87 @@ export default function DirectoryTreeStudioTab({
     setCustomItems((prev) => prev.filter((_, i) => i !== idx))
   }
 
-  return (
-    <div className="studio-tab-view select-none">
-      {/* Studio Top Control Strip */}
-      <div className="studio-top-bar">
-        <div className="studio-bar-left">
-          <div className="studio-badge-halo">
-            <span className="material-symbols-outlined text-secondary" style={{ color: '#818cf8' }}>
-              account_tree
-            </span>
-          </div>
-          <div>
-            <div className="studio-title-row">
-              <h2 className="studio-title">Interactive Directory Tree Studio</h2>
-              <span className="studio-tag" style={{ borderColor: 'rgba(99, 102, 241, 0.4)', color: '#38bdf8' }}>
-                Architecture Builder
-              </span>
-            </div>
-            <p className="studio-subtitle">
-              Assemble clean, annotated project architecture trees in Unicode, ASCII, or Emoji format with live preview.
-            </p>
-          </div>
-        </div>
+  // Canvas Header Extras: Syntax style and item stats
+  const canvasHeaderExtras = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <span className="canvas-header-divider" />
+      <span className="canvas-mode-tag" style={{ color: '#10b981', borderColor: 'rgba(16, 185, 129, 0.3)', backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>
+        {filteredItems.length} ITEMS • DEPTH {maxDepth}
+      </span>
 
-        <div className="studio-bar-actions">
-          {onBackToReadme && (
-            <button
-              type="button"
-              className="btn-studio-secondary"
-              onClick={onBackToReadme}
-              title="Return to active markdown document"
-            >
-              <span className="material-symbols-outlined icon-xs">arrow_back</span>
-              <span>Back to Editor</span>
-            </button>
-          )}
-          <button
-            type="button"
-            className="btn-studio-secondary"
-            onClick={handleCopy}
-            title="Copy ASCII tree block to clipboard"
-          >
-            <span className="material-symbols-outlined icon-xs">
-              {copied ? 'check' : 'content_copy'}
-            </span>
-            <span>{copied ? 'Copied!' : 'Copy Tree'}</span>
-          </button>
-          <button
-            type="button"
-            className="btn-studio-primary"
-            onClick={handleInsert}
-            title="Insert directory tree into an open document at cursor line"
-          >
-            <span className="material-symbols-outlined icon-xs">add_circle</span>
-            <span>Insert into Document</span>
-          </button>
-        </div>
-      </div>
+      <span className="canvas-header-divider" />
 
-      {/* Main Studio Body: 2-Column Responsive Layout */}
-      <div className="studio-content-grid">
-        {/* Left Column: Form Controls */}
-        <div
-          className="studio-form-column custom-scrollbar"
-          style={{ width: `${formWidth}px`, minWidth: `${formWidth}px`, maxWidth: `${formWidth}px`, flex: 'none' }}
+      {/* Style Switcher Pills */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '2px', backgroundColor: 'rgba(0,0,0,0.25)', padding: '2px', borderRadius: '4px' }}>
+        <button
+          type="button"
+          className={`studio-style-btn ${treeStyle === 'unicode' ? 'active' : ''}`}
+          onClick={() => setTreeStyle('unicode')}
+          style={{ padding: '2px 6px', fontSize: '10px' }}
+          title="Unicode Tree (├──)"
         >
-          {/* Source Blueprint Selection */}
-          <div className="studio-section">
-            <label className="studio-section-label">Tree Blueprint Source</label>
-            <div className="studio-segmented-styles">
-              <button
-                type="button"
-                className={`studio-style-btn ${activeSource === 'preset' ? 'active' : ''}`}
-                onClick={() => setActiveSource('preset')}
-              >
-                ⚡ Presets ({Object.keys(PRESET_TREES).length})
-              </button>
-              {workspaceDirectory && (
-                <button
-                  type="button"
-                  className={`studio-style-btn ${activeSource === 'workspace' ? 'active' : ''}`}
-                  onClick={() => setActiveSource('workspace')}
-                >
-                  📁 Workspace Files
-                </button>
-              )}
-              <button
-                type="button"
-                className={`studio-style-btn ${activeSource === 'custom' ? 'active' : ''}`}
-                onClick={() => setActiveSource('custom')}
-              >
-                ✏️ Custom Builder
-              </button>
-            </div>
-          </div>
+          Unicode
+        </button>
+        <button
+          type="button"
+          className={`studio-style-btn ${treeStyle === 'ascii' ? 'active' : ''}`}
+          onClick={() => setTreeStyle('ascii')}
+          style={{ padding: '2px 6px', fontSize: '10px' }}
+          title="ASCII Tree (|--)"
+        >
+          ASCII
+        </button>
+        <button
+          type="button"
+          className={`studio-style-btn ${treeStyle === 'emoji' ? 'active' : ''}`}
+          onClick={() => setTreeStyle('emoji')}
+          style={{ padding: '2px 6px', fontSize: '10px' }}
+          title="Emoji Tree (📁/📄)"
+        >
+          Emoji
+        </button>
+        <button
+          type="button"
+          className={`studio-style-btn ${treeStyle === 'indent' ? 'active' : ''}`}
+          onClick={() => setTreeStyle('indent')}
+          style={{ padding: '2px 6px', fontSize: '10px' }}
+          title="Minimal Indent (- )"
+        >
+          Minimal
+        </button>
+      </div>
+    </div>
+  )
 
-          {/* Preset Selector */}
+  return (
+    <StudioShell
+      studioId="tree.studio"
+      title="Directory Tree Studio"
+      subtitle="Clean ASCII, Unicode, and Emoji project architecture trees with automated annotations"
+      badge="Architecture Spec"
+      accentColor="#10b981"
+      icon={<span className="material-symbols-outlined" style={{ fontSize: '20px' }}>account_tree</span>}
+      modes={TREE_MODES}
+      activeMode={activeSource}
+      onModeChange={setActiveSource}
+      markdownCode={fullMarkdownBlock}
+      codeLanguage="bash"
+      onInsert={handleInsert}
+      insertLabel="Insert Tree"
+      onBackToReadme={onBackToReadme}
+      canvasHeaderExtras={canvasHeaderExtras}
+      defaultSplitWidth={520}
+      minSplitWidth={380}
+      maxSplitWidth={880}
+      inspectorContent={
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Section 1: Presets Catalog (in preset mode) */}
           {activeSource === 'preset' && (
             <div className="studio-section">
-              <label className="studio-section-label">Architecture Blueprint Presets</label>
-              <div className="badge-styles-card-grid">
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '8px' }}>
+                1 • Architecture Blueprint Presets ({Object.keys(PRESET_TREES).length})
+              </label>
+              <div className="badge-styles-card-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
                 {Object.entries(PRESET_TREES).map(([id, info]) => {
                   const isSelected = selectedPreset === id
                   return (
@@ -347,13 +392,14 @@ export default function DirectoryTreeStudioTab({
                       type="button"
                       className={`badge-style-card ${isSelected ? 'active' : ''}`}
                       onClick={() => setSelectedPreset(id)}
+                      style={{ padding: '8px 10px', textAlign: 'left', borderRadius: '6px', cursor: 'pointer' }}
                     >
-                      <div className="badge-style-card-header">
-                        <span className="badge-style-card-title">{info.name}</span>
-                        <span className="badge-style-card-tag">{info.badge}</span>
+                      <div className="badge-style-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className="badge-style-card-title" style={{ fontWeight: 600, fontSize: '11.5px', color: '#f1f5f9' }}>{info.name}</span>
+                        <span className="badge-style-card-tag" style={{ fontSize: '9.5px', color: '#10b981' }}>{info.badge}</span>
                       </div>
-                      <span className="badge-style-card-desc">
-                        {info.tree.length} files and directories annotated
+                      <span className="badge-style-card-desc" style={{ fontSize: '10.5px', color: '#94a3b8', display: 'block', marginTop: '3px' }}>
+                        {info.tree.length} files & dirs annotated
                       </span>
                     </button>
                   )
@@ -362,58 +408,107 @@ export default function DirectoryTreeStudioTab({
             </div>
           )}
 
-          {/* Style & Formatting Options */}
-          <div className="studio-section">
-            <label className="studio-section-label">Tree Format & Syntax Style</label>
-            <div className="studio-segmented-styles">
-              <button
-                type="button"
-                className={`studio-style-btn ${treeStyle === 'unicode' ? 'active' : ''}`}
-                onClick={() => setTreeStyle('unicode')}
-              >
-                Unicode (├──)
-              </button>
-              <button
-                type="button"
-                className={`studio-style-btn ${treeStyle === 'ascii' ? 'active' : ''}`}
-                onClick={() => setTreeStyle('ascii')}
-              >
-                ASCII (|--)
-              </button>
-              <button
-                type="button"
-                className={`studio-style-btn ${treeStyle === 'emoji' ? 'active' : ''}`}
-                onClick={() => setTreeStyle('emoji')}
-              >
-                Emoji (📁/📄)
-              </button>
-              <button
-                type="button"
-                className={`studio-style-btn ${treeStyle === 'indent' ? 'active' : ''}`}
-                onClick={() => setTreeStyle('indent')}
-              >
-                Minimal (- )
-              </button>
+          {/* Section 1: Workspace Files Info (in workspace mode) */}
+          {activeSource === 'workspace' && (
+            <div className="studio-section">
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '8px' }}>
+                1 • Live Workspace Files
+              </label>
+              <div style={{ padding: '12px', borderRadius: '6px', background: 'var(--surface-base)', border: '1px solid var(--border-color)' }}>
+                <span style={{ fontSize: '12px', color: '#f1f5f9', fontWeight: 600 }}>
+                  Scanning Active Workspace: {workspaceDirectory?.name || 'Local Project'}
+                </span>
+                <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#94a3b8' }}>
+                  {Object.keys(allFiles || {}).length} files discovered. Use depth slider and filters below to control tree granularity.
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Configuration Controls */}
+          {/* Section 1: Custom Builder Form (in custom mode) */}
+          {activeSource === 'custom' && (
+            <div className="studio-section">
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '8px' }}>
+                1 • Add Custom Paths & Annotations
+              </label>
+              <form onSubmit={handleAddCustomItem} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 90px', gap: '6px' }}>
+                  <input
+                    type="text"
+                    className="studio-text-input"
+                    placeholder="Path (e.g. src/auth/jwt.py)"
+                    value={newItemPath}
+                    onChange={(e) => setNewItemPath(e.target.value)}
+                    style={{ padding: '6px 8px', fontSize: '11px' }}
+                  />
+                  <input
+                    type="text"
+                    className="studio-text-input"
+                    placeholder="Purpose Comment"
+                    value={newItemComment}
+                    onChange={(e) => setNewItemComment(e.target.value)}
+                    style={{ padding: '6px 8px', fontSize: '11px' }}
+                  />
+                  <select
+                    className="studio-select"
+                    value={newItemType}
+                    onChange={(e) => setNewItemType(e.target.value)}
+                    style={{ padding: '6px 8px', fontSize: '11px' }}
+                  >
+                    <option value="file">File</option>
+                    <option value="dir">Folder</option>
+                  </select>
+                </div>
+                <button type="submit" className="studio-shell-btn studio-shell-btn-secondary" style={{ alignSelf: 'flex-start', padding: '4px 10px', fontSize: '11px' }}>
+                  <span className="material-symbols-outlined icon-xs">add</span>
+                  <span>Add Path</span>
+                </button>
+              </form>
+
+              <div className="tree-item-editor-list custom-scrollbar" style={{ marginTop: '10px', maxHeight: '180px', overflowY: 'auto' }}>
+                {customItems.map((item, idx) => (
+                  <div key={idx} className="tree-item-row" style={{ padding: '4px 8px' }}>
+                    <span className={`tree-type-pill ${item.type}`}>
+                      {item.type}
+                    </span>
+                    <span className="tree-path-input truncate" style={{ fontSize: '11px' }}>{item.path}</span>
+                    <span className="tree-comment-input truncate" style={{ fontSize: '10.5px' }}>{item.comment || '—'}</span>
+                    <button
+                      type="button"
+                      className="modal-close-icon-btn"
+                      onClick={() => handleRemoveCustomItem(idx)}
+                      title="Remove item"
+                      style={{ padding: '2px', background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}
+                    >
+                      <span className="material-symbols-outlined icon-xs">close</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Section 2: Tree Details & Constraints */}
           <div className="studio-section">
-            <label className="studio-section-label">Tree Details & Constraints</label>
-            <div className="studio-input-duo">
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '8px' }}>
+              2 • Tree Parameters & Depth Controls
+            </label>
+
+            <div className="studio-input-duo" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <div className="studio-field">
-                <span className="studio-field-label">Root Project Name</span>
+                <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Root Project Label</span>
                 <input
                   type="text"
                   className="studio-text-input"
                   value={rootLabel}
                   onChange={(e) => setRootLabel(e.target.value)}
                   placeholder="e.g. my-project"
+                  style={{ width: '100%', padding: '6px 8px', marginTop: '4px', fontSize: '11px' }}
                 />
               </div>
 
               <div className="studio-field">
-                <span className="studio-field-label">Max Depth Level ({maxDepth} Levels)</span>
+                <span className="studio-field-label" style={{ fontSize: '11px', color: '#94a3b8' }}>Max Depth Level: {maxDepth}</span>
                 <input
                   type="range"
                   min="1"
@@ -421,13 +516,13 @@ export default function DirectoryTreeStudioTab({
                   className="studio-slider"
                   value={maxDepth}
                   onChange={(e) => setMaxDepth(parseInt(e.target.value, 10))}
-                  style={{ marginTop: '8px' }}
+                  style={{ width: '100%', marginTop: '8px' }}
                 />
               </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-              <label className="badge-toggle-switch">
+              <label className="badge-toggle-switch" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '11px', color: '#cbd5e1' }}>
                 <input
                   type="checkbox"
                   checked={showAnnotations}
@@ -436,7 +531,7 @@ export default function DirectoryTreeStudioTab({
                 <span>Include inline file annotations (<code># Purpose</code>)</span>
               </label>
 
-              <label className="badge-toggle-switch">
+              <label className="badge-toggle-switch" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '11px', color: '#cbd5e1' }}>
                 <input
                   type="checkbox"
                   checked={hideBuildFolders}
@@ -446,116 +541,49 @@ export default function DirectoryTreeStudioTab({
               </label>
             </div>
           </div>
-
-          {/* Custom Items Manager */}
-          {activeSource === 'custom' && (
-            <div className="studio-section">
-              <label className="studio-section-label">Add Custom Path to Tree</label>
-              <form onSubmit={handleAddCustomItem} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: '8px' }}>
-                  <input
-                    type="text"
-                    className="studio-text-input"
-                    placeholder="Path (e.g. src/auth/jwt.py)"
-                    value={newItemPath}
-                    onChange={(e) => setNewItemPath(e.target.value)}
-                  />
-                  <input
-                    type="text"
-                    className="studio-text-input"
-                    placeholder="Comment (e.g. JWT verification)"
-                    value={newItemComment}
-                    onChange={(e) => setNewItemComment(e.target.value)}
-                  />
-                  <select
-                    className="studio-select"
-                    value={newItemType}
-                    onChange={(e) => setNewItemType(e.target.value)}
-                  >
-                    <option value="file">File</option>
-                    <option value="dir">Folder</option>
-                  </select>
-                </div>
-                <button type="submit" className="btn-studio-secondary" style={{ alignSelf: 'flex-start' }}>
-                  <span className="material-symbols-outlined icon-xs">add</span>
-                  <span>Add Path</span>
-                </button>
-              </form>
-
-              <div className="tree-item-editor-list custom-scrollbar" style={{ marginTop: '12px' }}>
-                {customItems.map((item, idx) => (
-                  <div key={idx} className="tree-item-row">
-                    <span className={`tree-type-pill ${item.type}`}>
-                      {item.type}
-                    </span>
-                    <span className="tree-path-input truncate">{item.path}</span>
-                    <span className="tree-comment-input truncate">{item.comment || '—'}</span>
-                    <button
-                      type="button"
-                      className="modal-close-icon-btn"
-                      onClick={() => handleRemoveCustomItem(idx)}
-                      title="Remove item"
-                    >
-                      <span className="material-symbols-outlined icon-xs">close</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
-
-        {/* Resizer Splitter Handle */}
+      }
+      canvasContent={
         <div
-          className={`studio-resizer-handle ${isDragging ? 'is-dragging' : ''}`}
-          onMouseDown={handleMouseDown}
-          onDoubleClick={handleDoubleClick}
-          title="Drag to resize form and preview sections • Double-click to reset"
-        />
-
-        {/* Right Column: Live Syntax Output Canvas */}
-        <div className="studio-preview-column custom-scrollbar" style={{ flex: 1, minWidth: 0 }}>
-          {/* Live Preview Card */}
-          <div className="studio-card">
-            <div className="studio-card-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="mac-dot dot-red" />
-                <span className="mac-dot dot-yellow" />
-                <span className="mac-dot dot-green" />
-                <span className="studio-card-title">{rootLabel} — Tree Preview</span>
+          className="tree-preview-stage"
+          style={{
+            width: '100%',
+            maxWidth: '820px',
+            padding: '24px',
+            boxSizing: 'border-box'
+          }}
+        >
+          {/* Framed Architecture Tree Window */}
+          <div className="terminal-window-mockup" style={{ width: '100%', borderRadius: '8px', overflow: 'hidden' }}>
+            <div className="terminal-window-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px' }}>
+              <div className="terminal-window-dots" style={{ display: 'flex', gap: '6px' }}>
+                <span className="terminal-dot red" />
+                <span className="terminal-dot yellow" />
+                <span className="terminal-dot green" />
               </div>
-              <span className="studio-card-tag">
-                {filteredItems.length} items • Depth {maxDepth}
+              <span className="terminal-window-title" style={{ fontSize: '11px', fontFamily: 'monospace', color: '#94a3b8' }}>
+                {rootLabel}/ — Architecture Tree
               </span>
+              <div style={{ width: '40px' }} />
             </div>
-            <div className="studio-render-canvas dark-bg custom-scrollbar" style={{ padding: '16px' }}>
-              <pre className="tree-preview-canvas custom-scrollbar" style={{ margin: 0, border: 'none', background: 'transparent' }}>
-                <code>{renderedTreeText}</code>
-              </pre>
-            </div>
-          </div>
 
-          {/* Generated Markdown Code Block */}
-          <div className="studio-card">
-            <div className="studio-card-header">
-              <span className="studio-card-title">Generated Markdown Code Block</span>
-              <button
-                type="button"
-                className="snippet-copy-btn"
-                onClick={handleCopy}
-              >
-                <span className="material-symbols-outlined icon-xs">
-                  {copied ? 'check' : 'content_copy'}
-                </span>
-                <span>{copied ? 'Copied' : 'Copy'}</span>
-              </button>
-            </div>
-            <pre className="studio-code-block custom-scrollbar">
-              <code>{fullMarkdownBlock}</code>
+            <pre
+              className="tree-preview-canvas custom-scrollbar"
+              style={{
+                margin: 0,
+                border: 'none',
+                borderRadius: 0,
+                padding: '16px',
+                lineHeight: 1.6,
+                fontSize: '12px',
+                fontFamily: 'var(--font-mono, monospace)'
+              }}
+            >
+              <code>{renderedTreeText}</code>
             </pre>
           </div>
         </div>
-      </div>
-    </div>
+      }
+    />
   )
 }

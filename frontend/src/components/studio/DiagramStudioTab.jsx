@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react'
+import React, { useState, useMemo, useRef } from 'react'
 import { saveAs } from 'file-saver'
 import MermaidRenderer from '../MermaidRenderer'
-import { useStudioSplit } from '../../utils/useResizableSplit'
+import StudioShell from './common/StudioShell'
+import '../../styles/studios/diagramStudio.css'
 
 // 6 Curated High-Fidelity Diagram Color Themes
 const DIAGRAM_THEMES = [
@@ -154,7 +155,7 @@ const ACCENT_COLORS = [
   { name: 'None', color: '' }
 ]
 
-// Preset Full Templates
+// Preset Full Templates (Expanded to 8 Architecture Patterns)
 const PRESET_TEMPLATES = [
   {
     id: 'arch-microservices',
@@ -206,7 +207,57 @@ const PRESET_TEMPLATES = [
   Scan --> Build[Multi-Stage Docker Build]
   Build --> Reg[Container Registry :: GHCR]
   Reg --> Deploy[Kubernetes Production Cluster]`
+  },
+  {
+    id: 'gitflow-branches',
+    title: 'GitFlow Branching Model',
+    description: 'Main production branch, develop integration, feature branch, and emergency hotfix.',
+    code: `graph LR
+  Main([main / production]) -->|Branch| Hotfix([hotfix / patch])
+  Hotfix -->|Emergency PR| Main
+  Main -->|Branch| Dev([develop / integration])
+  Dev -->|Feature Branch| Feat([feat/user-auth])
+  Feat -->|PR + CI Pass| Dev
+  Dev -->|Release Tag| Main`
+  },
+  {
+    id: 'oauth-flow',
+    title: 'OAuth 2.0 Auth & Token Exchange',
+    description: 'Browser user consent, Authorization Code redirection, and Backend JWT token exchange.',
+    code: `graph TD
+  Browser([User Browser]) -->|1. Sign-In Request| App([Web App Frontend])
+  App -->|2. Redirect Auth URL| IdP([Identity Provider :: GitHub/Google])
+  IdP -->|3. Consent Code| Browser
+  Browser -->|4. Exchange Auth Code| Backend([API Auth Service])
+  Backend -->|5. Verify Secret & Code| IdP
+  Backend -->|6. Return JWT Session| Browser`
+  },
+  {
+    id: 'cqrs-event-sourcing',
+    title: 'CQRS & Event Sourcing Flow',
+    description: 'Commands write to Event Store while Projections update read-optimized search indices.',
+    code: `graph TD
+  Client([Client Application]) -->|Commands| CmdHandler[Command Handler API]
+  CmdHandler -->|Append Event| EventStore[(Event Store Log)]
+  EventStore -->|Stream Subscription| Projector[Read Model Projector]
+  Projector -->|Update Projections| ReadDB[(Elasticsearch / Read DB)]
+  Client -->|Queries| ReadDB`
+  },
+  {
+    id: 'database-er-model',
+    title: 'Database Entity Relationships',
+    description: 'Users, Orders, Line Items, Products, and Payment Transaction records.',
+    code: `graph LR
+  User[(Users Table)] -->|1:N| Order[(Orders Table)]
+  Order -->|N:M| OrderItem[(Order Items)]
+  Product[(Products Catalog)] -->|1:N| OrderItem
+  Order -->|1:1| Payment[(Payment Transactions)]`
   }
+]
+
+const STUDIO_MODES = [
+  { id: 'visual', label: 'Visual Flow Builder', icon: 'account_tree' },
+  { id: 'code', label: 'Mermaid Code Editor', icon: 'code' }
 ]
 
 // ======================== PARSER & COMPILER ========================
@@ -319,7 +370,6 @@ function parseMermaidFlowchart(mermaidCode = '') {
 
 // Compile visual cards and connections into valid, production-ready Mermaid syntax
 function compileToMermaidCode({ direction = 'TD', nodes = [], edges = [] }) {
-  // Map internal unique IDs to safe, sanitized Mermaid identifiers
   const idMap = new Map()
   nodes.forEach((n, idx) => {
     const cleanSym = (n.name || 'comp').replace(/[^a-zA-Z0-9]/g, '_').slice(0, 20)
@@ -400,11 +450,15 @@ function applyThemeDirective(rawCode, themeKey) {
   return `${directive}${cleanedCode}`
 }
 
+/**
+ * Mermaid.js Architecture Diagram Studio Pro
+ * Interactive visual node builder, raw code editor, themes, and 1-click SVG/PNG export.
+ */
 export default function DiagramStudioTab({
   onInsertDiagram,
   onBackToReadme
 }) {
-  // Workflow Mode: 'visual' (Card-Based Visual Builder) | 'code' (Mermaid Textarea)
+  // Mode: 'visual' (Visual Flow Builder) | 'code' (Mermaid Textarea)
   const [studioMode, setStudioMode] = useState('visual')
 
   // Theme & Direction
@@ -419,13 +473,11 @@ export default function DiagramStudioTab({
   // Raw Code State
   const [code, setCode] = useState(PRESET_TEMPLATES[0].code)
 
-  // Zoom & Canvas Ref
+  // Zoom & Viewport Ref
   const [zoomLevel, setZoomLevel] = useState(100)
-  const [copied, setCopied] = useState(false)
   const viewportRef = useRef(null)
-  const { formWidth, isDragging, handleMouseDown, handleDoubleClick } = useStudioSplit(520)
 
-  // Update visual state and auto-compile to code
+  // Sync visual state and compile to code
   const syncVisualState = (newNodes, newEdges, newDir = direction) => {
     setNodes(newNodes)
     setEdges(newEdges)
@@ -445,8 +497,6 @@ export default function DiagramStudioTab({
 
   // Markdown code block for GitHub README
   const markdownBlock = `\`\`\`mermaid\n${activeThemedChart.trim()}\n\`\`\``
-
-  // ======================== COMPONENT MANAGEMENT ========================
 
   // Add a new component
   const handleAddNewComponent = (presetType = 'generic') => {
@@ -487,36 +537,29 @@ export default function DiagramStudioTab({
     syncVisualState(newNodes, edges)
   }
 
-  // Rename a component
   const handleRenameComponent = (nodeId, newName) => {
     const updated = nodes.map((n) => (n.id === nodeId ? { ...n, name: newName } : n))
     syncVisualState(updated, edges)
   }
 
-  // Change a component's shape
   const handleChangeShape = (nodeId, newShape) => {
     const updated = nodes.map((n) => (n.id === nodeId ? { ...n, shape: newShape } : n))
     syncVisualState(updated, edges)
   }
 
-  // Change a component's accent color
   const handleChangeColor = (nodeId, newColor) => {
     const updated = nodes.map((n) => (n.id === nodeId ? { ...n, color: newColor } : n))
     syncVisualState(updated, edges)
   }
 
-  // Delete a component (and remove all its connections)
   const handleDeleteComponent = (nodeId) => {
     const updatedNodes = nodes.filter((n) => n.id !== nodeId)
     const updatedEdges = edges.filter((e) => e.from !== nodeId && e.to !== nodeId)
     syncVisualState(updatedNodes, updatedEdges)
   }
 
-  // ======================== CONNECTION (WIRE) MANAGEMENT ========================
-
-  // Add a connection originating from a component
+  // Connections
   const handleAddConnection = (fromNodeId) => {
-    // Pick the first other node as default target
     const targetNode = nodes.find((n) => n.id !== fromNodeId)
     if (!targetNode) return
 
@@ -532,31 +575,26 @@ export default function DiagramStudioTab({
     syncVisualState(nodes, updatedEdges)
   }
 
-  // Change the target component of a connection
   const handleChangeConnectionTarget = (edgeId, newToId) => {
     const updated = edges.map((e) => (e.id === edgeId ? { ...e, to: newToId } : e))
     syncVisualState(nodes, updated)
   }
 
-  // Change the label (protocol / payload) of a connection
   const handleChangeConnectionLabel = (edgeId, newLabel) => {
     const updated = edges.map((e) => (e.id === edgeId ? { ...e, label: newLabel } : e))
     syncVisualState(nodes, updated)
   }
 
-  // Change arrow connector type (solid, dotted, thick)
   const handleChangeConnectionType = (edgeId, newType) => {
     const updated = edges.map((e) => (e.id === edgeId ? { ...e, type: newType } : e))
     syncVisualState(nodes, updated)
   }
 
-  // Remove a connection
   const handleRemoveConnection = (edgeId) => {
     const updated = edges.filter((e) => e.id !== edgeId)
     syncVisualState(nodes, updated)
   }
 
-  // Apply a template preset
   const handleApplyPreset = (preset) => {
     setCode(preset.code)
     const parsed = parseMermaidFlowchart(preset.code)
@@ -567,25 +605,18 @@ export default function DiagramStudioTab({
     }
   }
 
-  // Toggle layout direction (TD ↔ LR)
   const handleToggleDirection = (newDir) => {
     syncVisualState(nodes, edges, newDir)
   }
 
-  // ======================== EXPORT & DOWNLOAD ACTIONS ========================
-
-  const handleCopyMarkdown = () => {
-    navigator.clipboard.writeText(markdownBlock)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   const handleInsert = () => {
     if (!code.trim()) return
-    onInsertDiagram(markdownBlock)
+    if (typeof onInsertDiagram === 'function') {
+      onInsertDiagram(markdownBlock)
+    }
   }
 
-  // Export high-resolution vector SVG
+  // Export vector SVG
   const handleExportSvg = async () => {
     if (!viewportRef.current) return
     const svgEl = viewportRef.current.querySelector('svg')
@@ -608,7 +639,7 @@ export default function DiagramStudioTab({
     }
   }
 
-  // Export high-resolution rasterized PNG (2x Retina)
+  // Export raster PNG (2x Retina)
   const handleExportPng = () => {
     if (!viewportRef.current) return
     const svgEl = viewportRef.current.querySelector('svg')
@@ -666,135 +697,183 @@ export default function DiagramStudioTab({
     }
   }
 
-  return (
-    <div className="studio-tab-view select-none">
-      {/* Studio Top Bar */}
-      <div className="studio-top-bar">
-        <div className="studio-bar-left">
-          <div className="studio-badge-halo">
-            <span className="material-symbols-outlined text-primary" style={{ color: '#818cf8' }}>schema</span>
-          </div>
-          <div>
-            <div className="studio-title-row">
-              <h2 className="studio-title">Mermaid.js Architecture Studio</h2>
-              <span className="studio-tag" style={{ borderColor: 'rgba(99, 102, 241, 0.4)', color: '#38bdf8' }}>Interactive Flow Designer</span>
-            </div>
-            <p className="studio-subtitle">
-              Visual card-based architecture builder with live connections and one-click SVG/PNG export.
-            </p>
-          </div>
-        </div>
+  // Mode change handler (sync visual cards if coming from code mode)
+  const handleModeChange = (newMode) => {
+    if (newMode === 'visual') {
+      const parsed = parseMermaidFlowchart(code)
+      if (parsed.nodes.length > 0) {
+        setNodes(parsed.nodes)
+        setEdges(parsed.edges)
+        setDirection(parsed.direction)
+      }
+    }
+    setStudioMode(newMode)
+  }
 
-        {/* Studio Top Export Bar */}
-        <div className="studio-bar-actions">
-          {onBackToReadme && (
-            <button
-              type="button"
-              className="btn-studio-secondary"
-              onClick={onBackToReadme}
-              title="Return to active markdown document"
-            >
-              <span className="material-symbols-outlined icon-xs">arrow_back</span>
-              <span>Back to Editor</span>
-            </button>
-          )}
+  // Top header export buttons
+  const extraHeaderActions = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <button
+        type="button"
+        className="studio-shell-btn studio-shell-btn-secondary"
+        onClick={handleExportSvg}
+        title="Download standalone vector SVG"
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: '15px', color: '#10b981' }}>download</span>
+        <span>SVG</span>
+      </button>
 
-          <button
-            type="button"
-            className="diagram-export-btn"
-            onClick={handleExportSvg}
-            title="Download vector SVG to commit into assets/"
-          >
-            <span className="material-symbols-outlined icon-xs" style={{ color: '#10b981' }}>download</span>
-            <span>Export .SVG</span>
-          </button>
+      <button
+        type="button"
+        className="studio-shell-btn studio-shell-btn-secondary"
+        onClick={handleExportPng}
+        title="Download high-resolution 2x retina PNG"
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: '15px', color: '#38bdf8' }}>image</span>
+        <span>PNG</span>
+      </button>
+    </div>
+  )
 
-          <button
-            type="button"
-            className="diagram-export-btn"
-            onClick={handleExportPng}
-            title="Download high-resolution 2x PNG"
-          >
-            <span className="material-symbols-outlined icon-xs" style={{ color: '#38bdf8' }}>image</span>
-            <span>Export .PNG</span>
-          </button>
+  // Canvas header extras: Zoom HUD and Direction switcher
+  const canvasHeaderExtras = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <span className="canvas-header-divider" />
 
-          <button
-            type="button"
-            className="btn-studio-secondary"
-            onClick={handleCopyMarkdown}
-          >
-            <span className="material-symbols-outlined icon-xs">
-              {copied ? 'check' : 'content_copy'}
-            </span>
-            <span>{copied ? 'Copied!' : 'Copy Code'}</span>
-          </button>
-
-          <button
-            type="button"
-            className="btn-studio-primary"
-            onClick={handleInsert}
-            title="Insert diagram into an open document"
-          >
-            <span className="material-symbols-outlined icon-xs">add_circle</span>
-            <span>Insert into Document</span>
-          </button>
-        </div>
+      {/* Direction Toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '2px', backgroundColor: 'rgba(0,0,0,0.25)', padding: '2px', borderRadius: '4px' }}>
+        <button
+          type="button"
+          className={`studio-style-btn ${direction === 'TD' ? 'active' : ''}`}
+          onClick={() => handleToggleDirection('TD')}
+          style={{ padding: '2px 6px', fontSize: '10px' }}
+          title="Top-to-Bottom Flow"
+        >
+          ⬇️ TD
+        </button>
+        <button
+          type="button"
+          className={`studio-style-btn ${direction === 'LR' ? 'active' : ''}`}
+          onClick={() => handleToggleDirection('LR')}
+          style={{ padding: '2px 6px', fontSize: '10px' }}
+          title="Left-to-Right Flow"
+        >
+          ➡️ LR
+        </button>
       </div>
 
-      {/* Main Studio Body: 2-Column Responsive Layout */}
-      <div className="studio-content-grid">
-        {/* Left Column: Visual Cards Editor or Raw Code */}
-        <div
-          className="studio-form-column custom-scrollbar"
-          style={{ width: `${formWidth}px`, minWidth: `${formWidth}px`, maxWidth: `${formWidth}px`, flex: 'none' }}
-        >
-          {/* Dual-Mode Workflow Switcher */}
-          <div className="diagram-workflow-selector">
-            <button
-              type="button"
-              className={`diagram-workflow-btn ${studioMode === 'visual' ? 'active' : ''}`}
-              onClick={() => {
-                const parsed = parseMermaidFlowchart(code)
-                if (parsed.nodes.length > 0) {
-                  setNodes(parsed.nodes)
-                  setEdges(parsed.edges)
-                  setDirection(parsed.direction)
-                }
-                setStudioMode('visual')
-              }}
-            >
-              <span className="material-symbols-outlined icon-xs">view_agenda</span>
-              <span>Visual Component Flow</span>
-            </button>
-            <button
-              type="button"
-              className={`diagram-workflow-btn ${studioMode === 'code' ? 'active' : ''}`}
-              onClick={() => setStudioMode('code')}
-            >
-              <span className="material-symbols-outlined icon-xs">code</span>
-              <span>Mermaid Code Editor</span>
-            </button>
-          </div>
+      <span className="canvas-header-divider" />
 
+      {/* Zoom HUD */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <button
+          type="button"
+          className="studio-shell-btn studio-shell-btn-icon"
+          onClick={() => setZoomLevel((z) => Math.max(50, z - 10))}
+          title="Zoom Out"
+          style={{ width: '24px', height: '24px' }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>remove</span>
+        </button>
+        <span style={{ fontSize: '10.5px', fontFamily: 'monospace', color: '#94a3b8', minWidth: '36px', textAlign: 'center' }}>
+          {zoomLevel}%
+        </span>
+        <button
+          type="button"
+          className="studio-shell-btn studio-shell-btn-icon"
+          onClick={() => setZoomLevel((z) => Math.min(150, z + 10))}
+          title="Zoom In"
+          style={{ width: '24px', height: '24px' }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>add</span>
+        </button>
+        <button
+          type="button"
+          className="studio-shell-btn studio-shell-btn-icon"
+          onClick={() => setZoomLevel(100)}
+          title="Reset Zoom to 100%"
+          style={{ width: '24px', height: '24px' }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>restart_alt</span>
+        </button>
+      </div>
+
+      <span className="canvas-header-divider" />
+
+      {/* Palette selector */}
+      <select
+        value={themeKey}
+        onChange={(e) => setThemeKey(e.target.value)}
+        className="studio-text-input"
+        style={{
+          padding: '2px 6px',
+          fontSize: '10.5px',
+          borderRadius: '4px',
+          background: 'rgba(255, 255, 255, 0.05)',
+          color: '#cbd5e1',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}
+      >
+        {DIAGRAM_THEMES.map((th) => (
+          <option key={th.id} value={th.id} style={{ background: '#1e293b', color: '#f8fafc' }}>
+            {th.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+
+  return (
+    <StudioShell
+      studioId="diagrams.studio"
+      title="Mermaid Architecture Studio"
+      subtitle="Visual card-based system architecture designer & raw Mermaid compiler with vector export"
+      badge="Vector Flow Pro"
+      accentColor="#818cf8"
+      icon={<span className="material-symbols-outlined" style={{ fontSize: '20px' }}>schema</span>}
+      modes={STUDIO_MODES}
+      activeMode={studioMode}
+      onModeChange={handleModeChange}
+      markdownCode={markdownBlock}
+      codeLanguage="markdown"
+      onInsert={handleInsert}
+      insertLabel="Insert Diagram"
+      onBackToReadme={onBackToReadme}
+      extraHeaderActions={extraHeaderActions}
+      canvasHeaderExtras={canvasHeaderExtras}
+      defaultSplitWidth={540}
+      minSplitWidth={380}
+      maxSplitWidth={880}
+      inspectorContent={
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {studioMode === 'visual' ? (
             /* =========================================================================
                 WORKFLOW 1: INTUITIVE CARD-BASED VISUAL BUILDER
                ========================================================================= */
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {/* Quick Toolbar: Add Component & Direction */}
-              <div className="diagram-toolbar-row">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {/* Quick Component Creator Toolbar */}
+              <div className="diagram-toolbar-row" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>
+                    1 • Add Architecture Nodes
+                  </label>
+                  <span style={{ fontSize: '11px', color: '#64748b' }}>
+                    {nodes.length} Components • {edges.length} Connections
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px' }}>
                   <button
                     type="button"
                     className="btn-add-component"
                     onClick={() => handleAddNewComponent('generic')}
+                    style={{ backgroundColor: 'rgba(99, 102, 241, 0.2)', borderColor: '#6366f1' }}
                   >
                     <span className="material-symbols-outlined icon-xs">add</span>
-                    <span>New Component</span>
+                    <span>+ Component</span>
                   </button>
 
-                  <div className="diagram-quick-chips">
+                  <div className="diagram-quick-chips" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                     <button
                       type="button"
                       className="diagram-quick-chip"
@@ -832,43 +911,23 @@ export default function DiagramStudioTab({
                     </button>
                   </div>
                 </div>
-
-                {/* Direction Switch */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <button
-                    type="button"
-                    className={`studio-style-btn ${direction === 'TD' ? 'active' : ''}`}
-                    onClick={() => handleToggleDirection('TD')}
-                    style={{ padding: '4px 8px', fontSize: '10.5px' }}
-                  >
-                    ⬇️ Top-Down
-                  </button>
-                  <button
-                    type="button"
-                    className={`studio-style-btn ${direction === 'LR' ? 'active' : ''}`}
-                    onClick={() => handleToggleDirection('LR')}
-                    style={{ padding: '4px 8px', fontSize: '10.5px' }}
-                  >
-                    ➡️ Left-Right
-                  </button>
-                </div>
               </div>
 
               {/* Template Architecture Loader */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 2px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                  Load Architecture Preset:
-                </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>
+                  2 • Architecture Blueprint Presets
+                </label>
                 <select
                   className="studio-text-input"
-                  style={{ flex: 1, padding: '4px 8px', fontSize: '11px' }}
+                  style={{ width: '100%', padding: '6px 10px', fontSize: '11px' }}
                   onChange={(e) => {
                     const preset = PRESET_TEMPLATES.find((p) => p.id === e.target.value)
                     if (preset) handleApplyPreset(preset)
                   }}
                   defaultValue=""
                 >
-                  <option value="" disabled>Choose a pre-built architecture...</option>
+                  <option value="" disabled>Choose a pre-built architecture blueprint...</option>
                   {PRESET_TEMPLATES.map((p) => (
                     <option key={p.id} value={p.id}>{p.title}</option>
                   ))}
@@ -876,162 +935,149 @@ export default function DiagramStudioTab({
               </div>
 
               {/* Components Flow List */}
-              <div className="diagram-components-list">
-                {nodes.map((node, index) => {
-                  // Find all connections that originate FROM this component
-                  const outgoingEdges = edges.filter((e) => e.from === node.id)
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>
+                  3 • Flow Nodes & Connections
+                </label>
 
-                  return (
-                    <div key={node.id} className="diagram-component-card">
-                      {/* Top Bar: Number, Name Input, Delete */}
-                      <div className="diagram-card-top-row">
-                        <span className="diagram-card-index-badge">{index + 1}</span>
-                        <input
-                          type="text"
-                          className="diagram-card-name-input"
-                          value={node.name}
-                          onChange={(e) => handleRenameComponent(node.id, e.target.value)}
-                          placeholder="Component Name (e.g. API Gateway, Database)"
-                        />
-                        <button
-                          type="button"
-                          className="diagram-card-del-btn"
-                          onClick={() => handleDeleteComponent(node.id)}
-                          title="Delete this component and all its connections"
-                        >
-                          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
-                        </button>
-                      </div>
+                <div className="diagram-components-list">
+                  {nodes.map((node, index) => {
+                    const outgoingEdges = edges.filter((e) => e.from === node.id)
 
-                      {/* Meta Row: Shape Selector & Accent Color */}
-                      <div className="diagram-card-meta-row">
-                        <div className="diagram-shape-chips">
-                          {SHAPES.map((sh) => (
-                            <button
-                              key={sh.id}
-                              type="button"
-                              className={`diagram-shape-chip-btn ${node.shape === sh.id ? 'active' : ''}`}
-                              onClick={() => handleChangeShape(node.id, sh.id)}
-                              title={sh.label}
-                            >
-                              <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>{sh.icon}</span>
-                              <span>{sh.label}</span>
-                            </button>
-                          ))}
-                        </div>
-
-                        <div className="diagram-color-swatches-mini">
-                          {ACCENT_COLORS.map((c) => (
-                            <button
-                              key={c.name}
-                              type="button"
-                              className={`diagram-color-dot-btn ${node.color === c.color ? 'active' : ''}`}
-                              style={{ backgroundColor: c.color || '#334155' }}
-                              onClick={() => handleChangeColor(node.id, c.color)}
-                              title={c.name}
-                            />
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Outgoing Connections */}
-                      <div className="diagram-connections-box">
-                        <div className="diagram-conn-header">
-                          <span>Calls / Connects To ({outgoingEdges.length})</span>
-                          <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Target & Protocol</span>
-                        </div>
-
-                        {outgoingEdges.map((edge) => (
-                          <div key={edge.id} className="diagram-conn-row">
-                            <span className="diagram-conn-arrow-indicator">➔</span>
-
-                            {/* Target Dropdown */}
-                            <select
-                              className="diagram-conn-target-select"
-                              value={edge.to}
-                              onChange={(e) => handleChangeConnectionTarget(edge.id, e.target.value)}
-                              title="Select which component this sends requests or data to"
-                            >
-                              {nodes.map((targetCandidate) => (
-                                <option key={targetCandidate.id} value={targetCandidate.id}>
-                                  {targetCandidate.name} {targetCandidate.id === node.id ? '(Self)' : ''}
-                                </option>
-                              ))}
-                            </select>
-
-                            {/* Label Input */}
-                            <input
-                              type="text"
-                              className="diagram-conn-label-input"
-                              value={edge.label}
-                              onChange={(e) => handleChangeConnectionLabel(edge.id, e.target.value)}
-                              placeholder="Protocol (e.g. HTTPS, REST, SQL, Async)"
-                              title="Connection message / protocol label"
-                            />
-
-                            {/* Wire Type */}
-                            <select
-                              className="diagram-conn-type-select"
-                              value={edge.type}
-                              onChange={(e) => handleChangeConnectionType(edge.id, e.target.value)}
-                              title="Arrow style"
-                            >
-                              <option value="arrow">Solid ──&gt;</option>
-                              <option value="dotted">Dotted ┄&gt;</option>
-                              <option value="thick">Thick ━━&gt;</option>
-                              <option value="twoway">&lt;──&gt;</option>
-                            </select>
-
-                            {/* Remove Wire */}
-                            <button
-                              type="button"
-                              className="diagram-conn-del-btn"
-                              onClick={() => handleRemoveConnection(edge.id)}
-                              title="Remove this connection"
-                            >
-                              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>close</span>
-                            </button>
-                          </div>
-                        ))}
-
-                        {/* Add Connection Button */}
-                        <div>
+                    return (
+                      <div key={node.id} className="diagram-component-card">
+                        {/* Top Bar: Number, Name Input, Delete */}
+                        <div className="diagram-card-top-row">
+                          <span className="diagram-card-index-badge">{index + 1}</span>
+                          <input
+                            type="text"
+                            className="diagram-card-name-input"
+                            value={node.name}
+                            onChange={(e) => handleRenameComponent(node.id, e.target.value)}
+                            placeholder="Component Name (e.g. API Gateway, Database)"
+                          />
                           <button
                             type="button"
-                            className="diagram-add-conn-btn"
-                            onClick={() => handleAddConnection(node.id)}
+                            className="diagram-card-del-btn"
+                            onClick={() => handleDeleteComponent(node.id)}
+                            title="Delete this component and all its connections"
                           >
-                            <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>add</span>
-                            <span>Connect to another component</span>
+                            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
                           </button>
                         </div>
+
+                        {/* Meta Row: Shape Selector & Accent Color */}
+                        <div className="diagram-card-meta-row">
+                          <div className="diagram-shape-chips">
+                            {SHAPES.map((sh) => (
+                              <button
+                                key={sh.id}
+                                type="button"
+                                className={`diagram-shape-chip-btn ${node.shape === sh.id ? 'active' : ''}`}
+                                onClick={() => handleChangeShape(node.id, sh.id)}
+                                title={sh.label}
+                              >
+                                <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>{sh.icon}</span>
+                                <span>{sh.label}</span>
+                              </button>
+                            ))}
+                          </div>
+
+                          <div className="diagram-color-swatches-mini">
+                            {ACCENT_COLORS.map((c) => (
+                              <button
+                                key={c.name}
+                                type="button"
+                                className={`diagram-color-dot-btn ${node.color === c.color ? 'active' : ''}`}
+                                style={{ backgroundColor: c.color || '#334155' }}
+                                onClick={() => handleChangeColor(node.id, c.color)}
+                                title={c.name}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Outgoing Connections */}
+                        <div className="diagram-connections-box">
+                          <div className="diagram-conn-header">
+                            <span>Calls / Connects To ({outgoingEdges.length})</span>
+                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Target & Protocol</span>
+                          </div>
+
+                          {outgoingEdges.map((edge) => (
+                            <div key={edge.id} className="diagram-conn-row">
+                              <span className="diagram-conn-arrow-indicator">➔</span>
+
+                              {/* Target Dropdown */}
+                              <select
+                                className="diagram-conn-target-select"
+                                value={edge.to}
+                                onChange={(e) => handleChangeConnectionTarget(edge.id, e.target.value)}
+                                title="Select which component this sends requests or data to"
+                              >
+                                {nodes.map((targetCandidate) => (
+                                  <option key={targetCandidate.id} value={targetCandidate.id}>
+                                    {targetCandidate.name} {targetCandidate.id === node.id ? '(Self)' : ''}
+                                  </option>
+                                ))}
+                              </select>
+
+                              {/* Label Input */}
+                              <input
+                                type="text"
+                                className="diagram-conn-label-input"
+                                value={edge.label}
+                                onChange={(e) => handleChangeConnectionLabel(edge.id, e.target.value)}
+                                placeholder="Protocol (e.g. HTTPS, REST, SQL, Async)"
+                                title="Connection message / protocol label"
+                              />
+
+                              {/* Wire Type */}
+                              <select
+                                className="diagram-conn-type-select"
+                                value={edge.type}
+                                onChange={(e) => handleChangeConnectionType(edge.id, e.target.value)}
+                                title="Arrow style"
+                              >
+                                <option value="arrow">Solid ──&gt;</option>
+                                <option value="dotted">Dotted ┄&gt;</option>
+                                <option value="thick">Thick ━━&gt;</option>
+                                <option value="twoway">&lt;──&gt;</option>
+                              </select>
+
+                              {/* Remove Wire */}
+                              <button
+                                type="button"
+                                className="diagram-conn-del-btn"
+                                onClick={() => handleRemoveConnection(edge.id)}
+                                title="Remove this connection"
+                              >
+                                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>close</span>
+                              </button>
+                            </div>
+                          ))}
+
+                          {/* Add Connection Button */}
+                          <div>
+                            <button
+                              type="button"
+                              className="diagram-add-conn-btn"
+                              onClick={() => handleAddConnection(node.id)}
+                            >
+                              <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>add</span>
+                              <span>Connect to another component</span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
+                    )
+                  })}
+
+                  {nodes.length === 0 && (
+                    <div style={{ padding: '24px', textAlign: 'center', backgroundColor: 'var(--surface-mid)', borderRadius: '6px', color: 'var(--text-muted)', fontSize: '12px' }}>
+                      No components in diagram. Click <strong>"+ Component"</strong> above to start!
                     </div>
-                  )
-                })}
-
-                {nodes.length === 0 && (
-                  <div style={{ padding: '24px', textAlign: 'center', backgroundColor: 'var(--surface-mid)', borderRadius: '6px', color: 'var(--text-muted)', fontSize: '12px' }}>
-                    No components in diagram. Click <strong>"New Component"</strong> above to start!
-                  </div>
-                )}
-              </div>
-
-              {/* Visual Theme Selector */}
-              <div className="studio-section" style={{ marginTop: '6px' }}>
-                <label className="studio-section-label">Canvas Color Theme</label>
-                <div className="diagram-themes-grid">
-                  {DIAGRAM_THEMES.map((th) => (
-                    <button
-                      key={th.id}
-                      type="button"
-                      className={`diagram-theme-pill ${themeKey === th.id ? 'active' : ''}`}
-                      onClick={() => setThemeKey(th.id)}
-                    >
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: th.dot }} />
-                      <span>{th.name}</span>
-                    </button>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>
@@ -1041,13 +1087,13 @@ export default function DiagramStudioTab({
                ========================================================================= */
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div className="studio-section editor-section">
-                <div className="code-editor-header">
-                  <div className="file-indicator">
-                    <span className="material-symbols-outlined icon-xs text-secondary">code</span>
-                    <span className="file-name">architecture.mmd</span>
+                <div className="code-editor-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <div className="file-indicator" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="material-symbols-outlined icon-xs text-secondary" style={{ color: '#818cf8' }}>code</span>
+                    <span className="file-name" style={{ fontSize: '12px', fontWeight: 600, color: '#f8fafc' }}>architecture.mmd</span>
                   </div>
                   <div className="code-stats">
-                    <span>{code.split('\n').length} lines</span>
+                    <span style={{ fontSize: '11px', color: '#64748b' }}>{code.split('\n').length} lines</span>
                   </div>
                 </div>
                 <textarea
@@ -1057,23 +1103,38 @@ export default function DiagramStudioTab({
                   placeholder="Enter Mermaid.js diagram source code..."
                   rows={18}
                   spellCheck={false}
+                  style={{
+                    width: '100%',
+                    fontFamily: 'var(--font-mono, monospace)',
+                    fontSize: '12px',
+                    padding: '12px',
+                    borderRadius: '6px',
+                    background: 'var(--surface-lowest, #0d1117)',
+                    color: '#f8fafc',
+                    border: '1px solid var(--border-color, #30363d)',
+                    resize: 'vertical',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
 
               {/* Presets List in Code Mode */}
               <div className="studio-section">
-                <label className="studio-section-label">Quick Architecture Presets</label>
-                <div className="diagram-preset-list">
+                <label className="studio-section-label" style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '8px' }}>
+                  Architecture Presets Catalog
+                </label>
+                <div className="diagram-preset-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {PRESET_TEMPLATES.map((p) => (
                     <div
                       key={p.id}
                       className="diagram-preset-card"
                       onClick={() => handleApplyPreset(p)}
+                      style={{ cursor: 'pointer', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--surface-base)' }}
                     >
                       <div className="preset-card-top">
-                        <span className="preset-card-title">{p.title}</span>
+                        <span className="preset-card-title" style={{ fontWeight: 600, fontSize: '12px', color: '#f1f5f9' }}>{p.title}</span>
                       </div>
-                      <p className="preset-card-desc">{p.description}</p>
+                      <p className="preset-card-desc" style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>{p.description}</p>
                     </div>
                   ))}
                 </div>
@@ -1081,103 +1142,34 @@ export default function DiagramStudioTab({
             </div>
           )}
         </div>
-
-        {/* Resizer Splitter Handle */}
+      }
+      canvasContent={
         <div
-          className={`studio-resizer-handle ${isDragging ? 'is-dragging' : ''}`}
-          onMouseDown={handleMouseDown}
-          onDoubleClick={handleDoubleClick}
-          title="Drag to resize form and preview sections • Double-click to reset"
-        />
-
-        {/* Right Column: Live SVG Render Canvas & Markdown Readout */}
-        <div className="studio-preview-column custom-scrollbar" style={{ flex: 1, minWidth: 0 }}>
-          {/* Live SVG Canvas Card */}
-          <div className="diagram-canvas-card">
-            <div className="canvas-header-bar">
-              <div className="canvas-status-tag">
-                <span className="live-dot"></span>
-                <span>Live Compiled SVG Canvas ({direction})</span>
-              </div>
-              <div className="canvas-controls-group">
-                <button
-                  type="button"
-                  className="canvas-hud-btn"
-                  onClick={() => handleToggleDirection(direction === 'TD' ? 'LR' : 'TD')}
-                  title="Toggle Flow Direction (TD ↔ LR)"
-                >
-                  <span className="material-symbols-outlined icon-xs">rotate_right</span>
-                  <span>{direction}</span>
-                </button>
-                <button
-                  type="button"
-                  className="canvas-hud-btn"
-                  onClick={() => setZoomLevel((z) => Math.max(50, z - 10))}
-                  title="Zoom Out"
-                >
-                  <span className="material-symbols-outlined icon-xs">remove</span>
-                </button>
-                <span className="zoom-readout">{zoomLevel}%</span>
-                <button
-                  type="button"
-                  className="canvas-hud-btn"
-                  onClick={() => setZoomLevel((z) => Math.min(150, z + 10))}
-                  title="Zoom In"
-                >
-                  <span className="material-symbols-outlined icon-xs">add</span>
-                </button>
-                <button
-                  type="button"
-                  className="canvas-hud-btn"
-                  onClick={() => setZoomLevel(100)}
-                  title="Reset Zoom"
-                >
-                  <span className="material-symbols-outlined icon-xs">restart_alt</span>
-                </button>
-              </div>
-            </div>
-
-            <div
-              className="diagram-svg-viewport custom-scrollbar"
-              ref={viewportRef}
-              style={{
-                backgroundColor: DIAGRAM_THEMES.find((t) => t.id === themeKey)?.bg || '#090d16',
-                minHeight: '380px'
-              }}
-            >
-              <div
-                className="diagram-scale-container"
-                style={{
-                  transform: `scale(${zoomLevel / 100})`,
-                  transformOrigin: 'top center'
-                }}
-              >
-                <MermaidRenderer chart={activeThemedChart} />
-              </div>
-            </div>
-          </div>
-
-          {/* Generated Markdown Syntax Card */}
-          <div className="diagram-snippet-card">
-            <div className="snippet-header">
-              <span className="snippet-title">Generated Markdown Code Block</span>
-              <button
-                type="button"
-                className="snippet-copy-btn"
-                onClick={handleCopyMarkdown}
-              >
-                <span className="material-symbols-outlined icon-xs">
-                  {copied ? 'check' : 'content_copy'}
-                </span>
-                <span>{copied ? 'Copied' : 'Copy'}</span>
-              </button>
-            </div>
-            <pre className="snippet-pre custom-scrollbar">
-              <code>{markdownBlock}</code>
-            </pre>
+          className="diagram-svg-viewport custom-scrollbar"
+          ref={viewportRef}
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            boxSizing: 'border-box',
+            overflow: 'auto'
+          }}
+        >
+          <div
+            className="diagram-scale-container"
+            style={{
+              transform: `scale(${zoomLevel / 100})`,
+              transformOrigin: 'center center',
+              transition: 'transform 120ms ease'
+            }}
+          >
+            <MermaidRenderer chart={activeThemedChart} />
           </div>
         </div>
-      </div>
-    </div>
+      }
+    />
   )
 }
