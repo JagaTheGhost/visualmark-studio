@@ -26,7 +26,7 @@
     "electron:pack": "vite build && electron-builder --dir",
     "electron:portable": "vite build && electron-builder --win portable",
     "electron:manual": "powershell -ExecutionPolicy Bypass -File scripts/manual-pack.ps1",
-    "electron:dist": "powershell -ExecutionPolicy Bypass -File ../installer/build-installer.ps1",
+    "electron:dist": "vite build && electron-builder",
     "installer:preview": "electron ../installer",
     "uninstaller:preview": "electron ../installer --uninstall",
     "installer:build": "powershell -ExecutionPolicy Bypass -File ../installer/build-installer.ps1"
@@ -56,7 +56,7 @@
     "win": {
       "target": [
         {
-          "target": "dir",
+          "target": "nsis",
           "arch": [
             "x64"
           ]
@@ -86,6 +86,20 @@
           "icon": "public/icon.ico"
         }
       ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "VisualMark Studio",
+      "runAfterFinish": true,
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico",
+      "artifactName": "VisualMark-Studio-Setup.${ext}",
+      "deleteAppDataOnUninstall": false
     },
     "portable": {
       "artifactName": "VisualMark-Studio-Portable.${ext}"
