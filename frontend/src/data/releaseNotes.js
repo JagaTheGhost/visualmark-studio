@@ -2,56 +2,91 @@
  * VisualMark Studio - Release Notes & Update History Dataset
  * Powers the "What's New" modal dialog, update notifications, and in-IDE release history.
  */
-export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.1.3'
+export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.1.4'
 
 export const RELEASE_HISTORY = [
   {
-    version: '1.1.3',
-    type: 'patch',
-    title: 'VisualMark Studio 1.1.3 — Next-Gen Glassmorphic Installer & Uninstaller Suite, Security Hardening & Asset Fixes',
+    version: '1.1.4',
+    type: 'feature',
+    title: 'VisualMark Studio 1.1.4 — Diagram Studio Rebuild: 7 Visual Builders, 8 Themes & Monaco Tokenizer',
     date: 'October 2026',
     isCurrent: true,
     highlights: [
-      'Next-Gen Glassmorphic Windows Installer: 2-column Figma-aligned dark UI with dynamic step headlines, path validator, and explicit license compliance',
-      'Modern Glassmorphic Uninstaller: Standalone uninstaller wizard with atomic cleanup and zero leftover files or orphan registry entries',
-      'Enhanced Security Architecture: Sanitized path inputs to prevent traversal attacks, HKCU registry isolation, and base64-encoded parameterized PowerShell shortcut creation',
-      'Asset Resolution & Stability Patch: Fixed 16,000+ console error loops caused by missing favicon requests and restored local launcher branding assets',
-      'Pruned Legacy NSIS Pipeline: Completely eliminated legacy Win32 NSIS scripts and bitmaps in favor of clean, modern Electron setup technology'
+      '7 Specialized Visual Builders: Complete visual designer suites for Architecture Flowcharts, Sequence Diagrams, Database ER Models, Class & Object Models, State Machines, Git Branch Graphs, and Mindmaps',
+      '8 Curated Diagram Themes: Midnight Obsidian, Tokyo Night, Cyber Neon, Forest Emerald, Dracula, Monokai Pro, Sunset Horizon, and GitHub Slate Light',
+      'Monaco Mermaid Syntax Tokenizer: Custom syntax highlighting for Mermaid keywords, directions, arrows, nodes, and subgraphs in the code editor',
+      'Interactive Pan & Zoom Canvas: Smooth 10% to 500% zoom controls, drag panning, grid canvas backdrops, and instant SVG/PNG export',
+      'Architecture Blueprint Preset Catalog: Comprehensive library of pre-built, production-ready system architectures and data models'
     ],
     sections: [
       {
-        category: 'Next-Gen Setup Experience',
-        icon: 'install_desktop',
-        badge: 'Installer',
+        category: 'Diagram Studio Rebuild',
+        icon: 'account_tree',
+        badge: 'Major Studio',
         color: '#6366f1',
         items: [
           {
-            title: 'Figma 2-Column Dark Layout',
-            desc: 'Replaces legacy Win32 dialogs with a modern 2-column interface featuring dynamic step descriptions and high-contrast typography.'
+            title: '7 Specialized Visual Builders',
+            desc: 'Visually configure flowcharts, API handshakes, database entities with keys/types, class methods, state transitions, GitFlow branch lifelines, and hierarchical mindmaps with live two-way synchronization.'
           },
           {
-            title: 'Explicit License Agreement',
-            desc: 'Dedicated license verification step with "I do not accept" selected by default to ensure intentional compliance.'
+            title: '8 High-Fidelity Theming Engines',
+            desc: 'Tailored dark, neon, and slate themes that harmonize perfectly with modern documentation, GitHub READMEs, and presentations.'
           },
           {
-            title: 'Matching Uninstaller Wizard',
-            desc: 'Dedicated uninstaller interface supporting atomic removal of application binaries, shortcuts, and registry entries.'
+            title: 'Monaco Mermaid Syntax Tokenizer',
+            desc: 'Native syntax highlighting and Monarch tokenizer for Mermaid diagrams directly inside the Monaco code editor.'
+          },
+          {
+            title: 'Interactive Canvas with Multi-Format Export',
+            desc: 'Pan and zoom through massive cloud topologies, toggle grid canvas backdrops, and export directly to crisp SVG, high-resolution PNG, or GFM code blocks.'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    version: '1.1.3',
+    type: 'patch',
+    title: 'VisualMark Studio 1.1.3 — Packaging Pipeline Modernization, Differential Updates & Asset Fixes',
+    date: 'October 2026',
+    isCurrent: false,
+    highlights: [
+      'Packaging Modernization: Cleaned up setup packaging pipeline by removing legacy bitmaps and scripts in favor of standardized, non-elevated user-level installation',
+      'Differential Auto-Updates: Verified delta blockmap pipeline allowing existing desktop installations to download only changed byte blocks without reinstalling',
+      'Asset Resolution & Stability Patch: Fixed 16,000+ recursive console error loops caused by missing favicon requests and restored local launcher branding assets',
+      'Streamlined Build Pipeline: Optimized production builds and CI/CD workflow compatibility'
+    ],
+    sections: [
+      {
+        category: 'Packaging & Updates',
+        icon: 'system_update',
+        badge: 'Setup',
+        color: '#6366f1',
+        items: [
+          {
+            title: 'Clean User-Level Installer',
+            desc: 'Installs seamlessly into AppData without requiring administrator elevation, creating Start Menu and Desktop shortcuts.'
+          },
+          {
+            title: 'Differential Delta Updates',
+            desc: 'Utilizes blockmap manifests to download only modified byte chunks during auto-update, saving bandwidth and time.'
           }
         ]
       },
       {
-        category: 'Security & Bug Fixes',
-        icon: 'security',
-        badge: 'Security',
+        category: 'Bug Fixes & Stability',
+        icon: 'bug_report',
+        badge: 'Fixes',
         color: '#10b981',
         items: [
           {
-            title: 'Path Traversal & Injection Hardening',
-            desc: 'Validated destination paths and isolated registry modifications to HKCU to eliminate Administrator escalation requirements.'
+            title: 'Console Error Loop Resolution',
+            desc: 'Eliminated recursive missing favicon requests that caused over 16,000 console errors, ensuring smooth launch performance.'
           },
           {
-            title: 'Console Loop & Asset Fix',
-            desc: 'Eliminated recursive missing favicon requests that caused over 16,000 console errors, ensuring smooth launch performance.'
+            title: 'Launcher Brand Asset Bundling',
+            desc: 'Resolved missing launcher logo by bundling the local high-resolution asset directly into the application.'
           }
         ]
       }

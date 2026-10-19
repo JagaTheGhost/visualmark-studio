@@ -161,30 +161,22 @@ cd backend
 python build_sidecar.py
 ```
 
-### Step 2: Package Windows Executables & Custom Installer
+### Step 2: Package Windows Executables
 ```bash
 cd ../frontend
 npm run electron:dist
 ```
-Generated artifacts in `release/` and `frontend/release/`:
-- `VisualMark-Studio-Setup.exe` — Glassmorphic 2-column standalone Windows installer
+Generated artifacts in `frontend/release/`:
+- `VisualMark-Studio-Setup.exe` — Windows setup installer (Non-elevated user-level installation, Start Menu & Desktop shortcuts)
 - `VisualMark-Studio-Portable.exe` — Zero-install portable standalone executable
 - `latest.yml` — Differential auto-update manifest for Electron Updater
-
-### Step 3: Preview Installer & Uninstaller in Development
-You can preview the installer and uninstaller UI live inside Electron without running a full build:
-```bash
-cd frontend
-npm run installer:preview     # Previews the 2-column installer
-npm run uninstaller:preview   # Previews the 2-column uninstaller
-```
 
 ---
 
 ## 7. Testing Auto-Updates (Differential Patching)
 
 VisualMark Studio supports delta auto-updates via GitHub Releases (`v1.1.2` → `v1.1.3`):
-1. **Bump Version:** Update `"version"` in `frontend/package.json`, `installer/package.json`, and `frontend/src/data/releaseNotes.js`.
+1. **Bump Version:** Update `"version"` in `frontend/package.json` and `frontend/src/data/releaseNotes.js`.
 2. **Git Commit & Tag:**
    ```bash
    git add .
@@ -194,6 +186,8 @@ VisualMark Studio supports delta auto-updates via GitHub Releases (`v1.1.2` → 
    ```
 3. **CI/CD Build & Publish:** GitHub Actions (`release.yml`) builds the assets and uploads `VisualMark-Studio-Setup.exe`, `.blockmap`, `VisualMark-Studio-Portable.exe`, and `latest.yml` to the Release.
 4. **Verification:** Launch installed `v1.1.2`, open **Settings → Updates**, click **"Check for updates"**, and observe the app download only the differential blockmap patch and prompt to restart into `v1.1.3`.
+
+---
 
 ## 8. Verification & Health Checks
 

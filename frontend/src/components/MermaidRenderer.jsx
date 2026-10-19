@@ -17,6 +17,8 @@ async function getMermaid() {
           background: '#10141a',
           primaryColor: '#262a31',
           primaryTextColor: '#dfe2eb',
+          textColor: '#dfe2eb',
+          nodeTextColor: '#dfe2eb',
           primaryBorderColor: '#6366f1',
           lineColor: '#7bd0ff',
           secondaryColor: '#181c22',
@@ -24,7 +26,7 @@ async function getMermaid() {
           fontFamily: 'Inter, JetBrains Mono, monospace',
           fontSize: '13px'
         },
-        securityLevel: 'strict'
+        securityLevel: 'loose'
       })
       mermaidInstance = mModule
       return mermaidInstance
@@ -33,7 +35,7 @@ async function getMermaid() {
   return mermaidPromise
 }
 
-export default function MermaidRenderer({ chart }) {
+export default function MermaidRenderer({ chart, plain = false }) {
   const containerRef = useRef(null)
   const [svgContent, setSvgContent] = useState('')
   const [renderError, setRenderError] = useState(null)
@@ -55,7 +57,7 @@ export default function MermaidRenderer({ chart }) {
         const mermaid = await getMermaid()
         const { svg } = await mermaid.render(uniqueId, chart.trim())
         if (isMounted) {
-          setSvgContent(sanitizeSvg(svg))
+          setSvgContent(svg)
         }
       } catch (err) {
         if (isMounted) {
@@ -88,6 +90,16 @@ export default function MermaidRenderer({ chart }) {
         <p className="mermaid-error-msg">{renderError}</p>
         <pre className="mermaid-source-preview"><code>{chart}</code></pre>
       </div>
+    )
+  }
+
+  if (plain) {
+    return (
+      <div
+        ref={containerRef}
+        className="mermaid-plain-viewport select-none"
+        dangerouslySetInnerHTML={{ __html: svgContent }}
+      />
     )
   }
 

@@ -183,10 +183,34 @@ VisualMark Studio bundles 10 dedicated visual environments accessible as tabs:
 - **1-Click Insertion & Export**: Copy Markdown syntax, direct HTML image tags, or download the raw SVG badge file.
 
 ### 4.2 Mermaid Architecture Studio (`diagrams.studio`)
-- **Interactive Visual Editor**: Build system architecture diagrams, microservice maps, sequence diagrams, state machines, entity-relationship models, and Git graphs.
-- **Live Preview & Validation**: Syntax error reporting with line-level hints.
-- **High-Resolution Vector Export**: 1-click export to high-res SVG or 2x Retina PNG.
-- **Interactive Canvas Navigation**: Full zoom, pan, and fit-to-screen controls.
+- **7 Specialized Visual Builders with 2-Way Compilation**:
+  - **Architecture Flowcharts**: Design microservices topologies, cloud architectures, and subgraphs with directional switches (`TD`, `LR`, `RL`, `BT`), link styling, and comprehensive shape selectors (rectangle, rounded, stadium, cylinder, circle, diamond, hexagon, asymmetry).
+  - **API Sequence Diagrams**: Visual handshake designer for actors, lifelines, message types (solid, dashed, async, return), activation boxes, notes, and parallel loops.
+  - **Database ER Models**: Relational database schema builder featuring entities with primary keys (`PK`), foreign keys (`FK`), column data types, and cardinality links (one-to-one, one-to-many, many-to-many).
+  - **Class & Object Diagrams**: UML class structures with visibility indicators (`+`, `-`, `#`, `~`), fields, methods, inheritance, composition, aggregation, and realization associations.
+  - **State Machine Diagrams**: Finite state machines with composite states, event triggers, guards, entry/exit actions, and fork/join transitions.
+  - **Git Branching Graphs**: Visual branch topologies (`main`, `develop`, `feature/*`, `hotfix/*`), commits with tags, merges, and cherry-picks.
+  - **Mindmaps & Roadmaps**: Multi-level hierarchical trees, node icons, and architecture decision breakdowns.
+- **8 Curated High-DPI Diagram Themes**:
+  - **Midnight Obsidian** (Deep dark `#090d16` with neon indigo accents `#6366f1`).
+  - **Tokyo Night** (Cyan `#06b6d4` & violet glow).
+  - **Cyber Neon** (Terminal emerald `#22c55e` & dark slate).
+  - **Forest Emerald** (Deep green `#10b981` & sage).
+  - **Dracula** (Classic purple `#a855f7` & midnight).
+  - **Monokai Pro** (Amber `#f59e0b` & charcoal).
+  - **Sunset Horizon** (Rose `#f43f5e` & coral).
+  - **GitHub Slate Light** (Clean high-contrast light mode `#f8fafc`).
+- **Monaco Mermaid Language Tokenizer (`monacoMermaid.js`)**:
+  - Native syntax highlighting and Monarch tokenizer for raw Mermaid code in Monaco with bracket matching, direction keywords, and string coloring.
+- **Interactive Canvas with Smooth Pan & Zoom (`DiagramCanvas.jsx`)**:
+  - Fluid zoom controls from 10% to 500% with zoom-to-fit and reset.
+  - Drag-to-pan navigation for inspecting complex architectures.
+  - Canvas grid backdrop pattern toggle.
+  - Instant export to vector SVG, high-resolution PNG, and clipboard Markdown.
+- **Architecture Blueprint Preset Catalog (`PresetCatalogModal.jsx`)**:
+  - Built-in library of production templates for Microservices with API Gateway, OAuth2 Handshakes, E-Commerce Relational Schemas, Redux State Machines, and GitFlow branches.
+- **Robust Bidirectional Compilers (`diagramCompilers.js`)**:
+  - Seamless 2-way synchronization between visual form state and clean, standards-compliant Mermaid syntax.
 
 ### 4.3 Visual Markdown Table Studio (`tables.studio`)
 - **Spreadsheet-Style Grid**: Add and remove rows and columns with point-and-click ease.

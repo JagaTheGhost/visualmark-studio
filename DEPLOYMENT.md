@@ -45,22 +45,15 @@ npm run electron:portable
 *Output: `frontend/release/VisualMark-Studio-Portable.exe`*  
 Runs immediately from any directory or portable USB drive with zero installation.
 
-#### 2. Complete Installer (Glassmorphic Setup `.exe`)
+#### 2. Complete Installer (Windows Setup `.exe`)
 ```bash
 cd frontend
 npm run electron:dist
 ```
-*Output: `release/VisualMark-Studio-Setup.exe`*  
-Full Windows installer featuring the 2-column Figma layout, license verification, validated destination paths, Start Menu & Desktop shortcuts, and integrated uninstaller.
+*Output: `frontend/release/VisualMark-Studio-Setup.exe`*  
+Full Windows setup installer supporting non-elevated user-level installation, Start Menu & Desktop shortcuts, and integrated uninstaller.
 
-#### 3. Uninstaller & Installer Developer Previews
-```bash
-cd frontend
-npm run installer:preview     # Previews the 2-column installer
-npm run uninstaller:preview   # Previews the 2-column uninstaller
-```
-
-#### 4. Unpacked Directory (Fast Verification)
+#### 3. Unpacked Directory (Fast Verification)
 ```bash
 cd frontend
 npm run electron:pack

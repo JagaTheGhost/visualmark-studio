@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/version-1.1.2-6366f1.svg?style=for-the-badge" alt="Version 1.1.2" /></a>
+  <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/version-1.1.4-6366f1.svg?style=for-the-badge" alt="Version 1.1.4" /></a>
   <a href="https://github.com/JagaTheGhost/visualmark-studio/releases/latest"><img src="https://img.shields.io/badge/Download-Windows_.exe-22c55e?style=for-the-badge&logo=windows&logoColor=white" alt="Download Windows" /></a>
   <a href="https://electronjs.org"><img src="https://img.shields.io/badge/Electron-44.7+-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron" /></a>
   <a href="https://fastapi.tiangolo.com"><img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" /></a>
@@ -62,7 +62,7 @@ VisualMark Studio features dedicated, visual designer environments accessible as
 | :--- | :--- | :--- |
 | 🛡️ **Shields.io Badges** | `badges.studio` | 100+ Devicon tech presets, custom hex pickers, styles (`for-the-badge`, `flat`), SVG download |
 | 💳 **GitHub Repo Cards** | `repocard.studio` | 100% client-side vector SVG repo cards, auto-adaptive dark/light themes, live GitHub sync, 4 layout templates |
-| 📊 **Mermaid Architecture** | `diagrams.studio` | Visual architecture maps, flowcharts, sequence diagrams, git graphs, high-res SVG & 2x PNG export |
+| 📊 **Mermaid Architecture** | `diagrams.studio` | 7 visual builders (Flowchart, Sequence, ER Models, Class, State, Git, Mindmap), 8 high-DPI themes, Monaco tokenizer, pan/zoom canvas, blueprint presets, SVG/PNG export |
 | 🧮 **Visual Tables** | `tables.studio` | Interactive spreadsheet grid, column alignment, CSV import/export, 1-click Markdown generation |
 | 🧩 **Snippets & Callouts** | `snippets.studio` | GitHub alert callouts (`[!NOTE]`, `[!TIP]`, `[!WARNING]`), collapsible `<details>`, shortcut tables |
 | 🖼️ **Images & Banners** | `images.studio` | Gradient hero banners, motion heroes (GIF/MP4), macOS/Windows window frames, image optimization |

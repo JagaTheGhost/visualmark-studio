@@ -36,6 +36,76 @@
   height: auto !important;
 }
 
+.mermaid-plain-viewport {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: auto;
+  height: auto;
+}
+.mermaid-plain-viewport svg {
+  max-width: none !important;
+  height: auto !important;
+  display: block;
+  filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.45));
+}
+
+/* Ensure Mermaid text labels and foreignObject elements are always visible and styled */
+.mermaid-plain-viewport svg text,
+.mermaid-plain-viewport .nodeLabel,
+.mermaid-plain-viewport .label,
+.mermaid-plain-viewport .cluster-label,
+.mermaid-plain-viewport .edgeLabel,
+.mermaid-plain-viewport foreignObject div,
+.mermaid-plain-viewport foreignObject span {
+  color: #f8fafc !important;
+  fill: #f8fafc !important;
+  font-family: var(--font-sans, 'Inter', -apple-system, sans-serif) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.stage-bg-light .mermaid-plain-viewport svg text,
+.stage-bg-light .mermaid-plain-viewport .nodeLabel,
+.stage-bg-light .mermaid-plain-viewport .label,
+.stage-bg-light .mermaid-plain-viewport .cluster-label,
+.stage-bg-light .mermaid-plain-viewport .edgeLabel,
+.stage-bg-light .mermaid-plain-viewport foreignObject div,
+.stage-bg-light .mermaid-plain-viewport foreignObject span {
+  color: #1e293b !important;
+  fill: #1e293b !important;
+}
+
+/* Interactive Click-to-Select Canvas Styles */
+.mermaid-plain-viewport svg g.node,
+.mermaid-plain-viewport svg g.actor,
+.mermaid-plain-viewport svg g.entityBox,
+.mermaid-plain-viewport svg g.classGroup,
+.mermaid-plain-viewport svg .statediagram-state,
+.mermaid-plain-viewport svg .mindmap-node {
+  cursor: pointer !important;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.mermaid-plain-viewport svg g.node:hover,
+.mermaid-plain-viewport svg g.actor:hover,
+.mermaid-plain-viewport svg g.entityBox:hover,
+.mermaid-plain-viewport svg g.classGroup:hover,
+.mermaid-plain-viewport svg .statediagram-state:hover,
+.mermaid-plain-viewport svg .mindmap-node:hover {
+  filter: brightness(1.22) drop-shadow(0 0 8px rgba(99, 102, 241, 0.7)) !important;
+}
+
+/* Active Selected Node Glow Halo */
+.mermaid-plain-viewport svg .canvas-selected-node rect,
+.mermaid-plain-viewport svg .canvas-selected-node polygon,
+.mermaid-plain-viewport svg .canvas-selected-node circle,
+.mermaid-plain-viewport svg .canvas-selected-node path {
+  stroke: #818cf8 !important;
+  stroke-width: 2.5px !important;
+  filter: drop-shadow(0 0 10px #6366f1) !important;
+}
+
 .mermaid-error-card {
   margin: 14px 0;
   padding: 10px 12px;
@@ -1048,3 +1118,1173 @@
   color: var(--text-primary);
   border-color: var(--primary);
 }
+
+/* ==========================================================================
+   Rebuilt Diagram Studio Pro: Monaco Editor, Stage HUD, & Catalog
+   ========================================================================== */
+.diagram-cat-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: var(--radius-xs, 4px);
+  color: var(--text-secondary, #94a3b8);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.diagram-cat-btn:hover {
+  background-color: var(--surface-high);
+  color: var(--text-primary);
+  border-color: var(--border-high);
+}
+
+.diagram-cat-btn.active {
+  background-color: rgba(99, 102, 241, 0.15);
+  border-color: #818cf8;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+}
+
+.canvas-header-divider {
+  width: 1px;
+  height: 18px;
+  background-color: var(--border-color, #30363d);
+  margin: 0 2px;
+}
+
+/* StudioShell Stage Integration: Diagram Studio full viewport canvas */
+.studio-shell-diagrams-studio .studio-canvas-stage {
+  padding: 0 !important;
+  overflow: hidden !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+}
+
+.studio-shell-diagrams-studio .studio-canvas-content-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  flex: 1 !important;
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  overflow: hidden !important;
+}
+
+/* Header archetype bar spacing */
+.studio-shell-diagrams-studio .studio-shell-header-left {
+  flex: 0 0 auto;
+  max-width: 270px;
+}
+
+.studio-shell-diagrams-studio .studio-shell-modes {
+  flex: 1 1 auto;
+  max-width: fit-content;
+  gap: 2px;
+  padding: 2px 3px;
+}
+
+.studio-shell-diagrams-studio .studio-shell-mode-pill {
+  padding: 2.5px 7px;
+  font-size: 10.5px;
+  gap: 3.5px;
+}
+
+/* Studio Mode Switcher in Left Inspector (Visual Builder vs Monaco Code Editor) */
+.diagram-mode-switch-bar {
+  display: flex;
+  align-items: center;
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 6px;
+  padding: 3px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.diagram-mode-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-secondary, #94a3b8);
+  font-family: var(--font-sans, 'Inter', -apple-system, sans-serif);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.diagram-mode-btn:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.diagram-mode-btn.active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.22), rgba(79, 70, 229, 0.32));
+  border-color: #818cf8;
+  color: #ffffff;
+  box-shadow: 0 1px 8px rgba(99, 102, 241, 0.25);
+}
+
+/* ==========================================================================
+   Sequence Diagram Studio Pro UI Components
+   ========================================================================== */
+
+/* Lifeline Participants Card */
+.seq-participants-card {
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.seq-participant-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  color: #f8fafc;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.seq-participant-chip.is-actor {
+  background-color: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #e0f2fe;
+}
+
+.seq-participant-chip.is-actor:hover {
+  background-color: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+}
+
+.seq-participant-chip.is-service {
+  background-color: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  color: #e0e7ff;
+}
+
+.seq-participant-chip.is-service:hover {
+  background-color: rgba(99, 102, 241, 0.2);
+  border-color: #818cf8;
+}
+
+.seq-participant-chip.is-selected {
+  border-color: #a855f7 !important;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.35);
+}
+
+.seq-icon-mini-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 1px 3px;
+  border-radius: 3px;
+  line-height: 1;
+}
+
+.seq-icon-mini-btn:hover:not(:disabled) {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.seq-icon-mini-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.seq-icon-mini-btn.delete:hover {
+  color: #f87171;
+  background-color: rgba(248, 113, 113, 0.2);
+}
+
+.seq-preset-chip {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 500;
+  cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  transition: all 0.15s ease;
+}
+
+.seq-preset-chip:hover {
+  background-color: rgba(99, 102, 241, 0.15);
+  border-color: #818cf8;
+  color: #ffffff;
+}
+
+.seq-preset-chip.custom {
+  background-color: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+}
+
+/* View Mode Segmented Toggle (Cards vs Compact) */
+.seq-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.seq-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.seq-view-btn:hover {
+  color: #ffffff;
+}
+
+.seq-view-btn.active {
+  background-color: rgba(99, 102, 241, 0.2);
+  border-color: #818cf8;
+  color: #ffffff;
+}
+
+/* Spacious Sequence Step Cards */
+.seq-step-card {
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.seq-step-card:hover {
+  border-color: #475569;
+}
+
+.seq-step-card.is-selected {
+  border-color: #818cf8 !important;
+  box-shadow: 0 0 12px rgba(129, 140, 248, 0.25);
+  background-color: rgba(99, 102, 241, 0.03);
+}
+
+.seq-step-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.seq-step-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.seq-step-badge {
+  font-size: 10.5px;
+  font-family: monospace;
+  font-weight: 700;
+  color: #818cf8;
+  background-color: rgba(99, 102, 241, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.seq-route-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.seq-select {
+  background-color: #1a202c;
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 5px;
+  color: #f8fafc;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 8px;
+  flex: 1 1 120px;
+  min-width: 100px;
+  max-width: 170px;
+  outline: none;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.seq-select:focus {
+  border-color: #818cf8;
+}
+
+.seq-arrow-select {
+  background-color: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 5px;
+  color: #c7d2fe;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: monospace;
+  padding: 4px 6px;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.seq-arrow-select:focus {
+  border-color: #818cf8;
+  box-shadow: 0 0 6px rgba(129, 140, 248, 0.4);
+}
+
+.seq-step-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.seq-icon-action-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s ease;
+}
+
+.seq-icon-action-btn:hover:not(:disabled) {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.seq-icon-action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.seq-icon-action-btn.delete:hover {
+  color: #f87171;
+  background-color: rgba(248, 113, 113, 0.18);
+}
+
+.seq-msg-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.seq-text-input {
+  flex: 1;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 5px;
+  color: #ffffff;
+  font-size: 12px;
+  font-family: var(--font-sans, 'Inter', -apple-system, sans-serif);
+  padding: 6px 10px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.seq-text-input:focus {
+  border-color: #818cf8;
+  box-shadow: 0 0 8px rgba(129, 140, 248, 0.35);
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.seq-step-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.seq-snippet-chip {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 9.5px;
+  font-weight: 500;
+  cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  transition: all 0.12s ease;
+}
+
+.seq-snippet-chip:hover {
+  background-color: rgba(99, 102, 241, 0.15);
+  border-color: #818cf8;
+  color: #ffffff;
+}
+
+/* Note Card */
+.seq-note-card {
+  background-color: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+.seq-note-card.is-selected {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+/* Compact Table Layout */
+.seq-compact-table {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 6px;
+  padding: 4px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.seq-compact-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.seq-compact-row:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.seq-compact-row.is-selected {
+  background-color: rgba(99, 102, 241, 0.15);
+  border-left: 3px solid #818cf8;
+}
+
+.seq-focused-editor {
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid #818cf8;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 0 14px rgba(129, 140, 248, 0.2);
+}
+
+/* ==========================================================================
+   Database ER Model Studio Pro UI Components
+   ========================================================================== */
+
+/* ER Tables Outline Card */
+.er-tables-outline-card {
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.er-table-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 5px;
+  font-size: 11px;
+  color: #f8fafc;
+  cursor: pointer;
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.er-table-chip:hover {
+  background-color: rgba(16, 185, 129, 0.18);
+  border-color: #10b981;
+}
+
+.er-table-chip.is-selected {
+  border-color: #10b981 !important;
+  background-color: rgba(16, 185, 129, 0.2) !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
+}
+
+.er-col-count-badge {
+  font-size: 9.5px;
+  color: #94a3b8;
+  background-color: rgba(255, 255, 255, 0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* Focused Table Card */
+.er-focused-table-card {
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.er-focused-table-card:hover {
+  border-color: #475569;
+}
+
+.er-table-header-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.12), rgba(6, 78, 59, 0.15));
+  border-bottom: 1px solid var(--border-color, #30363d);
+}
+
+.er-table-rename-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.4);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  font-family: monospace;
+  letter-spacing: 0.04em;
+  outline: none;
+  padding: 2px 4px;
+  text-transform: uppercase;
+  transition: border-color 0.15s ease;
+}
+
+.er-table-rename-input:focus {
+  border-bottom-color: #10b981;
+}
+
+/* Column Rows */
+.er-col-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+  transition: border-color 0.12s ease;
+}
+
+.er-col-row:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.er-key-select {
+  background-color: #1a202c;
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 5px;
+  width: 66px;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.er-col-name-input {
+  background: transparent;
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 4px;
+  color: #f8fafc;
+  font-size: 11.5px;
+  font-family: monospace;
+  padding: 4px 7px;
+  flex: 1.3;
+  min-width: 100px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.er-col-name-input:focus {
+  border-color: #10b981;
+}
+
+.er-type-select {
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 4px;
+  color: #6ee7b7;
+  font-size: 11px;
+  font-family: monospace;
+  font-weight: 600;
+  padding: 4px 6px;
+  width: 90px;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.er-type-select:focus {
+  border-color: #10b981;
+}
+
+.er-col-comment-input {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  color: #94a3b8;
+  font-size: 11px;
+  padding: 4px 6px;
+  flex: 1;
+  min-width: 80px;
+  outline: none;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.er-col-comment-input:focus {
+  border-color: #64748b;
+  color: #f8fafc;
+}
+
+/* ER Relationships Card */
+.er-relationships-card {
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.er-rel-card {
+  background-color: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.15s ease;
+}
+
+.er-rel-card:hover {
+  border-color: #475569;
+}
+
+.er-cardinality-select {
+  background-color: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 5px;
+  color: #bae6fd;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-family: monospace;
+  padding: 4px 6px;
+  min-width: 130px;
+  outline: none;
+}
+
+.er-cardinality-select:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.35);
+}
+
+/* ==========================================================================
+   Class Diagram Studio Pro UI Components
+   ========================================================================== */
+.cls-outline-card {
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cls-table-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 5px;
+  font-size: 11px;
+  color: #f8fafc;
+  cursor: pointer;
+  background-color: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.cls-table-chip:hover {
+  background-color: rgba(99, 102, 241, 0.2);
+  border-color: #818cf8;
+}
+
+.cls-table-chip.is-selected {
+  border-color: #818cf8 !important;
+  background-color: rgba(99, 102, 241, 0.25) !important;
+  box-shadow: 0 0 10px rgba(129, 140, 248, 0.35);
+}
+
+.cls-member-count-badge {
+  font-size: 9.5px;
+  color: #94a3b8;
+  background-color: rgba(255, 255, 255, 0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.cls-focused-card {
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cls-focused-card:hover {
+  border-color: #475569;
+}
+
+.cls-header-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), rgba(79, 70, 229, 0.18));
+  border-bottom: 1px solid var(--border-color, #30363d);
+}
+
+.cls-rename-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(129, 140, 248, 0.4);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  font-family: monospace;
+  outline: none;
+  padding: 2px 4px;
+  transition: border-color 0.15s ease;
+}
+
+.cls-rename-input:focus {
+  border-bottom-color: #818cf8;
+}
+
+.cls-member-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+  transition: border-color 0.12s ease;
+}
+
+.cls-member-row:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.cls-visibility-select {
+  background-color: #1a202c;
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 4px;
+  color: #f8fafc;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 6px;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.cls-type-input {
+  background-color: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 4px;
+  color: #a5b4fc;
+  font-size: 11px;
+  font-family: monospace;
+  font-weight: 600;
+  padding: 4px 6px;
+  width: 95px;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.cls-type-input:focus {
+  border-color: #818cf8;
+}
+
+.cls-name-input {
+  background: transparent;
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 4px;
+  color: #f8fafc;
+  font-size: 11.5px;
+  font-family: monospace;
+  padding: 4px 7px;
+  flex: 1;
+  min-width: 90px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.cls-name-input:focus {
+  border-color: #818cf8;
+}
+
+.cls-params-input {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  color: #cbd5e1;
+  font-size: 11px;
+  font-family: monospace;
+  padding: 4px 6px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.cls-params-input:focus {
+  border-color: #64748b;
+  color: #ffffff;
+}
+
+.cls-relationships-card {
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cls-rel-card {
+  background-color: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.15s ease;
+}
+
+.cls-rel-card:hover {
+  border-color: #475569;
+}
+
+.cls-rel-type-select {
+  background-color: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  border-radius: 5px;
+  color: #e9d5ff;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-family: monospace;
+  padding: 4px 6px;
+  min-width: 140px;
+  outline: none;
+}
+
+.cls-rel-type-select:focus {
+  border-color: #a855f7;
+  box-shadow: 0 0 6px rgba(168, 85, 247, 0.35);
+}
+
+/* ==========================================================================
+   State Machine Diagram Studio Pro UI Components
+   ========================================================================== */
+.state-outline-card {
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.state-table-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 5px;
+  font-size: 11px;
+  color: #f8fafc;
+  cursor: pointer;
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.state-table-chip:hover {
+  background-color: rgba(16, 185, 129, 0.18);
+  border-color: #10b981;
+}
+
+.state-table-chip.is-selected {
+  border-color: #10b981 !important;
+  background-color: rgba(16, 185, 129, 0.22) !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
+}
+
+.state-badge-start {
+  font-size: 9px;
+  font-weight: 700;
+  color: #10b981;
+  background-color: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  padding: 0 4px;
+  border-radius: 3px;
+}
+
+.state-badge-end {
+  font-size: 9px;
+  font-weight: 700;
+  color: #f43f5e;
+  background-color: rgba(244, 63, 94, 0.2);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  padding: 0 4px;
+  border-radius: 3px;
+}
+
+.state-trans-count-badge {
+  font-size: 9.5px;
+  color: #94a3b8;
+  background-color: rgba(255, 255, 255, 0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.state-focused-card {
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.state-focused-card:hover {
+  border-color: #475569;
+}
+
+.state-header-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.18));
+  border-bottom: 1px solid var(--border-color, #30363d);
+}
+
+.state-rename-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.4);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  font-family: monospace;
+  outline: none;
+  padding: 2px 4px;
+  transition: border-color 0.15s ease;
+}
+
+.state-rename-input:focus {
+  border-bottom-color: #10b981;
+}
+
+.state-transitions-card {
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.state-trans-card {
+  background-color: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.15s ease;
+}
+
+.state-trans-card:hover {
+  border-color: #475569;
+}
+
+/* ==========================================================================
+   Git Graph Studio Pro UI Components
+   ========================================================================== */
+.git-outline-card {
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.git-branch-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-family: monospace;
+  font-weight: 600;
+  background-color: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  color: #d8b4fe;
+}
+
+.git-step-card {
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 6px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.git-step-card:hover {
+  border-color: #475569;
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.git-step-card.is-selected {
+  border-color: #a855f7 !important;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.25);
+  background-color: rgba(168, 85, 247, 0.06);
+}
+
+/* ==========================================================================
+   Mindmap Studio Pro UI Components
+   ========================================================================== */
+.mm-root-card {
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid #818cf8;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 0 14px rgba(129, 140, 248, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.mm-root-input {
+  width: 100%;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 10px;
+  color: #ffffff;
+  background-color: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  border-radius: 5px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mm-root-input:focus {
+  border-color: #818cf8;
+  box-shadow: 0 0 8px rgba(129, 140, 248, 0.35);
+}
+
+.mm-outline-card {
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mm-node-card {
+  background-color: var(--surface-base, #10141a);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 5px;
+  padding: 6px 8px;
+  transition: all 0.15s ease;
+}
+
+.mm-node-card:hover {
+  border-color: #475569;
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.mm-node-card.is-selected {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+  background-color: rgba(56, 189, 248, 0.06);
+}
+
+
+
+

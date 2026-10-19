@@ -61,9 +61,47 @@ export function sanitizeSvg(svgCode) {
   if (!svgCode || typeof svgCode !== 'string') return ''
   try {
     return DOMPurify.sanitize(svgCode, {
-      USE_PROFILES: { svg: true, svgFilters: true },
-      ADD_TAGS: ['use', 'animate', 'animateTransform'],
-      ADD_ATTR: ['target', 'xlink:href']
+      USE_PROFILES: { svg: true, svgFilters: true, html: true },
+      ADD_TAGS: [
+        'foreignObject',
+        'style',
+        'text',
+        'tspan',
+        'use',
+        'animate',
+        'animateTransform',
+        'div',
+        'span',
+        'p',
+        'b',
+        'i',
+        'br',
+        'strong',
+        'em'
+      ],
+      ADD_ATTR: [
+        'target',
+        'xlink:href',
+        'dominant-baseline',
+        'text-anchor',
+        'transform-origin',
+        'xmlns',
+        'class',
+        'style',
+        'viewBox',
+        'preserveAspectRatio',
+        'x',
+        'y',
+        'dx',
+        'dy',
+        'width',
+        'height',
+        'font-size',
+        'font-family',
+        'font-weight',
+        'fill',
+        'stroke'
+      ]
     })
   } catch (err) {
     console.warn('SVG sanitization error:', err)

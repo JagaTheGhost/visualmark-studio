@@ -72,8 +72,6 @@ id_ed25519*
 # Desktop App Builds
 release/
 frontend/release/
-installer/payload/
-installer/node_modules/
 *.spec
 resources/backend-sidecar/
 frontend/resources/backend-sidecar/
@@ -97,5 +95,6 @@ htmlcov/
 scratch/
 .agents/
 .gemini/
+.wiki_staging/
 
 

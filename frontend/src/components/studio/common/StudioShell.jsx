@@ -141,6 +141,7 @@ export default function StudioShell({
                   type="button"
                   className={`studio-shell-mode-pill ${isActive ? 'active' : ''}`}
                   onClick={() => onModeChange && onModeChange(mode.id)}
+                  title={mode.desc || mode.fullLabel || mode.label}
                   style={
                     isActive
                       ? {
