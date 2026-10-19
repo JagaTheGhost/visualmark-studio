@@ -13,6 +13,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.3] - 2026-10-19
+
+### Added
+- **Figma-Aligned 2-Column Glassmorphic Installer**:
+  - Replaced legacy Win32 NSIS wizard with a bespoke Electron-based installer.
+  - Modern 2-column layout (Left: brand showcase with dynamic step headlines & descriptions; Right: step configuration card).
+  - Explicit license agreement step with **default set to "I do not accept the agreement"** to ensure intentional compliance.
+  - Interactive destination path selector with directory validation and disk space telemetry.
+- **Figma-Aligned Glassmorphic Uninstaller Suite**:
+  - Clean 2-column layout uninstallation wizard with confirmation, progress reporting, and completion.
+  - Atomic removal of application binaries, shortcuts, and registry entries.
+- **Developer Preview Scripts**:
+  - Added `npm run installer:preview` and `npm run uninstaller:preview` for instant UI inspection and testing.
+
+### Changed
+- **Packaging Pipeline Overhaul**:
+  - Pruned legacy NSIS scripts and bitmaps (`installer.nsh`, `create_installer_bitmaps.py`, and `frontend/electron/assets/`).
+  - Standardized installer builder script in `installer/build-installer.ps1` outputting to `release/VisualMark-Studio-Setup.exe`.
+
+### Security Hardening
+- **Path Traversal & Injection Protection**:
+  - Destination paths are strictly sanitized and validated against root directories (`C:\`) and system folders (`C:\Windows`).
+  - Shortcut creation utilizes Base64-encoded PowerShell scripts (`-EncodedCommand`) with strict parameterization, preventing shell injection vulnerabilities.
+- **HKCU Registry Isolation**:
+  - Registry keys for Start Menu, shell context menus, and Uninstall metadata are strictly registered within `HKEY_CURRENT_USER\Software`, requiring zero UAC Administrator escalation.
+
+### Fixed
+- **Asset Link Resolution & Console Error Loop**:
+  - Fixed missing `favicon.svg` network loop (`file:///D:/favicon.svg net::ERR_FILE_NOT_FOUND`) by bundling local `appLogo` directly into `WelcomeLauncher.jsx`.
+  - Resolved missing app branding logo in launcher screen.
+
+---
+
 ## [1.1.2] - 2026-10-18
 
 ### Added

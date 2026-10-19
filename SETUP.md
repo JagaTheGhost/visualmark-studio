@@ -161,19 +161,41 @@ cd backend
 python build_sidecar.py
 ```
 
-### Step 2: Package Windows Executables
+### Step 2: Package Windows Executables & Custom Installer
 ```bash
 cd ../frontend
 npm run electron:dist
 ```
-Generated artifacts in `frontend/release/`:
-- `VisualMark-Studio-Setup.exe` — Full Windows NSIS installer
-- `VisualMark-Studio-Portable.exe` — Zero-install portable executable
-- `latest.yml` — Auto-update manifest for Electron Updater
+Generated artifacts in `release/` and `frontend/release/`:
+- `VisualMark-Studio-Setup.exe` — Glassmorphic 2-column standalone Windows installer
+- `VisualMark-Studio-Portable.exe` — Zero-install portable standalone executable
+- `latest.yml` — Differential auto-update manifest for Electron Updater
+
+### Step 3: Preview Installer & Uninstaller in Development
+You can preview the installer and uninstaller UI live inside Electron without running a full build:
+```bash
+cd frontend
+npm run installer:preview     # Previews the 2-column installer
+npm run uninstaller:preview   # Previews the 2-column uninstaller
+```
 
 ---
 
-## 7. Verification & Health Checks
+## 7. Testing Auto-Updates (Differential Patching)
+
+VisualMark Studio supports delta auto-updates via GitHub Releases (`v1.1.2` → `v1.1.3`):
+1. **Bump Version:** Update `"version"` in `frontend/package.json`, `installer/package.json`, and `frontend/src/data/releaseNotes.js`.
+2. **Git Commit & Tag:**
+   ```bash
+   git add .
+   git commit -m "chore: release v1.1.3"
+   git tag v1.1.3
+   git push origin main --tags
+   ```
+3. **CI/CD Build & Publish:** GitHub Actions (`release.yml`) builds the assets and uploads `VisualMark-Studio-Setup.exe`, `.blockmap`, `VisualMark-Studio-Portable.exe`, and `latest.yml` to the Release.
+4. **Verification:** Launch installed `v1.1.2`, open **Settings → Updates**, click **"Check for updates"**, and observe the app download only the differential blockmap patch and prompt to restart into `v1.1.3`.
+
+## 8. Verification & Health Checks
 
 ### Check Backend Health
 ```bash
@@ -203,7 +225,7 @@ curl -X POST http://localhost:8000/generate-readme \
 
 ---
 
-## 8. Troubleshooting Guide
+## 9. Troubleshooting Guide
 
 ### Port 8000 Conflict
 - **Cause:** Another service is using port 8000.

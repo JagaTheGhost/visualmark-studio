@@ -92,11 +92,17 @@ npm run sidecar:build
 ```
 
 ### Step 2: Package the Windows Executable (`.exe`)
-Builds both an **NSIS Installer** and a **Standalone Portable `.exe`** in `frontend/release/`:
+Builds both the **Next-Gen Glassmorphic Installer** (`release/VisualMark-Studio-Setup.exe`) and a **Standalone Portable `.exe`** (`frontend/release/VisualMark-Studio-Portable.exe`):
 
 ```bash
 cd frontend
 npm run electron:dist
 ```
 
-Testers can double-click the portable `.exe` and run the entire IDE offline with zero installation or Python configuration required.
+To preview the 2-column Figma-aligned installer or uninstaller UI in development:
+```bash
+npm run installer:preview     # Previews installer wizard
+npm run uninstaller:preview   # Previews uninstaller wizard
+```
+
+Testers can either run the setup installer or double-click the portable `.exe` and run the entire IDE offline with zero installation or Python configuration required.

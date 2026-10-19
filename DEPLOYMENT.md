@@ -45,39 +45,48 @@ npm run electron:portable
 *Output: `frontend/release/VisualMark-Studio-Portable.exe`*  
 Runs immediately from any directory or portable USB drive with zero installation.
 
-#### 2. Complete Installer (NSIS Setup `.exe`)
+#### 2. Complete Installer (Glassmorphic Setup `.exe`)
 ```bash
 cd frontend
 npm run electron:dist
 ```
-*Output: `frontend/release/VisualMark-Studio-Setup.exe`*  
-Full Windows installer with Start Menu entry, Desktop shortcut, and optional custom install directory.
+*Output: `release/VisualMark-Studio-Setup.exe`*  
+Full Windows installer featuring the 2-column Figma layout, license verification, validated destination paths, Start Menu & Desktop shortcuts, and integrated uninstaller.
 
-#### 3. Unpacked Directory (Fast Verification)
+#### 3. Uninstaller & Installer Developer Previews
+```bash
+cd frontend
+npm run installer:preview     # Previews the 2-column installer
+npm run uninstaller:preview   # Previews the 2-column uninstaller
+```
+
+#### 4. Unpacked Directory (Fast Verification)
 ```bash
 cd frontend
 npm run electron:pack
 ```
 *Output: `frontend/release/win-unpacked/VisualMark Studio.exe`*  
-Useful for rapid local testing without waiting for NSIS compression.
+Useful for rapid local testing without waiting for full compression.
 
 ---
 
 ## 🤖 GitHub Actions CI/CD Release Automation
 
-Production binaries are automatically built and published via `.github/workflows/release.yml` whenever a SemVer tag (e.g. `v1.1.2`) is pushed to GitHub:
+Production binaries and differential update manifests are automatically built and published via `.github/workflows/release.yml` whenever a SemVer tag (e.g. `v1.1.3`) is pushed to GitHub:
 
 ```bash
-git tag v1.1.2
-git push origin v1.1.2
+git add .
+git commit -m "chore: release v1.1.3"
+git tag v1.1.3
+git push origin main --tags
 ```
 
 The workflow:
 1. Provisions Windows Server runner with Node.js 20 and Python 3.11.
 2. Compiles the FastAPI backend into `server.exe` via PyInstaller.
-3. Packages both the NSIS installer (`VisualMark-Studio-Setup.exe`) and portable binary (`VisualMark-Studio-Portable.exe`).
-4. Generates `latest.yml` for Electron auto-updater.
-5. Verifies and uploads strictly canonical assets to the GitHub Release, preventing duplicate filenames or naming collisions.
+3. Packages both the custom installer (`VisualMark-Studio-Setup.exe`) and portable binary (`VisualMark-Studio-Portable.exe`).
+4. Generates `latest.yml` and `.blockmap` files for differential delta updates.
+5. Verifies and uploads strictly canonical assets to the GitHub Release, allowing existing installed instances (e.g. `v1.1.2`) to download only the differential block changes without reinstalling the entire application.
 
 ---
 

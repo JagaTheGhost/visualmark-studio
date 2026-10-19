@@ -2,15 +2,67 @@
  * VisualMark Studio - Release Notes & Update History Dataset
  * Powers the "What's New" modal dialog, update notifications, and in-IDE release history.
  */
-export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.1.2'
+export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.1.3'
 
 export const RELEASE_HISTORY = [
+  {
+    version: '1.1.3',
+    type: 'patch',
+    title: 'VisualMark Studio 1.1.3 — Next-Gen Glassmorphic Installer & Uninstaller Suite, Security Hardening & Asset Fixes',
+    date: 'October 2026',
+    isCurrent: true,
+    highlights: [
+      'Next-Gen Glassmorphic Windows Installer: 2-column Figma-aligned dark UI with dynamic step headlines, path validator, and explicit license compliance',
+      'Modern Glassmorphic Uninstaller: Standalone uninstaller wizard with atomic cleanup and zero leftover files or orphan registry entries',
+      'Enhanced Security Architecture: Sanitized path inputs to prevent traversal attacks, HKCU registry isolation, and base64-encoded parameterized PowerShell shortcut creation',
+      'Asset Resolution & Stability Patch: Fixed 16,000+ console error loops caused by missing favicon requests and restored local launcher branding assets',
+      'Pruned Legacy NSIS Pipeline: Completely eliminated legacy Win32 NSIS scripts and bitmaps in favor of clean, modern Electron setup technology'
+    ],
+    sections: [
+      {
+        category: 'Next-Gen Setup Experience',
+        icon: 'install_desktop',
+        badge: 'Installer',
+        color: '#6366f1',
+        items: [
+          {
+            title: 'Figma 2-Column Dark Layout',
+            desc: 'Replaces legacy Win32 dialogs with a modern 2-column interface featuring dynamic step descriptions and high-contrast typography.'
+          },
+          {
+            title: 'Explicit License Agreement',
+            desc: 'Dedicated license verification step with "I do not accept" selected by default to ensure intentional compliance.'
+          },
+          {
+            title: 'Matching Uninstaller Wizard',
+            desc: 'Dedicated uninstaller interface supporting atomic removal of application binaries, shortcuts, and registry entries.'
+          }
+        ]
+      },
+      {
+        category: 'Security & Bug Fixes',
+        icon: 'security',
+        badge: 'Security',
+        color: '#10b981',
+        items: [
+          {
+            title: 'Path Traversal & Injection Hardening',
+            desc: 'Validated destination paths and isolated registry modifications to HKCU to eliminate Administrator escalation requirements.'
+          },
+          {
+            title: 'Console Loop & Asset Fix',
+            desc: 'Eliminated recursive missing favicon requests that caused over 16,000 console errors, ensuring smooth launch performance.'
+          }
+        ]
+      }
+    ]
+  },
   {
     version: '1.1.2',
     type: 'patch',
     title: 'VisualMark Studio 1.1.2 — GitHub Repo Card Studio, Internationalization (i18n), Collapsible Tab Groups & StudioShell Architecture',
     date: 'October 2026',
-    isCurrent: true,
+    isCurrent: false,
     highlights: [
       'GitHub Repo Card Studio: Standalone first-class visual studio generating 100% client-side vector SVG repo cards with live telemetry and auto-adaptive dark/light themes',
       'Comprehensive Internationalization (i18n): Native multi-language support across 10 locales (English, Simplified Chinese, Spanish, Japanese, German, French, Russian, Hindi, Portuguese-BR, Italian) with custom language pack import/export',

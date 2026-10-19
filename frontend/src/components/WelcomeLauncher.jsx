@@ -1,4 +1,5 @@
 import React from 'react'
+import appLogo from '../assets/logo.png'
 
 /**
  * WelcomeLauncher
@@ -24,13 +25,15 @@ export default function WelcomeLauncher({
         <div className="welcome-brand-header">
           <div className="welcome-logo-wrap">
             <img
-              src="/logo.png"
+              src={appLogo}
               alt="VisualMark Studio"
               className="welcome-app-logo"
               onError={(e) => {
-                // Fallback to favicon SVG if png has path issues
-                e.target.onerror = null
-                e.target.src = '/favicon.svg'
+                e.currentTarget.onerror = null
+                if (!e.currentTarget.dataset.fallbackTried) {
+                  e.currentTarget.dataset.fallbackTried = 'true'
+                  e.currentTarget.src = `${import.meta.env.BASE_URL}logo.png`
+                }
               }}
             />
             <div className="welcome-logo-glow" />
