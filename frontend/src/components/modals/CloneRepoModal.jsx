@@ -101,7 +101,7 @@ export default function CloneRepoModal({
       }
 
       if (res?.success) {
-        showToast(`Successfully cloned "${res.folderName || 'repository'}"!`, 'success')
+        showToast(`Successfully cloned "${res.folderName || 'repository'}"!`, 'success', { source: 'GIT' })
         onClose()
         setCloneUrl('')
         setCloneFolderName('')

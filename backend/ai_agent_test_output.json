@@ -1,0 +1,88 @@
+{
+  "project_summary": "VisualMark Studio is a modern desktop IDE built with Electron, Vite, and Python for authoring Markdown documentation alongside interactive Mermaid diagrams. It blends code-first workflows with visual studios and sidecar backend processing to deliver a comprehensive documentation authoring environment.",
+  "flowchart_studio": {
+    "direction": "TD",
+    "nodes": [
+      {
+        "id": "ui_layer",
+        "name": "Vite + Web Frontend",
+        "shape": "round",
+        "color": "#646CFF"
+      },
+      {
+        "id": "electron_main",
+        "name": "Electron Main Process (main.cjs)",
+        "shape": "box",
+        "color": "#47848F"
+      },
+      {
+        "id": "py_sidecar",
+        "name": "Python Backend Sidecar",
+        "shape": "cylinder",
+        "color": "#3776AB"
+      },
+      {
+        "id": "file_system",
+        "name": "Markdown & Diagram Files",
+        "shape": "box",
+        "color": "#10B981"
+      }
+    ],
+    "edges": [
+      {
+        "from": "ui_layer",
+        "to": "electron_main",
+        "label": "IPC Events & State"
+      },
+      {
+        "from": "electron_main",
+        "to": "py_sidecar",
+        "label": "Subprocess Sidecar I/O"
+      },
+      {
+        "from": "electron_main",
+        "to": "file_system",
+        "label": "Native File Read/Write (.md)"
+      }
+    ]
+  },
+  "badge_studio": [
+    {
+      "label": "Electron",
+      "message": "Desktop App",
+      "color": "47848F",
+      "style": "for-the-badge"
+    },
+    {
+      "label": "Vite",
+      "message": "Bundler",
+      "color": "646CFF",
+      "style": "for-the-badge"
+    },
+    {
+      "label": "Python",
+      "message": "Sidecar Backend",
+      "color": "3776AB",
+      "style": "for-the-badge"
+    },
+    {
+      "label": "License",
+      "message": "MIT",
+      "color": "green",
+      "style": "for-the-badge"
+    },
+    {
+      "label": "Version",
+      "message": "v1.1.4",
+      "color": "blueviolet",
+      "style": "for-the-badge"
+    }
+  ],
+  "core_features": [
+    "Dual-mode authoring combining code-first Markdown editing with visual diagram generation studios",
+    "Embedded Python sidecar architecture built into packaged binaries for backend operations",
+    "Native OS file associations and shell integration for .md and .markdown documents",
+    "Production packaging workflows supporting both NSIS Windows installers and portable executables"
+  ],
+  "quickstart_instructions": "# Clone the repository\ngit clone https://github.com/JagaTheGhost/visualmark-studio.git\ncd visualmark-studio/frontend\n\n# Install dependencies\nnpm install\n\n# Build backend sidecar\nnpm run sidecar:build\n\n# Launch desktop application in development mode\nnpm run electron:dev"
+}

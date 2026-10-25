@@ -174,6 +174,69 @@ export default function TableStudioTab({
   // Selected / Active cell for quick formatting
   const [activeCell, setActiveCell] = useState({ rowIndex: 0, colIndex: 0 })
 
+  // AI Bridge: Listen for VMarks Table Studio data injection
+  useEffect(() => {
+    const handleSetTableData = (event) => {
+      const data = event.detail
+      if (!data) return
+      if (typeof data.markdown === 'string' || typeof data.tableString === 'string') {
+        const rawText = data.markdown || data.tableString
+        const lines = rawText.trim().split(/\r?\n/).filter((l) => l.trim() !== '')
+        if (lines.length > 0) {
+          const parseLine = (line) =>
+            line
+              .split('|')
+              .map((c) => c.trim())
+              .filter((c, idx, arr) => !(idx === 0 && c === '') && !(idx === arr.length - 1 && c === ''))
+          const parsedLines = lines
+            .map(parseLine)
+            .filter((row) => row.length > 0 && !row.every((c) => /^:?-+:?$/.test(c)))
+          if (parsedLines.length > 0) {
+            const newHeaders = parsedLines[0].map((h, i) => h || `Col ${i + 1}`)
+            let aligns = newHeaders.map(() => 'left')
+            if (lines.length > 1) {
+              const sepLine = lines[1]
+                .split('|')
+                .map((c) => c.trim())
+                .filter((c, idx, arr) => !(idx === 0 && c === '') && !(idx === arr.length - 1 && c === ''))
+              if (sepLine.length > 0 && sepLine.every((c) => /^:?-+:?$/.test(c))) {
+                aligns = sepLine.map((s) => {
+                  if (s.startsWith(':') && s.endsWith(':')) return 'center'
+                  if (s.endsWith(':')) return 'right'
+                  return 'left'
+                })
+              }
+            }
+            const rawRows = parsedLines.slice(1)
+            const newRows =
+              rawRows.length > 0
+                ? rawRows.map((row) => {
+                    const filled = new Array(newHeaders.length).fill('')
+                    row.forEach((cell, idx) => {
+                      if (idx < newHeaders.length) filled[idx] = cell
+                    })
+                    return filled
+                  })
+                : [new Array(newHeaders.length).fill('')]
+            setHeaders(newHeaders)
+            setAlignments(aligns)
+            setRows(newRows)
+            return
+          }
+        }
+      }
+      if (Array.isArray(data.headers) && data.headers.length > 0) {
+        setHeaders(data.headers)
+        setAlignments(data.alignments || data.headers.map(() => 'left'))
+      }
+      if (Array.isArray(data.rows) && data.rows.length > 0) {
+        setRows(data.rows)
+      }
+    }
+    window.addEventListener('visualmark:set-table-data', handleSetTableData)
+    return () => window.removeEventListener('visualmark:set-table-data', handleSetTableData)
+  }, [])
+
   // Count cells with badges wrapped in backticks (e.g. `![Feat](...)`)
   const backtickBadges = useMemo(() => {
     let count = 0

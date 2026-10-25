@@ -5,6 +5,8 @@
  * an actual downloadable .pdf file without opening browser print mode.
  */
 
+import { getThemeById, isDarkTheme } from '../themes/themeRegistry'
+
 export async function exportToPdf({
   title = 'README',
   contentElement = null,
@@ -15,9 +17,10 @@ export async function exportToPdf({
     import('jspdf'),
     import('html2canvas')
   ])
-  const isDark = themeMode !== 'light'
-  const bgColor = themeMode === 'light' ? '#ffffff' : themeMode === 'slate' ? '#0f172a' : '#0d1117'
-  const textColor = themeMode === 'light' ? '#1f2328' : '#e6edf3'
+  const isDark = isDarkTheme(themeMode)
+  const theme = getThemeById(themeMode)
+  const bgColor = theme.colors.base || (isDark ? '#0d1117' : '#ffffff')
+  const textColor = theme.colors.textPrimary || (isDark ? '#e6edf3' : '#1f2328')
 
   // Prepare off-screen container with standardized desktop width (860px)
   // so the output PDF is consistent, gorgeous, and not dependent on current pane width

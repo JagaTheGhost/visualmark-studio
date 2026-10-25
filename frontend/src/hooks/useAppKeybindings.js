@@ -4,7 +4,7 @@ import { matchesKeybinding } from '../utils/keybindingManager'
 const isStudioTabId = (id) => {
   return (
     typeof id === 'string' &&
-    (id.endsWith('.studio') || id === 'settings' || id === 'shortcuts' || id === 'whats-new' || id === 'release-notes')
+    (id.endsWith('.studio') || id === 'settings' || id === 'shortcuts' || id === 'whats-new' || id === 'release-notes' || id === 'welcome')
   )
 }
 

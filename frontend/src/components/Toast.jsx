@@ -212,11 +212,11 @@ export function NotificationHistoryPanel() {
           {/* Quick Level Filter */}
           <select
             className="ide-drawer-level-select"
-            value={toastFilterLevel}
+            value={toastFilterLevel === 'important' ? 'updates_git' : toastFilterLevel}
             onChange={(e) => setToastFilterLevel(e.target.value)}
             title="Notification Popup Filter Level"
           >
-            <option value="important">Strict: Important Only (Recommended)</option>
+            <option value="updates_git">Updates & Git Only (Default - Recommended)</option>
             <option value="balanced">Balanced: Standard Notifications</option>
             <option value="all">Verbose: All Popups</option>
             <option value="errors">Errors Only</option>
@@ -326,7 +326,8 @@ export function NotificationHistoryPanel() {
       {/* 3. Footer Bar */}
       <div className="ide-drawer-footer">
         <span className="ide-drawer-footer-text">
-          {toastFilterLevel === 'important' && 'Filter: Important & Warnings only (Routine actions muted)'}
+          {(toastFilterLevel === 'updates_git' || toastFilterLevel === 'important') && 'Filter: Updates & Git only (Routine actions muted)'}
+          {toastFilterLevel === 'balanced' && 'Filter: Balanced standard notifications'}
           {toastFilterLevel === 'all' && 'Filter: All notifications (Verbose popups)'}
           {toastFilterLevel === 'errors' && 'Filter: Errors only'}
           {toastFilterLevel === 'silent' && 'Filter: Do Not Disturb (Popups silenced)'}

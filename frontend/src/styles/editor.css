@@ -16,8 +16,8 @@
 .tab-strip-bar {
   height: 35px;
   min-height: 35px;
-  background-color: #18181b;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--surface-tabbar, var(--surface-low));
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: stretch;
   justify-content: space-between;
@@ -50,11 +50,11 @@
   align-items: center;
   gap: 7px;
   padding: 0 10px 0 12px;
-  background-color: #18181b;
+  background-color: var(--surface-tabbar, var(--surface-low));
   border: none;
-  border-right: 1px solid rgba(255, 255, 255, 0.07);
-  border-top: 1px solid transparent;
-  color: #969696;
+  border-right: 1px solid var(--border-color);
+  border-top: 2px solid transparent;
+  color: var(--text-secondary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-size: 12px;
   font-weight: 400;
@@ -68,18 +68,18 @@
 }
 
 .editor-tab:hover {
-  background-color: rgba(255, 255, 255, 0.035);
-  color: #cccccc;
+  background-color: var(--surface-high);
+  color: var(--text-primary);
 }
 
 .editor-tab.active {
-  background-color: #1e1e1e;
-  border-top: 1px solid #007acc;
-  border-bottom: 1px solid #1e1e1e;
+  background-color: var(--surface-tab-active, var(--surface-base));
+  border-top: 2px solid var(--primary);
+  border-bottom: 1px solid var(--surface-tab-active, var(--surface-base));
   margin-bottom: -1px;
-  color: #ffffff;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  font-weight: 400;
+  color: var(--text-primary);
+  border-right: 1px solid var(--border-color);
+  font-weight: 500;
   position: relative;
   z-index: 2;
 }
@@ -778,6 +778,11 @@
   height: 100%;
 }
 
+.editor-workspace-split.mode-preview .editor-pane.pane-hidden-preview,
+.editor-workspace-split.mode-preview .editor-pane {
+  display: none !important;
+}
+
 /* Code Editor Pane Base */
 .editor-pane {
   display: flex;
@@ -1411,3 +1416,19 @@
 .tab-downloading-shortcut {
   cursor: pointer;
 }
+
+/* ==========================================================================
+   Keep-Alive Studio Workspace Panes & Tab State Retention
+   ========================================================================== */
+.studio-workspace-pane {
+  flex: 1 1 0%;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.studio-workspace-pane.doc-preview-pane {
+  position: relative;
+}
+

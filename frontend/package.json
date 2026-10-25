@@ -96,7 +96,8 @@
       "installerIcon": "public/icon.ico",
       "uninstallerIcon": "public/icon.ico",
       "artifactName": "VisualMark-Studio-Setup.${ext}",
-      "deleteAppDataOnUninstall": false
+      "deleteAppDataOnUninstall": false,
+      "differentialPackage": false
     },
     "portable": {
       "artifactName": "VisualMark-Studio-Portable.${ext}"

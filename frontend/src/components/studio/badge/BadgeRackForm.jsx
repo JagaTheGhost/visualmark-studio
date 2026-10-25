@@ -41,7 +41,10 @@ export default function BadgeRackForm({
             } else {
               bUrl = `https://img.shields.io/badge/${escapeShieldsText(b.label)}-${escapeShieldsText(b.message)}-${bC}?style=${b.style || style}`
             }
-            if (b.logo) bUrl += `&logo=${encodeURIComponent(b.logo)}&logoColor=white`
+            if (b.logo) {
+              const lc = b.logoColor || 'white'
+              bUrl += `&logo=${encodeURIComponent(b.logo)}&logoColor=${encodeURIComponent(lc)}`
+            }
 
             return (
               <div key={b.id || idx} className="badge-rack-item">

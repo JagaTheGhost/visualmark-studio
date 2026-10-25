@@ -196,12 +196,17 @@ Distributed under the MIT License.
     setIsZenMode,
     themeMode,
     setThemeMode,
+    toggleThemeMode,
+    isDarkMode,
     cursorPosition,
     setCursorPosition,
     scrollToHeadingTarget,
     setScrollToHeadingTarget,
     editorEngine,
-    setEditorEngine
+    setEditorEngine,
+    showWelcomeOnStartup,
+    setShowWelcomeOnStartup,
+    handleToggleShowWelcomeOnStartup
   } = useEditorPreferences()
   const [openPresetTabs, setOpenPresetTabs] = useState([]) // Multi-preset comparison tabs e.g. ['fullstack', 'cli-tool']
   const prePreviewViewModeRef = useRef(null)
@@ -265,12 +270,30 @@ Distributed under the MIT License.
     return []
   })
   const [isCloneModalOpen, setIsCloneModalOpen] = useState(false)
+  const [isFirstTimeSetupOpen, setIsFirstTimeSetupOpen] = useState(() => {
+    try {
+      const completed = localStorage.getItem('visualmark_onboarding_completed')
+      return completed !== 'true'
+    } catch {
+      return false
+    }
+  })
 
   // Listen for global open-git-clone-dialog events
   useEffect(() => {
     const handleOpenClone = () => setIsCloneModalOpen(true)
     window.addEventListener('open-git-clone-dialog', handleOpenClone)
     return () => window.removeEventListener('open-git-clone-dialog', handleOpenClone)
+  }, [])
+
+  // Listen for global visualmark:ask-vmarks-selection events to open VMarks panel
+  useEffect(() => {
+    const handleAskVMarks = () => {
+      setActiveActivityTab('ai-agent')
+      setSidebarCollapsed(false)
+    }
+    window.addEventListener('visualmark:ask-vmarks-selection', handleAskVMarks)
+    return () => window.removeEventListener('visualmark:ask-vmarks-selection', handleAskVMarks)
   }, [])
   const fileScrollPositions = useRef({})
   const fileCursorPositions = useRef({})
@@ -1263,6 +1286,18 @@ Distributed under the MIT License.
     })
   }, [openStudioTabs, openDocTabs])
 
+  // Global listener for visualmark:open-studio-tab to seamlessly switch to studios from agent or plugins
+  useEffect(() => {
+    const handleOpenStudio = (e) => {
+      const tabId = e.detail?.tabId || e.detail
+      if (tabId && isStudioTabId(tabId)) {
+        handleOpenStudioTab(tabId)
+      }
+    }
+    window.addEventListener('visualmark:open-studio-tab', handleOpenStudio)
+    return () => window.removeEventListener('visualmark:open-studio-tab', handleOpenStudio)
+  }, [handleOpenStudioTab])
+
   const handleOpenSettingsTab = useCallback(() => {
     setOpenDocTabs((prev) => prev.filter((f) => !isStudioTabId(f)))
     setOpenStudioTabs((prev) => (prev.includes('settings') ? prev : [...prev, 'settings']))
@@ -1278,6 +1313,88 @@ Distributed under the MIT License.
     setOpenStudioTabs((prev) => (prev.includes('shortcuts') ? prev : [...prev, 'shortcuts']))
     setActiveFile('shortcuts')
   }, [])
+
+  const handleOpenWelcomeTab = useCallback(() => {
+    setOpenDocTabs((prev) => prev.filter((f) => !isStudioTabId(f)))
+    setOpenStudioTabs((prev) => (prev.includes('welcome') ? prev : [...prev, 'welcome']))
+    setActiveFile('welcome')
+  }, [])
+
+  const handleOpenSampleDoc = useCallback(() => {
+    const filename = 'Playground.md'
+    const playgroundContent = `# 🚀 Welcome to VisualMark Studio Playground
+
+> [!TIP]
+> **Live Interactive Preview**: Edit anything in the editor on the left (or toggle views using the top bar), and watch the live preview render synchronously on the right!
+
+---
+
+## ⚡ Quick Architecture Overview
+
+Here is a live **Mermaid Architecture Flowchart**. Try changing the text or node connections in the editor:
+
+\`\`\`mermaid
+graph TD
+    User([👤 Documentation Engineer]) -->|Edits Markdown| Monaco[📝 Monaco Pro Editor]
+    Monaco -->|Synchronous AST Parsing| LiveEngine{⚡ VisualMark Studio Core}
+    LiveEngine -->|Real-time Rendering| Preview[👁️ Live High-Fidelity Preview]
+    LiveEngine -->|Interactive Studios| Studios[🎨 Visual Studios]
+    Studios -->|Generates Snippets| Monaco
+    
+    subgraph "Visual Studios Ecosystem"
+        Studios --> Badges[🛡️ Shields.io Badges]
+        Studios --> Diagrams[📊 Mermaid Diagrams]
+        Studios --> Tables[📅 Visual Table Designer]
+        Studios --> AI[🤖 AI Documentation Agent]
+    end
+
+    classDef primary fill:#3b82f6,stroke:#1d4ed8,stroke-width:2px,color:#fff;
+    classDef accent fill:#8b5cf6,stroke:#6d28d9,stroke-width:2px,color:#fff;
+    classDef success fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff;
+    class Monaco,LiveEngine primary;
+    class Studios,Badges,Diagrams,Tables,AI accent;
+    class Preview success;
+\`\`\`
+
+---
+
+## 🛡️ Interactive Badges
+
+You can generate customizable Shields.io badges visually using the **Shields.io Badges Studio** (\`Badges\` tab above):
+
+![VisualMark Studio](https://img.shields.io/badge/VisualMark-Studio-007acc?style=for-the-badge&logo=markdown&logoColor=white)
+![Build Status](https://img.shields.io/badge/Build-Passing-10b981?style=for-the-badge&logo=githubactions&logoColor=white)
+![Themes](https://img.shields.io/badge/Themes-10%20Standard%20Themes-8b5cf6?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-f59e0b?style=for-the-badge)
+
+---
+
+## 📊 Live Markdown Table
+
+Use the **Table Designer Studio** to visually craft, sort, and format tables without typing markdown pipes by hand:
+
+| Feature | VisualMark Studio | Standard Editors | Benefits |
+| :--- | :---: | :---: | :--- |
+| **Monaco Integration** | ✅ Native | ⚠️ Basic Textarea | VS Code level intellisense, keybindings & multiselect |
+| **Mermaid Visual Studio** | ✅ Built-in GUI | ❌ Plugin Needed | Visual flowchart, sequence, and ER diagram authoring |
+| **Theme System** | ✅ 10 Themes (Dark & Light) | ⚠️ Generic Dark only | Calibrated contrast in Dracula, Tokyo Night, Solarized, etc. |
+| **AI Doc Agent** | ✅ Integrated Copilot | ❌ None | Context-aware documentation drafting & refactoring |
+
+---
+
+## 💡 Quick Tips & Pro Shortcuts
+
+- **Command Palette**: Press <kbd>Ctrl</kbd> + <kbd>K</kbd> to access all studio commands, theme switchers, and actions.
+- **Split / Zen Views**: Toggle between Split Mode, Full Editor, and Full Preview from the top bar.
+- **Visual Studios**: Check out the tabs above for **Mermaid Diagrams**, **Shields Badges**, **Table Designer**, and **Changelog Generator**.
+- **Exporting**: Click **File > Export PDF** or **Export HTML** to generate presentation-ready documentation instantly.
+
+*Enjoy engineering extraordinary documentation!*
+`
+    handleCreateFile(filename, playgroundContent)
+    setViewMode('split')
+    showToast('🚀 Opened Interactive Playground! Feel free to edit and experiment.', 'success')
+  }, [handleCreateFile, setViewMode, showToast])
 
   // Listen for Monaco / global open-command-palette events
   useEffect(() => {
@@ -1832,11 +1949,20 @@ Distributed under the MIT License.
     handleClear,
     handleToggleBottomPanel,
     handleOpenWhatsNewTab,
-    handleCheckForUpdates
+    handleCheckForUpdates,
+    setThemeMode,
+    toggleThemeMode,
+    handleOpenWelcome: handleOpenWelcomeTab,
+    handleOpenSampleDoc: handleOpenSampleDoc,
+    handleOpenQuickSetup: () => setIsFirstTimeSetupOpen(true)
   })
 
   return (
-    <div className={`ide-app-root theme-${themeMode} ${isZenMode ? 'zen-mode' : ''}`}>
+    <div
+      className={`ide-app-root theme-${themeMode} ${isDarkMode ? 'theme-dark' : 'theme-light'} ${isZenMode ? 'zen-mode' : ''}`}
+      data-theme={themeMode}
+      data-theme-type={isDarkMode ? 'dark' : 'light'}
+    >
       {/* Stacked Toast Notification Viewport & Notification Center */}
       <ToastContainer />
       <NotificationHistoryPanel />
@@ -1869,6 +1995,8 @@ Distributed under the MIT License.
           hasGenerated={hasGenerated}
           themeMode={themeMode}
           setThemeMode={setThemeMode}
+          toggleThemeMode={toggleThemeMode}
+          isDarkMode={isDarkMode}
           onOpenSettings={handleOpenSettingsTab}
           onOpenShortcuts={handleOpenShortcutsTab}
           onNewFile={handleCreateUntitledFile}
@@ -1886,6 +2014,8 @@ Distributed under the MIT License.
           onCloseTab={handleCloseFile}
           onCloneRepo={() => setIsCloneModalOpen(true)}
           onCloseWorkspace={handleCloseWorkspace}
+          onOpenWelcome={handleOpenWelcomeTab}
+          onOpenQuickSetup={() => setIsFirstTimeSetupOpen(true)}
           appVersion={appVersion}
         />
       )}
@@ -2045,6 +2175,7 @@ Distributed under the MIT License.
               {/* Central Workspace: Dedicated Studio Tabs or Markdown Preview */}
               <StudioWorkspaceRenderer
                 activeFile={activeFile}
+                openStudioTabs={openStudioTabs}
                 activePreset={activePreset}
                 orientation={orientation}
                 zoomLevel={zoomLevel}
@@ -2123,6 +2254,11 @@ Distributed under the MIT License.
                 setFindReplaceMode={setFindReplaceMode}
                 tabGroupingEnabled={tabGroupingEnabled}
                 setTabGroupingEnabled={handleToggleTabGrouping}
+                handleOpenSampleDoc={handleOpenSampleDoc}
+                setViewMode={setViewMode}
+                showWelcomeOnStartup={showWelcomeOnStartup}
+                handleToggleShowWelcomeOnStartup={handleToggleShowWelcomeOnStartup}
+                handleOpenQuickSetup={() => setIsFirstTimeSetupOpen(true)}
               />
 
               {/* Integrated Bottom Panel Drawer (VS Code / Antigravity IDE) */}
@@ -2198,6 +2334,16 @@ Distributed under the MIT License.
             setIsCloneModalOpen={setIsCloneModalOpen}
             openWorkspaceDirectory={openWorkspaceDirectory}
             workspaceDirectory={workspaceDirectory}
+            isFirstTimeSetupOpen={isFirstTimeSetupOpen}
+            setIsFirstTimeSetupOpen={setIsFirstTimeSetupOpen}
+            themeMode={themeMode}
+            setThemeMode={setThemeMode}
+            editorEngine={editorEngine}
+            setEditorEngine={setEditorEngine}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            showWelcomeOnStartup={showWelcomeOnStartup}
+            handleToggleShowWelcomeOnStartup={handleToggleShowWelcomeOnStartup}
           />
         </div>
   )

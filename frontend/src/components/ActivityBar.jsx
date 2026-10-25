@@ -45,6 +45,12 @@ export default function ActivityBar({
       label: 'Studio Tools & Builders (Badges, Diagrams, Tables, Snippets)',
       icon: 'widgets',
       badge: null
+    },
+    {
+      id: 'ai-agent',
+      label: 'VMarks Studio Copilot (Beta)',
+      icon: 'auto_awesome',
+      badge: 'VM'
     }
   ]
 

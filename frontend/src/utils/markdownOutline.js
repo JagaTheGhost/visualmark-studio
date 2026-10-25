@@ -14,9 +14,14 @@
 export function cleanHeadingText(rawText = '') {
   if (!rawText) return ''
 
-  return rawText
-    // Remove HTML tags e.g. <span ...>...</span> or <b>...</b>
-    .replace(/<[^>]+>/g, '')
+  let text = rawText
+  let prevText
+  do {
+    prevText = text
+    text = text.replace(/<[^>]*>/g, '')
+  } while (text !== prevText)
+
+  return text
     // Replace markdown links [Link Text](url) with "Link Text"
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     // Replace markdown images ![Alt Text](url) with "Alt Text"

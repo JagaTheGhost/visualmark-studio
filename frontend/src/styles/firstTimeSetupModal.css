@@ -1,0 +1,498 @@
+/* ==========================================================================
+   First-Time Onboarding Modal Styles (VisualMark Studio Theme System)
+   Theme-aware popup providing 15-second personalization for new users.
+   ========================================================================== */
+
+.onboarding-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: onboardingFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes onboardingFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.onboarding-modal-card {
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-mid, #252526);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+  border-radius: 14px;
+  box-shadow: 
+    0 24px 48px -12px rgba(0, 0, 0, 0.55),
+    0 4px 16px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  font-family: var(--font-sans, sans-serif);
+}
+
+/* Header */
+.onboarding-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  background: var(--surface-low, #18181b);
+}
+
+.onboarding-brand-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.onboarding-logo-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--surface-mid, #252526);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.onboarding-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.onboarding-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary, #cccccc);
+  letter-spacing: -0.2px;
+}
+
+.onboarding-subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary, #969696);
+}
+
+.onboarding-btn-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #6e7681);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.onboarding-btn-close:hover {
+  background: var(--surface-high, #2d2d30);
+  color: var(--text-primary, #cccccc);
+}
+
+/* Scrollable Body */
+.onboarding-modal-body {
+  padding: 20px 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* Steps */
+.onboarding-step-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.onboarding-step-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.onboarding-step-number {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--primary, #007acc);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.onboarding-step-title {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary, #cccccc);
+}
+
+.onboarding-step-desc {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary, #969696);
+  margin-top: 1px;
+}
+
+/* 1. Theme Grid */
+.onboarding-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .onboarding-theme-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.onboarding-theme-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--surface-low, #18181b);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  position: relative;
+}
+
+.onboarding-theme-card:hover {
+  background: var(--surface-high, #2d2d30);
+  border-color: var(--border-focus, #007acc);
+}
+
+.onboarding-theme-card.active {
+  background: var(--surface-high, #2d2d30);
+  border-color: var(--primary, #007acc);
+  box-shadow: 0 0 0 1px var(--primary, #007acc);
+}
+
+.onboarding-theme-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.onboarding-theme-swatch-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.onboarding-theme-meta {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.onboarding-theme-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary, #cccccc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.onboarding-theme-type {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  color: var(--text-muted, #6e7681);
+}
+
+/* 2. Editor Engine Grid */
+.onboarding-engine-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .onboarding-engine-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.onboarding-engine-card {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--surface-low, #18181b);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  position: relative;
+}
+
+.onboarding-engine-card:hover {
+  background: var(--surface-high, #2d2d30);
+  border-color: var(--border-focus, #007acc);
+  transform: translateY(-1px);
+}
+
+.onboarding-engine-card.active {
+  background: var(--surface-high, #2d2d30);
+  border-color: var(--primary, #007acc);
+  box-shadow: 0 0 0 1px var(--primary, #007acc);
+}
+
+.onboarding-engine-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.onboarding-engine-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.onboarding-engine-icon {
+  font-size: 20px;
+}
+
+.icon-monaco {
+  color: #38bdf8;
+}
+
+.icon-classic {
+  color: #fbbf24;
+}
+
+.onboarding-engine-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary, #cccccc);
+}
+
+.onboarding-engine-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.badge-powerful {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.badge-lightweight {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.onboarding-engine-desc {
+  font-size: 11.5px;
+  color: var(--text-secondary, #969696);
+  line-height: 1.45;
+  margin: 0 0 12px;
+  flex: 1;
+}
+
+.onboarding-engine-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+}
+
+.onboarding-engine-usecase {
+  font-size: 10px;
+  color: var(--text-muted, #6e7681);
+  font-style: italic;
+}
+
+/* 3. View Mode Grid */
+.onboarding-view-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 600px) {
+  .onboarding-view-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.onboarding-view-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 9px;
+  background: var(--surface-low, #18181b);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  position: relative;
+}
+
+.onboarding-view-card:hover {
+  background: var(--surface-high, #2d2d30);
+  border-color: var(--border-focus, #007acc);
+}
+
+.onboarding-view-card.active {
+  background: var(--surface-high, #2d2d30);
+  border-color: var(--primary, #007acc);
+  box-shadow: 0 0 0 1px var(--primary, #007acc);
+}
+
+.onboarding-view-icon {
+  font-size: 20px;
+  color: var(--primary, #007acc);
+  margin-top: 1px;
+}
+
+.onboarding-view-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.onboarding-view-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.onboarding-view-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary, #cccccc);
+}
+
+.onboarding-view-rec {
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.onboarding-view-desc {
+  font-size: 11px;
+  color: var(--text-muted, #6e7681);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.onboarding-check {
+  font-size: 16px;
+  color: var(--primary, #007acc);
+  flex-shrink: 0;
+}
+
+/* Footer */
+.onboarding-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  background: var(--surface-low, #18181b);
+}
+
+.onboarding-startup-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--text-secondary, #969696);
+  cursor: pointer;
+  user-select: none;
+}
+
+.onboarding-startup-label input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--primary, #007acc);
+}
+
+.onboarding-btn-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  background: var(--primary, #007acc);
+  color: #ffffff;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.14s ease;
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(0, 122, 204, 0.35);
+}
+
+.onboarding-btn-submit:hover {
+  background: var(--primary-hover, #0062a3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 122, 204, 0.45);
+}
+
+.onboarding-btn-submit:active {
+  transform: translateY(1px);
+}
+
+.onboarding-btn-submit .material-symbols-outlined {
+  font-size: 16px;
+}

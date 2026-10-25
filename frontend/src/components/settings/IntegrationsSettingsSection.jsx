@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 export default function IntegrationsSettingsSection({
   activeCategory,
@@ -8,14 +8,74 @@ export default function IntegrationsSettingsSection({
   showToken,
   setShowToken
 }) {
-  if (activeCategory !== 'all' && activeCategory !== 'github') return null
+  const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem('visualmark_gemini_key') || '')
+  const [showGeminiKey, setShowGeminiKey] = useState(false)
+
+  if (activeCategory !== 'all' && activeCategory !== 'github' && activeCategory !== 'ai') return null
 
   return (
     <section className="settings-group-section">
       <div className="settings-group-header">
         <span className="material-symbols-outlined">hub</span>
-        <h3>GitHub & Integrations</h3>
+        <h3>AI & Cloud Integrations</h3>
       </div>
+
+      {/* Google Gemini AI Studio API Key */}
+      {matchesSearch('gemini ai copilot api key vmarks studio llm') && (
+        <div className="settings-card">
+          <div className="settings-card-info">
+            <div className="settings-card-label">Google Gemini API Key (VMarks Copilot)</div>
+            <div className="settings-card-sublabel">
+              Powers VMarks AI Copilot, live document diff reviews, and Shields.io Badge Studio automation.
+              Get your free API key at{' '}
+              <a
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: '#818cf8', textDecoration: 'underline' }}
+              >
+                aistudio.google.com/app/apikey
+              </a>.
+            </div>
+          </div>
+          <div className="settings-card-control" style={{ minWidth: '260px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
+              <input
+                type={showGeminiKey ? 'text' : 'password'}
+                className="settings-input-text"
+                placeholder="AIzaSyxxxxxxxxxxxx"
+                value={geminiKey}
+                onChange={(e) => {
+                  const val = e.target.value.trim()
+                  setGeminiKey(val)
+                  localStorage.setItem('visualmark_gemini_key', val)
+                  window.dispatchEvent(new CustomEvent('visualmark:gemini-key-updated', { detail: val }))
+                }}
+                style={{
+                  flex: 1,
+                  background: 'var(--surface-high, #2d2d30)',
+                  border: '1px solid var(--border-color, rgba(255,255,255,0.1))',
+                  color: 'var(--text-primary, #cccccc)',
+                  borderRadius: '4px',
+                  padding: '4px 8px',
+                  fontSize: '12px'
+                }}
+              />
+              <button
+                type="button"
+                className="settings-action-btn"
+                onClick={() => setShowGeminiKey(!showGeminiKey)}
+                title={showGeminiKey ? 'Hide key' : 'Show key'}
+                style={{ padding: '4px 8px', height: '28px', display: 'flex', alignItems: 'center' }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
+                  {showGeminiKey ? 'visibility_off' : 'visibility'}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* GitHub Personal Access Token */}
       {matchesSearch('github token pat rate limit authorization api private repo') && (

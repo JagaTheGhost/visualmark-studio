@@ -25,6 +25,7 @@
 @import './styles/settings.css';
 @import './styles/whatsNew.css';
 @import './styles/welcomeLauncher.css';
+@import './styles/firstTimeSetupModal.css';
 
 /* Studio Environments */
 @import './styles/studios/common.css';

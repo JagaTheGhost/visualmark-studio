@@ -172,6 +172,23 @@ export default function DirectoryTreeStudioTab({
     }
   }, [workspaceDirectory])
 
+  // AI Bridge: Listen for VMarks Directory Tree data injection
+  useEffect(() => {
+    const handleSetTreeData = (e) => {
+      const data = e.detail
+      if (!data) return
+      if (Array.isArray(data) && data.length > 0) {
+        setCustomItems(data)
+        setActiveSource('custom')
+      } else if (Array.isArray(data.items) && data.items.length > 0) {
+        setCustomItems(data.items)
+        setActiveSource('custom')
+      }
+    }
+    window.addEventListener('visualmark:set-directory-tree-data', handleSetTreeData)
+    return () => window.removeEventListener('visualmark:set-directory-tree-data', handleSetTreeData)
+  }, [])
+
   // Get active items according to mode
   const rawItems = useMemo(() => {
     if (activeSource === 'preset') {

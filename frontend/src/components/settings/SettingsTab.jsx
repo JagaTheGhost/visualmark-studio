@@ -62,7 +62,9 @@ export default function SettingsTab({
   onStartDownloadUpdate = () => {},
   onRestartToUpdate = () => {},
   tabGroupingEnabled = true,
-  setTabGroupingEnabled = () => {}
+  setTabGroupingEnabled = () => {},
+  showWelcomeOnStartup = true,
+  onToggleShowWelcomeOnStartup = () => {}
 }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('all')
@@ -271,6 +273,8 @@ export default function SettingsTab({
           setOrientation={setOrientation}
           tabGroupingEnabled={tabGroupingEnabled}
           setTabGroupingEnabled={setTabGroupingEnabled}
+          showWelcomeOnStartup={showWelcomeOnStartup}
+          onToggleShowWelcomeOnStartup={onToggleShowWelcomeOnStartup}
         />
 
         <ExportSettingsSection

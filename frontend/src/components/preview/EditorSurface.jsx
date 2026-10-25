@@ -7,6 +7,7 @@ import MonacoEditorPane from './MonacoEditorPane'
 import { decorateFoldTokensInPrismHtml } from '../../utils/dataUriFold'
 
 export default function EditorSurface({
+  viewMode = 'split',
   editorEngine = 'monaco',
   activeFile = 'README.md',
   safeMarkdown,
@@ -62,6 +63,7 @@ export default function EditorSurface({
 
       {editorEngine === 'monaco' ? (
         <MonacoEditorPane
+          viewMode={viewMode}
           value={safeMarkdown}
           onChange={previewPreset ? () => {} : onMarkdownChange}
           activeFile={activeFile}

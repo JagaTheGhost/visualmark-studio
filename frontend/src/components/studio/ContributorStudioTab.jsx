@@ -57,6 +57,14 @@ const CONTRIBUTOR_MODES = [
   { id: 'cards', label: 'Team Member Cards', icon: 'contact_page' }
 ]
 
+function getSafeAvatarUrl(username, size = 48) {
+  if (!username || typeof username !== 'string') return 'https://github.com/github.png'
+  const cleanUsername = username.trim().replace(/^@/, '')
+  const safeUsername = encodeURIComponent(cleanUsername)
+  const safeSize = Math.max(16, Math.min(Number(size) || 48, 256))
+  return `https://github.com/${safeUsername}.png?size=${safeSize}`
+}
+
 export default function ContributorStudioTab({
   onInsertContributors = () => {},
   onBackToReadme = () => {}
@@ -67,6 +75,15 @@ export default function ContributorStudioTab({
   const [avatarSize, setAvatarSize] = useState(80)
   const [includeSponsors, setIncludeSponsors] = useState(true)
   const [sponsorUrl, setSponsorUrl] = useState('https://github.com/sponsors')
+
+  const safeSponsorUrl = useMemo(() => {
+    if (!sponsorUrl || typeof sponsorUrl !== 'string') return 'https://github.com/sponsors'
+    const trimmed = sponsorUrl.trim()
+    if (/^https?:\/\//i.test(trimmed)) {
+      return trimmed
+    }
+    return 'https://github.com/sponsors'
+  }, [sponsorUrl])
 
   // Form input for adding new contributor
   const [newUsername, setNewUsername] = useState('')
@@ -445,7 +462,7 @@ export default function ContributorStudioTab({
               {contributors.map((c, idx) => (
                 <div key={idx} className="contributor-item-row">
                   <img
-                    src={`https://github.com/${c.username}.png?size=48`}
+                    src={getSafeAvatarUrl(c.username, 48)}
                     alt={c.name}
                     className="contributor-avatar-circle"
                     onError={(e) => {
@@ -546,7 +563,7 @@ export default function ContributorStudioTab({
                     }}
                   >
                     <img
-                      src={`https://github.com/${c.username}.png?size=${avatarSize}`}
+                      src={getSafeAvatarUrl(c.username, avatarSize)}
                       alt={c.name}
                       style={{
                         width: `${Math.min(avatarSize, 80)}px`,
@@ -631,7 +648,7 @@ export default function ContributorStudioTab({
                     }}
                   >
                     <img
-                      src={`https://github.com/${c.username}.png?size=72`}
+                      src={getSafeAvatarUrl(c.username, 72)}
                       alt={c.name}
                       style={{
                         width: '54px',
@@ -694,7 +711,7 @@ export default function ContributorStudioTab({
                     }}
                   >
                     <img
-                      src={`https://github.com/${c.username}.png?size=32`}
+                      src={getSafeAvatarUrl(c.username, 32)}
                       alt={c.name}
                       style={{ width: '24px', height: '24px', borderRadius: '50%' }}
                       onError={(e) => {
@@ -741,7 +758,7 @@ export default function ContributorStudioTab({
                   Support this project by becoming a sponsor. Your logo will show up here with a link to your website!
                 </p>
                 <a
-                  href={sponsorUrl}
+                  href={safeSponsorUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{

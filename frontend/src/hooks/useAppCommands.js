@@ -1,4 +1,5 @@
 import { useMemo, useCallback } from 'react'
+import { THEMES } from '../themes/themeRegistry'
 
 /**
  * Custom hook providing searchable commands for VisualMark Studio Command Palette.
@@ -32,7 +33,12 @@ export function useAppCommands({
   handleClear,
   handleToggleBottomPanel,
   handleOpenWhatsNewTab,
-  handleCheckForUpdates
+  handleCheckForUpdates,
+  setThemeMode,
+  toggleThemeMode,
+  handleOpenWelcome,
+  handleOpenSampleDoc,
+  handleOpenQuickSetup
 }) {
   const getBindingKey = useCallback(
     (id, fallback = '') => keybindings.find((k) => k.id === id)?.key || fallback,
@@ -213,6 +219,22 @@ export function useAppCommands({
       shortcut: getBindingKey('pref.settings', 'Ctrl + ,'),
       action: handleOpenSettingsTab
     },
+    {
+      id: 'pref.toggleTheme',
+      title: 'Preferences: Toggle Light / Dark Mode',
+      description: 'Switch between preferred Light and Dark themes',
+      icon: 'brightness_medium',
+      category: 'Preferences',
+      action: toggleThemeMode
+    },
+    ...THEMES.map((theme) => ({
+      id: `pref.theme.${theme.id}`,
+      title: `Preferences: Color Theme: ${theme.name}`,
+      description: theme.description,
+      icon: 'palette',
+      category: 'Preferences',
+      action: () => setThemeMode?.(theme.id)
+    })),
     {
       id: 'studio.badges',
       title: 'Open Shields.io Badge Studio Tab',
@@ -427,6 +449,30 @@ export function useAppCommands({
       icon: 'system_update',
       category: 'Help',
       action: handleCheckForUpdates
+    },
+    {
+      id: 'help.welcome',
+      title: 'Help: Welcome & Getting Started',
+      description: 'Open the first-run welcome and onboarding dashboard',
+      icon: 'waving_hand',
+      category: 'Help',
+      action: handleOpenWelcome
+    },
+    {
+      id: 'help.openPlayground',
+      title: 'Help: Open Interactive Playground',
+      description: 'Open sample document with live Mermaid diagrams, badges, and tables',
+      icon: 'play_circle',
+      category: 'Help',
+      action: handleOpenSampleDoc
+    },
+    {
+      id: 'help.quickSetup',
+      title: 'Help: Run Workspace Setup Wizard',
+      description: 'Re-open 1st-time onboarding setup popup to configure theme, engine & layout',
+      icon: 'magic_button',
+      category: 'Help',
+      action: handleOpenQuickSetup
     }
   ], [
     activeFile,
@@ -458,7 +504,12 @@ export function useAppCommands({
     handleClear,
     handleToggleBottomPanel,
     handleOpenWhatsNewTab,
-    handleCheckForUpdates
+    handleCheckForUpdates,
+    setThemeMode,
+    toggleThemeMode,
+    handleOpenWelcome,
+    handleOpenSampleDoc,
+    handleOpenQuickSetup
   ])
 
   return commands

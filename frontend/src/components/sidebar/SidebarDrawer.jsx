@@ -5,6 +5,7 @@ import SourceControlDrawer from '../sourcecontrol/SourceControlDrawer'
 import OutlinePanel from './OutlinePanel'
 import TemplatesPanel from './TemplatesPanel'
 import StudioToolsPanel from './StudioToolsPanel'
+import AiAgentPanel from '../ai/AiAgentPanel'
 import { PRESET_TEMPLATES } from '../../data/presetTemplates'
 import { parseMarkdownOutline } from '../../utils/markdownOutline'
 
@@ -80,15 +81,32 @@ export default function SidebarDrawer({
   })
   const [isResizing, setIsResizing] = useState(false)
 
+  // Listen for programmatic width adjustments (e.g. from AI Copilot expand button)
+  React.useEffect(() => {
+    const handleSetWidth = (e) => {
+      const w = e.detail?.width
+      if (typeof w === 'number' && w >= 260 && w <= 850) {
+        setDrawerWidth(w)
+        try {
+          localStorage.setItem('ide_sidebar_width', String(w))
+        } catch {}
+      }
+    }
+    window.addEventListener('visualmark:set-sidebar-width', handleSetWidth)
+    return () => window.removeEventListener('visualmark:set-sidebar-width', handleSetWidth)
+  }, [])
+
   const handleStartResize = (e) => {
     e.preventDefault()
     setIsResizing(true)
     const startX = e.clientX
     const startWidth = drawerWidth
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
 
     const onMouseMove = (moveEvent) => {
       const delta = moveEvent.clientX - startX
-      const nextWidth = Math.max(220, Math.min(650, startWidth + delta))
+      const nextWidth = Math.max(260, Math.min(850, startWidth + delta))
       setDrawerWidth(nextWidth)
       try {
         localStorage.setItem('ide_sidebar_width', String(nextWidth))
@@ -97,6 +115,8 @@ export default function SidebarDrawer({
 
     const onMouseUp = () => {
       setIsResizing(false)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
       window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('mouseup', onMouseUp)
     }
@@ -106,9 +126,9 @@ export default function SidebarDrawer({
   }
 
   const handleResetResize = () => {
-    setDrawerWidth(300)
+    setDrawerWidth(320)
     try {
-      localStorage.setItem('ide_sidebar_width', '300')
+      localStorage.setItem('ide_sidebar_width', '320')
     } catch {}
   }
 
@@ -126,8 +146,8 @@ export default function SidebarDrawer({
       className={`sidebar-drawer ide-sidebar-drawer ${isResizing ? 'resizing' : ''}`}
       style={{ width: `${drawerWidth}px` }}
     >
-      {/* Header with Title (Hidden when activeTab === 'explorer' or 'git' because they render their own custom headers) */}
-      {activeTab !== 'explorer' && activeTab !== 'git' && activeTab !== 'source-control' && (
+      {/* Header with Title (Hidden when activeTab === 'explorer', 'git', or 'ai-agent' because they render their own custom headers) */}
+      {activeTab !== 'explorer' && activeTab !== 'git' && activeTab !== 'source-control' && activeTab !== 'ai-agent' && (
         <div className="drawer-header">
           <div className="drawer-title-group">
             <span className="material-symbols-outlined drawer-title-icon">
@@ -147,7 +167,7 @@ export default function SidebarDrawer({
       )}
 
       {/* Main Drawer Body Scrollable Container */}
-      <div className={`drawer-body custom-scrollbar ${activeTab === 'explorer' || activeTab === 'git' || activeTab === 'source-control' ? 'no-padding' : ''}`}>
+      <div className={`drawer-body custom-scrollbar ${activeTab === 'explorer' || activeTab === 'git' || activeTab === 'source-control' || activeTab === 'ai-agent' ? 'no-padding' : ''}`}>
         {/* ==================== 1. EXPLORER TREE ==================== */}
         {activeTab === 'explorer' && (
           <IdeExplorerTree
@@ -175,7 +195,7 @@ export default function SidebarDrawer({
             onOpenFolder={onOpenFolder}
             onCloneRepo={onCloneRepo}
             onSelectFile={onSelectFile}
-            showToast={showToast}
+            showToast={(msg, type, opts) => showToast(msg, type, { ...(typeof opts === 'object' && opts !== null ? opts : {}), source: 'GIT' })}
           />
         )}
 
@@ -236,6 +256,19 @@ export default function SidebarDrawer({
             onSelectFile={onSelectFile}
             onOpenStudioTab={onOpenStudioTab}
             onCloseStudioTab={onCloseStudioTab}
+          />
+        )}
+
+        {/* ==================== 6. AI STUDIO COPILOT PANEL (EXPERIMENTAL) ==================== */}
+        {activeTab === 'ai-agent' && (
+          <AiAgentPanel
+            repoUrl={repoUrl}
+            activeFile={activeFile}
+            activeContent={markdown}
+            workspaceDirectory={workspaceDirectory}
+            onOpenStudioTab={onOpenStudioTab}
+            onInsertSnippet={onInsertInstantSyntax}
+            showToast={showToast}
           />
         )}
       </div>

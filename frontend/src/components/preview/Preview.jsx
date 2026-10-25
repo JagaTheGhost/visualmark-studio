@@ -321,91 +321,92 @@ export default function Preview({
       }}
     >
       {/* ==================== LEFT PANE: CODE EDITOR ==================== */}
-      {(viewMode === 'split' || viewMode === 'editor') && (
-        <div
-          className="editor-pane"
-          style={
-            viewMode === 'split'
-              ? orientation === 'vertical'
-                ? { flex: `0 0 ${splitRatio}%`, width: `${splitRatio}%`, minWidth: '15%' }
-                : { flex: `0 0 ${splitRatio}%`, height: `${splitRatio}%`, minHeight: '15%' }
+      <div
+        className={`editor-pane ${viewMode === 'preview' ? 'pane-hidden-preview' : ''}`}
+        style={
+          viewMode === 'split'
+            ? orientation === 'vertical'
+              ? { flex: `0 0 ${splitRatio}%`, width: `${splitRatio}%`, minWidth: '15%' }
+              : { flex: `0 0 ${splitRatio}%`, height: `${splitRatio}%`, minHeight: '15%' }
+            : viewMode === 'preview'
+              ? { display: 'none' }
               : undefined
+        }
+      >
+        {/* Breadcrumbs Trail */}
+        <PreviewBreadcrumbs
+          activeFile={activeFile}
+          activeHeading={activeHeading}
+          previewPreset={previewPreset}
+        />
+
+        {/* Sub Toolbar for Formatting */}
+        <EditorToolbar
+          markdown={safeMarkdown}
+          setMarkdown={onMarkdownChange}
+          textareaRef={editorScrollRef}
+          monacoEditorRef={monacoEditorRef}
+          activeFile={activeFile}
+          activeHeading={activeHeading}
+          onOpenBadgeBuilder={onOpenBadgeBuilder}
+          onOpenDiagramStudio={onOpenDiagramStudio}
+          onOpenTableStudio={onOpenTableStudio}
+          onOpenSnippetStudio={onOpenSnippetStudio}
+          onOpenImageStudio={onOpenImageStudio}
+          onOpenFindReplace={() => setFindReplaceOpen(true)}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          canUndo={canUndo}
+          canRedo={canRedo}
+        />
+
+        {/* Editor Container with Gutter & External Drag-and-Drop */}
+        <EditorSurface
+          findReplaceWidget={
+            <FindReplaceWidget
+              isOpen={findReplaceOpen}
+              onClose={() => setFindReplaceOpen(false)}
+              markdown={safeMarkdown}
+              onMarkdownChange={onMarkdownChange}
+              showReplaceInitially={findReplaceMode === 'replace'}
+              onNavigateMatch={handleNavigateMatch}
+            />
           }
-        >
-          {/* Breadcrumbs Trail */}
-          <PreviewBreadcrumbs
-            activeFile={activeFile}
-            activeHeading={activeHeading}
-            previewPreset={previewPreset}
-          />
-
-          {/* Sub Toolbar for Formatting */}
-          <EditorToolbar
-            markdown={safeMarkdown}
-            setMarkdown={onMarkdownChange}
-            textareaRef={editorScrollRef}
-            monacoEditorRef={monacoEditorRef}
-            activeFile={activeFile}
-            activeHeading={activeHeading}
-            onOpenBadgeBuilder={onOpenBadgeBuilder}
-            onOpenDiagramStudio={onOpenDiagramStudio}
-            onOpenTableStudio={onOpenTableStudio}
-            onOpenSnippetStudio={onOpenSnippetStudio}
-            onOpenImageStudio={onOpenImageStudio}
-            onOpenFindReplace={() => setFindReplaceOpen(true)}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            canUndo={canUndo}
-            canRedo={canRedo}
-          />
-
-          {/* Editor Container with Gutter & External Drag-and-Drop */}
-          <EditorSurface
-            findReplaceWidget={
-              <FindReplaceWidget
-                isOpen={findReplaceOpen}
-                onClose={() => setFindReplaceOpen(false)}
-                markdown={safeMarkdown}
-                onMarkdownChange={onMarkdownChange}
-                showReplaceInitially={findReplaceMode === 'replace'}
-                onNavigateMatch={handleNavigateMatch}
-              />
-            }
-            editorEngine={editorEngine}
-            activeFile={activeFile}
-            safeMarkdown={safeMarkdown}
-            onMarkdownChange={onMarkdownChange}
-            previewPreset={previewPreset}
-            fontSize={fontSize}
-            wordWrap={wordWrap}
-            showLineNumbers={showLineNumbers}
-            tabSize={tabSize}
-            themeMode={themeMode}
-            editorLanguage={editorLanguage}
-            setActiveLine={setActiveLine}
-            onCursorChange={onCursorChange}
-            handleMonacoScroll={handleMonacoScroll}
-            monacoEditorRef={monacoEditorRef}
-            editorScrollRef={editorScrollRef}
-            gutterRef={gutterRef}
-            isEditorDragOver={isEditorDragOver}
-            handleEditorDragOver={handleEditorDragOver}
-            handleEditorDragLeave={handleEditorDragLeave}
-            handleEditorDrop={handleEditorDrop}
-            lineFoldState={lineFoldState}
-            handleExpandFold={handleExpandFold}
-            handleFoldCurrent={handleFoldCurrent}
-            lines={lines}
-            activeLine={activeLine}
-            lineHeights={lineHeights}
-            handleGutterLineClick={handleGutterLineClick}
-            handleEditorScroll={handleEditorScroll}
-            handleEditorKeyUpOrClick={handleEditorKeyUpOrClick}
-            handleEditorKeyDown={handleEditorKeyDown}
-            handleEditorBlur={handleEditorBlur}
-          />
-        </div>
-      )}
+          viewMode={viewMode}
+          editorEngine={editorEngine}
+          activeFile={activeFile}
+          safeMarkdown={safeMarkdown}
+          onMarkdownChange={onMarkdownChange}
+          previewPreset={previewPreset}
+          fontSize={fontSize}
+          wordWrap={wordWrap}
+          showLineNumbers={showLineNumbers}
+          tabSize={tabSize}
+          themeMode={themeMode}
+          editorLanguage={editorLanguage}
+          setActiveLine={setActiveLine}
+          onCursorChange={onCursorChange}
+          handleMonacoScroll={handleMonacoScroll}
+          monacoEditorRef={monacoEditorRef}
+          editorScrollRef={editorScrollRef}
+          gutterRef={gutterRef}
+          isEditorDragOver={isEditorDragOver}
+          handleEditorDragOver={handleEditorDragOver}
+          handleEditorDragLeave={handleEditorDragLeave}
+          handleEditorDrop={handleEditorDrop}
+          lineFoldState={lineFoldState}
+          handleExpandFold={handleExpandFold}
+          handleFoldCurrent={handleFoldCurrent}
+          lines={lines}
+          activeLine={activeLine}
+          lineHeights={lineHeights}
+          handleGutterLineClick={handleGutterLineClick}
+          handleEditorScroll={handleEditorScroll}
+          handleEditorKeyUpOrClick={handleEditorKeyUpOrClick}
+          handleEditorKeyDown={handleEditorKeyDown}
+          handleEditorBlur={handleEditorBlur}
+        />
+      </div>
 
       {/* Interactive Draggable Split Divider */}
       {viewMode === 'split' && (

@@ -56,6 +56,23 @@ export function useRepoCardState({
   const [showDataOverrides, setShowDataOverrides] = useState(false)
   const [saveStatusMessage, setSaveStatusMessage] = useState('')
 
+  // AI Bridge: Listen for VMarks Repo Card data injection
+  useEffect(() => {
+    const handleSetRepoCard = (e) => {
+      const data = e.detail
+      if (!data) return
+      if (data.targetRepo) setTargetRepo(data.targetRepo)
+      if (data.desc) setDesc(data.desc)
+      if (data.stars !== undefined) setStars(String(data.stars))
+      if (data.forks !== undefined) setForks(String(data.forks))
+      if (data.license) setLicense(data.license)
+      if (data.lang) setLang(data.lang)
+      if (data.template) setTemplate(data.template)
+    }
+    window.addEventListener('visualmark:set-repo-card-data', handleSetRepoCard)
+    return () => window.removeEventListener('visualmark:set-repo-card-data', handleSetRepoCard)
+  }, [])
+
   // Split owner and repo name
   const cleanRepo = useMemo(() => {
     return targetRepo.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\/$/, '') || 'owner/repo'

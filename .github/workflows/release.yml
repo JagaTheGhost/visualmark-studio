@@ -75,7 +75,6 @@ jobs:
         with:
           files: |
             frontend/release/VisualMark-Studio-Setup.exe
-            frontend/release/VisualMark-Studio-Setup.exe.blockmap
             frontend/release/VisualMark-Studio-Portable.exe
             frontend/release/SHA256SUMS.txt
             frontend/release/latest.yml

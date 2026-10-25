@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react'
 export default function FloatingSelectionToolbar({
   position = { top: 0, left: 0, flipped: false },
   selectedText = '',
+  selectionRange = null,
   onFormat = () => {},
   config = {},
   onClose = () => {}
@@ -430,6 +431,37 @@ export default function FloatingSelectionToolbar({
             <span className="material-symbols-outlined text-sm" style={{ color: '#a855f7' }}>shield</span>
           </button>
         )}
+
+        {/* ================= 6. VMarks AI Copilot Selection Bridge ================= */}
+        <div className="floating-divider" />
+        <button
+          type="button"
+          className="floating-toolbar-btn vmarks-ai-toolbar-btn"
+          title="Send selected text to VMarks AI Copilot"
+          style={{
+            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(168, 85, 247, 0.25))',
+            color: '#e0e7ff',
+            border: '1px solid rgba(168, 85, 247, 0.4)',
+            borderRadius: '4px',
+            padding: '2px 7px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontWeight: 600,
+            fontSize: '11px',
+            cursor: 'pointer'
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            window.dispatchEvent(new CustomEvent('visualmark:ask-vmarks-selection', {
+              detail: { text: selectedText, range: selectionRange }
+            }))
+          }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '13px', color: '#818cf8' }}>auto_awesome</span>
+          <span>VMarks</span>
+        </button>
       </div>
     </div>
   )

@@ -28,7 +28,7 @@
 ### Core Value Proposition
 
 - **Unified Developer Tooling:** Draft Markdown code, design Mermaid architecture diagrams, build Shields.io badges, design vector repo cards, and preview REST API endpoints inside a single native desktop IDE.
-- **100% Local-First & Private:** Direct disk read/write (`Ctrl+S`, `Ctrl+O`), offline sidecar daemon, and zero telemetry or external cloud dependencies.
+- **Local-Core Architecture & Privacy:** Direct disk read/write (`Ctrl+S`, `Ctrl+O`), local sidecar daemon, zero unwanted tracking/telemetry, and optional connected cloud enhancements (Shields.io badges, remote Git).
 - **Bi-Directional Ergonomics:** Visual designers generate clean, optimized GitHub-Flavored Markdown (GFM) that is injected directly into open document buffers at your exact cursor position.
 - **Production Publishing:** One-click export to GitHub vector PDF (`Ctrl+P`), standalone styled HTML, and full documentation ZIP suites.
 

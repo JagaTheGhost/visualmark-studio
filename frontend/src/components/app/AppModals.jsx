@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react'
 import CloneRepoModal from '../modals/CloneRepoModal'
+import FirstTimeSetupModal from '../modals/FirstTimeSetupModal'
 
 const CommandPalette = lazy(() => import('../modals/CommandPalette'))
 const InsertTargetModal = lazy(() => import('../modals/InsertTargetModal'))
@@ -31,7 +32,17 @@ export default function AppModals({
   isCloneModalOpen,
   setIsCloneModalOpen,
   openWorkspaceDirectory,
-  workspaceDirectory
+  workspaceDirectory,
+  isFirstTimeSetupOpen = false,
+  setIsFirstTimeSetupOpen = () => {},
+  themeMode,
+  setThemeMode,
+  editorEngine,
+  setEditorEngine,
+  viewMode,
+  setViewMode,
+  showWelcomeOnStartup,
+  handleToggleShowWelcomeOnStartup
 }) {
   return (
     <>
@@ -212,6 +223,21 @@ export default function AppModals({
         }}
         showToast={showToast}
         initialParentDir={workspaceDirectory?.path ? workspaceDirectory.path.replace(/[\\/][^\\/]+$/, '') : ''}
+      />
+
+      {/* 1st-Time Onboarding Quick Setup Modal */}
+      <FirstTimeSetupModal
+        isOpen={isFirstTimeSetupOpen}
+        onClose={() => setIsFirstTimeSetupOpen(false)}
+        themeMode={themeMode}
+        setThemeMode={setThemeMode}
+        editorEngine={editorEngine}
+        setEditorEngine={setEditorEngine}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        showWelcomeOnStartup={showWelcomeOnStartup}
+        onToggleShowWelcomeOnStartup={handleToggleShowWelcomeOnStartup}
+        showToast={showToast}
       />
     </>
   )

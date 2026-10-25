@@ -27,7 +27,7 @@
 
 Writing technical documentation is notoriously fragmented across disconnected browser tabs: drafting Markdown in basic text boxes, generating badges on web forms, drawing architecture diagrams on third-party whiteboards, building tables in online converters, and manually tracking release notes.
 
-**VisualMark Studio** unites all of this under a single, **100% offline native desktop IDE**. It pairs the industry-standard **Monaco code editor** (the engine powering VS Code) with **12 specialized interactive visual studios**, direct local disk I/O, rich documentation architecture tools, and automated documentation generation.
+**VisualMark Studio** unites all of this under a single, **privacy-first native desktop IDE**. It pairs the industry-standard **Monaco code editor** (the engine powering VS Code) with **12 specialized interactive visual studios**, direct local disk I/O, rich documentation architecture tools, and automated documentation generation.
 
 | Traditional Documentation Workflow | The VisualMark Studio Experience |
 | :--- | :--- |
@@ -36,7 +36,7 @@ Writing technical documentation is notoriously fragmented across disconnected br
 | ❌ Manual formatting and hunting for syntax callouts | ✅ **Floating Selection HUD Toolbar** with live headings, callouts, and code fences |
 | ❌ Manual copy-pasting into local repositories | ✅ **Direct Local Disk I/O** (`Ctrl+S`, `Ctrl+O`) and real-time File Explorer |
 | ❌ Blind guessing whether Markdown structure is complete | ✅ **README Auditor & Linter** with automated health scoring (A+ to F) |
-| ❌ Cloud data leakage and external telemetry | ✅ **100% Local-First** with zero telemetry or network tracking |
+| ❌ Forced cloud lock-in and telemetry tracking | ✅ **Local-Core Architecture** with zero unwanted telemetry and optional cloud enhancements |
 
 ---
 

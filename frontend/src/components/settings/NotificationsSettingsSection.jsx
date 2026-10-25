@@ -24,16 +24,16 @@ export default function NotificationsSettingsSection({
             <div className="settings-card-label">Notifications: Popup Toast Level</div>
             <div className="settings-card-sublabel">
               Controls which notifications pop up as floating cards over your workspace.
-              By default, routine file operations (closing files, switching tabs) are muted to prevent distraction. All notifications are permanently saved to the Notification Center history.
+              By default, toast messages are only generated for software updates, Git source control actions, and interactive alerts. Routine operations (saving files, opening files, switching tabs, inserting snippets) are muted to prevent distraction.
             </div>
           </div>
           <div className="settings-card-control">
             <select
               className="settings-input-select"
-              value={toastFilterLevel}
+              value={toastFilterLevel === 'important' ? 'updates_git' : toastFilterLevel}
               onChange={(e) => setToastFilterLevel(e.target.value)}
             >
-              <option value="important">Strict: Important & Warnings Only (Default - Recommended)</option>
+              <option value="updates_git">Updates & Git Only (Default - Minimal Distraction)</option>
               <option value="balanced">Balanced: Standard Notifications</option>
               <option value="all">Verbose: All Notifications</option>
               <option value="errors">Errors Only</option>

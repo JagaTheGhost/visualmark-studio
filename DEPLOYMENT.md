@@ -78,8 +78,8 @@ The workflow:
 1. Provisions Windows Server runner with Node.js 20 and Python 3.11.
 2. Compiles the FastAPI backend into `server.exe` via PyInstaller.
 3. Packages both the custom installer (`VisualMark-Studio-Setup.exe`) and portable binary (`VisualMark-Studio-Portable.exe`).
-4. Generates `latest.yml` and `.blockmap` files for differential delta updates.
-5. Verifies and uploads strictly canonical assets to the GitHub Release, allowing existing installed instances (e.g. `v1.1.2`) to download only the differential block changes without reinstalling the entire application.
+4. Generates `latest.yml` update manifest for Electron Updater.
+5. Verifies and uploads canonical release assets to the GitHub Release, enabling seamless, single-pass background auto-updates without redundant delta fallback downloads.
 
 ---
 

@@ -48,6 +48,7 @@ def build_sidecar():
         "requests",
         "app",
         "prompts",
+        "ai_agent",
     ]
 
     cmd = [
