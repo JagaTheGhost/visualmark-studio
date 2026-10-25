@@ -46,7 +46,7 @@ export function useAppUpdates({ appVersion, showToast, handleOpenWhatsNewTab }) 
         if (!suppressAuto) {
           handleOpenWhatsNewTab?.()
         } else {
-          showToast?.(`VisualMark Studio updated to v${appVersion}!`, 'info')
+          showToast?.(`VisualMark Studio updated to v${appVersion}!`, 'info', { source: 'UPDATE', important: true })
         }
       }
     } catch (e) {
@@ -94,7 +94,7 @@ export function useAppUpdates({ appVersion, showToast, handleOpenWhatsNewTab }) 
     if (window.electronAPI?.quitAndInstallUpdate) {
       window.electronAPI.quitAndInstallUpdate()
     } else {
-      showToast?.('Restart the application to apply update.', 'info')
+      showToast?.('Restart the application to apply update.', 'info', { source: 'UPDATE', important: true })
     }
   }, [showToast])
 
@@ -160,18 +160,18 @@ export function useAppUpdates({ appVersion, showToast, handleOpenWhatsNewTab }) 
     setIsCheckingUpdate(true)
     if (typeof window !== 'undefined' && window.electronAPI?.checkForUpdates) {
       try {
-        showToast?.('Checking for updates...', 'info')
+        showToast?.('Checking for updates...', 'info', { source: 'UPDATE' })
         const res = await window.electronAPI.checkForUpdates()
         if (res?.status === 'dev') {
-          showToast?.('Auto-updater is active in production packaged builds.', 'info')
+          showToast?.('Auto-updater is active in production packaged builds.', 'info', { source: 'UPDATE' })
         }
       } catch {
-        showToast?.('Unable to check for updates right now.', 'warning')
+        showToast?.('Unable to check for updates right now.', 'warning', { source: 'UPDATE', important: true })
       } finally {
         setTimeout(() => setIsCheckingUpdate(false), 2000)
       }
     } else {
-      showToast?.(`VisualMark Studio v${appVersion} is up to date.`, 'info')
+      showToast?.(`VisualMark Studio v${appVersion} is up to date.`, 'info', { source: 'UPDATE', important: true })
       setIsCheckingUpdate(false)
     }
   }, [appVersion, isCheckingUpdate, showToast])

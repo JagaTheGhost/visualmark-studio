@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { normalizeThemeId, isDarkTheme } from '../themes/themeRegistry'
 
 export function useEditorPreferences() {
   const [viewMode, setViewMode] = useState('split') // 'split' | 'editor' | 'preview'
@@ -31,12 +32,31 @@ export function useEditorPreferences() {
     }
   }, [])
 
-  // Theme mode with LocalStorage persistence
-  const [themeMode, setThemeMode] = useState(() => {
+  // Theme mode with LocalStorage persistence & dual-mode preference support
+  const [themeMode, setThemeModeState] = useState(() => {
     try {
-      return localStorage.getItem('readme_ide_theme') || 'dark'
+      const stored = localStorage.getItem('readme_ide_theme')
+      return stored ? normalizeThemeId(stored) : 'dark-modern'
     } catch {
-      return 'dark'
+      return 'dark-modern'
+    }
+  })
+
+  const [preferredDarkTheme, setPreferredDarkTheme] = useState(() => {
+    try {
+      const stored = localStorage.getItem('readme_preferred_dark_theme')
+      return stored ? normalizeThemeId(stored) : 'dark-modern'
+    } catch {
+      return 'dark-modern'
+    }
+  })
+
+  const [preferredLightTheme, setPreferredLightTheme] = useState(() => {
+    try {
+      const stored = localStorage.getItem('readme_preferred_light_theme')
+      return stored ? normalizeThemeId(stored) : 'light-modern'
+    } catch {
+      return 'light-modern'
     }
   })
 
@@ -47,6 +67,31 @@ export function useEditorPreferences() {
       console.warn('Failed saving readme_ide_theme:', err)
     }
   }, [themeMode])
+
+  const setThemeMode = useCallback((id) => {
+    const norm = typeof id === 'function' ? normalizeThemeId(id(themeMode)) : normalizeThemeId(id)
+    setThemeModeState(norm)
+    if (isDarkTheme(norm)) {
+      setPreferredDarkTheme(norm)
+      try { localStorage.setItem('readme_preferred_dark_theme', norm) } catch {}
+    } else {
+      setPreferredLightTheme(norm)
+      try { localStorage.setItem('readme_preferred_light_theme', norm) } catch {}
+    }
+  }, [themeMode])
+
+  const toggleThemeMode = useCallback(() => {
+    setThemeModeState((curr) => {
+      const isDark = isDarkTheme(curr)
+      if (isDark) {
+        return preferredLightTheme || 'light-modern'
+      } else {
+        return preferredDarkTheme || 'dark-modern'
+      }
+    })
+  }, [preferredLightTheme, preferredDarkTheme])
+
+  const isDarkMode = isDarkTheme(themeMode)
 
   // Editor Engine ('monaco' | 'classic') with LocalStorage persistence
   const [editorEngine, setEditorEngine] = useState(() => {
@@ -64,6 +109,26 @@ export function useEditorPreferences() {
       console.warn('Failed saving readme_editor_engine:', err)
     }
   }, [editorEngine])
+
+  // Show Welcome On Startup preference
+  const [showWelcomeOnStartup, setShowWelcomeOnStartup] = useState(() => {
+    try {
+      const stored = localStorage.getItem('readme_show_welcome_on_startup')
+      return stored !== null ? stored === 'true' : true
+    } catch {
+      return true
+    }
+  })
+
+  const handleToggleShowWelcomeOnStartup = useCallback((val) => {
+    const nextVal = typeof val === 'boolean' ? val : !showWelcomeOnStartup
+    setShowWelcomeOnStartup(nextVal)
+    try {
+      localStorage.setItem('readme_show_welcome_on_startup', String(nextVal))
+    } catch (err) {
+      console.warn('Failed saving readme_show_welcome_on_startup:', err)
+    }
+  }, [showWelcomeOnStartup])
 
   const handleZoomIn = useCallback(() => {
     setZoomLevel((prev) => Math.min(prev + 10, 200))
@@ -102,11 +167,18 @@ export function useEditorPreferences() {
     setIsZenMode,
     themeMode,
     setThemeMode,
+    toggleThemeMode,
+    isDarkMode,
+    preferredDarkTheme,
+    preferredLightTheme,
     cursorPosition,
     setCursorPosition,
     scrollToHeadingTarget,
     setScrollToHeadingTarget,
     editorEngine,
-    setEditorEngine
+    setEditorEngine,
+    showWelcomeOnStartup,
+    setShowWelcomeOnStartup,
+    handleToggleShowWelcomeOnStartup
   }
 }

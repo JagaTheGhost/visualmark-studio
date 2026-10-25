@@ -6,6 +6,8 @@ import CommitHistorySection from './CommitHistorySection'
 import DiffViewerModal from './DiffViewerModal'
 import CommitInspectorModal from './CommitInspectorModal'
 import BranchSwitcherModal from './BranchSwitcherModal'
+import CommitConfirmModal from './CommitConfirmModal'
+import CommitHelpModal from './CommitHelpModal'
 
 export default function SourceControlDrawer({
   gitInfo = null,
@@ -21,6 +23,11 @@ export default function SourceControlDrawer({
   const [isCommitting, setIsCommitting] = useState(false)
   const [commitAction, setCommitAction] = useState('commit') // 'commit' | 'commit-push' | 'commit-sync' | 'commit-amend'
   const [isSplitMenuOpen, setIsSplitMenuOpen] = useState(false)
+
+  // Commit Review & Help Modals
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false)
+  const [pendingCommitAction, setPendingCommitAction] = useState('commit')
 
   // Collapsible section states
   const [changesExpanded, setChangesExpanded] = useState(true)
@@ -232,7 +239,20 @@ export default function SourceControlDrawer({
   }
 
   // 3. Commit Operations
-  const executeCommit = async (actionType = commitAction) => {
+  const handleInitiateCommit = (actionType = commitAction) => {
+    if (!commitMessage.trim() && actionType !== 'commit-amend') {
+      showToast('Please enter a commit message before proceeding', 'warning')
+      return
+    }
+    if (totalChangesCount === 0 && actionType !== 'commit-amend') {
+      showToast('No changed files detected to commit', 'warning')
+      return
+    }
+    setPendingCommitAction(actionType || commitAction)
+    setIsConfirmModalOpen(true)
+  }
+
+  const executeCommit = async (actionType = pendingCommitAction || commitAction) => {
     if (!commitMessage.trim() && actionType !== 'commit-amend') {
       showToast('Please enter a commit message', 'warning')
       return
@@ -240,6 +260,11 @@ export default function SourceControlDrawer({
     if (!folderPath) return
 
     setIsCommitting(true)
+    const actionLabel = actionType === 'commit-push' ? 'Commit & Push' :
+                        actionType === 'commit-sync' ? 'Commit & Sync' :
+                        actionType === 'commit-amend' ? 'Commit (Amend)' : 'Commit'
+    showToast(`Executing ${actionLabel}... please wait`, 'info')
+
     try {
       if (stagedChanges.length === 0 && unstagedChanges.length > 0 && actionType !== 'commit-amend') {
         await window.electronAPI?.gitStageAll?.(folderPath)
@@ -248,9 +273,17 @@ export default function SourceControlDrawer({
       if (window.electronAPI?.gitCommitAction) {
         const res = await window.electronAPI.gitCommitAction(folderPath, commitMessage.trim(), actionType)
         if (res?.success) {
-          showToast(`Commit succeeded (${actionType})`, 'success')
+          const successMsg = actionType === 'commit-push'
+            ? 'Committed & pushed to remote GitHub repository!'
+            : actionType === 'commit-sync'
+            ? 'Committed and synced successfully with remote!'
+            : actionType === 'commit-amend'
+            ? 'Amended previous commit successfully!'
+            : 'Committed changes locally!'
+          showToast(successMsg, 'success')
           if (res.warning) showToast(res.warning, 'warning')
           setCommitMessage('')
+          setIsConfirmModalOpen(false)
           onRefreshGit(folderPath)
           loadGitGraph(folderPath)
         } else {
@@ -261,6 +294,7 @@ export default function SourceControlDrawer({
         if (res?.success) {
           showToast('Committed successfully', 'success')
           setCommitMessage('')
+          setIsConfirmModalOpen(false)
           onRefreshGit(folderPath)
           loadGitGraph(folderPath)
         } else {
@@ -602,7 +636,8 @@ export default function SourceControlDrawer({
                   setCommitAction={setCommitAction}
                   isSplitMenuOpen={isSplitMenuOpen}
                   setIsSplitMenuOpen={setIsSplitMenuOpen}
-                  onExecuteCommit={executeCommit}
+                  onInitiateCommit={handleInitiateCommit}
+                  onOpenHelp={() => setIsHelpModalOpen(true)}
                 />
 
                 <ChangesList
@@ -672,6 +707,26 @@ export default function SourceControlDrawer({
         onCheckoutBranch={handleCheckoutBranch}
         onCreateBranch={handleCreateBranch}
         onClose={() => setIsBranchModalOpen(false)}
+      />
+
+      {/* 7. Commit Confirmation & Review Modal */}
+      <CommitConfirmModal
+        isOpen={isConfirmModalOpen}
+        actionType={pendingCommitAction}
+        branch={branch}
+        remoteUrl={gitInfo?.remoteUrl}
+        commitMessage={commitMessage}
+        stagedChanges={stagedChanges}
+        unstagedChanges={unstagedChanges}
+        isCommitting={isCommitting}
+        onConfirm={() => executeCommit(pendingCommitAction)}
+        onClose={() => setIsConfirmModalOpen(false)}
+      />
+
+      {/* 8. Commit Help & Commands Guide Modal */}
+      <CommitHelpModal
+        isOpen={isHelpModalOpen}
+        onClose={() => setIsHelpModalOpen(false)}
       />
     </div>
   )

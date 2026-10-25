@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 export default function IntegrationsSettingsSection({
   activeCategory,
@@ -14,7 +14,7 @@ export default function IntegrationsSettingsSection({
     <section className="settings-group-section">
       <div className="settings-group-header">
         <span className="material-symbols-outlined">hub</span>
-        <h3>GitHub & Integrations</h3>
+        <h3>GitHub & Version Control Integrations</h3>
       </div>
 
       {/* GitHub Personal Access Token */}

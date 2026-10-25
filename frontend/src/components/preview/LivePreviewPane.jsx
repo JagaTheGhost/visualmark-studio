@@ -76,28 +76,37 @@ export default function LivePreviewPane({
             urlTransform={(url) => {
               if (!url || typeof url !== 'string') return ''
               const trimmed = url.replace(/[\r\n\t]/g, '').trim()
-              const lower = trimmed.toLowerCase()
-              if (
-                lower.startsWith('javascript:') ||
-                lower.startsWith('vbscript:') ||
-                lower.startsWith('data:text/html') ||
-                lower.startsWith('file:')
-              ) {
-                return ''
+              if (!trimmed) return ''
+
+              // 1. Allow standard web protocols (HTTP, HTTPS, mailto)
+              if (/^https?:\/\//i.test(trimmed) || /^mailto:/i.test(trimmed)) {
+                return trimmed
               }
+
+              // 2. Allow relative workspace paths and in-page anchors
               if (
-                trimmed.startsWith('data:image/') ||
-                trimmed.startsWith('http://') ||
-                trimmed.startsWith('https://') ||
                 trimmed.startsWith('/') ||
                 trimmed.startsWith('./') ||
                 trimmed.startsWith('../') ||
                 trimmed.startsWith('#') ||
-                trimmed.startsWith('mailto:') ||
                 (!trimmed.includes(':') && !trimmed.startsWith('//'))
               ) {
                 return trimmed
               }
+
+              // 3. Allow safe raster image data URIs
+              if (/^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/i.test(trimmed)) {
+                return trimmed
+              }
+
+              // 4. Safe SVG data URI with content inspection
+              if (/^data:image\/svg\+xml/i.test(trimmed)) {
+                const lower = trimmed.toLowerCase()
+                if (!lower.includes('<script') && !lower.includes('javascript:') && !lower.includes('onload=') && !lower.includes('onerror=')) {
+                  return trimmed
+                }
+              }
+
               return ''
             }}
             components={{

@@ -61,6 +61,67 @@ export default function BadgeStudioTab({
   ])
   const [rackLayout, setRackLayout] = useState('center-div')
 
+  // AI Agent Studio Hydration Listener
+  useEffect(() => {
+    const applyBadgeData = (data) => {
+      if (!data) return
+      const list = Array.isArray(data)
+        ? data
+        : (data.badge_studio || data.badges_studio || data.badges || [])
+      if (!Array.isArray(list) || list.length === 0) return
+
+      const newRack = list.map((b, idx) => {
+        const hasMessage = Boolean(b.message && String(b.message).trim())
+        const rawLabel = b.label || b.name || 'Tech'
+        const rawMsg = b.message || b.value || ''
+        const title = b.title || (hasMessage ? `${rawLabel} ${rawMsg}` : rawLabel)
+        const format = b.format || (hasMessage ? 'split' : 'brand-plate')
+        const color = (b.color || '6366f1').replace('#', '').trim()
+        const labelColor = (b.labelColor || '18181b').replace('#', '').trim()
+        const logo = b.logo
+          ? String(b.logo).toLowerCase().trim()
+          : (b.label || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+        const logoColor = b.logoColor || (color.toUpperCase() === '61DAFB' ? 'black' : 'white')
+
+        return {
+          id: String(Date.now() + idx),
+          format,
+          title,
+          label: rawLabel,
+          message: rawMsg,
+          color,
+          labelColor,
+          style: b.style || 'for-the-badge',
+          logo,
+          logoColor,
+          link: b.url || b.link || ''
+        }
+      })
+
+      setRackBadges(newRack)
+      setActiveMode('rack')
+    }
+
+    const handleSetBadges = (e) => {
+      applyBadgeData(e.detail)
+    }
+
+    // Auto-hydrate on mount if pending data was cached before lazy tab load
+    try {
+      const pending = sessionStorage.getItem('visualmark_pending_badge_data')
+      if (pending) {
+        sessionStorage.removeItem('visualmark_pending_badge_data')
+        const parsed = JSON.parse(pending)
+        applyBadgeData(parsed)
+      }
+    } catch (err) {
+      console.warn('Failed to parse pending badge data:', err)
+    }
+
+    window.addEventListener('visualmark:set-badge-data', handleSetBadges)
+    return () => window.removeEventListener('visualmark:set-badge-data', handleSetBadges)
+  }, [])
+
   // GitHub Metrics Mode State
   const [customRepo, setCustomRepo] = useState('')
   const [githubMetricsStyle, setGithubMetricsStyle] = useState('for-the-badge')
@@ -167,19 +228,20 @@ export default function BadgeStudioTab({
   // Rack Mode Item URL
   const getRackItemUrl = (b) => {
     const bC = (b.color || '6366f1').replace('#', '')
+    const logoColorParam = b.logoColor ? `&logoColor=${encodeURIComponent(b.logoColor)}` : '&logoColor=white'
     if (b.format === 'brand-plate') {
       let u = `https://img.shields.io/badge/${escapeShieldsText(b.title || b.label)}-${bC}?style=${b.style || style}`
-      if (b.logo) u += `&logo=${encodeURIComponent(b.logo)}&logoColor=white`
+      if (b.logo) u += `&logo=${encodeURIComponent(b.logo)}${logoColorParam}`
       return u
     }
     if (b.format === 'icon-only') {
       let u = `https://img.shields.io/badge/--${bC}?style=${b.style || style}`
-      if (b.logo) u += `&logo=${encodeURIComponent(b.logo)}&logoColor=white`
+      if (b.logo) u += `&logo=${encodeURIComponent(b.logo)}${logoColorParam}`
       return u
     }
     let u = `https://img.shields.io/badge/${escapeShieldsText(b.label)}-${escapeShieldsText(b.message)}-${bC}?style=${b.style || style}`
     if (b.labelColor) u += `&labelColor=${encodeURIComponent(b.labelColor.replace('#', ''))}`
-    if (b.logo) u += `&logo=${encodeURIComponent(b.logo)}&logoColor=white`
+    if (b.logo) u += `&logo=${encodeURIComponent(b.logo)}${logoColorParam}`
     return u
   }
 

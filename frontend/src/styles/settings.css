@@ -39,7 +39,7 @@
 .settings-main-title {
   font-size: 18px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .settings-env-badge {
@@ -99,14 +99,14 @@
   border: 1px solid var(--border-color);
   border-radius: 4px;
   padding: 7px 32px 7px 32px;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 13px;
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .settings-search-input:focus {
-  border-color: #007acc;
-  box-shadow: 0 0 0 1px #007acc;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
 }
 
 .settings-search-clear {
@@ -121,7 +121,7 @@
   font-size: 12px;
 }
 .settings-search-clear:hover {
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .settings-category-pills {
@@ -144,7 +144,7 @@
   white-space: nowrap;
 }
 .settings-pill:hover {
-  color: #ffffff;
+  color: var(--text-primary);
   background-color: var(--surface-high);
 }
 .settings-pill.active {
@@ -169,8 +169,8 @@
   gap: 8px;
   margin-bottom: 14px;
   padding-bottom: 6px;
-  border-bottom: 1px solid var(--border-subtle);
-  color: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 .settings-group-header h3 {
   font-size: 14px;
@@ -201,7 +201,7 @@
 .settings-card-label {
   font-size: 13px;
   font-weight: 500;
-  color: #e2e8f0;
+  color: var(--text-primary);
   margin-bottom: 2px;
 }
 
@@ -214,7 +214,7 @@
 .settings-input-select {
   background-color: var(--surface-lowest);
   border: 1px solid var(--border-color);
-  color: #ffffff;
+  color: var(--text-primary);
   padding: 5px 10px;
   border-radius: 4px;
   font-size: 12px;
@@ -222,21 +222,21 @@
   min-width: 180px;
 }
 .settings-input-select:focus {
-  border-color: #007acc;
+  border-color: var(--primary);
 }
 
 .settings-input-text {
   width: 100%;
   background-color: var(--surface-lowest);
   border: 1px solid var(--border-color);
-  color: #ffffff;
+  color: var(--text-primary);
   padding: 5px 10px;
   border-radius: 4px;
   font-size: 12px;
   outline: none;
 }
 .settings-input-text:focus {
-  border-color: #007acc;
+  border-color: var(--primary);
 }
 
 .settings-input-with-toggle {
@@ -258,7 +258,7 @@
   align-items: center;
 }
 .settings-eye-btn:hover {
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .settings-val-badge {
@@ -351,7 +351,7 @@
 .shortcuts-main-title {
   font-size: 18px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .shortcuts-count-badge {
@@ -410,7 +410,7 @@
   border: 1px solid var(--border-color);
   border-radius: 4px;
   padding: 7px 32px 7px 32px;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 13px;
   outline: none;
 }
@@ -451,7 +451,7 @@
   white-space: nowrap;
 }
 .shortcuts-pill:hover {
-  color: #ffffff;
+  color: var(--text-primary);
   background-color: var(--surface-high);
 }
 .shortcuts-pill.active {
@@ -496,7 +496,7 @@
 
 .shortcut-cmd-name {
   font-weight: 500;
-  color: #e2e8f0;
+  color: var(--text-primary);
 }
 
 .shortcut-cmd-desc {
@@ -516,13 +516,13 @@
   padding: 2px 7px;
   background-color: var(--surface-mid);
   border: 1px solid var(--border-color);
-  border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+  border-bottom: 2px solid var(--primary);
   border-radius: 4px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 11px;
   font-weight: 500;
-  color: #ffffff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .key-plus {

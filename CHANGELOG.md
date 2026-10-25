@@ -13,6 +13,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2026-10-25
+
+### Added
+- **10-Theme Palette Suite & Top Bar Quick Switcher**:
+  - 10 hand-calibrated themes across Dark & Light modes (Tokyo Night, Dracula, GitHub Slate Light, GitHub Dark, One Dark, Solarized Dark, Solarized Light, Monokai Pro, Nord, and Synthwave '84).
+  - Fast Dark/Light mode toggle button pinned to the top header bar.
+  - Interactive theme picker flyout with color palette swatch dots and badge indicators.
+- **Glassmorphic Welcome Launcher Hub (`WelcomeLauncher.jsx`)**:
+  - Streamlined start screen featuring Quick Start actions (Open Folder, Clone Repo, New File, Doc Generator).
+  - Integrated Interactive Live Playground launcher (`Playground.md`) pre-loaded with live Mermaid flowcharts, Shields.io badges, and markdown tables.
+  - Recent workspaces list with one-click path opening and clear history action.
+  - Visual studio exploration grid showcasing Badges, Diagrams, Tables, Directory Trees, Changelogs, and Contributors studios.
+  - Startup preference toggle (*"Show Welcome page on startup"*).
+- **15-Second Quick Setup Wizard Modal (`FirstTimeSetupModal.jsx`)**:
+  - Modal onboarding wizard for new and returning users to configure themes, editor engines (Monaco Pro vs Basic), and default view modes.
+- **Source Control / Git Drawer Overhaul (`SourceControlDrawer.jsx`)**:
+  - Redesigned commit composer with staged vs. unstaged change tracking, unstaged file counters, and character validation.
+  - Commit Confirmation modal (`CommitConfirmModal.jsx`) with pre-commit checklist.
+  - Commit Guide modal (`CommitHelpModal.jsx`) detailing Conventional Commits prefixes (`feat`, `fix`, `docs`, etc.).
+  - Commit history inspector with date formatting and commit hash copying.
+- **Monaco Pro Editor Hardening**:
+  - Native markdown lint diagnostics and problem reporting panel integration.
+  - Word wrap toggle, minimap visibility toggle, and configurable line-height / typography.
+  - Improved selection HUD toolbar and floating actions.
+
+### Changed
+- Refactored packaging configuration to support single-pass background auto-updates and portable binaries without elevation requirements.
+- Standardized 100% offline local-first security architecture with zero external telemetry and zero required cloud credentials.
+
+---
+
 ## [1.1.4] - 2026-10-19
 
 ### Added

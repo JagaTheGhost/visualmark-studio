@@ -13,21 +13,12 @@ export function sanitizeSafeMediaUrl(url, fallback = '') {
   const trimmed = url.replace(/[\r\n\t]/g, '').trim()
   if (!trimmed) return fallback
 
-  const lower = trimmed.toLowerCase()
-  if (
-    lower.startsWith('javascript:') ||
-    lower.startsWith('vbscript:') ||
-    lower.startsWith('data:text/html')
-  ) {
-    return fallback
-  }
-
-  // Allow standard web protocols
-  if (/^https?:\/\//i.test(trimmed)) {
+  // 1. Allow standard web protocols (HTTP, HTTPS, mailto)
+  if (/^https?:\/\//i.test(trimmed) || /^mailto:/i.test(trimmed)) {
     return trimmed
   }
 
-  // Allow relative workspace paths (e.g. assets/..., ./assets/..., images/..., etc.)
+  // 2. Allow relative workspace paths (e.g. assets/..., ./assets/..., images/..., etc.)
   if (
     trimmed.startsWith('/') ||
     trimmed.startsWith('./') ||
@@ -37,17 +28,18 @@ export function sanitizeSafeMediaUrl(url, fallback = '') {
     return trimmed
   }
 
-  // Allow safe image/media data URIs (PNG, JPEG, WebP, GIF, SVG)
+  // 3. Allow safe image/media data URIs (PNG, JPEG, WebP, GIF)
   if (/^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/i.test(trimmed)) {
     return trimmed
   }
 
-  if (trimmed.startsWith('data:image/svg+xml')) {
-    // Avoid javascript/event handlers in SVG data URIs
-    if (lower.includes('<script') || lower.includes('javascript:') || lower.includes('onload=') || lower.includes('onerror=')) {
-      return fallback
+  // 4. Safe SVG data URI with content inspection
+  if (/^data:image\/svg\+xml/i.test(trimmed)) {
+    const lower = trimmed.toLowerCase()
+    if (!lower.includes('<script') && !lower.includes('javascript:') && !lower.includes('onload=') && !lower.includes('onerror=')) {
+      return trimmed
     }
-    return trimmed
+    return fallback
   }
 
   // Disallow any other protocols (e.g. javascript:, vbscript:, file:, etc.)

@@ -48,7 +48,7 @@ export default function CommitInspectorModal({
                   className="sc-btn-copy-hash"
                   onClick={() => {
                     navigator.clipboard?.writeText(selectedCommit.hash)
-                    showToast('Commit hash copied to clipboard', 'success')
+                    showToast('Commit hash copied to clipboard', 'success', { source: 'GIT' })
                   }}
                   title="Copy full hash"
                 >

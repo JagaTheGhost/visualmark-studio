@@ -11,6 +11,7 @@ async function getMermaid() {
       const mModule = m.default || m
       mModule.initialize({
         startOnLoad: false,
+        suppressErrorRendering: true,
         theme: 'base',
         themeVariables: {
           darkMode: true,
@@ -45,6 +46,11 @@ export default function MermaidRenderer({ chart, plain = false }) {
     let isMounted = true
     const uniqueId = `mermaid-svg-${Math.random().toString(36).substring(2, 9)}`
 
+    // Remove any previously injected stray Mermaid error DOM nodes from document.body
+    if (typeof document !== 'undefined') {
+      document.querySelectorAll('svg[id^="dmermaid-svg-"], div[id^="dmermaid-svg-"], [id^="dmermaid-"]').forEach((el) => el.remove())
+    }
+
     const renderChart = async () => {
       if (!chart || !chart.trim()) {
         setSvgContent('')
@@ -52,14 +58,27 @@ export default function MermaidRenderer({ chart, plain = false }) {
         return
       }
 
+      const trimmedChart = chart.trim()
+
       try {
         setRenderError(null)
         const mermaid = await getMermaid()
-        const { svg } = await mermaid.render(uniqueId, chart.trim())
+
+        // 1. Validate syntax with parse() first to avoid polluting the DOM with error SVGs
+        if (typeof mermaid.parse === 'function') {
+          await mermaid.parse(trimmedChart)
+        }
+
+        // 2. Render only if parse succeeded
+        const { svg } = await mermaid.render(uniqueId, trimmedChart)
         if (isMounted) {
           setSvgContent(svg)
         }
       } catch (err) {
+        // Remove any stray error elements Mermaid might have appended to document.body
+        if (typeof document !== 'undefined') {
+          document.querySelectorAll(`[id^="d${uniqueId}"], [id^="${uniqueId}"], svg[id^="dmermaid-svg-"], div[id^="dmermaid-svg-"]`).forEach((el) => el.remove())
+        }
         if (isMounted) {
           console.warn('Mermaid rendering syntax error:', err)
           setRenderError(err.message || 'Syntax error in Mermaid diagram')
@@ -71,6 +90,9 @@ export default function MermaidRenderer({ chart, plain = false }) {
 
     return () => {
       isMounted = false
+      if (typeof document !== 'undefined') {
+        document.querySelectorAll(`[id^="d${uniqueId}"], [id^="${uniqueId}"]`).forEach((el) => el.remove())
+      }
     }
   }, [chart])
 

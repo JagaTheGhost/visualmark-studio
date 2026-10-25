@@ -162,7 +162,7 @@ export default function TabBar({
   }
 
   const isStudioTabActive =
-    activeFile && (activeFile.endsWith('.studio') || activeFile === 'settings' || activeFile === 'shortcuts' || activeFile === 'whats-new' || activeFile === 'release-notes')
+    activeFile && (activeFile.endsWith('.studio') || activeFile === 'settings' || activeFile === 'shortcuts' || activeFile === 'whats-new' || activeFile === 'release-notes' || activeFile === 'welcome' || Boolean(STUDIO_TABS_CONFIG[activeFile]))
 
   // Handle dropping onto a specific tab
   const handleTabDrop = (e, targetTabName) => {

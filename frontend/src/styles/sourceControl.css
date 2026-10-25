@@ -738,6 +738,63 @@
   gap: 6px;
 }
 
+.sc-commit-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 1px;
+}
+
+.sc-commit-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+  letter-spacing: 0.02em;
+}
+
+.sc-branch-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+  font-weight: 500;
+}
+
+.sc-btn-help-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1px 7px 1px 5px;
+  color: #94a3b8;
+  font-size: 10.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sc-btn-help-trigger:hover {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+
+.sc-help-icon-symbol {
+  font-size: 13px !important;
+}
+
 .sc-commit-input-wrapper {
   width: 100%;
 }
@@ -832,9 +889,62 @@
 }
 
 .sc-split-menu {
-  width: 100%;
+  width: 270px;
   left: 0;
   right: auto;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 100;
+}
+
+.sc-split-menu-item {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+  padding: 6px 8px !important;
+  text-align: left !important;
+  border-radius: 4px !important;
+  width: 100% !important;
+  transition: background 0.12s ease;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.sc-split-menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.sc-split-menu-item.selected {
+  background-color: rgba(0, 122, 204, 0.22) !important;
+  border-left: 2px solid #007acc !important;
+}
+
+.sc-split-menu-item .material-symbols-outlined {
+  font-size: 16px !important;
+  margin-top: 2px;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.sc-split-menu-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sc-split-item-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary, #f1f5f9);
+}
+
+.sc-split-item-subtitle {
+  font-size: 10px;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.25;
 }
 
 /* Staged / Changes Subsections */
@@ -1714,3 +1824,590 @@
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+/* ==========================================================================
+   Commit In-Progress Banner & Animations
+   ========================================================================== */
+.sc-spin-fast {
+  animation: scSpin 0.75s linear infinite !important;
+}
+
+@keyframes scSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.sc-commit-progress-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm, 4px);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  animation: scPulseFade 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes scPulseFade {
+  0% { border-color: rgba(56, 189, 248, 0.25); }
+  100% { border-color: rgba(56, 189, 248, 0.75); box-shadow: 0 0 12px rgba(56, 189, 248, 0.25); }
+}
+
+.sc-commit-progress-banner .sc-spin-fast {
+  color: #38bdf8;
+  font-size: 20px !important;
+  flex-shrink: 0;
+}
+
+.sc-progress-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sc-progress-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-progress-sub {
+  font-size: 10px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   Commit Confirmation & Review Modal
+   ========================================================================== */
+.sc-confirm-modal {
+  max-width: 520px;
+  width: 90%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  background: var(--surface-card, #161b22);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6);
+  animation: scModalSlide 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes scModalSlide {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.sc-confirm-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.sc-confirm-title-icon {
+  font-size: 18px !important;
+  color: #38bdf8;
+}
+
+.sc-confirm-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.sc-confirm-action-banner {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sc-confirm-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.sc-action-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.sc-action-badge.badge-push {
+  background: rgba(56, 189, 248, 0.18);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+
+.sc-action-badge.badge-commit {
+  background: rgba(34, 197, 94, 0.18);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #4ade80;
+}
+
+.sc-action-badge.badge-sync {
+  background: rgba(168, 85, 247, 0.18);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+}
+
+.sc-action-badge.badge-amend {
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+}
+
+.sc-branch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+}
+
+.sc-confirm-action-desc {
+  margin: 0;
+  font-size: 11.5px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.sc-confirm-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sc-confirm-meta-row {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+}
+
+.sc-confirm-label {
+  width: 90px;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.sc-confirm-value {
+  color: #e2e8f0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-repo-url {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono, monospace);
+  font-size: 11.5px;
+  color: #38bdf8;
+}
+
+.sc-confirm-message-section, .sc-confirm-files-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sc-confirm-section-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sc-confirm-message-box {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-left: 3px solid #38bdf8;
+  color: #f8fafc;
+  font-size: 12.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.sc-confirm-message-empty {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.sc-confirm-files-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sc-files-count-badge {
+  font-size: 10.5px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.sc-autostage-notice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  font-size: 11px;
+  color: #fbbf24;
+}
+
+.sc-confirm-files-list {
+  max-height: 140px;
+  overflow-y: auto;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sc-confirm-file-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 11.5px;
+  color: #cbd5e1;
+}
+
+.sc-confirm-file-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sc-confirm-no-files {
+  padding: 12px;
+  text-align: center;
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+.sc-file-icon {
+  font-size: 14px !important;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.sc-file-name {
+  font-weight: 500;
+  color: #f1f5f9;
+}
+
+.sc-file-dir {
+  font-size: 10px;
+  color: #64748b;
+  margin-left: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-confirm-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.sc-btn-secondary-modal {
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sc-btn-secondary-modal:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.sc-btn-primary-modal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: 6px;
+  background: #0284c7;
+  border: 1px solid #38bdf8;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sc-btn-primary-modal:hover:not(:disabled) {
+  background: #0369a1;
+}
+
+.sc-btn-primary-modal:disabled, .sc-btn-secondary-modal:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Commit Help & Commands Guide Modal
+   ========================================================================== */
+.sc-help-modal {
+  max-width: 620px;
+  width: 92%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  background: var(--surface-card, #161b22);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.65);
+  animation: scModalSlide 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sc-help-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.sc-help-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 20px;
+  overflow-y: auto;
+}
+
+.sc-help-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sc-help-heading {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.sc-help-icon {
+  font-size: 18px !important;
+  color: #38bdf8;
+}
+
+.sc-help-p {
+  margin: 0;
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+.sc-help-tips-box {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sc-help-tip-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.sc-help-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #cbd5e1;
+}
+
+.sc-help-prefix-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.sc-badge-prefix {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 11px;
+}
+
+.sc-badge-prefix code, .sc-help-list code {
+  color: #38bdf8;
+  font-family: var(--font-mono, monospace);
+  background: rgba(56, 189, 248, 0.12);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.sc-commands-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 600px) {
+  .sc-commands-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sc-command-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.15s ease;
+}
+
+.sc-command-card.featured {
+  background: rgba(56, 189, 248, 0.06);
+  border-color: rgba(56, 189, 248, 0.25);
+}
+
+.sc-command-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sc-cmd-icon {
+  font-size: 17px !important;
+}
+
+.sc-cmd-icon.check { color: #4ade80; }
+.sc-cmd-icon.push { color: #38bdf8; }
+.sc-cmd-icon.sync { color: #c084fc; }
+.sc-cmd-icon.amend { color: #fbbf24; }
+
+.sc-cmd-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.sc-cmd-scope {
+  margin-left: auto;
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sc-cmd-scope.local {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+}
+
+.sc-cmd-scope.remote {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+.sc-cmd-scope.rewrite {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+}
+
+.sc-cmd-desc {
+  margin: 0;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.sc-cmd-desc code {
+  color: #38bdf8;
+  font-family: var(--font-mono, monospace);
+}
+
+.sc-cmd-footer {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 10px;
+  color: #cbd5e1;
+}
+
+.sc-cmd-footer .material-symbols-outlined {
+  font-size: 13px !important;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+

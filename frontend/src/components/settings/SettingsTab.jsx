@@ -62,7 +62,9 @@ export default function SettingsTab({
   onStartDownloadUpdate = () => {},
   onRestartToUpdate = () => {},
   tabGroupingEnabled = true,
-  setTabGroupingEnabled = () => {}
+  setTabGroupingEnabled = () => {},
+  showWelcomeOnStartup = true,
+  onToggleShowWelcomeOnStartup = () => {}
 }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('all')
@@ -197,7 +199,7 @@ export default function SettingsTab({
           <input
             type="text"
             className="settings-search-input"
-            placeholder="Search settings (e.g. font, wrap, gemini, theme, indentation)..."
+            placeholder="Search settings (e.g. font, wrap, theme, git, indentation)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -271,6 +273,8 @@ export default function SettingsTab({
           setOrientation={setOrientation}
           tabGroupingEnabled={tabGroupingEnabled}
           setTabGroupingEnabled={setTabGroupingEnabled}
+          showWelcomeOnStartup={showWelcomeOnStartup}
+          onToggleShowWelcomeOnStartup={onToggleShowWelcomeOnStartup}
         />
 
         <ExportSettingsSection

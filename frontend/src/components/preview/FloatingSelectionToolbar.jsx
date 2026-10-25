@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react'
 export default function FloatingSelectionToolbar({
   position = { top: 0, left: 0, flipped: false },
   selectedText = '',
+  selectionRange = null,
   onFormat = () => {},
   config = {},
   onClose = () => {}

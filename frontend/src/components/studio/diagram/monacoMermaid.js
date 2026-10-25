@@ -132,8 +132,16 @@ export function registerMermaidLanguage(monaco) {
         [/"([^"\\]|\\.)*"/, 'string'],
         [/'([^'\\]|\\.)*'/, 'string'],
 
-        // Arrows & Connectors
-        [/(-->|-.->|==>|<-->|---|->>|-->>|\|\|--o\{|\|\|--\|\||\}o--o\{)/, 'operator'],
+        // Arrows & Connectors (Uses official Monaco Monarch @operators lookup to avoid HTML comment regex ambiguity)
+        [
+          /[-=<>|.ox*{}]+/,
+          {
+            cases: {
+              '@operators': 'operator',
+              '@default': ''
+            }
+          }
+        ],
 
         // Labels inside pipes |label|
         [/\|[^|]+\|/, 'string.pipe'],

@@ -169,23 +169,23 @@ npm run electron:dist
 Generated artifacts in `frontend/release/`:
 - `VisualMark-Studio-Setup.exe` — Windows setup installer (Non-elevated user-level installation, Start Menu & Desktop shortcuts)
 - `VisualMark-Studio-Portable.exe` — Zero-install portable standalone executable
-- `latest.yml` — Differential auto-update manifest for Electron Updater
+- `latest.yml` — Release manifest for Electron Updater
 
 ---
 
-## 7. Testing Auto-Updates (Differential Patching)
+## 7. Testing Auto-Updates (Direct Packaging)
 
-VisualMark Studio supports delta auto-updates via GitHub Releases (`v1.1.2` → `v1.1.3`):
+VisualMark Studio supports automated in-app updates via GitHub Releases:
 1. **Bump Version:** Update `"version"` in `frontend/package.json` and `frontend/src/data/releaseNotes.js`.
 2. **Git Commit & Tag:**
    ```bash
    git add .
-   git commit -m "chore: release v1.1.3"
-   git tag v1.1.3
+   git commit -m "chore: release v1.1.4"
+   git tag v1.1.4
    git push origin main --tags
    ```
-3. **CI/CD Build & Publish:** GitHub Actions (`release.yml`) builds the assets and uploads `VisualMark-Studio-Setup.exe`, `.blockmap`, `VisualMark-Studio-Portable.exe`, and `latest.yml` to the Release.
-4. **Verification:** Launch installed `v1.1.2`, open **Settings → Updates**, click **"Check for updates"**, and observe the app download only the differential blockmap patch and prompt to restart into `v1.1.3`.
+3. **CI/CD Build & Publish:** GitHub Actions (`release.yml`) builds the assets and uploads `VisualMark-Studio-Setup.exe`, `VisualMark-Studio-Portable.exe`, and `latest.yml` to the Release.
+4. **Verification:** Launch installed application, open **Settings → Updates**, click **"Check for updates"**, and observe the app download the release cleanly in a single pass and prompt to restart.
 
 ---
 

@@ -1,5 +1,6 @@
 import React from 'react'
 import { useI18n } from '../../i18n/I18nContext'
+import { THEMES } from '../../themes/themeRegistry'
 
 export default function AppearanceSettingsSection({
   activeCategory,
@@ -11,7 +12,9 @@ export default function AppearanceSettingsSection({
   orientation,
   setOrientation,
   tabGroupingEnabled = true,
-  setTabGroupingEnabled = () => {}
+  setTabGroupingEnabled = () => {},
+  showWelcomeOnStartup = true,
+  onToggleShowWelcomeOnStartup = () => {}
 }) {
   const { locale, setLocale, supportedLanguages, t } = useI18n()
 
@@ -51,11 +54,11 @@ export default function AppearanceSettingsSection({
 
 
       {/* Color Theme */}
-      {matchesSearch('theme color dark modern slate light') && (
+      {matchesSearch('theme color dark modern slate light tokyo dracula one monokai github solarized') && (
         <div className="settings-card">
           <div className="settings-card-info">
             <div className="settings-card-label">Workbench: Color Theme</div>
-            <div className="settings-card-sublabel">Specifies the color theme used in the workbench and editor canvas.</div>
+            <div className="settings-card-sublabel">Specifies the color theme used in the workbench, editor canvas, and markdown preview.</div>
           </div>
           <div className="settings-card-control">
             <select
@@ -63,9 +66,20 @@ export default function AppearanceSettingsSection({
               value={themeMode}
               onChange={(e) => setThemeMode(e.target.value)}
             >
-              <option value="dark">Dark Modern (Antigravity IDE / VS Code Default)</option>
-              <option value="slate">Sleek Slate (#10141a)</option>
-              <option value="light">Crisp Light Mode</option>
+              <optgroup label="Dark Themes">
+                {THEMES.filter(t => t.type === 'dark').map(theme => (
+                  <option key={theme.id} value={theme.id}>
+                    {theme.name} {theme.badge ? `(${theme.badge})` : ''}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Light Themes">
+                {THEMES.filter(t => t.type === 'light').map(theme => (
+                  <option key={theme.id} value={theme.id}>
+                    {theme.name} {theme.badge ? `(${theme.badge})` : ''}
+                  </option>
+                ))}
+              </optgroup>
             </select>
           </div>
         </div>
@@ -130,6 +144,26 @@ export default function AppearanceSettingsSection({
               <option value="vertical">Side-by-Side (Vertical Split)</option>
               <option value="horizontal">Stacked (Horizontal Split)</option>
             </select>
+          </div>
+        </div>
+      )}
+
+      {/* Show Welcome On Startup */}
+      {matchesSearch('welcome startup onboarding landing page getting started') && (
+        <div className="settings-card">
+          <div className="settings-card-info">
+            <div className="settings-card-label">Workbench: Show Welcome Page on Startup</div>
+            <div className="settings-card-sublabel">Open the Welcome / Getting Started dashboard when launching VisualMark Studio.</div>
+          </div>
+          <div className="settings-card-control">
+            <label className="settings-switch">
+              <input
+                type="checkbox"
+                checked={Boolean(showWelcomeOnStartup)}
+                onChange={(e) => onToggleShowWelcomeOnStartup(e.target.checked)}
+              />
+              <span className="settings-switch-slider" />
+            </label>
           </div>
         </div>
       )}

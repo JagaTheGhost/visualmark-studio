@@ -136,7 +136,10 @@ async function ensureSidecar() {
   activeBackendPort = await findAvailablePort(DEFAULT_BACKEND_PORT)
   console.log('[Sidecar] Allocated backend port:', activeBackendPort)
 
-  // Determine path to bundled binary or python script
+  // Determine path to bundled binary or live python script
+  const pythonScript = path.resolve(__dirname, '../../backend/desktop_server.py')
+  const preferLiveDev = isDev && fs.existsSync(pythonScript)
+
   const candidatePaths = [
     app.isPackaged ? path.join(process.resourcesPath, 'backend-sidecar', 'server', 'server.exe') : null,
     app.isPackaged ? path.join(process.resourcesPath, 'backend-sidecar', 'server.exe') : null,
@@ -146,7 +149,39 @@ async function ensureSidecar() {
 
   const bundledExe = candidatePaths.find((p) => fs.existsSync(p))
 
-  if (bundledExe) {
+  if (preferLiveDev) {
+    console.log('[Sidecar Dev] Spawning live python daemon:', pythonScript)
+    try {
+      sidecarProcess = spawn('python', [pythonScript, '--port', String(activeBackendPort)], {
+        cwd: path.dirname(pythonScript),
+        stdio: ['ignore', 'pipe', 'pipe'],
+        windowsHide: true,
+        detached: false
+      })
+      sidecarProcess.stdout?.on('data', (chunk) => {
+        const text = chunk.toString('utf-8').trim()
+        if (text) console.log(`[Sidecar Dev] ${text}`)
+      })
+      sidecarProcess.stderr?.on('data', (chunk) => {
+        const text = chunk.toString('utf-8').trim()
+        if (text) console.warn(`[Sidecar Dev Err] ${text}`)
+      })
+      sidecarProcess.on('error', () => {
+        console.log('[Sidecar Dev] Python direct spawn skipped (external terminal might be running).')
+      })
+
+      for (let attempt = 0; attempt < 16; attempt++) {
+        const ok = await checkBackendHealth(activeBackendPort)
+        if (ok) {
+          console.log(`[Sidecar Dev] Successfully connected to backend daemon on port ${activeBackendPort} (attempt ${attempt + 1})`)
+          break
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250))
+      }
+    } catch (err) {
+      console.error('[Sidecar Dev Spawn Failed]', err)
+    }
+  } else if (bundledExe) {
     console.log('[Sidecar] Launching bundled sidecar binary:', bundledExe)
     try {
       const sidecarCwd = path.dirname(bundledExe)
@@ -181,40 +216,6 @@ async function ensureSidecar() {
     } catch (err) {
       console.error('[Sidecar Spawn Failed]', err)
     }
-  } else if (isDev) {
-    // In dev mode, attempt to launch python script if python is in PATH
-    const pythonScript = path.resolve(__dirname, '../../backend/desktop_server.py')
-    if (fs.existsSync(pythonScript)) {
-      console.log('[Sidecar Dev] Spawning python daemon:', pythonScript)
-      try {
-        sidecarProcess = spawn('python', [pythonScript, '--port', String(activeBackendPort)], {
-          cwd: path.dirname(pythonScript),
-          stdio: ['ignore', 'pipe', 'pipe'],
-          windowsHide: true,
-          detached: false
-        })
-        sidecarProcess.stdout?.on('data', (chunk) => {
-          const text = chunk.toString('utf-8').trim()
-          if (text) console.log(`[Sidecar Dev] ${text}`)
-        })
-        sidecarProcess.stderr?.on('data', (chunk) => {
-          const text = chunk.toString('utf-8').trim()
-          if (text) console.warn(`[Sidecar Dev Err] ${text}`)
-        })
-        sidecarProcess.on('error', () => {
-          console.log('[Sidecar Dev] Python direct spawn skipped (external terminal might be running).')
-        })
-
-        for (let attempt = 0; attempt < 12; attempt++) {
-          const ok = await checkBackendHealth(activeBackendPort)
-          if (ok) {
-            console.log(`[Sidecar Dev] Backend ready on port ${activeBackendPort}`)
-            break
-          }
-          await new Promise((resolve) => setTimeout(resolve, 250))
-        }
-      } catch {}
-    }
   }
 }
 
@@ -236,7 +237,8 @@ function createWindow() {
       nodeIntegrationInWorker: false,
       webSecurity: true,
       allowRunningInsecureContent: false,
-      spellcheck: true
+      spellcheck: true,
+      devTools: isDev
     }
   })
 
@@ -299,6 +301,21 @@ function createWindow() {
       if (level >= 2) {
         console.log(`[Renderer ${level === 3 ? 'ERROR' : 'WARN'}] ${message} (${sourceId}:${line})`)
       }
+    })
+  } else {
+    // In production builds: strictly disable and block any DevTools shortcuts and inspect keys
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      const key = (input.key || '').toLowerCase()
+      if (
+        key === 'f12' ||
+        (input.control && input.shift && (key === 'i' || key === 'j' || key === 'c')) ||
+        (input.control && key === 'u')
+      ) {
+        event.preventDefault()
+      }
+    })
+    mainWindow.webContents.on('devtools-opened', () => {
+      mainWindow.webContents.closeDevTools()
     })
   }
 
@@ -454,12 +471,15 @@ ipcMain.handle('dialog-save-text-export', async (_event, { defaultPath, filters,
   }
 })
 
-// Toggle Developer Tools
+// Toggle Developer Tools (Only allowed in development mode)
 ipcMain.on('window-toggle-devtools', () => {
-  if (mainWindow) {
+  if (mainWindow && isDev) {
     mainWindow.webContents.toggleDevTools()
   }
 })
+
+// Query whether app is in development mode
+ipcMain.handle('app-is-dev', () => isDev)
 
 // Reload window
 ipcMain.on('window-reload', () => {
@@ -486,14 +506,17 @@ const DANGEROUS_EXECUTABLE_EXTENSIONS = new Set([
   'scr', 'msi', 'msp', 'com', 'pif', 'hta', 'cpl', 'jar', 'reg', 'inf', 'scf', 'lnk', 'url'
 ])
 
-// Read arbitrary file with binary / unsupported format fail-safe
+// Read arbitrary file with binary / unsupported format fail-safe (atomic file handle to prevent race conditions)
 ipcMain.handle('file-read', async (_event, filePath) => {
+  if (!filePath || typeof filePath !== 'string') {
+    return { success: false, error: 'Invalid path' }
+  }
+  let fd = null
   try {
-    if (!filePath || !fs.existsSync(filePath)) {
-      return { success: false, error: 'File does not exist' }
-    }
-    const stat = await fs.promises.stat(filePath)
+    fd = await fs.promises.open(filePath, 'r')
+    const stat = await fd.stat()
     if (stat.isDirectory()) {
+      await fd.close()
       return { success: false, error: 'Target is a directory' }
     }
     const ext = path.extname(filePath).toLowerCase().replace(/^\./, '')
@@ -501,6 +524,7 @@ ipcMain.handle('file-read', async (_event, filePath) => {
 
     // 1. Extension check
     if (BINARY_EXTENSIONS.has(ext)) {
+      await fd.close()
       return {
         success: true,
         isUnsupported: true,
@@ -514,6 +538,7 @@ ipcMain.handle('file-read', async (_event, filePath) => {
 
     // 2. File size safety guard (> 5MB is treated as oversized document)
     if (stat.size > 5 * 1024 * 1024) {
+      await fd.close()
       return {
         success: true,
         isUnsupported: true,
@@ -526,15 +551,14 @@ ipcMain.handle('file-read', async (_event, filePath) => {
     }
 
     // 3. Buffer inspection: check for null bytes in initial chunk
-    const fd = await fs.promises.open(filePath, 'r')
     const sampleSize = Math.min(1024, stat.size)
     const buffer = Buffer.alloc(sampleSize)
     if (sampleSize > 0) {
       await fd.read(buffer, 0, sampleSize, 0)
     }
-    await fd.close()
 
     if (buffer.includes(0)) {
+      await fd.close()
       return {
         success: true,
         isUnsupported: true,
@@ -546,32 +570,41 @@ ipcMain.handle('file-read', async (_event, filePath) => {
       }
     }
 
-    const content = await fs.promises.readFile(filePath, 'utf-8')
+    const content = await fd.readFile({ encoding: 'utf-8' })
+    await fd.close()
     return { success: true, content, fileName, filePath, size: stat.size }
   } catch (err) {
+    if (fd) {
+      try { await fd.close() } catch {}
+    }
+    if (err.code === 'ENOENT') {
+      return { success: false, error: 'File does not exist' }
+    }
     return { success: false, error: err.message }
   }
 })
 
-// Read workspace media file (SVG, PNG, JPG, GIF, WebP, MP4) for Markdown Preview
+// Read workspace media file (SVG, PNG, JPG, GIF, WebP, MP4) for Markdown Preview (atomic file handle)
 ipcMain.handle('read-local-media', async (_event, filePath) => {
+  if (!filePath || typeof filePath !== 'string') {
+    return { success: false, error: 'Invalid path' }
+  }
+  let fd = null
   try {
-    if (!filePath || typeof filePath !== 'string') {
-      return { success: false, error: 'Invalid path' }
-    }
-    if (!fs.existsSync(filePath)) {
-      return { success: false, error: 'File does not exist' }
-    }
-    const stat = await fs.promises.stat(filePath)
+    fd = await fs.promises.open(filePath, 'r')
+    const stat = await fd.stat()
     if (stat.isDirectory()) {
+      await fd.close()
       return { success: false, error: 'Target is a directory' }
     }
     if (stat.size > 30 * 1024 * 1024) {
+      await fd.close()
       return { success: false, error: 'File exceeds size limit (>30MB)' }
     }
     const ext = path.extname(filePath).toLowerCase().replace(/^\./, '')
     if (ext === 'svg') {
-      const content = await fs.promises.readFile(filePath, 'utf-8')
+      const content = await fd.readFile({ encoding: 'utf-8' })
+      await fd.close()
       return { success: true, isSvg: true, content, filePath }
     }
 
@@ -587,10 +620,17 @@ ipcMain.handle('read-local-media', async (_event, filePath) => {
       webm: 'video/webm'
     }
     const mime = mimeMap[ext] || 'image/png'
-    const buffer = await fs.promises.readFile(filePath)
+    const buffer = await fd.readFile()
+    await fd.close()
     const base64 = buffer.toString('base64')
     return { success: true, isSvg: false, dataUrl: `data:${mime};base64,${base64}`, filePath }
   } catch (err) {
+    if (fd) {
+      try { await fd.close() } catch {}
+    }
+    if (err.code === 'ENOENT') {
+      return { success: false, error: 'File does not exist' }
+    }
     return { success: false, error: err.message }
   }
 })
@@ -1530,6 +1570,7 @@ ipcMain.handle('workspace-get-default', async () => {
 // ==================== AUTO UPDATER PIPELINE ====================
 autoUpdater.autoDownload = false
 autoUpdater.autoInstallOnAppQuit = true
+autoUpdater.disableDifferentialDownload = true
 
 ipcMain.handle('app-set-auto-download', (_event, enabled) => {
   autoUpdater.autoDownload = Boolean(enabled)

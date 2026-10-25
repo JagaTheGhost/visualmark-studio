@@ -7,6 +7,7 @@ from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
+import os
 import re
 import urllib.request
 import urllib.parse
@@ -236,6 +237,25 @@ def generate_readme(req: ReadmeRequest):
         )
 
 
+ALLOWED_RESOLVE_HOSTS = {
+    "share.google",
+    "bit.ly",
+    "tinyurl.com",
+    "t.co",
+    "goo.gl",
+    "google.com",
+    "www.google.com",
+    "images.google.com",
+}
+ALLOWED_RESOLVE_SUFFIXES = (
+    ".google.com",
+    ".googleusercontent.com",
+    ".unsplash.com",
+    ".githubusercontent.com",
+    ".imgur.com",
+)
+
+
 @api_router.get("/resolve-image")
 def resolve_image_url(url: str):
     """
@@ -250,11 +270,17 @@ def resolve_image_url(url: str):
         raise HTTPException(status_code=400, detail="Invalid URL or access to restricted address prohibited")
 
     try:
-        # Check if already a Google Image search result with imgurl
         parsed_target = urllib.parse.urlparse(clean_target)
+        target_host = (parsed_target.hostname or "").lower()
+        if not (target_host in ALLOWED_RESOLVE_HOSTS or target_host.endswith(ALLOWED_RESOLVE_SUFFIXES)):
+            raise HTTPException(status_code=400, detail="Domain not permitted for image resolution")
+
+        # Check if already a Google Image search result with imgurl
         target_qs = urllib.parse.parse_qs(parsed_target.query)
         if "imgurl" in target_qs and target_qs["imgurl"]:
-            return {"success": True, "direct_url": target_qs["imgurl"][0], "original_url": clean_target}
+            candidate_imgurl = target_qs["imgurl"][0]
+            if is_safe_public_url(candidate_imgurl):
+                return {"success": True, "direct_url": candidate_imgurl, "original_url": clean_target}
 
         req = urllib.request.Request(
             clean_target,
@@ -298,8 +324,10 @@ def resolve_image_url(url: str):
                         return {"success": True, "direct_url": cand_og, "original_url": clean_target}
 
             return {"success": True, "direct_url": final_url, "original_url": clean_target}
-    except Exception as e:
-        return {"success": False, "error": str(e), "original_url": clean_target}
+    except HTTPException:
+        raise
+    except Exception:
+        return {"success": False, "error": "Unable to resolve target image URL", "original_url": clean_target}
 
 
 class GitCloneRequest(BaseModel):
@@ -326,22 +354,23 @@ def git_clone_endpoint(req: GitCloneRequest):
     # Expand GitHub shorthand e.g. owner/repo
     if "://" not in clean_url and not clean_url.startswith("git@") and "/" in clean_url and " " not in clean_url:
         parts = clean_url.split("/")
-        if len(parts) == 2:
+        if len(parts) == 2 and not parts[0].startswith("-") and not parts[1].startswith("-"):
             clean_url = f"https://github.com/{clean_url}.git"
     elif clean_url.startswith("github.com/"):
-        clean_url = f"https://{clean_url}"
+        # Validate that the domain is strictly github.com and matches owner/repo
+        if re.match(r"^github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/?$", clean_url):
+            clean_url = f"https://{clean_url}"
+        else:
+            raise HTTPException(status_code=400, detail="Invalid GitHub URL format.")
 
     # Validate allowed protocols
-    if not (clean_url.startswith("https://") or clean_url.startswith("http://") or clean_url.startswith("git@") or clean_url.startswith("ssh://")):
-        raise HTTPException(status_code=400, detail="Only HTTP/HTTPS and SSH git repository URLs are supported.")
+    parsed_git = urllib.parse.urlparse(clean_url)
+    if parsed_git.scheme not in ("https", "http", "ssh") and not clean_url.startswith("git@"):
+        raise HTTPException(status_code=400, detail="Only HTTPS, HTTP, and SSH git repository URLs are supported.")
 
-    # Determine destination directory
-    target_dir = (req.target_dir and req.target_dir.strip()) or os.path.expanduser("~/Documents")
-    if not os.path.exists(target_dir):
-        try:
-            os.makedirs(target_dir, exist_ok=True)
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Cannot create destination directory: {e}")
+    # Determine destination directory with canonicalization
+    raw_target_dir = (req.target_dir and req.target_dir.strip()) or os.path.expanduser("~/Documents")
+    target_dir = os.path.abspath(os.path.normpath(raw_target_dir))
 
     dest_folder = (req.folder_name and req.folder_name.strip())
     if not dest_folder:
@@ -350,15 +379,31 @@ def git_clone_endpoint(req: GitCloneRequest):
             url_stripped = url_stripped[:-4]
         dest_folder = url_stripped.split("/")[-1] or "cloned-repo"
 
-    # Sanitize folder name: disallow leading hyphen or path separators
-    if dest_folder.startswith("-") or ".." in dest_folder or "/" in dest_folder or "\\" in dest_folder:
+    # Sanitize folder name: must be strictly alphanumeric with safe punctuation
+    if not re.match(r"^[A-Za-z0-9_.-]+$", dest_folder) or dest_folder in (".", "..") or dest_folder.startswith("-"):
         raise HTTPException(status_code=400, detail="Invalid target folder name.")
 
-    full_dest_path = os.path.join(target_dir, dest_folder)
+    # Prevent path traversal: ensure full destination path is strictly within target_dir
+    full_dest_path = os.path.abspath(os.path.join(target_dir, dest_folder))
+    try:
+        common_prefix = os.path.commonpath([target_dir, full_dest_path])
+        if common_prefix != target_dir:
+            raise HTTPException(status_code=400, detail="Invalid target destination path.")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Cross-drive paths are not supported.")
+
+    if not os.path.exists(target_dir):
+        try:
+            os.makedirs(target_dir, exist_ok=True)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Cannot create destination directory")
+
     if os.path.exists(full_dest_path):
         try:
             if os.listdir(full_dest_path):
                 raise HTTPException(status_code=400, detail=f'Folder "{dest_folder}" already exists in destination and is not empty.')
+        except HTTPException:
+            raise
         except Exception:
             pass
 
@@ -382,22 +427,22 @@ def git_clone_endpoint(req: GitCloneRequest):
         }
     except subprocess.TimeoutExpired:
         return {"success": False, "error": "Git clone timed out after 3 minutes."}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
+    except Exception:
+        return {"success": False, "error": "Git clone operation failed. Please check repository URL and network access."}
 
 @api_router.get("/")
 def root():
     """Root metadata endpoint."""
     return {
-        "message": "README Studio API",
-        "version": "1.0.0",
+        "message": "VisualMark Studio API",
+        "version": "1.2.0",
         "endpoints": {
             "health": "/health or /api/health",
             "generate": "/generate-readme or /api/generate-readme (POST)",
             "docs": "/docs"
         }
     }
+
 
 
 # Mount the router both with and without /api prefix for maximum deployment flexibility

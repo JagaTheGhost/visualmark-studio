@@ -45,6 +45,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openPathInOs: (filePath) => ipcRenderer.invoke('open-path-in-os', filePath),
   toggleDevTools: () => ipcRenderer.send('window-toggle-devtools'),
   reloadWindow: () => ipcRenderer.send('window-reload'),
+  getIsDev: () => ipcRenderer.invoke('app-is-dev'),
 
   // Git / Source Control Operations
   getGitInfo: (folderPath) => ipcRenderer.invoke('git-get-status', folderPath),

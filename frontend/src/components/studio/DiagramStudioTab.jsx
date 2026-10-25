@@ -131,6 +131,42 @@ export default function DiagramStudioTab({
   const [gitSteps, setGitSteps] = useState(initialGit.steps)
   const [selectedGitStepId, setSelectedGitStepId] = useState(initialGit.steps[0]?.id || null)
 
+  // AI Agent Studio Hydration Listeners
+  React.useEffect(() => {
+    const handleSetFlowchart = (e) => {
+      const data = e.detail
+      if (!data) return
+      if (data.direction) setFlowDirection(data.direction)
+      if (Array.isArray(data.nodes) && data.nodes.length > 0) {
+        setFlowNodes(data.nodes)
+        setSelectedFlowchartNodeId(data.nodes[0]?.id || null)
+      }
+      if (Array.isArray(data.edges)) setFlowEdges(data.edges)
+      if (Array.isArray(data.subgraphs)) setFlowSubgraphs(data.subgraphs)
+      setDiagramType('flowchart')
+      setStudioMode('visual')
+    }
+
+    const handleSetDiagramCode = (e) => {
+      const data = e.detail
+      if (!data) return
+      const rawCode = typeof data === 'string' ? data : (data.code || '')
+      if (!rawCode.trim()) return
+      const cleanCode = rawCode.replace(/^```(?:mermaid)?\r?\n/i, '').replace(/\r?\n```$/, '').trim()
+      setCode(cleanCode)
+      const detected = detectDiagramType(cleanCode)
+      setDiagramType(detected)
+      setStudioMode('code')
+    }
+
+    window.addEventListener('visualmark:set-flowchart-data', handleSetFlowchart)
+    window.addEventListener('visualmark:set-diagram-code', handleSetDiagramCode)
+    return () => {
+      window.removeEventListener('visualmark:set-flowchart-data', handleSetFlowchart)
+      window.removeEventListener('visualmark:set-diagram-code', handleSetDiagramCode)
+    }
+  }, [])
+
   // Compute Active Selection Symbol and Text for Canvas Highlighting
   const selectedFlowchartSymbol = useMemo(() => {
     if (diagramType !== 'flowchart' || !selectedFlowchartNodeId) return ''

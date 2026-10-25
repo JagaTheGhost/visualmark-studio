@@ -4,6 +4,7 @@ import { APP_CURRENT_VERSION } from '../data/releaseNotes'
 import appLogo from '../assets/logo.png'
 import { useToast } from '../context/ToastContext'
 import { useI18n } from '../i18n/I18nContext'
+import { THEMES, getThemeById } from '../themes/themeRegistry'
 
 export default function TopMenuBar({
   activeFile,
@@ -25,9 +26,10 @@ export default function TopMenuBar({
   workspaceDirectory,
   isDocPack,
   loading,
-  hasGenerated,
   themeMode,
   setThemeMode,
+  toggleThemeMode,
+  isDarkMode,
   onOpenSettings,
   onOpenShortcuts,
   onNewFile,
@@ -48,15 +50,32 @@ export default function TopMenuBar({
   onCloseTab = () => {},
   onCloneRepo = () => {},
   onCloseWorkspace = () => {},
+  onOpenWelcome = () => {},
+  onOpenQuickSetup = () => {},
   appVersion = APP_CURRENT_VERSION
 }) {
   const [activeMenu, setActiveMenu] = useState(null)
   const [activeSubmenu, setActiveSubmenu] = useState(null)
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false)
   const [isElectron, setIsElectron] = useState(true)
   const [isMaximized, setIsMaximized] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [isDevMode, setIsDevMode] = useState(() => Boolean(import.meta.env.DEV))
   const topBarRef = useRef(null)
+  const themeMenuRef = useRef(null)
   const { t } = useI18n()
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (themeMenuRef.current && !themeMenuRef.current.contains(e.target)) {
+        setThemeMenuOpen(false)
+      }
+    }
+    if (themeMenuOpen) {
+      document.addEventListener('mousedown', handleOutsideClick)
+    }
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [themeMenuOpen])
 
   let toastCtx = null
   try {
@@ -71,6 +90,11 @@ export default function TopMenuBar({
     if (typeof window !== 'undefined' && window.electronAPI?.isElectron) {
       setIsElectron(true)
       window.electronAPI.isWindowMaximized().then((max) => setIsMaximized(max))
+      if (window.electronAPI.getIsDev) {
+        window.electronAPI.getIsDev().then((res) => {
+          if (typeof res === 'boolean') setIsDevMode(res)
+        }).catch(() => {})
+      }
       const cleanup = window.electronAPI.onMaximizedChange((max) => {
         setIsMaximized(max)
       })
@@ -389,15 +413,57 @@ export default function TopMenuBar({
                   <span>{editorEngine === 'classic' ? '✓ ' : '  '}Editor: Classic (Lightweight)</span>
                 </button>
                 <div className="dropdown-divider" />
-                <button type="button" className="dropdown-item" onClick={() => handleItemClick(() => setThemeMode('dark'))}>
-                  <span>{themeMode === 'dark' ? '✓ ' : '  '}Theme: Dark</span>
-                </button>
-                <button type="button" className="dropdown-item" onClick={() => handleItemClick(() => setThemeMode('slate'))}>
-                  <span>{themeMode === 'slate' ? '✓ ' : '  '}Theme: Slate</span>
-                </button>
-                <button type="button" className="dropdown-item" onClick={() => handleItemClick(() => setThemeMode('light'))}>
-                  <span>{themeMode === 'light' ? '✓ ' : '  '}Theme: Light</span>
-                </button>
+                <div
+                  className="dropdown-item has-submenu"
+                  onMouseEnter={() => setActiveSubmenu('theme')}
+                >
+                  <span className="dropdown-item-label">
+                    <span className="material-symbols-outlined dropdown-icon">palette</span>
+                    <span>Color Theme</span>
+                  </span>
+                  <span className="submenu-arrow">›</span>
+                  {activeSubmenu === 'theme' && (
+                    <div className="menubar-submenu" style={{ minWidth: '230px' }}>
+                      <div style={{ padding: '6px 12px 2px', fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.05em' }}>DARK THEMES</div>
+                      {THEMES.filter(t => t.type === 'dark').map(theme => (
+                        <button
+                          key={theme.id}
+                          type="button"
+                          className="dropdown-item"
+                          onClick={() => handleItemClick(() => setThemeMode(theme.id))}
+                        >
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ display: 'inline-flex', gap: '2px' }}>
+                              {theme.colors.swatch.map((c, i) => (
+                                <span key={i} style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: c, display: 'inline-block' }} />
+                              ))}
+                            </span>
+                            <span>{themeMode === theme.id ? '✓ ' : '  '}{theme.name}</span>
+                          </span>
+                        </button>
+                      ))}
+                      <div className="dropdown-divider" />
+                      <div style={{ padding: '6px 12px 2px', fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.05em' }}>LIGHT THEMES</div>
+                      {THEMES.filter(t => t.type === 'light').map(theme => (
+                        <button
+                          key={theme.id}
+                          type="button"
+                          className="dropdown-item"
+                          onClick={() => handleItemClick(() => setThemeMode(theme.id))}
+                        >
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ display: 'inline-flex', gap: '2px' }}>
+                              {theme.colors.swatch.map((c, i) => (
+                                <span key={i} style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: c, display: 'inline-block' }} />
+                              ))}
+                            </span>
+                            <span>{themeMode === theme.id ? '✓ ' : '  '}{theme.name}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -493,15 +559,19 @@ export default function TopMenuBar({
                   <span>Reveal in File Explorer</span>
                   <kbd>Ctrl+Shift+E</kbd>
                 </button>
-                <div className="dropdown-divider" />
-                <button
-                  type="button"
-                  className="dropdown-item"
-                  onClick={() => handleItemClick(() => window.electronAPI?.toggleDevTools?.())}
-                >
-                  <span>Toggle Developer Tools</span>
-                  <kbd>Ctrl+Shift+I</kbd>
-                </button>
+                {isDevMode && (
+                  <>
+                    <div className="dropdown-divider" />
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      onClick={() => handleItemClick(() => window.electronAPI?.toggleDevTools?.())}
+                    >
+                      <span>Toggle Developer Tools</span>
+                      <kbd>Ctrl+Shift+I</kbd>
+                    </button>
+                  </>
+                )}
                 <button
                   type="button"
                   className="dropdown-item"
@@ -526,6 +596,13 @@ export default function TopMenuBar({
             </button>
             {activeMenu === 'help' && (
               <div className="menubar-dropdown">
+                <button type="button" className="dropdown-item" onClick={() => handleItemClick(onOpenWelcome)}>
+                  <span>Welcome / Getting Started</span>
+                </button>
+                <button type="button" className="dropdown-item" onClick={() => handleItemClick(onOpenQuickSetup)}>
+                  <span>Quick Setup Wizard...</span>
+                </button>
+                <div className="dropdown-divider" />
                 <button type="button" className="dropdown-item" onClick={() => handleItemClick(onOpenShortcuts)}>
                   <span>Keyboard Shortcuts</span>
                   <kbd>Ctrl+/</kbd>
@@ -680,17 +757,96 @@ export default function TopMenuBar({
           )}
         </button>
 
-        {/* Theme Mode Toggle */}
+        {/* Fast Light / Dark Mode Toggle */}
         <button
           type="button"
           className="top-action-icon-btn"
-          onClick={() => setThemeMode(prev => prev === 'dark' ? 'slate' : prev === 'slate' ? 'light' : 'dark')}
-          title={`Theme: ${themeMode} (click to toggle)`}
+          onClick={() => {
+            if (toggleThemeMode) {
+              toggleThemeMode()
+            } else {
+              setThemeMode(prev => (prev && prev.startsWith('light') ? 'dark-modern' : 'light-modern'))
+            }
+          }}
+          title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
           <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
-            {themeMode === 'light' ? 'light_mode' : themeMode === 'slate' ? 'palette' : 'dark_mode'}
+            {isDarkMode ? 'light_mode' : 'dark_mode'}
           </span>
         </button>
+
+        {/* Color Theme Picker Dropdown Trigger */}
+        <div className="theme-picker-wrapper" ref={themeMenuRef}>
+          <button
+            type="button"
+            className={`top-action-icon-btn ${themeMenuOpen ? 'is-active' : ''}`}
+            onClick={() => setThemeMenuOpen(prev => !prev)}
+            title="Select Color Theme"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
+              palette
+            </span>
+          </button>
+
+          {themeMenuOpen && (
+            <div className="theme-picker-flyout">
+              <div className="theme-picker-header">
+                <span>Color Themes</span>
+                <span className="theme-picker-badge">{isDarkMode ? 'Dark' : 'Light'}</span>
+              </div>
+
+              <div className="theme-picker-section-label">Dark Themes</div>
+              {THEMES.filter(t => t.type === 'dark').map(theme => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  className={`theme-picker-item ${themeMode === theme.id ? 'active' : ''}`}
+                  onClick={() => {
+                    setThemeMode(theme.id)
+                    setThemeMenuOpen(false)
+                  }}
+                >
+                  <div className="theme-swatch-dots">
+                    {theme.colors.swatch.map((c, i) => (
+                      <span key={i} className="theme-dot" style={{ backgroundColor: c }} />
+                    ))}
+                  </div>
+                  <span className="theme-item-name">{theme.name}</span>
+                  {theme.badge && <span className="theme-item-badge">{theme.badge}</span>}
+                  {themeMode === theme.id && (
+                    <span className="material-symbols-outlined theme-check-icon">check</span>
+                  )}
+                </button>
+              ))}
+
+              <div className="theme-picker-divider" />
+
+              <div className="theme-picker-section-label">Light Themes</div>
+              {THEMES.filter(t => t.type === 'light').map(theme => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  className={`theme-picker-item ${themeMode === theme.id ? 'active' : ''}`}
+                  onClick={() => {
+                    setThemeMode(theme.id)
+                    setThemeMenuOpen(false)
+                  }}
+                >
+                  <div className="theme-swatch-dots">
+                    {theme.colors.swatch.map((c, i) => (
+                      <span key={i} className="theme-dot" style={{ backgroundColor: c }} />
+                    ))}
+                  </div>
+                  <span className="theme-item-name">{theme.name}</span>
+                  {theme.badge && <span className="theme-item-badge">{theme.badge}</span>}
+                  {themeMode === theme.id && (
+                    <span className="material-symbols-outlined theme-check-icon">check</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 4. Frameless Desktop Window Controls (Minimize, Maximize, Close) - Pinned Edge */}

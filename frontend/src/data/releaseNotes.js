@@ -2,15 +2,80 @@
  * VisualMark Studio - Release Notes & Update History Dataset
  * Powers the "What's New" modal dialog, update notifications, and in-IDE release history.
  */
-export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.1.4'
+export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.2.0'
 
 export const RELEASE_HISTORY = [
+  {
+    version: '1.2.0',
+    type: 'feature',
+    title: 'VisualMark Studio 1.2.0 — Theme Suite, Welcome Hub, Source Control Suite & Quick Setup Wizard',
+    date: 'October 2026',
+    isCurrent: true,
+    highlights: [
+      '10-Theme Palette Suite & Quick Picker: Tokyo Night, Dracula, GitHub Dark/Light, One Dark, Solarized Dark/Light, Monokai, Nord, Synthwave 84, and Modern with 1-click Dark/Light toggle and top bar quick-switcher',
+      'Workspace Welcome Launcher: Glassmorphic onboarding hub with quick start templates, recent workspaces, and an interactive sample document (Playground.md)',
+      '15-Second Quick Setup Wizard: Instant setup modal for new and existing users to configure theme, editor engine, and view mode',
+      'Source Control / Git Drawer Overhaul: Native commit box with staged vs. unstaged diffs, Commit Confirmation safeguard modal, Commit Guide, and commit history',
+      'Monaco Pro Editor Hardening: Real-time markdown lint diagnostics, word wrap, smooth minimap, line-height & font controls, and enhanced selection HUD',
+      '100% Local-First & Zero-Cloud: Zero network telemetry, pure offline privacy, and lightning-fast local disk performance'
+    ],
+    sections: [
+      {
+        category: 'Theme System',
+        icon: 'palette',
+        badge: 'Appearance',
+        color: '#8b5cf6',
+        items: [
+          {
+            title: '10 Calibrated Color Themes',
+            desc: 'Custom-tailored themes across high-contrast dark and clean light modes, including Tokyo Night, Dracula, GitHub Slate, One Dark, Solarized, and Synthwave.'
+          },
+          {
+            title: 'Fast Dark / Light Mode Toggle',
+            desc: 'Instant one-click toggle in the top menu bar to switch between dark and light variants with automatic Monaco tokenizer matching.'
+          }
+        ]
+      },
+      {
+        category: 'Welcome & Onboarding',
+        icon: 'rocket_launch',
+        badge: 'Productivity',
+        color: '#06b6d4',
+        items: [
+          {
+            title: 'Workspace Welcome Launcher',
+            desc: 'Visual hub with instant access to recent workspaces, template starters, visual studios, and interactive Playground.'
+          },
+          {
+            title: 'Quick Setup Wizard Modal',
+            desc: '15-second configuration wizard allowing quick personalization of theme, editor engine, and view modes.'
+          }
+        ]
+      },
+      {
+        category: 'Git & Source Control',
+        icon: 'fork_right',
+        badge: 'Version Control',
+        color: '#10b981',
+        items: [
+          {
+            title: 'Redesigned Git Drawer & Commit Box',
+            desc: 'Integrated commit composer with staged vs unstaged change counters, commit message validation, and commit history.'
+          },
+          {
+            title: 'Commit Confirmation & Help Safeguards',
+            desc: 'Safety modals preventing accidental commits and providing conventional commit message guidelines.'
+          }
+        ]
+      }
+    ]
+  },
   {
     version: '1.1.4',
     type: 'feature',
     title: 'VisualMark Studio 1.1.4 — Diagram Studio Rebuild: 7 Visual Builders, 8 Themes & Monaco Tokenizer',
     date: 'October 2026',
-    isCurrent: true,
+    isCurrent: false,
     highlights: [
       '7 Specialized Visual Builders: Complete visual designer suites for Architecture Flowcharts, Sequence Diagrams, Database ER Models, Class & Object Models, State Machines, Git Branch Graphs, and Mindmaps',
       '8 Curated Diagram Themes: Midnight Obsidian, Tokyo Night, Cyber Neon, Forest Emerald, Dracula, Monokai Pro, Sunset Horizon, and GitHub Slate Light',

@@ -4,15 +4,34 @@ const ToastContext = createContext(null)
 
 let toastCounter = 0
 
+const GIT_ACTION_TERMS = [
+  'git', 'commit', 'branch', 'repo', 'stage', 'staged', 'unstage', 'unstaged',
+  'discard', 'push', 'pull', 'fetch', 'checkout', 'clone', 'cloned', 'remote',
+  'origin', 'stash', 'merge', 'cherry-pick', 'rebase'
+]
+
+const UPDATE_ACTION_TERMS = [
+  'update', 'downloading update', 'auto-updater', 'new version', 'restart to update', 'release notes'
+]
+
+function isGitNotificationText(text) {
+  return GIT_ACTION_TERMS.some((term) => text.includes(term))
+}
+
+function isUpdateNotificationText(text) {
+  if (UPDATE_ACTION_TERMS.some((term) => text.includes(term))) return true
+  return text.includes('version') && (text.includes('v') || text.includes('visualmark'))
+}
+
 /**
- * Infer or normalize source category (e.g. GIT, WORKSPACE, FILE, LINTER, UPDATE, EXPORT, STUDIO, IDE)
+ * Infer or normalize source category (e.g. GIT, UPDATE, WORKSPACE, FILE, LINTER, EXPORT, STUDIO, IDE)
  */
 function resolveNotificationSource(message, explicitSource) {
   if (explicitSource) return String(explicitSource).toUpperCase()
   const text = String(message || '').toLowerCase()
-  if (text.includes('git') || text.includes('commit') || text.includes('branch') || text.includes('repo')) return 'GIT'
+  if (isGitNotificationText(text)) return 'GIT'
+  if (isUpdateNotificationText(text)) return 'UPDATE'
   if (text.includes('workspace') || text.includes('folder') || text.includes('root')) return 'WORKSPACE'
-  if (text.includes('update') || text.includes('download') || text.includes('version')) return 'UPDATE'
   if (text.includes('export') || text.includes('pdf') || text.includes('html') || text.includes('zip')) return 'EXPORT'
   if (text.includes('lint') || text.includes('problem') || text.includes('diagnostic')) return 'LINTER'
   if (text.includes('file') || text.includes('draft') || text.includes('saved') || text.includes('doc')) return 'FILE'
@@ -21,26 +40,57 @@ function resolveNotificationSource(message, explicitSource) {
 }
 
 /**
- * Detect minor / routine actions (e.g. file opening, path copying, tab switching)
- * that should not distract the user with floating toast popups under Strict/Important mode.
+ * Detect if a notification is strictly related to software updates or Git source control
  */
-function isMinorAction(message, options, type) {
+function isUpdateOrGitNotification(message, options, source) {
+  const explicitSource = String(options?.source || source || '').toUpperCase()
+  if (explicitSource === 'GIT' || explicitSource === 'UPDATE') return true
+
+  const text = String(message || '').toLowerCase()
+  return isGitNotificationText(text) || isUpdateNotificationText(text)
+}
+
+/**
+ * Detect routine editor, file, or workspace operations that should not trigger toast popups
+ */
+function isRoutineEditorAction(message, options, type, source) {
   if (options?.minor === true || options?.priority === 'minor') return true
-  if (options?.important === true || options?.priority === 'important' || options?.priority === 'critical') return false
-  if (type === 'error' || type === 'warning' || type === 'loading' || options?.action) return false
+  if (isUpdateOrGitNotification(message, options, source)) return false
+  if (options?.action) return false // Interactive action prompts are never routine
 
   const text = String(message || '').toLowerCase().trim()
   return (
-    text.startsWith('opened ') ||
-    text.startsWith('✓ opened') ||
-    text.startsWith('loaded ') ||
-    text.startsWith('copied relative path') ||
-    text.startsWith('copied full path') ||
-    text.includes('copied to clipboard') ||
-    text.includes('cleared recently opened') ||
-    text.startsWith('switching to ') ||
-    text.startsWith('reset active markdown') ||
-    text.includes('auto-recovered')
+    text.includes('saved') ||
+    text.includes('saving') ||
+    text.includes('opened') ||
+    text.includes('loaded') ||
+    text.includes('closed') ||
+    text.includes('created') ||
+    text.includes('deleted') ||
+    text.includes('renamed') ||
+    text.includes('copied') ||
+    text.includes('clipboard') ||
+    text.includes('inserted') ||
+    text.includes('snippet') ||
+    text.includes('template') ||
+    text.includes('preset') ||
+    text.includes('table') ||
+    text.includes('diagram') ||
+    text.includes('badge') ||
+    text.includes('switched') ||
+    text.includes('switching') ||
+    text.includes('reset active') ||
+    text.includes('auto-recovered') ||
+    text.includes('export') ||
+    text.includes('exported') ||
+    text.includes('pdf') ||
+    text.includes('html') ||
+    text.includes('zip') ||
+    text.includes('playground') ||
+    text.includes('theme') ||
+    text.includes('language') ||
+    text.includes('prompt copied') ||
+    text.includes('context added')
   )
 }
 
@@ -92,12 +142,17 @@ export function ToastProvider({ children }) {
     isHistoryOpenRef.current = isHistoryOpen
   }, [isHistoryOpen])
 
-  // Notification popup filter level: 'important' (default) | 'balanced' | 'all' | 'errors' | 'silent'
+  // Notification popup filter level: 'updates_git' (default) | 'important' | 'balanced' | 'all' | 'errors' | 'silent'
   const [toastFilterLevel, setToastFilterLevelState] = useState(() => {
     try {
-      return localStorage.getItem('visualmark_toast_level') || 'important'
+      const saved = localStorage.getItem('visualmark_toast_level')
+      // Auto-migrate old defaults or unset states to updates_git
+      if (!saved || saved === 'important' || saved === 'balanced') {
+        return 'updates_git'
+      }
+      return saved
     } catch {
-      return 'important'
+      return 'updates_git'
     }
   })
 
@@ -153,11 +208,15 @@ export function ToastProvider({ children }) {
     lastToastRef.current = { message: resolvedMessage, type: resolvedType, time: now, id }
     const timestamp = new Date()
     const source = resolveNotificationSource(resolvedMessage, resolvedOpts.source)
+    const isUpdateOrGit = isUpdateOrGitNotification(resolvedMessage, resolvedOpts, source)
+    const isRoutine = isRoutineEditorAction(resolvedMessage, resolvedOpts, resolvedType, source)
 
-    // Errors and warnings: Route to ProblemsTab instead of treating them as floating toast popups
+    // Errors and warnings: Route to ProblemsTab for workspace/code diagnostics.
+    // However, if the error/warning is related to Git or Software Updates (e.g. push failed, update failed),
+    // we ALSO allow it to continue downstream so a floating toast is displayed.
     if (resolvedType === 'error' || resolvedType === 'warning') {
       const problemSource = resolvedOpts.source || source || (resolvedType === 'error' ? 'System Error' : 'System Warning')
-      const problemFile = resolvedOpts.file || 'Workspace'
+      const problemFile = resolvedOpts.file || (isUpdateOrGit ? (source === 'GIT' ? 'Git' : 'Update') : 'Workspace')
       const problemEntry = {
         id: `prob-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         severity: resolvedType,
@@ -179,53 +238,41 @@ export function ToastProvider({ children }) {
         return next
       })
 
-      // Append to Notification History Log for persistent audit record
-      setHistory((prev) => {
-        const isCurrentlyOpen = isHistoryOpenRef.current
-        const entry = {
-          id,
-          message: typeof resolvedMessage === 'string' ? resolvedMessage : 'Notification',
-          type: resolvedType,
-          source: problemSource,
-          important: true,
-          minor: false,
-          time: timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          date: timestamp.toLocaleDateString(),
-          read: isCurrentlyOpen ? true : false,
-          action: resolvedOpts.action || null
-        }
-        if (!isCurrentlyOpen) {
-          setUnreadCount((c) => c + 1)
-        }
-        const updated = [entry, ...prev.filter((h) => h.id !== id)].slice(0, 60)
-        try {
-          localStorage.setItem('visualmark_notification_history', JSON.stringify(updated))
-        } catch {}
-        return updated
-      })
-
-      return id
+      // If this is NOT an update, git, or actionable alert, and not in verbose/errors mode,
+      // silently log to notification history and do not show a floating toast
+      if (!isUpdateOrGit && !resolvedOpts.action && toastFilterLevel !== 'all' && toastFilterLevel !== 'errors') {
+        setHistory((prev) => {
+          const isCurrentlyOpen = isHistoryOpenRef.current
+          const entry = {
+            id,
+            message: typeof resolvedMessage === 'string' ? resolvedMessage : 'Notification',
+            type: resolvedType,
+            source: problemSource,
+            important: true,
+            minor: false,
+            time: timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            date: timestamp.toLocaleDateString(),
+            read: isCurrentlyOpen ? true : false,
+            action: resolvedOpts.action || null
+          }
+          const updated = [entry, ...prev.filter((h) => h.id !== id)].slice(0, 60)
+          try {
+            localStorage.setItem('visualmark_notification_history', JSON.stringify(updated))
+          } catch {}
+          return updated
+        })
+        return id
+      }
     }
 
-    // Determine minor vs important
-    const isMinor = isMinorAction(resolvedMessage, resolvedOpts, resolvedType)
+    // Determine important flag
     const isImportant = Boolean(
       resolvedOpts.important ||
       resolvedOpts.priority === 'important' ||
       resolvedOpts.priority === 'critical' ||
-      resolvedType === 'error' ||
-      resolvedType === 'warning' ||
-      resolvedType === 'loading' ||
       resolvedOpts.action ||
-      (!isMinor && (
-        (resolvedType === 'success' && (
-          String(resolvedMessage).toLowerCase().includes('saved') ||
-          String(resolvedMessage).toLowerCase().includes('exported') ||
-          String(resolvedMessage).toLowerCase().includes('update')
-        )) ||
-        source === 'UPDATE' ||
-        source === 'EXPORT'
-      ))
+      isUpdateOrGit ||
+      (!isRoutine && (resolvedType === 'error' || resolvedType === 'warning'))
     )
 
     // Determine auto-dismiss duration
@@ -256,7 +303,7 @@ export function ToastProvider({ children }) {
       type: resolvedType,
       source,
       important: isImportant,
-      minor: isMinor,
+      minor: isRoutine,
       action: resolvedOpts.action || null, // { label: string, onClick: () => void }
       duration,
       timestamp,
@@ -264,19 +311,19 @@ export function ToastProvider({ children }) {
     }
 
     // Check filter level to decide if floating popup appears
-    let shouldPop = true
+    let shouldPop = false
     if (toastFilterLevel === 'silent') {
       shouldPop = false
+    } else if (toastFilterLevel === 'all') {
+      shouldPop = true
     } else if (toastFilterLevel === 'errors') {
       shouldPop = resolvedType === 'error'
-    } else if (toastFilterLevel === 'important') {
-      // Strict: only important/critical events pop up, routine actions are quiet
-      shouldPop = isImportant && !isMinor
     } else if (toastFilterLevel === 'balanced') {
-      // Balanced: standard notifications pop up, minor routine actions are quiet
-      shouldPop = !isMinor || isImportant
+      shouldPop = !isRoutine || isUpdateOrGit || Boolean(resolvedOpts.action)
     } else {
-      shouldPop = true // 'all' (verbose)
+      // 'updates_git' (Default, also covers legacy 'important'):
+      // Toast messages are ONLY generated for software updates, Git actions, and interactive action prompts
+      shouldPop = isUpdateOrGit || Boolean(resolvedOpts.action)
     }
 
     if (shouldPop) {
@@ -299,30 +346,33 @@ export function ToastProvider({ children }) {
       }
     }
 
-    // Append to Notification History Log (max 60 entries)
-    setHistory((prev) => {
-      const isCurrentlyOpen = isHistoryOpenRef.current
-      const entry = {
-        id,
-        message: typeof resolvedMessage === 'string' ? resolvedMessage : 'Notification',
-        type: resolvedType,
-        source,
-        important: isImportant,
-        minor: isMinor,
-        time: timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        date: timestamp.toLocaleDateString(),
-        read: isCurrentlyOpen ? true : false,
-        action: resolvedOpts.action || null
-      }
-      const updated = [entry, ...prev.filter((h) => h.id !== id)].slice(0, 60)
-      try {
-        localStorage.setItem('visualmark_notification_history', JSON.stringify(updated))
-      } catch {}
-      return updated
-    })
+    // Append to Notification History Log only for relevant notifications (Updates, Git, Errors, Actionable, or All mode)
+    const shouldRecordHistory = isUpdateOrGit || Boolean(resolvedOpts.action) || resolvedType === 'error' || resolvedType === 'warning' || toastFilterLevel === 'all'
+    if (shouldRecordHistory) {
+      setHistory((prev) => {
+        const isCurrentlyOpen = isHistoryOpenRef.current
+        const entry = {
+          id,
+          message: typeof resolvedMessage === 'string' ? resolvedMessage : 'Notification',
+          type: resolvedType,
+          source,
+          important: isImportant,
+          minor: isRoutine,
+          time: timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: timestamp.toLocaleDateString(),
+          read: isCurrentlyOpen ? true : false,
+          action: resolvedOpts.action || null
+        }
+        const updated = [entry, ...prev.filter((h) => h.id !== id)].slice(0, 60)
+        try {
+          localStorage.setItem('visualmark_notification_history', JSON.stringify(updated))
+        } catch {}
+        return updated
+      })
+    }
 
-    // Increment unread badge count only for non-minor notifications when drawer is closed
-    if (!isHistoryOpenRef.current && (!isMinor || toastFilterLevel === 'all')) {
+    // Increment unread badge count only for updates, git, or actionable notifications when drawer is closed
+    if (!isHistoryOpenRef.current && (isUpdateOrGit || Boolean(resolvedOpts.action) || toastFilterLevel === 'all')) {
       setUnreadCount((c) => c + 1)
     }
 

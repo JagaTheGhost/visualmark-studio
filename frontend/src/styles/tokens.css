@@ -1,7 +1,6 @@
 /* ==========================================================================
-   AUTO README STUDIO — IDE DESIGN SYSTEM
-   Modern Dark Developer Environment (Stitch Generated & Refined)
-   Tokens: Electric Indigo (#6366f1), Cyan (#38bdf8), Emerald (#10b981)
+   VISUALMARK STUDIO — IDE DESIGN SYSTEM & THEME TOKENS
+   Comprehensive Standard Editor Themes (Dark & Light)
    ========================================================================== */
 
 *, *::before, *::after {
@@ -11,16 +10,22 @@
 }
 
 :root {
-  /* Surface Layers (Antigravity IDE / VS Code Dark Modern Theme) */
+  /* Default: Dark Modern (Antigravity IDE / VS Code Dark Standard) */
   --surface-base: #1e1e1e;
-  --surface-lowest: #1e1e1e;
+  --surface-lowest: #18181b;
   --surface-low: #18181b;
   --surface-mid: #252526;
   --surface-high: #2d2d30;
   --surface-highest: #37373d;
 
+  --surface-titlebar: #18181b;
+  --surface-tabbar: #18181b;
+  --surface-tab-active: #1e1e1e;
+  --surface-sidebar: #18181b;
+  --surface-activitybar: #18181b;
+
   /* Outlines & Borders */
-  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-subtle: rgba(255, 255, 255, 0.06);
   --border-color: rgba(255, 255, 255, 0.08);
   --border-focus: #007acc;
 
@@ -56,33 +61,244 @@
   --transition-smooth: 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Alternate Theme: Slate Monokai */
-.theme-slate {
+/* ==========================================================================
+   1. DARK THEMES
+   ========================================================================== */
+
+/* Dark Modern (VS Code Standard) */
+.theme-dark-modern,
+.theme-dark {
   --surface-base: #1e1e1e;
-  --surface-lowest: #1e1e1e;
+  --surface-lowest: #18181b;
   --surface-low: #18181b;
   --surface-mid: #252526;
   --surface-high: #2d2d30;
   --surface-highest: #37373d;
-  --border-subtle: rgba(255, 255, 255, 0.07);
+  --surface-titlebar: #18181b;
+  --surface-tabbar: #18181b;
+  --surface-tab-active: #1e1e1e;
+  --surface-sidebar: #18181b;
+  --surface-activitybar: #18181b;
+  --border-subtle: rgba(255, 255, 255, 0.06);
   --border-color: rgba(255, 255, 255, 0.08);
-  --text-primary: #dfe2eb;
+  --text-primary: #cccccc;
+  --text-secondary: #969696;
+  --text-muted: #6e7681;
+  --primary: #007acc;
+  --primary-hover: #0062a3;
+  --primary-glow: rgba(0, 122, 204, 0.28);
 }
 
-/* Alternate Theme: Light */
+/* GitHub Dark */
+.theme-github-dark {
+  --surface-base: #0d1117;
+  --surface-lowest: #010409;
+  --surface-low: #010409;
+  --surface-mid: #161b22;
+  --surface-high: #21262d;
+  --surface-highest: #30363d;
+  --surface-titlebar: #010409;
+  --surface-tabbar: #010409;
+  --surface-tab-active: #0d1117;
+  --surface-sidebar: #010409;
+  --surface-activitybar: #010409;
+  --border-subtle: #21262d;
+  --border-color: #30363d;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+  --primary: #2f81f7;
+  --primary-hover: #1f6feb;
+  --primary-glow: rgba(47, 129, 247, 0.28);
+}
+
+/* Tokyo Night */
+.theme-tokyo-night,
+.theme-slate {
+  --surface-base: #1a1b26;
+  --surface-lowest: #16161e;
+  --surface-low: #16161e;
+  --surface-mid: #1f2335;
+  --surface-high: #292e42;
+  --surface-highest: #3b4261;
+  --surface-titlebar: #16161e;
+  --surface-tabbar: #16161e;
+  --surface-tab-active: #1a1b26;
+  --surface-sidebar: #16161e;
+  --surface-activitybar: #16161e;
+  --border-subtle: #1f2335;
+  --border-color: #292e42;
+  --text-primary: #c0caf5;
+  --text-secondary: #9aa5ce;
+  --text-muted: #565f89;
+  --primary: #7aa2f7;
+  --primary-hover: #5d87e0;
+  --primary-glow: rgba(122, 162, 247, 0.28);
+}
+
+/* Dracula */
+.theme-dracula {
+  --surface-base: #282a36;
+  --surface-lowest: #21222c;
+  --surface-low: #21222c;
+  --surface-mid: #343746;
+  --surface-high: #44475a;
+  --surface-highest: #6272a4;
+  --surface-titlebar: #21222c;
+  --surface-tabbar: #21222c;
+  --surface-tab-active: #282a36;
+  --border-subtle: #343746;
+  --border-color: #44475a;
+  --text-primary: #f8f8f2;
+  --text-secondary: #bd93f9;
+  --text-muted: #6272a4;
+  --primary: #bd93f9;
+  --primary-hover: #a371f7;
+  --primary-glow: rgba(189, 147, 249, 0.28);
+}
+
+/* One Dark Pro */
+.theme-one-dark-pro {
+  --surface-base: #282c34;
+  --surface-lowest: #21252b;
+  --surface-low: #21252b;
+  --surface-mid: #2c313a;
+  --surface-high: #3e4451;
+  --surface-highest: #4b5263;
+  --surface-titlebar: #21252b;
+  --surface-tabbar: #21252b;
+  --surface-tab-active: #282c34;
+  --border-subtle: #2c313a;
+  --border-color: #3e4451;
+  --text-primary: #abb2bf;
+  --text-secondary: #828997;
+  --text-muted: #5c6370;
+  --primary: #61afef;
+  --primary-hover: #4d97d5;
+  --primary-glow: rgba(97, 175, 239, 0.28);
+}
+
+/* Monokai Classic */
+.theme-monokai {
+  --surface-base: #272822;
+  --surface-lowest: #1e1f1c;
+  --surface-low: #1e1f1c;
+  --surface-mid: #32332d;
+  --surface-high: #3e3d32;
+  --surface-highest: #49483e;
+  --surface-titlebar: #1e1f1c;
+  --surface-tabbar: #1e1f1c;
+  --surface-tab-active: #272822;
+  --border-subtle: #32332d;
+  --border-color: #49483e;
+  --text-primary: #f8f8f2;
+  --text-secondary: #e6db74;
+  --text-muted: #75715e;
+  --primary: #a6e22e;
+  --primary-hover: #8ac41f;
+  --primary-glow: rgba(166, 226, 46, 0.28);
+}
+
+/* ==========================================================================
+   2. LIGHT THEMES (OPTIMIZED HIGH CONTRAST)
+   ========================================================================== */
+
+/* Light Modern (VS Code Standard) */
+.theme-light-modern,
 .theme-light {
-  --surface-base: #f8fafc;
+  --surface-base: #ffffff;
   --surface-lowest: #f1f5f9;
-  --surface-low: #ffffff;
-  --surface-mid: #f8fafc;
+  --surface-low: #f8fafc;
+  --surface-mid: #f1f5f9;
   --surface-high: #e2e8f0;
   --surface-highest: #cbd5e1;
+  --surface-titlebar: #f8fafc;
+  --surface-tabbar: #f1f5f9;
+  --surface-tab-active: #ffffff;
+  --surface-sidebar: #f8fafc;
+  --surface-activitybar: #f1f5f9;
   --border-subtle: #f1f5f9;
   --border-color: #e2e8f0;
   --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --primary: #007acc;
+  --primary-hover: #0062a3;
+  --primary-glow: rgba(0, 122, 204, 0.18);
 }
+
+/* GitHub Light */
+.theme-github-light {
+  --surface-base: #ffffff;
+  --surface-lowest: #f6f8fa;
+  --surface-low: #f6f8fa;
+  --surface-mid: #eaeef2;
+  --surface-high: #d0d7de;
+  --surface-highest: #afb8c1;
+  --surface-titlebar: #f6f8fa;
+  --surface-tabbar: #f6f8fa;
+  --surface-tab-active: #ffffff;
+  --surface-sidebar: #f6f8fa;
+  --surface-activitybar: #f6f8fa;
+  --border-subtle: #eaeef2;
+  --border-color: #d0d7de;
+  --text-primary: #1f2328;
+  --text-secondary: #424a53;
+  --text-muted: #656d76;
+  --primary: #0969da;
+  --primary-hover: #0550ae;
+  --primary-glow: rgba(9, 105, 218, 0.18);
+}
+
+/* Solarized Light */
+.theme-solarized-light {
+  --surface-base: #fdf6e3;
+  --surface-lowest: #eee8d5;
+  --surface-low: #eee8d5;
+  --surface-mid: #e4dcbe;
+  --surface-high: #d3c9a8;
+  --surface-highest: #93a1a1;
+  --surface-titlebar: #eee8d5;
+  --surface-tabbar: #eee8d5;
+  --surface-tab-active: #fdf6e3;
+  --surface-sidebar: #eee8d5;
+  --surface-activitybar: #e4dcbe;
+  --border-subtle: #e4dcbe;
+  --border-color: #d3c9a8;
+  --text-primary: #073642;
+  --text-secondary: #586e75;
+  --text-muted: #839496;
+  --primary: #268bd2;
+  --primary-hover: #1a6fa8;
+  --primary-glow: rgba(38, 139, 210, 0.2);
+}
+
+/* One Light */
+.theme-one-light {
+  --surface-base: #fafafa;
+  --surface-lowest: #f0f0f0;
+  --surface-low: #f0f0f0;
+  --surface-mid: #e5e5e6;
+  --surface-high: #d7d7d9;
+  --surface-highest: #c0c0c2;
+  --surface-titlebar: #f0f0f0;
+  --surface-tabbar: #f0f0f0;
+  --surface-tab-active: #fafafa;
+  --surface-sidebar: #f0f0f0;
+  --surface-activitybar: #e5e5e6;
+  --border-subtle: #e5e5e6;
+  --border-color: #d7d7d9;
+  --text-primary: #24292e;
+  --text-secondary: #495057;
+  --text-muted: #6a737d;
+  --primary: #4078f2;
+  --primary-hover: #2b62d8;
+  --primary-glow: rgba(64, 120, 242, 0.18);
+}
+
+/* ==========================================================================
+   Global Surface & Root Typography
+   ========================================================================== */
 
 html, body {
   height: 100%;
@@ -107,7 +323,7 @@ html, body {
   vertical-align: middle;
 }
 
-/* Custom Scrollbars */
+/* Universal Scrollbars synced with current theme */
 .custom-scrollbar::-webkit-scrollbar,
 ::-webkit-scrollbar {
   width: 6px;
