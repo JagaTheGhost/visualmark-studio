@@ -33,7 +33,7 @@ jobs:
             os: macos-latest
             build-args: --mac --arm64
           - name: macOS Intel (x64 zip)
-            os: macos-13
+            os: macos-latest
             build-args: --mac --x64
 
     steps:
