@@ -6,7 +6,7 @@ const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron')
 const { autoUpdater } = require('electron-updater')
 const path = require('path')
 const fs = require('fs')
-const { spawn, execFile } = require('child_process')
+const { spawn, execFile, exec } = require('child_process')
 const http = require('http')
 const net = require('net')
 
@@ -15,6 +15,9 @@ let sidecarProcess = null
 const DEFAULT_BACKEND_PORT = 8000
 let activeBackendPort = DEFAULT_BACKEND_PORT
 const isDev = !app.isPackaged || process.env.NODE_ENV === 'development'
+if (isDev) {
+  process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true'
+}
 const activeTerminals = new Map()
 
 // Helper to extract file or directory path from command line arguments (e.g. from Explorer context menu)
@@ -140,19 +143,23 @@ async function ensureSidecar() {
   const pythonScript = path.resolve(__dirname, '../../backend/desktop_server.py')
   const preferLiveDev = isDev && fs.existsSync(pythonScript)
 
+  const isWindows = process.platform === 'win32'
+  const binaryName = isWindows ? 'server.exe' : 'server'
+
   const candidatePaths = [
-    app.isPackaged ? path.join(process.resourcesPath, 'backend-sidecar', 'server', 'server.exe') : null,
-    app.isPackaged ? path.join(process.resourcesPath, 'backend-sidecar', 'server.exe') : null,
-    path.join(__dirname, '../resources/backend-sidecar', 'server', 'server.exe'),
-    path.join(__dirname, '../resources/backend-sidecar', 'server.exe'),
+    app.isPackaged ? path.join(process.resourcesPath, 'backend-sidecar', 'server', binaryName) : null,
+    app.isPackaged ? path.join(process.resourcesPath, 'backend-sidecar', binaryName) : null,
+    path.join(__dirname, '../resources/backend-sidecar', 'server', binaryName),
+    path.join(__dirname, '../resources/backend-sidecar', binaryName),
   ].filter(Boolean)
 
   const bundledExe = candidatePaths.find((p) => fs.existsSync(p))
 
   if (preferLiveDev) {
+    const pyCmd = isWindows ? 'python' : (process.env.PYTHON || 'python3')
     console.log('[Sidecar Dev] Spawning live python daemon:', pythonScript)
     try {
-      sidecarProcess = spawn('python', [pythonScript, '--port', String(activeBackendPort)], {
+      sidecarProcess = spawn(pyCmd, [pythonScript, '--port', String(activeBackendPort)], {
         cwd: path.dirname(pythonScript),
         stdio: ['ignore', 'pipe', 'pipe'],
         windowsHide: true,
@@ -182,6 +189,13 @@ async function ensureSidecar() {
       console.error('[Sidecar Dev Spawn Failed]', err)
     }
   } else if (bundledExe) {
+    if (!isWindows) {
+      try {
+        fs.chmodSync(bundledExe, 0o755)
+      } catch (err) {
+        console.warn('[Sidecar] Warning: Could not chmod executable:', err)
+      }
+    }
     console.log('[Sidecar] Launching bundled sidecar binary:', bundledExe)
     try {
       const sidecarCwd = path.dirname(bundledExe)
@@ -274,7 +288,15 @@ function createWindow() {
         return // Allow Vite dev server reload/navigation
       }
       if (navigationUrl.startsWith('file://')) {
-        return // Allow local HTML navigation
+        // Only allow internal bundled UI file navigation (e.g. dist/index.html)
+        const allowedDistDir = path.normalize(path.join(__dirname, '../dist')).toLowerCase()
+        const rawFilePath = decodeURIComponent(parsed.pathname || '').replace(/^\/([a-zA-Z]:)/, '$1')
+        const normalizedTarget = path.normalize(rawFilePath).toLowerCase()
+        if (normalizedTarget.startsWith(allowedDistDir)) {
+          return // Allow bundled application asset navigation
+        }
+        event.preventDefault()
+        return // Block arbitrary file:// disk navigation
       }
       event.preventDefault()
       if (['http:', 'https:'].includes(parsed.protocol)) {
@@ -338,14 +360,173 @@ function createWindow() {
   })
 }
 
+// ==================== WORKSPACE & IPC SECURITY CONFINEMENT ====================
+
+const activeWorkspaces = new Set()
+const authorizedFiles = new Set()
+let currentActiveWorkspace = null
+
+/**
+ * Validates that an incoming IPC request originated from the legitimate local UI frame.
+ */
+function validateIpcSender(event) {
+  if (!event || !event.senderFrame) return false
+  const frameUrl = event.senderFrame.url
+  if (!frameUrl) return false
+  if (isDev) {
+    return (
+      frameUrl.startsWith('http://localhost:3000') ||
+      frameUrl.startsWith('http://127.0.0.1:3000') ||
+      frameUrl.startsWith('file://')
+    )
+  }
+  return frameUrl.startsWith('file://')
+}
+
+/**
+ * Normalizes and canonicalizes a path, resolving symlinks when target exists.
+ */
+function getCanonicalPath(targetPath) {
+  if (!targetPath || typeof targetPath !== 'string') return null
+  try {
+    const resolved = path.resolve(targetPath)
+    if (fs.existsSync(resolved)) {
+      return fs.realpathSync(resolved)
+    }
+    // If target does not exist yet (e.g. creating new file), resolve parent realpath
+    const parentDir = path.dirname(resolved)
+    if (fs.existsSync(parentDir)) {
+      const canonicalParent = fs.realpathSync(parentDir)
+      return path.join(canonicalParent, path.basename(resolved))
+    }
+    return resolved
+  } catch {
+    return path.resolve(targetPath)
+  }
+}
+
+/**
+ * Registers an authorized workspace directory after validating it is not a sensitive OS path.
+ */
+function registerAuthorizedWorkspace(folderPath) {
+  if (!folderPath || typeof folderPath !== 'string') return false
+  try {
+    const resolved = path.resolve(folderPath)
+    if (!fs.existsSync(resolved)) return false
+    const stat = fs.statSync(resolved)
+    if (!stat.isDirectory()) return false
+
+    // Prevent registering root of filesystem (e.g. C:\ or /)
+    const root = path.parse(resolved).root
+    if (resolved.toLowerCase() === root.toLowerCase()) {
+      console.warn('[Security] Denied root directory as workspace:', resolved)
+      return false
+    }
+
+    const lower = resolved.toLowerCase()
+    const forbiddenPaths = [
+      'c:\\windows',
+      'c:\\program files',
+      'c:\\program files (x86)',
+      'c:\\programdata',
+      '/etc',
+      '/bin',
+      '/sbin',
+      '/usr',
+      '/var',
+      '/sys',
+      '/proc',
+      '/system',
+      '/library'
+    ]
+    for (const forbidden of forbiddenPaths) {
+      if (lower === forbidden || lower.startsWith(forbidden + path.sep)) {
+        console.warn('[Security] Denied system directory as workspace:', resolved)
+        return false
+      }
+    }
+
+    // Disallow registering application installation folder itself
+    const appDir = path.dirname(process.execPath).toLowerCase()
+    if (lower === appDir || lower.startsWith(appDir + path.sep)) {
+      console.warn('[Security] Denied application install directory as workspace:', resolved)
+      return false
+    }
+
+    const canonical = getCanonicalPath(resolved)
+    if (canonical) {
+      activeWorkspaces.add(canonical)
+      currentActiveWorkspace = canonical
+      return true
+    }
+    return false
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Registers a specific file explicitly chosen by the user via native open/save dialogs.
+ */
+function registerAuthorizedFile(filePath) {
+  const canonical = getCanonicalPath(filePath)
+  if (canonical) {
+    authorizedFiles.add(canonical)
+    try {
+      const parentDir = path.dirname(canonical)
+      if (parentDir && fs.existsSync(parentDir)) {
+        registerAuthorizedWorkspace(parentDir)
+      }
+    } catch {}
+  }
+}
+
+/**
+ * Enforces path containment within authorized workspaces or explicitly selected files.
+ */
+function isPathWithinWorkspace(targetPath) {
+  if (!targetPath || typeof targetPath !== 'string') return false
+
+  // If path is relative and we have active workspaces, check if resolving against ws is valid
+  if (!path.isAbsolute(targetPath) && activeWorkspaces.size > 0) {
+    for (const ws of activeWorkspaces) {
+      const resolvedAgainstWs = path.resolve(ws, targetPath)
+      const rel = path.relative(ws, resolvedAgainstWs)
+      if (!rel.startsWith('..') && !path.isAbsolute(rel)) {
+        return true
+      }
+    }
+  }
+
+  const canonical = getCanonicalPath(targetPath)
+  if (!canonical) return false
+
+  // Directly authorized single file
+  if (authorizedFiles.has(canonical)) {
+    return true
+  }
+
+  // Contained within an authorized workspace directory
+  for (const ws of activeWorkspaces) {
+    const rel = path.relative(ws, canonical)
+    if (!rel.startsWith('..') && !path.isAbsolute(rel)) {
+      return true
+    }
+  }
+
+  return false
+}
+
 // ==================== IPC HANDLERS ====================
 
 // Window controls
-ipcMain.on('window-minimize', () => {
+ipcMain.on('window-minimize', (event) => {
+  if (!validateIpcSender(event)) return
   if (mainWindow) mainWindow.minimize()
 })
 
-ipcMain.on('window-maximize', () => {
+ipcMain.on('window-maximize', (event) => {
+  if (!validateIpcSender(event)) return
   if (!mainWindow) return
   if (mainWindow.isMaximized()) {
     mainWindow.unmaximize()
@@ -354,16 +535,19 @@ ipcMain.on('window-maximize', () => {
   }
 })
 
-ipcMain.on('window-close', () => {
+ipcMain.on('window-close', (event) => {
+  if (!validateIpcSender(event)) return
   if (mainWindow) mainWindow.close()
 })
 
-ipcMain.handle('window-is-maximized', () => {
+ipcMain.handle('window-is-maximized', (event) => {
+  if (!validateIpcSender(event)) return false
   return mainWindow ? mainWindow.isMaximized() : false
 })
 
 // Native Open File Dialog
-ipcMain.handle('dialog-open-file', async () => {
+ipcMain.handle('dialog-open-file', async (event) => {
+  if (!validateIpcSender(event)) return { canceled: true, error: 'Unauthorized IPC origin' }
   if (!mainWindow) return { canceled: true }
   const result = await dialog.showOpenDialog(mainWindow, {
     title: 'Open Markdown File',
@@ -380,6 +564,7 @@ ipcMain.handle('dialog-open-file', async () => {
   }
 
   const targetPath = result.filePaths[0]
+  registerAuthorizedFile(targetPath)
   try {
     const content = await fs.promises.readFile(targetPath, 'utf-8')
     return {
@@ -394,7 +579,8 @@ ipcMain.handle('dialog-open-file', async () => {
 })
 
 // Native Save File Dialog (Save As)
-ipcMain.handle('dialog-save-file', async (_event, { content, defaultPath }) => {
+ipcMain.handle('dialog-save-file', async (event, { content, defaultPath }) => {
+  if (!validateIpcSender(event)) return { canceled: true, error: 'Unauthorized IPC origin' }
   if (!mainWindow) return { canceled: true }
   const result = await dialog.showSaveDialog(mainWindow, {
     title: 'Save Markdown Document',
@@ -409,6 +595,7 @@ ipcMain.handle('dialog-save-file', async (_event, { content, defaultPath }) => {
     return { canceled: true }
   }
 
+  registerAuthorizedFile(result.filePath)
   try {
     await fs.promises.writeFile(result.filePath, content, 'utf-8')
     return {
@@ -422,8 +609,13 @@ ipcMain.handle('dialog-save-file', async (_event, { content, defaultPath }) => {
 })
 
 // Direct File Save (Ctrl+S without dialog)
-ipcMain.handle('file-save-direct', async (_event, { filePath, content }) => {
+ipcMain.handle('file-save-direct', async (event, { filePath, content }) => {
+  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC origin' }
   if (!filePath) return { success: false, error: 'No file path specified' }
+  if (!isPathWithinWorkspace(filePath)) {
+    console.warn('[Security] Refused file-save-direct outside workspace:', filePath)
+    return { success: false, error: 'Access denied: Path is outside active workspace' }
+  }
   try {
     await fs.promises.writeFile(filePath, content, 'utf-8')
     return { success: true, filePath, fileName: path.basename(filePath) }
@@ -433,7 +625,8 @@ ipcMain.handle('file-save-direct', async (_event, { filePath, content }) => {
 })
 
 // Native Save Binary Dialog (for ZIP archives, PDF documents, rendered images)
-ipcMain.handle('dialog-save-binary', async (_event, { defaultPath, filters, base64Data }) => {
+ipcMain.handle('dialog-save-binary', async (event, { defaultPath, filters, base64Data }) => {
+  if (!validateIpcSender(event)) return { canceled: true, error: 'Unauthorized IPC origin' }
   if (!mainWindow) return { canceled: true }
   const result = await dialog.showSaveDialog(mainWindow, {
     title: 'Export File',
@@ -443,6 +636,7 @@ ipcMain.handle('dialog-save-binary', async (_event, { defaultPath, filters, base
   if (result.canceled || !result.filePath) {
     return { canceled: true }
   }
+  registerAuthorizedFile(result.filePath)
   try {
     const buffer = Buffer.from(base64Data, 'base64')
     await fs.promises.writeFile(result.filePath, buffer)
@@ -453,7 +647,8 @@ ipcMain.handle('dialog-save-binary', async (_event, { defaultPath, filters, base
 })
 
 // Native Save Text Export Dialog (for HTML, Markdown, etc.)
-ipcMain.handle('dialog-save-text-export', async (_event, { defaultPath, filters, content }) => {
+ipcMain.handle('dialog-save-text-export', async (event, { defaultPath, filters, content }) => {
+  if (!validateIpcSender(event)) return { canceled: true, error: 'Unauthorized IPC origin' }
   if (!mainWindow) return { canceled: true }
   const result = await dialog.showSaveDialog(mainWindow, {
     title: 'Export Document',
@@ -463,6 +658,7 @@ ipcMain.handle('dialog-save-text-export', async (_event, { defaultPath, filters,
   if (result.canceled || !result.filePath) {
     return { canceled: true }
   }
+  registerAuthorizedFile(result.filePath)
   try {
     await fs.promises.writeFile(result.filePath, content || '', 'utf-8')
     return { canceled: false, filePath: result.filePath, fileName: path.basename(result.filePath) }
@@ -507,9 +703,16 @@ const DANGEROUS_EXECUTABLE_EXTENSIONS = new Set([
 ])
 
 // Read arbitrary file with binary / unsupported format fail-safe (atomic file handle to prevent race conditions)
-ipcMain.handle('file-read', async (_event, filePath) => {
+ipcMain.handle('file-read', async (event, filePath) => {
+  if (!validateIpcSender(event)) {
+    return { success: false, error: 'Unauthorized IPC origin' }
+  }
   if (!filePath || typeof filePath !== 'string') {
     return { success: false, error: 'Invalid path' }
+  }
+  if (!isPathWithinWorkspace(filePath)) {
+    console.warn('[Security] Refused file-read outside workspace:', filePath)
+    return { success: false, error: 'Access denied: Path is outside active workspace' }
   }
   let fd = null
   try {
@@ -584,28 +787,55 @@ ipcMain.handle('file-read', async (_event, filePath) => {
   }
 })
 
-// Read workspace media file (SVG, PNG, JPG, GIF, WebP, MP4) for Markdown Preview (atomic file handle)
-ipcMain.handle('read-local-media', async (_event, filePath) => {
+// Read workspace media file (SVG, PNG, JPG, GIF, WebP, MP4, Audio) for Markdown Preview (atomic file handle)
+ipcMain.handle('read-local-media', async (event, filePath) => {
+  if (!validateIpcSender(event)) {
+    return { success: false, error: 'Unauthorized IPC origin' }
+  }
   if (!filePath || typeof filePath !== 'string') {
     return { success: false, error: 'Invalid path' }
   }
+  let cleanInput = filePath.split('?')[0].split('#')[0]
+  try {
+    cleanInput = decodeURIComponent(cleanInput)
+  } catch {}
+  let targetPath = cleanInput
+
+  if (!path.isAbsolute(targetPath) && activeWorkspaces.size > 0) {
+    for (const ws of activeWorkspaces) {
+      const candidate1 = path.resolve(ws, targetPath)
+      if (fs.existsSync(candidate1)) {
+        targetPath = candidate1
+        break
+      }
+      const candidate2 = path.resolve(ws, targetPath.replace(/^[/\\]+/, ''))
+      if (fs.existsSync(candidate2)) {
+        targetPath = candidate2
+        break
+      }
+    }
+  }
+  if (!isPathWithinWorkspace(targetPath)) {
+    console.warn('[Security] Refused read-local-media outside workspace:', filePath)
+    return { success: false, error: 'Access denied: Path is outside active workspace' }
+  }
   let fd = null
   try {
-    fd = await fs.promises.open(filePath, 'r')
+    fd = await fs.promises.open(targetPath, 'r')
     const stat = await fd.stat()
     if (stat.isDirectory()) {
       await fd.close()
       return { success: false, error: 'Target is a directory' }
     }
-    if (stat.size > 30 * 1024 * 1024) {
+    if (stat.size > 50 * 1024 * 1024) {
       await fd.close()
-      return { success: false, error: 'File exceeds size limit (>30MB)' }
+      return { success: false, error: 'File exceeds size limit (>50MB)' }
     }
-    const ext = path.extname(filePath).toLowerCase().replace(/^\./, '')
+    const ext = path.extname(targetPath).toLowerCase().replace(/^\./, '')
     if (ext === 'svg') {
       const content = await fd.readFile({ encoding: 'utf-8' })
       await fd.close()
-      return { success: true, isSvg: true, content, filePath }
+      return { success: true, isSvg: true, content, filePath: targetPath }
     }
 
     const mimeMap = {
@@ -616,14 +846,30 @@ ipcMain.handle('read-local-media', async (_event, filePath) => {
       webp: 'image/webp',
       bmp: 'image/bmp',
       ico: 'image/x-icon',
+      avif: 'image/avif',
+      tiff: 'image/tiff',
+      tif: 'image/tiff',
       mp4: 'video/mp4',
-      webm: 'video/webm'
+      webm: 'video/webm',
+      ogg: 'video/ogg',
+      ogv: 'video/ogg',
+      mov: 'video/quicktime',
+      m4v: 'video/mp4',
+      mkv: 'video/x-matroska',
+      avi: 'video/x-msvideo',
+      mp3: 'audio/mpeg',
+      wav: 'audio/wav',
+      aac: 'audio/aac',
+      m4a: 'audio/mp4',
+      oga: 'audio/ogg',
+      flac: 'audio/flac',
+      weba: 'audio/webm'
     }
     const mime = mimeMap[ext] || 'image/png'
     const buffer = await fd.readFile()
     await fd.close()
     const base64 = buffer.toString('base64')
-    return { success: true, isSvg: false, dataUrl: `data:${mime};base64,${base64}`, filePath }
+    return { success: true, isSvg: false, dataUrl: `data:${mime};base64,${base64}`, filePath: targetPath }
   } catch (err) {
     if (fd) {
       try { await fd.close() } catch {}
@@ -637,7 +883,8 @@ ipcMain.handle('read-local-media', async (_event, filePath) => {
 
 
 // Native Open Folder / Workspace Dialog
-ipcMain.handle('dialog-open-folder', async () => {
+ipcMain.handle('dialog-open-folder', async (event) => {
+  if (!validateIpcSender(event)) return { canceled: true, error: 'Unauthorized IPC origin' }
   if (!mainWindow) return { canceled: true }
   const result = await dialog.showOpenDialog(mainWindow, {
     title: 'Open Workspace Directory',
@@ -649,6 +896,7 @@ ipcMain.handle('dialog-open-folder', async () => {
   }
 
   const folderPath = result.filePaths[0]
+  registerAuthorizedWorkspace(folderPath)
   const scan = scanMarkdownFolder(folderPath)
   return {
     canceled: false,
@@ -659,7 +907,8 @@ ipcMain.handle('dialog-open-folder', async () => {
 })
 
 // Native Select Destination Folder for Clone Dialog
-ipcMain.handle('dialog-select-clone-parent', async () => {
+ipcMain.handle('dialog-select-clone-parent', async (event) => {
+  if (!validateIpcSender(event)) return { canceled: true, error: 'Unauthorized IPC origin' }
   if (!mainWindow) return { canceled: true }
   let defaultDir = null
   try {
@@ -714,7 +963,13 @@ function scanMarkdownFolder(dir, baseDir = dir, depth = 0) {
   return filesList
 }
 
-ipcMain.handle('workspace-read-files', async (_event, folderPath) => {
+ipcMain.handle('workspace-read-files', async (event, folderPath) => {
+  if (!validateIpcSender(event)) return []
+  if (!folderPath) return []
+  if (!registerAuthorizedWorkspace(folderPath) && !isPathWithinWorkspace(folderPath)) {
+    console.warn('[Security] Refused workspace-read-files outside authorized workspace:', folderPath)
+    return []
+  }
   return scanMarkdownFolder(folderPath)
 })
 
@@ -950,42 +1205,51 @@ async function getGitFullInfo(folderPath) {
   }
 }
 
-ipcMain.handle('git-get-status', async (_event, folderPath) => {
-  if (!folderPath || !fs.existsSync(folderPath)) {
+function isAuthorizedGitFolder(event, folderPath) {
+  if (!validateIpcSender(event)) return false
+  if (!folderPath || typeof folderPath !== 'string') return false
+  return registerAuthorizedWorkspace(folderPath) || isPathWithinWorkspace(folderPath)
+}
+
+ipcMain.handle('git-get-status', async (event, folderPath) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) {
     return { isRepo: false, branch: null, hasChanges: false, changesCount: 0, changes: [], stagedChanges: [], unstagedChanges: [], statusMap: {}, latestCommit: null, remoteUrl: null, ahead: 0, behind: 0 }
   }
   return getGitFullInfo(folderPath)
 })
 
-ipcMain.handle('git-stage-all', async (_event, folderPath) => {
-  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+ipcMain.handle('git-stage-all', async (event, folderPath) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found or unauthorized' }
   const res = await runGit(['add', '-A'], folderPath, 8000)
   return res.success ? { success: true } : { success: false, error: res.error }
 })
 
-ipcMain.handle('git-stage-file', async (_event, { folderPath, filePath }) => {
-  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
-  const res = await runGit(['add', filePath], folderPath, 8000)
+ipcMain.handle('git-stage-file', async (event, { folderPath, filePath }) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found or unauthorized' }
+  if (!filePath || typeof filePath !== 'string') return { success: false, error: 'Invalid file path' }
+  const res = await runGit(['add', '--', filePath], folderPath, 8000)
   return res.success ? { success: true } : { success: false, error: res.error }
 })
 
-ipcMain.handle('git-unstage-all', async (_event, folderPath) => {
-  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
-  const res = await runGit(['restore', '--staged', '.'], folderPath, 8000)
+ipcMain.handle('git-unstage-all', async (event, folderPath) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found or unauthorized' }
+  const res = await runGit(['restore', '--staged', '--', '.'], folderPath, 8000)
   return res.success ? { success: true } : { success: false, error: res.error }
 })
 
-ipcMain.handle('git-unstage-file', async (_event, { folderPath, filePath }) => {
-  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
-  const res = await runGit(['restore', '--staged', filePath], folderPath, 8000)
+ipcMain.handle('git-unstage-file', async (event, { folderPath, filePath }) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found or unauthorized' }
+  if (!filePath || typeof filePath !== 'string') return { success: false, error: 'Invalid file path' }
+  const res = await runGit(['restore', '--staged', '--', filePath], folderPath, 8000)
   return res.success ? { success: true } : { success: false, error: res.error }
 })
 
-ipcMain.handle('git-discard-file', async (_event, { folderPath, filePath }) => {
-  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+ipcMain.handle('git-discard-file', async (event, { folderPath, filePath }) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found or unauthorized' }
+  if (!filePath || typeof filePath !== 'string') return { success: false, error: 'Invalid file path' }
   // Try clean for untracked and restore for tracked
-  await runGit(['clean', '-f', filePath], folderPath, 5000)
-  const res = await runGit(['restore', filePath], folderPath, 5000)
+  await runGit(['clean', '-f', '--', filePath], folderPath, 5000)
+  const res = await runGit(['restore', '--', filePath], folderPath, 5000)
   if (!res.success) {
     // Fallback to checkout
     await runGit(['checkout', '--', filePath], folderPath, 5000)
@@ -993,22 +1257,22 @@ ipcMain.handle('git-discard-file', async (_event, { folderPath, filePath }) => {
   return { success: true }
 })
 
-ipcMain.handle('git-discard-all', async (_event, folderPath) => {
-  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
-  await runGit(['restore', '.'], folderPath, 8000)
+ipcMain.handle('git-discard-all', async (event, folderPath) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found or unauthorized' }
+  await runGit(['restore', '--', '.'], folderPath, 8000)
   await runGit(['clean', '-fd'], folderPath, 8000)
   return { success: true }
 })
 
-ipcMain.handle('git-commit', async (_event, { folderPath, message }) => {
-  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+ipcMain.handle('git-commit', async (event, { folderPath, message }) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found or unauthorized' }
   if (!message?.trim()) return { success: false, error: 'Commit message is required' }
   const res = await runGit(['commit', '-m', message.trim()], folderPath, 10000)
   return res.success ? { success: true, output: res.stdout } : { success: false, error: res.error }
 })
 
-ipcMain.handle('git-commit-action', async (_event, { folderPath, message, action = 'commit' }) => {
-  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+ipcMain.handle('git-commit-action', async (event, { folderPath, message, action = 'commit' }) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found or unauthorized' }
   if (!message?.trim() && action !== 'commit-amend') {
     return { success: false, error: 'Commit message is required' }
   }
@@ -1042,26 +1306,26 @@ ipcMain.handle('git-commit-action', async (_event, { folderPath, message, action
   return { success: true, output: commitRes.stdout }
 })
 
-ipcMain.handle('git-push', async (_event, folderPath) => {
-  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+ipcMain.handle('git-push', async (event, folderPath) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found or unauthorized' }
   const res = await runGit(['push'], folderPath, 25000)
   return res.success ? { success: true, output: res.stdout } : { success: false, error: res.error }
 })
 
-ipcMain.handle('git-pull', async (_event, folderPath) => {
-  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+ipcMain.handle('git-pull', async (event, folderPath) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found or unauthorized' }
   const res = await runGit(['pull'], folderPath, 25000)
   return res.success ? { success: true, output: res.stdout } : { success: false, error: res.error }
 })
 
-ipcMain.handle('git-fetch', async (_event, folderPath) => {
-  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+ipcMain.handle('git-fetch', async (event, folderPath) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found or unauthorized' }
   const res = await runGit(['fetch'], folderPath, 20000)
   return res.success ? { success: true, output: res.stdout } : { success: false, error: res.error }
 })
 
-ipcMain.handle('git-get-graph', async (_event, { folderPath, maxCount = 50 }) => {
-  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, commits: [] }
+ipcMain.handle('git-get-graph', async (event, { folderPath, maxCount = 50 }) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) return { success: false, commits: [] }
   const args = ['log', `-n`, `${maxCount}`, '--pretty=format:%H%x00%h%x00%s%x00%an%x00%ae%x00%cr%x00%d%x00%P']
   const res = await runGit(args, folderPath, 10000)
   if (!res.success) return { success: false, error: res.error, commits: [] }
@@ -1118,8 +1382,8 @@ ipcMain.handle('git-get-graph', async (_event, { folderPath, maxCount = 50 }) =>
   return { success: true, commits }
 })
 
-ipcMain.handle('git-get-branches', async (_event, folderPath) => {
-  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, local: [], remote: [], current: 'main' }
+ipcMain.handle('git-get-branches', async (event, folderPath) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) return { success: false, local: [], remote: [], current: 'main' }
   const res = await runGit(['branch', '-a'], folderPath, 5000)
   if (!res.success) return { success: false, error: res.error, local: [], remote: [], current: 'main' }
 
@@ -1147,21 +1411,26 @@ ipcMain.handle('git-get-branches', async (_event, folderPath) => {
   return { success: true, current, local, remote }
 })
 
-ipcMain.handle('git-checkout-branch', async (_event, { folderPath, branch }) => {
-  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
-  const res = await runGit(['checkout', branch], folderPath, 8000)
+ipcMain.handle('git-checkout-branch', async (event, { folderPath, branch }) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found or unauthorized' }
+  if (!branch || typeof branch !== 'string' || branch.startsWith('-')) return { success: false, error: 'Invalid branch name' }
+  const res = await runGit(['checkout', '--', branch], folderPath, 8000)
   return res.success ? { success: true, output: res.stdout } : { success: false, error: res.error }
 })
 
-ipcMain.handle('git-create-branch', async (_event, { folderPath, branch }) => {
-  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+ipcMain.handle('git-create-branch', async (event, { folderPath, branch }) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found or unauthorized' }
+  if (!branch || typeof branch !== 'string' || branch.startsWith('-')) return { success: false, error: 'Invalid branch name' }
   const res = await runGit(['checkout', '-b', branch], folderPath, 8000)
   return res.success ? { success: true, output: res.stdout } : { success: false, error: res.error }
 })
 
-ipcMain.handle('git-diff', async (_event, { folderPath, filePath, staged = false }) => {
-  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, diff: '' }
-  const args = staged ? ['diff', '--staged', filePath] : ['diff', filePath]
+ipcMain.handle('git-diff', async (event, { folderPath, filePath, staged = false }) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) return { success: false, diff: '' }
+  if (filePath && typeof filePath === 'string' && filePath.startsWith('-')) return { success: false, diff: '' }
+  const args = staged
+    ? (filePath ? ['diff', '--staged', '--', filePath] : ['diff', '--staged'])
+    : (filePath ? ['diff', '--', filePath] : ['diff'])
   const res = await runGit(args, folderPath, 8000)
   let diff = res.stdout || ''
 
@@ -1182,11 +1451,11 @@ ipcMain.handle('git-diff', async (_event, { folderPath, filePath, staged = false
   return { success: true, diff }
 })
 
-ipcMain.handle('git-show-commit', async (_event, { folderPath, hash }) => {
-  if (!folderPath || !fs.existsSync(folderPath) || !hash) return { success: false, commit: null }
+ipcMain.handle('git-show-commit', async (event, { folderPath, hash }) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath) || !hash || typeof hash !== 'string' || hash.startsWith('-')) return { success: false, commit: null }
   const [showRes, statRes] = await Promise.all([
-    runGit(['show', '--stat', '--patch', hash], folderPath, 10000),
-    runGit(['show', '--name-status', '--format=%H%x00%s%x00%an%x00%cr', hash], folderPath, 8000)
+    runGit(['show', '--stat', '--patch', '--', hash], folderPath, 10000),
+    runGit(['show', '--name-status', '--format=%H%x00%s%x00%an%x00%cr', '--', hash], folderPath, 8000)
   ])
 
   let meta = {}
@@ -1219,8 +1488,8 @@ ipcMain.handle('git-show-commit', async (_event, { folderPath, hash }) => {
   }
 })
 
-ipcMain.handle('git-generate-commit-message', async (_event, folderPath) => {
-  if (!folderPath || !fs.existsSync(folderPath)) {
+ipcMain.handle('git-generate-commit-message', async (event, folderPath) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) {
     return { success: false, message: 'chore: update files' }
   }
 
@@ -1286,8 +1555,8 @@ ipcMain.handle('git-generate-commit-message', async (_event, folderPath) => {
   }
 })
 
-ipcMain.handle('git-init', async (_event, folderPath) => {
-  if (!folderPath || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found' }
+ipcMain.handle('git-init', async (event, folderPath) => {
+  if (!isAuthorizedGitFolder(event, folderPath) || !fs.existsSync(folderPath)) return { success: false, error: 'Path not found or unauthorized' }
   const res = await runGit(['init'], folderPath, 5000)
   return res.success ? { success: true, output: res.stdout } : { success: false, error: res.error }
 })
@@ -1310,11 +1579,15 @@ ipcMain.handle('git-clone', async (_event, { repoUrl, targetDir, folderName }) =
     return { success: false, error: 'Invalid repository URL.' }
   }
 
-  // Support GitHub shorthand: owner/repo
-  if (!cleanUrl.includes('://') && !cleanUrl.startsWith('git@') && cleanUrl.split('/').length === 2 && !cleanUrl.includes(' ')) {
-    cleanUrl = `https://github.com/${cleanUrl}.git`
-  } else if (cleanUrl.startsWith('github.com/')) {
-    cleanUrl = `https://${cleanUrl}`
+  // Support GitHub shorthand: owner/repo or github.com/owner/repo
+  if (!cleanUrl.includes('://') && !cleanUrl.startsWith('git@')) {
+    const ghMatch = cleanUrl.match(/^(?:(?:https?:\/\/)?(?:www\.)?github\.com\/)?([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/)
+    if (ghMatch) {
+      const [, owner, repo] = ghMatch
+      if (!owner.startsWith('-') && !repo.startsWith('-')) {
+        cleanUrl = `https://github.com/${owner}/${repo}.git`
+      }
+    }
   }
 
   // Validate allowed protocols strictly to prevent ext:: or file:// abuse
@@ -1367,6 +1640,8 @@ ipcMain.handle('git-clone', async (_event, { repoUrl, targetDir, folderName }) =
     return { success: false, error: res.error || 'Git clone failed.' }
   }
 
+  registerAuthorizedWorkspace(destinationPath)
+
   return {
     success: true,
     destinationPath,
@@ -1375,7 +1650,10 @@ ipcMain.handle('git-clone', async (_event, { repoUrl, targetDir, folderName }) =
   }
 })
 
-ipcMain.handle('workspace-read-tree', async (_event, folderPath) => {
+ipcMain.handle('workspace-read-tree', async (event, folderPath) => {
+  if (!validateIpcSender(event)) {
+    return { rootPath: null, rootName: null, tree: [], gitStatus: {}, gitInfo: {} }
+  }
   if (!folderPath || !fs.existsSync(folderPath)) {
     return {
       rootPath: null,
@@ -1384,6 +1662,10 @@ ipcMain.handle('workspace-read-tree', async (_event, folderPath) => {
       gitStatus: {},
       gitInfo: { isRepo: false, branch: null, hasChanges: false, changesCount: 0, changes: [], statusMap: {}, latestCommit: null, remoteUrl: null }
     }
+  }
+  if (!registerAuthorizedWorkspace(folderPath) && !isPathWithinWorkspace(folderPath)) {
+    console.warn('[Security] Refused workspace-read-tree outside authorized workspace:', folderPath)
+    return { rootPath: null, rootName: null, tree: [], gitStatus: {}, gitInfo: {} }
   }
   const tree = scanFullDirectoryTree(folderPath)
   const gitInfo = await getGitFullInfo(folderPath)
@@ -1396,34 +1678,90 @@ ipcMain.handle('workspace-read-tree', async (_event, folderPath) => {
   }
 })
 
-ipcMain.handle('file-create-direct', async (_event, { filePath, initialContent }) => {
+ipcMain.handle('file-create-direct', async (event, { filePath, initialContent }) => {
+  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC origin' }
+  if (!filePath) return { success: false, error: 'No file path specified' }
+
+  let targetPath = filePath
+  if (!path.isAbsolute(targetPath)) {
+    const activeWs = currentActiveWorkspace || Array.from(activeWorkspaces).slice(-1)[0]
+    if (activeWs) {
+      targetPath = path.resolve(activeWs, targetPath)
+    }
+  }
+
+  if (!isPathWithinWorkspace(targetPath)) {
+    console.warn('[Security] Refused file-create-direct outside workspace:', filePath)
+    return { success: false, error: 'Access denied: Path is outside active workspace' }
+  }
   try {
-    const dir = path.dirname(filePath)
+    const dir = path.dirname(targetPath)
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-    await fs.promises.writeFile(filePath, initialContent || '', 'utf-8')
+    await fs.promises.writeFile(targetPath, initialContent || '', 'utf-8')
+    registerAuthorizedFile(targetPath)
+    return { success: true, savedPath: targetPath }
+  } catch (err) {
+    return { success: false, error: err.message }
+  }
+})
+
+ipcMain.handle('folder-create-direct', async (event, folderPath) => {
+  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC origin' }
+  if (!folderPath) return { success: false, error: 'No folder path specified' }
+  let targetPath = folderPath
+  if (!path.isAbsolute(targetPath)) {
+    const activeWs = currentActiveWorkspace || Array.from(activeWorkspaces).slice(-1)[0]
+    if (activeWs) {
+      targetPath = path.resolve(activeWs, targetPath)
+    }
+  }
+  if (!isPathWithinWorkspace(targetPath)) {
+    console.warn('[Security] Refused folder-create-direct outside workspace:', folderPath)
+    return { success: false, error: 'Access denied: Path is outside active workspace' }
+  }
+  try {
+    if (!fs.existsSync(targetPath)) fs.mkdirSync(targetPath, { recursive: true })
     return { success: true }
   } catch (err) {
     return { success: false, error: err.message }
   }
 })
 
-ipcMain.handle('folder-create-direct', async (_event, folderPath) => {
-  try {
-    if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true })
-    return { success: true }
-  } catch (err) {
-    return { success: false, error: err.message }
+ipcMain.handle('workspace-set-active', async (event, folderPath) => {
+  if (!validateIpcSender(event)) return { success: false }
+  if (folderPath && typeof folderPath === 'string') {
+    const canonical = getCanonicalPath(folderPath)
+    if (canonical && fs.existsSync(canonical)) {
+      registerAuthorizedWorkspace(canonical)
+      currentActiveWorkspace = canonical
+      return { success: true, activeWorkspace: canonical }
+    }
   }
+  return { success: false }
 })
 
-ipcMain.handle('file-delete-direct', async (_event, filePath) => {
+ipcMain.handle('file-delete-direct', async (event, filePath) => {
+  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC origin' }
+  if (!filePath || typeof filePath !== 'string') return { success: false, error: 'No file path specified' }
+  const resolved = path.resolve(filePath)
+  if (!isPathWithinWorkspace(resolved)) {
+    console.warn('[Security] Refused file-delete-direct outside workspace:', filePath)
+    return { success: false, error: 'Access denied: Path is outside active workspace' }
+  }
+  // Strictly prevent deleting the active workspace root itself
+  const canonical = getCanonicalPath(resolved)
+  for (const ws of activeWorkspaces) {
+    if (canonical && canonical.toLowerCase() === ws.toLowerCase()) {
+      return { success: false, error: 'Access denied: Cannot delete active workspace root directory' }
+    }
+  }
   try {
-    if (fs.existsSync(filePath)) {
-      const stat = fs.statSync(filePath)
+    if (fs.existsSync(resolved)) {
+      const stat = fs.statSync(resolved)
       if (stat.isDirectory()) {
-        fs.rmSync(filePath, { recursive: true, force: true })
+        fs.rmSync(resolved, { recursive: true, force: true })
       } else {
-        fs.unlinkSync(filePath)
+        fs.unlinkSync(resolved)
       }
     }
     return { success: true }
@@ -1432,9 +1770,15 @@ ipcMain.handle('file-delete-direct', async (_event, filePath) => {
   }
 })
 
-ipcMain.handle('file-move-direct', async (_event, { sourcePath, targetPath }) => {
+ipcMain.handle('file-move-direct', async (event, { sourcePath, targetPath }) => {
+  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC origin' }
+  if (!sourcePath || !targetPath) return { success: false, error: 'Invalid paths' }
+  if (!isPathWithinWorkspace(sourcePath) || !isPathWithinWorkspace(targetPath)) {
+    console.warn('[Security] Refused file-move-direct outside workspace:', { sourcePath, targetPath })
+    return { success: false, error: 'Access denied: Path is outside active workspace' }
+  }
   try {
-    if (!sourcePath || !fs.existsSync(sourcePath)) {
+    if (!fs.existsSync(sourcePath)) {
       return { success: false, error: 'Source item does not exist' }
     }
     const targetDir = path.dirname(targetPath)
@@ -1442,15 +1786,22 @@ ipcMain.handle('file-move-direct', async (_event, { sourcePath, targetPath }) =>
       fs.mkdirSync(targetDir, { recursive: true })
     }
     await fs.promises.rename(sourcePath, targetPath)
+    registerAuthorizedFile(targetPath)
     return { success: true, targetPath }
   } catch (err) {
     return { success: false, error: err.message }
   }
 })
 
-ipcMain.handle('file-copy-direct', async (_event, { sourcePath, targetPath }) => {
+ipcMain.handle('file-copy-direct', async (event, { sourcePath, targetPath }) => {
+  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC origin' }
+  if (!sourcePath || !targetPath) return { success: false, error: 'Invalid paths' }
+  if (!isPathWithinWorkspace(sourcePath) || !isPathWithinWorkspace(targetPath)) {
+    console.warn('[Security] Refused file-copy-direct outside workspace:', { sourcePath, targetPath })
+    return { success: false, error: 'Access denied: Path is outside active workspace' }
+  }
   try {
-    if (!sourcePath || !fs.existsSync(sourcePath)) {
+    if (!fs.existsSync(sourcePath)) {
       return { success: false, error: 'Source file does not exist' }
     }
     const targetDir = path.dirname(targetPath)
@@ -1458,6 +1809,7 @@ ipcMain.handle('file-copy-direct', async (_event, { sourcePath, targetPath }) =>
       fs.mkdirSync(targetDir, { recursive: true })
     }
     await fs.promises.copyFile(sourcePath, targetPath)
+    registerAuthorizedFile(targetPath)
     return { success: true, targetPath }
   } catch (err) {
     return { success: false, error: err.message }
@@ -1465,7 +1817,8 @@ ipcMain.handle('file-copy-direct', async (_event, { sourcePath, targetPath }) =>
 })
 
 // External link and shell helpers (strictly validate allowed protocols to prevent injection)
-ipcMain.on('open-external-url', (_event, targetUrl) => {
+ipcMain.on('open-external-url', (event, targetUrl) => {
+  if (!validateIpcSender(event)) return
   if (!targetUrl || typeof targetUrl !== 'string') return
   try {
     const parsed = new URL(targetUrl)
@@ -1477,31 +1830,33 @@ ipcMain.on('open-external-url', (_event, targetUrl) => {
   }
 })
 
-ipcMain.on('show-in-folder', (_event, filePath) => {
-  if (filePath && fs.existsSync(filePath)) {
+ipcMain.on('show-in-folder', (event, filePath) => {
+  if (!validateIpcSender(event)) return
+  if (filePath && isPathWithinWorkspace(filePath) && fs.existsSync(filePath)) {
     shell.showItemInFolder(filePath)
   }
 })
 
-ipcMain.handle('open-path-in-os', async (_event, filePath) => {
-  if (filePath && fs.existsSync(filePath)) {
-    try {
-      const ext = path.extname(filePath).toLowerCase().replace(/^\./, '')
-      if (DANGEROUS_EXECUTABLE_EXTENSIONS.has(ext)) {
-        // Prevent accidental execution of executable binaries or shell scripts from untrusted repos
-        shell.showItemInFolder(filePath)
-        return {
-          success: false,
-          error: `Direct execution of executable files or scripts (.${ext}) is restricted for safety. Revealed file in Explorer instead.`
-        }
-      }
-      await shell.openPath(filePath)
-      return { success: true }
-    } catch (err) {
-      return { success: false, error: err.message }
-    }
+ipcMain.handle('open-path-in-os', async (event, filePath) => {
+  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC origin' }
+  if (!filePath || !isPathWithinWorkspace(filePath) || !fs.existsSync(filePath)) {
+    return { success: false, error: 'File does not exist or access denied' }
   }
-  return { success: false, error: 'File does not exist' }
+  try {
+    const ext = path.extname(filePath).toLowerCase().replace(/^\./, '')
+    if (DANGEROUS_EXECUTABLE_EXTENSIONS.has(ext)) {
+      // Prevent accidental execution of executable binaries or shell scripts from untrusted repos
+      shell.showItemInFolder(filePath)
+      return {
+        success: false,
+        error: `Direct execution of executable files or scripts (.${ext}) is restricted for safety. Revealed file in Explorer instead.`
+      }
+    }
+    await shell.openPath(filePath)
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err.message }
+  }
 })
 
 ipcMain.handle('get-backend-url', () => {
@@ -1509,12 +1864,14 @@ ipcMain.handle('get-backend-url', () => {
 })
 
 // Default or CLI Startup Workspace resolution
-ipcMain.handle('workspace-get-default', async () => {
+ipcMain.handle('workspace-get-default', async (event) => {
+  if (!validateIpcSender(event)) return { rootPath: null }
   const startupPath = parsePathFromArgv(process.argv)
   if (startupPath && fs.existsSync(startupPath)) {
     try {
       const stat = fs.statSync(startupPath)
       if (stat.isDirectory()) {
+        registerAuthorizedWorkspace(startupPath)
         const tree = scanFullDirectoryTree(startupPath)
         const gitInfo = await getGitFullInfo(startupPath)
         return {
@@ -1527,6 +1884,8 @@ ipcMain.handle('workspace-get-default', async () => {
         }
       } else {
         const rootDir = path.dirname(startupPath)
+        registerAuthorizedWorkspace(rootDir)
+        registerAuthorizedFile(startupPath)
         const tree = scanFullDirectoryTree(rootDir)
         const gitInfo = await getGitFullInfo(rootDir)
         return {
@@ -1541,6 +1900,22 @@ ipcMain.handle('workspace-get-default', async () => {
       }
     } catch {}
   }
+  // If a valid workspace was already set as active, return it
+  if (currentActiveWorkspace && fs.existsSync(currentActiveWorkspace)) {
+    try {
+      const tree = scanFullDirectoryTree(currentActiveWorkspace)
+      const gitInfo = await getGitFullInfo(currentActiveWorkspace)
+      return {
+        rootPath: currentActiveWorkspace,
+        rootName: path.basename(currentActiveWorkspace),
+        isArgv: false,
+        tree,
+        gitStatus: gitInfo.statusMap || {},
+        gitInfo
+      }
+    } catch {}
+  }
+
   // In packaged desktop mode, if no folder CLI argument was passed, do not auto-open installation folder
   if (app.isPackaged) {
     return {
@@ -1555,6 +1930,7 @@ ipcMain.handle('workspace-get-default', async () => {
 
   // Development mode only: convenient fallback to project root
   const defaultDir = path.resolve(__dirname, '../../')
+  registerAuthorizedWorkspace(defaultDir)
   const tree = scanFullDirectoryTree(defaultDir)
   const gitInfo = await getGitFullInfo(defaultDir)
   return {
@@ -1683,6 +2059,21 @@ ipcMain.on('app-quit-and-install', () => {
 
 // App Lifecycle
 app.whenReady().then(async () => {
+  // Windows AppContainer Sandbox Self-Healing:
+  // When installed on secondary partitions or non-standard folders, folder ACLs may lack
+  // read/execute access for ALL APPLICATION PACKAGES (*S-1-15-2-1), causing Chromium sandbox child
+  // processes to abort on launch with error -2147483645.
+  if (process.platform === 'win32' && app.isPackaged) {
+    try {
+      const installDir = path.dirname(process.execPath)
+      exec(`icacls "${installDir}" /grant "*S-1-15-2-1:(OI)(CI)(RX)" /T /C /Q`, (err) => {
+        if (err) {
+          // Silently proceed; handled primarily by installer
+        }
+      })
+    } catch {}
+  }
+
   await ensureSidecar()
   createWindow()
   initAutoUpdater()

@@ -15,12 +15,8 @@ export function useAppCommands({
   handleOpenNativeFolder,
   setIsCloneModalOpen,
   handleCloseWorkspace,
-  handleDownloadPdf,
   setViewMode,
   handleCopy,
-  handleDownloadActiveFile,
-  handleDownloadSuite,
-  handleDownloadHtml,
   setSidebarCollapsed,
   setIsZenMode,
   setOrientation,
@@ -97,7 +93,7 @@ export function useAppCommands({
       description: 'Clone a remote Git repository to local disk and open workspace',
       icon: 'download',
       category: 'Git',
-      shortcut: '',
+      shortcut: getBindingKey('git.clone', ''),
       action: () => setIsCloneModalOpen?.(true)
     },
     {
@@ -106,74 +102,44 @@ export function useAppCommands({
       description: 'Close active workspace folder and return to Welcome Launcher',
       icon: 'close',
       category: 'File',
-      shortcut: 'Ctrl + K F',
+      shortcut: getBindingKey('file.closeWorkspace', 'Ctrl + Shift + W'),
       action: handleCloseWorkspace
     },
     {
-      id: 'file.exportPdf',
-      title: 'File: Export as PDF',
-      description: 'High-fidelity GitHub-styled vector PDF document',
-      icon: 'picture_as_pdf',
-      category: 'File',
-      shortcut: getBindingKey('file.exportPdf', 'Ctrl + P'),
-      action: handleDownloadPdf
-    },
-    {
-      id: 'view-split',
+      id: 'view.split',
       title: 'View: Split Editor & Preview',
       description: '50/50 Code Editor and GitHub preview',
       icon: 'vertical_split',
       category: 'Layout',
+      shortcut: getBindingKey('view.split', ''),
       action: () => setViewMode?.('split')
     },
     {
-      id: 'view-editor',
+      id: 'view.editor',
       title: 'View: Editor Only',
       description: 'Maximize raw code editor space',
       icon: 'code',
       category: 'Layout',
+      shortcut: getBindingKey('view.editor', ''),
       action: () => setViewMode?.('editor')
     },
     {
-      id: 'view-preview',
+      id: 'view.preview',
       title: 'View: Preview Only',
       description: 'Read-only GitHub formatted documentation view',
       icon: 'visibility',
       category: 'Layout',
+      shortcut: getBindingKey('view.preview', ''),
       action: () => setViewMode?.('preview')
     },
     {
-      id: 'copy-md',
+      id: 'edit.copyMarkdown',
       title: `Copy ${activeFile || 'README.md'} Markdown`,
       description: 'Copy active markdown text to system clipboard',
       icon: 'content_copy',
       category: 'Clipboard',
-      shortcut: 'Ctrl+Shift+C',
+      shortcut: getBindingKey('edit.copyMarkdown', 'Ctrl + Shift + C'),
       action: handleCopy
-    },
-    {
-      id: 'download-file',
-      title: `Export: Save Active File (${activeFile || 'README.md'})`,
-      description: 'Download the current raw markdown buffer',
-      icon: 'description',
-      category: 'Export',
-      action: handleDownloadActiveFile
-    },
-    {
-      id: 'download-suite',
-      title: 'Export: Download Documentation Suite (.zip)',
-      description: 'Bundle all markdown documents into a zip archive',
-      icon: 'folder_zip',
-      category: 'Export',
-      action: handleDownloadSuite
-    },
-    {
-      id: 'download-html',
-      title: 'Export: Standalone HTML Page',
-      description: 'Self-contained GitHub-styled HTML file',
-      icon: 'html',
-      category: 'Export',
-      action: handleDownloadHtml
     },
     {
       id: 'view.toggleSidebar',
@@ -185,11 +151,12 @@ export function useAppCommands({
       action: () => setSidebarCollapsed?.((prev) => !prev)
     },
     {
-      id: 'zen-mode',
+      id: 'view.toggleZen',
       title: 'Toggle Zen / Focus Mode',
       description: 'Hide sidebar and chrome for distraction-free writing',
       icon: 'fullscreen',
       category: 'Layout',
+      shortcut: getBindingKey('view.toggleZen', 'F11'),
       action: () => setIsZenMode?.((prev) => !prev)
     },
     {
@@ -225,6 +192,7 @@ export function useAppCommands({
       description: 'Switch between preferred Light and Dark themes',
       icon: 'brightness_medium',
       category: 'Preferences',
+      shortcut: getBindingKey('pref.toggleTheme', 'Ctrl + Alt + T'),
       action: toggleThemeMode
     },
     ...THEMES.map((theme) => ({
@@ -281,43 +249,48 @@ export function useAppCommands({
       action: () => handleOpenStudioTab?.('images.studio')
     },
     {
-      id: 'tree-studio',
+      id: 'studio.tree',
       title: 'Open Directory Tree Studio Tab',
       description: 'Visual ASCII, Unicode, and Emoji folder tree generator',
       icon: 'account_tree',
       category: 'Studio',
+      shortcut: getBindingKey('studio.tree', 'Ctrl + Shift + D'),
       action: () => handleOpenStudioTab?.('tree.studio')
     },
     {
-      id: 'api-studio',
+      id: 'studio.api',
       title: 'Open API & Endpoints Studio Tab',
       description: 'Interactive REST route designer with parameter matrix and cURL',
       icon: 'api',
       category: 'Studio',
+      shortcut: getBindingKey('studio.api', 'Ctrl + Shift + A'),
       action: () => handleOpenStudioTab?.('api.studio')
     },
     {
-      id: 'audit-studio',
+      id: 'studio.audit',
       title: 'Open README Auditor & Linter Tab',
       description: 'Documentation health scorecard, A-F grade, and missing section boilerplate',
       icon: 'verified_user',
       category: 'Studio',
+      shortcut: getBindingKey('studio.audit', 'Ctrl + Shift + U'),
       action: () => handleOpenStudioTab?.('audit.studio')
     },
     {
-      id: 'contributors-studio',
+      id: 'studio.contributors',
       title: 'Open Contributor & Team Studio Tab',
       description: 'All-Contributors table, avatar matrix, and role badges',
       icon: 'group',
       category: 'Studio',
+      shortcut: getBindingKey('studio.contributors', 'Ctrl + Shift + R'),
       action: () => handleOpenStudioTab?.('contributors.studio')
     },
     {
-      id: 'changelog-studio',
+      id: 'studio.changelog',
       title: 'Open Changelog & Release Notes Tab',
       description: 'Keep-a-Changelog standard release notes with SemVer bumping',
       icon: 'history',
       category: 'Studio',
+      shortcut: getBindingKey('studio.changelog', 'Ctrl + Shift + L'),
       action: () => handleOpenStudioTab?.('changelog.studio')
     },
     {
@@ -326,7 +299,7 @@ export function useAppCommands({
       description: 'Curated developer emojis, GitHub shortcodes, vector symbols, and heading decorators',
       icon: 'sentiment_satisfied',
       category: 'Studio',
-      shortcut: getBindingKey('studio.icons', 'Ctrl + Shift + E'),
+      shortcut: getBindingKey('studio.icons', 'Ctrl + Shift + Y'),
       action: () => handleOpenStudioTab?.('icons.studio')
     },
     {
@@ -409,45 +382,48 @@ export function useAppCommands({
       }
     },
     {
-      id: 'clear-draft',
+      id: 'file.clearDraft',
       title: 'Reset Active Markdown Buffer',
       description: 'Clear the current file content',
       icon: 'delete_sweep',
       category: 'Danger',
+      shortcut: getBindingKey('file.clearDraft', ''),
       action: handleClear
     },
     {
-      id: 'toggle-output',
+      id: 'view.output',
       title: 'View: Toggle Output & Logs Panel',
       description: 'View IDE daemon and system output logs',
       icon: 'output',
       category: 'View',
-      shortcut: 'Ctrl+`',
+      shortcut: getBindingKey('view.output', 'Ctrl + `'),
       action: () => handleToggleBottomPanel?.('output')
     },
     {
-      id: 'toggle-problems',
+      id: 'view.problems',
       title: 'View: Toggle Problems Diagnostics',
       description: 'View markdown syntax errors and warnings',
       icon: 'error_outline',
       category: 'View',
-      shortcut: 'Ctrl+J',
+      shortcut: getBindingKey('view.problems', 'Ctrl + J'),
       action: () => handleToggleBottomPanel?.('problems')
     },
     {
-      id: 'whats-new',
+      id: 'help.whatsNew',
       title: 'Patch Notes',
       description: 'View version patch notes, highlights, and update changelog',
       icon: 'description',
       category: 'Help',
+      shortcut: getBindingKey('help.whatsNew', ''),
       action: handleOpenWhatsNewTab
     },
     {
-      id: 'check-updates',
+      id: 'help.checkUpdates',
       title: 'Check for Updates...',
       description: 'Check for latest application updates on GitHub',
       icon: 'system_update',
       category: 'Help',
+      shortcut: getBindingKey('help.checkUpdates', ''),
       action: handleCheckForUpdates
     },
     {
@@ -456,6 +432,7 @@ export function useAppCommands({
       description: 'Open the first-run welcome and onboarding dashboard',
       icon: 'waving_hand',
       category: 'Help',
+      shortcut: getBindingKey('help.welcome', ''),
       action: handleOpenWelcome
     },
     {
@@ -464,6 +441,7 @@ export function useAppCommands({
       description: 'Open sample document with live Mermaid diagrams, badges, and tables',
       icon: 'play_circle',
       category: 'Help',
+      shortcut: getBindingKey('help.openPlayground', ''),
       action: handleOpenSampleDoc
     },
     {
@@ -472,6 +450,7 @@ export function useAppCommands({
       description: 'Re-open 1st-time onboarding setup popup to configure theme, engine & layout',
       icon: 'magic_button',
       category: 'Help',
+      shortcut: getBindingKey('help.quickSetup', ''),
       action: handleOpenQuickSetup
     }
   ], [
@@ -486,13 +465,9 @@ export function useAppCommands({
     handleOpenNativeFolder,
     setIsCloneModalOpen,
     handleCloseWorkspace,
-    handleDownloadPdf,
-    setViewMode,
+      setViewMode,
     handleCopy,
-    handleDownloadActiveFile,
-    handleDownloadSuite,
-    handleDownloadHtml,
-    setSidebarCollapsed,
+          setSidebarCollapsed,
     setIsZenMode,
     setOrientation,
     handleOpenShortcutsTab,

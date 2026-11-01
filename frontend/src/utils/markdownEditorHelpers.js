@@ -208,6 +208,59 @@ export function applySmartFormat(content, selectionStart, selectionEnd, action, 
       }
     }
 
+    case 'video': {
+      const format = options.format || 'html5'
+      const url = options.url || (selectedText ? selectedText.trim() : 'assets/demo.mp4')
+      let snippet = ''
+      if (format === 'markdown') {
+        const alt = options.alt || 'Demo Video'
+        snippet = `\n![${alt}](${url})\n`
+      } else {
+        const mime = url.endsWith('.webm') ? 'video/webm' : 'video/mp4'
+        snippet = `\n<video controls width="100%">\n  <source src="${url}" type="${mime}">\n  Your browser does not support the video tag.\n</video>\n`
+      }
+      const newContent = content.substring(0, start) + snippet + content.substring(end)
+      return {
+        newContent,
+        newStart: start + snippet.length,
+        newEnd: start + snippet.length
+      }
+    }
+
+    case 'gif': {
+      const alt = options.alt || (selectedText || 'Animation Demo')
+      const url = options.url || 'assets/demo.gif'
+      const snippet = `\n![${alt}](${url})\n`
+      const newContent = content.substring(0, start) + snippet + content.substring(end)
+      return {
+        newContent,
+        newStart: start + snippet.length,
+        newEnd: start + snippet.length
+      }
+    }
+
+    case 'youtube': {
+      const videoId = options.videoId || 'dQw4w9WgXcQ'
+      const snippet = `\n<iframe width="100%" height="380" src="https://www.youtube.com/embed/${videoId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>\n`
+      const newContent = content.substring(0, start) + snippet + content.substring(end)
+      return {
+        newContent,
+        newStart: start + snippet.length,
+        newEnd: start + snippet.length
+      }
+    }
+
+    case 'audio': {
+      const url = options.url || (selectedText ? selectedText.trim() : 'assets/audio.mp3')
+      const snippet = `\n<audio controls src="${url}">\n  Your browser does not support the audio element.\n</audio>\n`
+      const newContent = content.substring(0, start) + snippet + content.substring(end)
+      return {
+        newContent,
+        newStart: start + snippet.length,
+        newEnd: start + snippet.length
+      }
+    }
+
     case 'table': {
       const rows = options.rows || 3
       const cols = options.cols || 3

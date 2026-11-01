@@ -27,7 +27,7 @@ async function getMermaid() {
           fontFamily: 'Inter, JetBrains Mono, monospace',
           fontSize: '13px'
         },
-        securityLevel: 'loose'
+        securityLevel: 'strict'
       })
       mermaidInstance = mModule
       return mermaidInstance
@@ -69,10 +69,10 @@ export default function MermaidRenderer({ chart, plain = false }) {
           await mermaid.parse(trimmedChart)
         }
 
-        // 2. Render only if parse succeeded
+        // 2. Render only if parse succeeded and sanitize generated SVG before DOM injection
         const { svg } = await mermaid.render(uniqueId, trimmedChart)
         if (isMounted) {
-          setSvgContent(svg)
+          setSvgContent(sanitizeSvg(svg))
         }
       } catch (err) {
         // Remove any stray error elements Mermaid might have appended to document.body

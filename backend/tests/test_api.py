@@ -189,3 +189,43 @@ def test_github_compatibility():
     # 4. Badges must not have broken domain typos
     assert "https://github.None" not in md
 
+
+def test_resolve_image_ssrf_protection():
+    """Verify that SSRF attempts against internal, loopback, or unauthorized domains are rejected."""
+    # Loopback IP
+    resp_loopback = client.get("/resolve-image?url=http://127.0.0.1:8000/admin")
+    assert resp_loopback.status_code == 400
+
+    # AWS metadata endpoint
+    resp_meta = client.get("/resolve-image?url=http://169.254.169.254/latest/meta-data/")
+    assert resp_meta.status_code == 400
+
+    # Non-whitelisted public domain
+    resp_unauth = client.get("/resolve-image?url=https://example.com/test.png")
+    assert resp_unauth.status_code == 400
+    assert "Domain not permitted" in resp_unauth.json()["detail"]
+
+
+def test_git_clone_security_guards():
+    """Verify that git clone rejects path traversal, flag injections, and unauthorized directories."""
+    # Flag injection
+    resp_flag = client.post("/git-clone", json={"repo_url": "--upload-pack=evil"})
+    assert resp_flag.status_code == 400
+
+    # Invalid folder name path traversal
+    resp_folder = client.post("/git-clone", json={
+        "repo_url": "facebook/react",
+        "folder_name": "../../root"
+    })
+    assert resp_folder.status_code == 400
+    assert "Invalid target folder name" in resp_folder.json()["detail"]
+
+    # Target directory path outside user profile / project
+    invalid_target = "/etc" if os.name != "nt" else "C:\\Windows\\System32"
+    resp_path = client.post("/git-clone", json={
+        "repo_url": "facebook/react",
+        "target_dir": invalid_target
+    })
+    assert resp_path.status_code == 400
+
+

@@ -1,4 +1,5 @@
 import React from 'react'
+import { useI18n } from '../../i18n/I18nContext'
 
 export default function NotificationsSettingsSection({
   activeCategory,
@@ -8,20 +9,21 @@ export default function NotificationsSettingsSection({
   history = [],
   clearHistory = () => {}
 }) {
+  const { t } = useI18n()
   if (activeCategory !== 'all' && activeCategory !== 'notifications') return null
 
   return (
     <section className="settings-group-section">
       <div className="settings-group-header">
         <span className="material-symbols-outlined">notifications</span>
-        <h3>Notifications & Toasts</h3>
+        <h3>{t('settings.notifications.title', 'Notifications & Toasts')}</h3>
       </div>
 
       {/* Notification Popup Level */}
       {matchesSearch('notifications toasts popup alert warning important level popup filter') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label">Notifications: Popup Toast Level</div>
+            <div className="settings-card-label">{t('settings.notifications.toastLevel', 'Notifications: Popup Toast Level')}</div>
             <div className="settings-card-sublabel">
               Controls which notifications pop up as floating cards over your workspace.
               By default, toast messages are only generated for software updates, Git source control actions, and interactive alerts. Routine operations (saving files, opening files, switching tabs, inserting snippets) are muted to prevent distraction.
@@ -47,7 +49,7 @@ export default function NotificationsSettingsSection({
       {matchesSearch('notifications history clear count log') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label">Notification Center History</div>
+            <div className="settings-card-label">{t('settings.notifications.history', 'Notification Center History')}</div>
             <div className="settings-card-sublabel">
               Currently storing {history.length} notification(s). Clear history log from Notification Center.
             </div>
@@ -61,7 +63,7 @@ export default function NotificationsSettingsSection({
               style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>delete_sweep</span>
-              <span>Clear History</span>
+              <span>{t('settings.notifications.clearHistory', 'Clear History')}</span>
             </button>
           </div>
         </div>

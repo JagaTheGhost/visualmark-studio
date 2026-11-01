@@ -985,6 +985,52 @@
   max-width: 100%;
 }
 
+/* Badge Live Preview Table Layout */
+.badge-preview-table-container {
+  width: 100%;
+  max-width: 680px;
+  overflow-x: auto;
+  border-radius: var(--radius-xs, 6px);
+  border: 1px solid var(--border-color);
+  background-color: var(--surface-base);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.badge-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  text-align: left;
+}
+
+.badge-preview-table th {
+  padding: 9px 14px;
+  background-color: var(--surface-sunken);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.badge-preview-table td {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+
+.badge-preview-table tr:last-child td {
+  border-bottom: none;
+}
+
+.badge-preview-table tr:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+
 /* Badge Format & Engine Selectors */
 .badge-format-selector {
   display: grid;

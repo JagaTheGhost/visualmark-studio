@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Workspace Directory Operations
   openFolderDialog: () => ipcRenderer.invoke('dialog-open-folder'),
+  setWorkspaceActive: (folderPath) => ipcRenderer.invoke('workspace-set-active', folderPath),
   readWorkspaceFiles: (folderPath) => ipcRenderer.invoke('workspace-read-files', folderPath),
   readWorkspaceTree: (folderPath) => ipcRenderer.invoke('workspace-read-tree', folderPath),
   getDefaultWorkspace: () => ipcRenderer.invoke('workspace-get-default'),

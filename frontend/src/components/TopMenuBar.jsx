@@ -16,9 +16,6 @@ export default function TopMenuBar({
   onGenerate,
   onCopy,
   onDownload,
-  onDownloadSuite,
-  onDownloadHtml,
-  onDownloadPdf,
   onOpenFile,
   onOpenFolder,
   onSaveFile,
@@ -89,7 +86,7 @@ export default function TopMenuBar({
   useEffect(() => {
     if (typeof window !== 'undefined' && window.electronAPI?.isElectron) {
       setIsElectron(true)
-      window.electronAPI.isWindowMaximized().then((max) => setIsMaximized(max))
+      window.electronAPI.isWindowMaximized().then((max) => setIsMaximized(max)).catch(() => {})
       if (window.electronAPI.getIsDev) {
         window.electronAPI.getIsDev().then((res) => {
           if (typeof res === 'boolean') setIsDevMode(res)
@@ -250,17 +247,6 @@ export default function TopMenuBar({
                 <button type="button" className="dropdown-item" onClick={() => handleItemClick(onDownload)} disabled={!activeFile}>
                   <span>Save Copy As Markdown...</span>
                 </button>
-                <button type="button" className="dropdown-item" onClick={() => handleItemClick(onDownloadHtml)}>
-                  <span>Export as HTML...</span>
-                </button>
-                <button type="button" className="dropdown-item" onClick={() => handleItemClick(onDownloadPdf)}>
-                  <span>Export as PDF...</span>
-                </button>
-                {isDocPack && onDownloadSuite && (
-                  <button type="button" className="dropdown-item" onClick={() => handleItemClick(onDownloadSuite)}>
-                    <span>Export Suite (.zip)...</span>
-                  </button>
-                )}
                 <div className="dropdown-divider" />
                 <button
                   type="button"
@@ -635,7 +621,7 @@ export default function TopMenuBar({
                     if (window.electronAPI?.openExternalUrl) {
                       window.electronAPI.openExternalUrl(url)
                     } else {
-                      window.open(url, '_blank')
+                      window.open(url, '_blank', 'noopener,noreferrer')
                     }
                   })}
                 >

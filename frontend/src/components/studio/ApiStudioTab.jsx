@@ -284,7 +284,7 @@ export default function ApiStudioTab({
     navigator.clipboard.writeText(text).then(() => {
       setCopyFeedback(label)
       setTimeout(() => setCopyFeedback(''), 1800)
-    })
+    }).catch(() => {})
   }, [])
 
   const getStatusPillClass = (code) => {

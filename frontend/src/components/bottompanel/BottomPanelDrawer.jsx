@@ -277,6 +277,18 @@ export default function BottomPanelDrawer({
             </>
           )}
 
+          {/* Community Discussions & Feedback Link */}
+          <a
+            href="https://github.com/JagaTheGhost/visualmark-studio/discussions"
+            target="_blank"
+            rel="noreferrer"
+            className="panel-action-btn panel-community-btn"
+            title="Bugs and issues to be expected during active development. Share your experience with the community on GitHub Discussions!"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>forum</span>
+            <span className="community-btn-text">Bugs & Feedback ↗</span>
+          </a>
+
           <div className="panel-divider" />
 
           {/* Maximize / Restore Toggle */}

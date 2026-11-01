@@ -37,15 +37,13 @@ python build_sidecar.py
 
 ### Step 2: Build the Electron Desktop Package
 
-#### 1. Portable Standalone Executable (Windows `.exe`)
+#### 1. Windows Setup Installer (`.exe`)
 ```bash
 cd frontend
-npm run electron:portable
+npm run electron:dist:win
 ```
-*Output: `frontend/release/VisualMark-Studio-Portable.exe`*  
-Runs immediately from any directory or portable USB drive with zero installation.
-
-#### 2. Complete Installer (Windows Setup `.exe`)
+*Output: `frontend/release/VisualMark-Studio-Setup.exe`*  
+Standard per-user desktop installer with automatic update support, Start Menu/Desktop shortcuts, and `.md` file associations.
 ```bash
 cd frontend
 npm run electron:dist
@@ -77,7 +75,7 @@ git push origin main --tags
 The workflow:
 1. Provisions Windows Server runner with Node.js 20 and Python 3.11.
 2. Compiles the FastAPI backend into `server.exe` via PyInstaller.
-3. Packages both the custom installer (`VisualMark-Studio-Setup.exe`) and portable binary (`VisualMark-Studio-Portable.exe`).
+3. Packages the desktop installer (`VisualMark-Studio-Setup.exe` on Windows, AppImage/deb on Linux, DMG on macOS).
 4. Generates `latest.yml` update manifest for Electron Updater.
 5. Verifies and uploads canonical release assets to the GitHub Release, enabling seamless, single-pass background auto-updates without redundant delta fallback downloads.
 

@@ -61,6 +61,15 @@ $minPkg | Set-Content "$resourcesApp\package.json"
 
 Write-Host "      App files copied" -ForegroundColor Green
 
+# Step 6: Apply Windows Sandbox ACL
+Write-Host "[5/5] Setting AppContainer sandbox permissions (ALL APPLICATION PACKAGES)..." -ForegroundColor Yellow
+try {
+    icacls "$outputDir" /grant "*S-1-15-2-1:(OI)(CI)(RX)" /T /C /Q | Out-Null
+    Write-Host "      Sandbox permissions set successfully" -ForegroundColor Green
+} catch {
+    Write-Host "      Warning: Could not set icacls permissions" -ForegroundColor Yellow
+}
+
 # Done
 Write-Host ""
 Write-Host "=== Build Complete! ===" -ForegroundColor Green

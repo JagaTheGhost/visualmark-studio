@@ -396,3 +396,31 @@
   font-style: italic;
   padding: 12px;
 }
+
+.panel-action-btn.panel-community-btn {
+  width: auto;
+  height: 22px;
+  padding: 0 8px;
+  gap: 4px;
+  background-color: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 3px;
+  font-size: 11px;
+  color: #38bdf8;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.15s ease;
+}
+
+.panel-action-btn.panel-community-btn:hover {
+  background-color: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #7dd3fc;
+}
+
+@media (max-width: 768px) {
+  .panel-action-btn.panel-community-btn .community-btn-text {
+    display: none;
+  }
+}

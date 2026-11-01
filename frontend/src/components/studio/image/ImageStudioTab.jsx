@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { saveAs } from 'file-saver'
 import { getOptimizedImageUrl, requiresAsyncResolution, resolveRedirectImageUrl } from '../../../utils/imageUtils'
+import { parseVideoEmbed } from '../../../utils/mediaUtils'
 import StudioShell from '../common/StudioShell'
 import {
   STUDIO_MODES,
@@ -18,10 +19,12 @@ import ImageStudioLivePreview from './ImageStudioLivePreview'
 
 export default function ImageStudioTab({
   repoUrl = '',
+  workspaceDirectory = null,
   onInsertImage = () => {},
   onBackToReadme = () => {}
 }) {
   const [activeMode, setActiveMode] = useState('banner')
+  const [saveStatusMessage, setSaveStatusMessage] = useState('')
 
   // Parse repo owner and name if available
   const parsedRepo = (() => {
@@ -83,16 +86,23 @@ export default function ImageStudioTab({
 
   // Typing SVG State
   const [typingLines, setTypingLines] = useState(
-    'Welcome to README Studio;Automated Documentation Platform;Built with React and Python'
+    "Your're right;I should have included a screenshot;to demonstrate the visual features;Thanks for pointing that out !"
   )
   const [typingFont, setTypingFont] = useState('Fira Code')
   const [typingColor, setTypingColor] = useState('6366F1')
   const [typingPause, setTypingPause] = useState('1000')
+  const [typingSpeed, setTypingSpeed] = useState('50')
+  const [typingEffect, setTypingEffect] = useState('discrete')
+  const [typingLayout, setTypingLayout] = useState('clean')
+  const [typingAlign, setTypingAlign] = useState('center')
+  const [typingFontSize, setTypingFontSize] = useState('24')
+  const [typingWidth, setTypingWidth] = useState('750')
+  const [typingHeight, setTypingHeight] = useState('90')
   const [typingError, setTypingError] = useState(false)
 
   useEffect(() => {
     setTypingError(false)
-  }, [typingLines, typingFont, typingColor, typingPause])
+  }, [typingLines, typingFont, typingColor, typingPause, typingSpeed, typingLayout, typingAlign, typingFontSize, typingWidth])
 
   // 2. Mockup State (Shared between Link and Upload)
   const [imageUrl, setImageUrl] = useState('')
@@ -150,16 +160,22 @@ export default function ImageStudioTab({
     if (requiresAsyncResolution(imageUrl)) {
       setIsResolving(true)
       setResolveNote('Resolving redirect link via backend...')
-      resolveRedirectImageUrl(imageUrl, API_BASE_URL).then((res) => {
-        setIsResolving(false)
-        if (res && res !== imageUrl) {
-          setResolvedUrl(res)
-          setResolveNote('✓ Successfully resolved to direct image')
-        } else {
+      resolveRedirectImageUrl(imageUrl, API_BASE_URL)
+        .then((res) => {
+          setIsResolving(false)
+          if (res && res !== imageUrl) {
+            setResolvedUrl(res)
+            setResolveNote('✓ Successfully resolved to direct image')
+          } else {
+            setResolvedUrl(imageUrl)
+            setResolveNote('Direct link')
+          }
+        })
+        .catch(() => {
+          setIsResolving(false)
           setResolvedUrl(imageUrl)
           setResolveNote('Direct link')
-        }
-      })
+        })
     } else {
       setResolvedUrl(imageUrl)
       setResolveNote('')
@@ -296,12 +312,14 @@ export default function ImageStudioTab({
     const params = new URLSearchParams()
     params.set('font', typingFont)
     params.set('color', typingColor.replace('#', ''))
-    params.set('size', '28')
+    params.set('size', typingFontSize || '24')
     params.set('pause', typingPause)
     params.set('lines', typingLines)
-    params.set('center', 'true')
-    params.set('width', '800')
-    params.set('height', '100')
+    if ((typingAlign || 'center') === 'center') {
+      params.set('center', 'true')
+    }
+    params.set('width', typingWidth || '750')
+    params.set('height', typingHeight || (typingLayout === 'clean' ? '90' : '160'))
     params.set('vCenter', 'true')
     return `https://readme-typing-svg.demolab.com?${params.toString()}`
   }
@@ -309,82 +327,169 @@ export default function ImageStudioTab({
 
 
 
+  // Compute current active pure vector SVG code
+  const getActiveVectorSvg = () => {
+    const activeTheme = isCustomColor
+      ? {
+          id: 'custom',
+          name: 'Custom Gradient',
+          bg: `linear-gradient(135deg, ${customHex1} 0%, ${customHex2} 100%)`,
+          hex1: customHex1,
+          hex2: customHex2,
+          colorParam: `0:${customHex1.replace('#', '')},100:${customHex2.replace('#', '')}`,
+          coverUrl: bannerTheme?.coverUrl || ''
+        }
+      : bannerTheme
+
+    if (activeMode === 'banner') {
+      return getActiveSvgCode({
+        bannerType,
+        bannerTitle,
+        bannerSubtitle,
+        capsuleShape,
+        hudStatus,
+        hudVersion,
+        hudMetric1,
+        hudMetric2,
+        hudMetric3,
+        bannerTheme: activeTheme,
+        customHex1,
+        customHex2,
+        isCustomColor,
+        fontColor: capsuleFontColor,
+        descColor: capsuleDescColor,
+        bannerHeight,
+        fontSize: capsuleTitleSize,
+        descSize: capsuleDescSize,
+        fontAlignY: capsuleFontAlignY,
+        descAlignY: capsuleDescAlignY,
+        capsuleAnimation,
+        neofetchOs,
+        neofetchLicense,
+        neofetchPrompt,
+        neofetchShell,
+        typingLines,
+        typingFont,
+        typingColor,
+        typingPause,
+        typingSpeed,
+        typingEffect,
+        typingLayout,
+        typingAlign,
+        typingFontSize,
+        typingWidth,
+        typingHeight: typingLayout === 'clean' ? 90 : 160
+      })
+    }
+
+    if (activeMode === 'link' || activeMode === 'upload') {
+      return getActiveSvgCode('mockup', {
+        macWindowTitle,
+        browserUrl,
+        terminalCommand,
+        frameStyle,
+        bannerTheme: activeTheme,
+        customHex1,
+        customHex2,
+        isCustomColor
+      })
+    }
+
+    if (activeMode === 'motion') {
+      return getActiveSvgCode('motion', {
+        motionTitle,
+        motionCaption,
+        motionUrl,
+        motionType,
+        bannerTheme: activeTheme,
+        customHex1,
+        customHex2,
+        isCustomColor
+      })
+    }
+
+    if (activeMode === 'adaptive') {
+      return getActiveSvgCode('adaptive', {
+        adaptiveAlt,
+        darkThemeUrl,
+        lightThemeUrl,
+        bannerTheme: activeTheme,
+        customHex1,
+        customHex2,
+        isCustomColor
+      })
+    }
+
+    if (activeMode === 'comparison') {
+      return getActiveSvgCode('comparison', {
+        compTitle1,
+        compTitle2,
+        compUrl1,
+        compUrl2,
+        bannerTheme: activeTheme,
+        customHex1,
+        customHex2,
+        isCustomColor
+      })
+    }
+
+    return getActiveSvgCode('capsule', {
+      bannerTitle,
+      bannerSubtitle,
+      bannerTheme: activeTheme,
+      customHex1,
+      customHex2,
+      isCustomColor
+    })
+  }
+
+  const getActiveVectorFileName = () => {
+    if (activeMode === 'banner') {
+      const slug = (bannerTitle.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'hero').replace(/^-+|-+$/g, '')
+      return `${slug || 'hero'}-${bannerType}-banner.svg`
+    }
+    if (activeMode === 'link' || activeMode === 'upload') {
+      return 'project-mockup.svg'
+    }
+    if (activeMode === 'motion') {
+      const slug = (motionTitle.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'motion').replace(/^-+|-+$/g, '')
+      return `${slug || 'motion'}-demo-card.svg`
+    }
+    if (activeMode === 'adaptive') {
+      return 'adaptive-theme-graphic.svg'
+    }
+    if (activeMode === 'comparison') {
+      return 'comparison-matrix.svg'
+    }
+    return `${activeMode}-graphic.svg`
+  }
+
   // Download active graphic as standalone file
   const handleDownloadAsset = async () => {
-    if (activeMode === 'banner') {
-      if (LOCAL_SVG_TYPES.includes(bannerType) || bannerType === 'capsule') {
-        const activeTheme = isCustomColor
-          ? {
-              id: 'custom',
-              name: 'Custom Gradient',
-              bg: `linear-gradient(135deg, ${customHex1} 0%, ${customHex2} 100%)`,
-              hex1: customHex1,
-              hex2: customHex2,
-              colorParam: `0:${customHex1.replace('#', '')},100:${customHex2.replace('#', '')}`,
-              coverUrl: bannerTheme?.coverUrl || ''
-            }
-          : bannerTheme
+    const svgCode = getActiveVectorSvg()
+    const fileName = getActiveVectorFileName()
 
-        const svgCode = getActiveSvgCode({
-          bannerType,
-          bannerTitle,
-          bannerSubtitle,
-          capsuleShape,
-          hudStatus,
-          hudVersion,
-          hudMetric1,
-          hudMetric2,
-          hudMetric3,
-          bannerTheme: activeTheme,
-          customHex1,
-          customHex2,
-          isCustomColor,
-          fontColor: capsuleFontColor,
-          descColor: capsuleDescColor,
-          bannerHeight,
-          fontSize: capsuleTitleSize,
-          descSize: capsuleDescSize,
-          fontAlignY: capsuleFontAlignY,
-          descAlignY: capsuleDescAlignY,
-          capsuleAnimation,
-          neofetchOs,
-          neofetchLicense,
-          neofetchPrompt,
-          neofetchShell
-        })
-        const fileName = `${(bannerTitle.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'hero')}-${bannerType}-banner.svg`
-
-        if (typeof window !== 'undefined' && window.electronAPI?.saveTextExportDialog) {
-          await window.electronAPI.saveTextExportDialog({
-            defaultPath: fileName,
-            filters: [{ name: 'SVG Vector Image', extensions: ['svg'] }, { name: 'All Files', extensions: ['*'] }],
-            content: svgCode
-          })
-          return
-        }
-        const blob = new Blob([svgCode], { type: 'image/svg+xml;charset=utf-8' })
-        saveAs(blob, fileName)
-      }
-    } else if (activeMode === 'upload' && uploadedDataUrl) {
-      const fileName = uploadMeta?.name || 'screenshot.webp'
-      if (typeof window !== 'undefined' && window.electronAPI?.saveBinaryDialog) {
-        const base64Data = uploadedDataUrl.split(',')[1]
-        await window.electronAPI.saveBinaryDialog({
-          defaultPath: fileName,
-          filters: [{ name: 'WebP Image', extensions: ['webp'] }, { name: 'All Files', extensions: ['*'] }],
-          base64Data
-        })
-        return
-      }
-      const byteString = atob(uploadedDataUrl.split(',')[1])
-      const ab = new ArrayBuffer(byteString.length)
-      const ia = new Uint8Array(ab)
-      for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i)
-      }
-      const blob = new Blob([ab], { type: 'image/webp' })
-      saveAs(blob, fileName)
+    if (typeof window !== 'undefined' && window.electronAPI?.saveTextExportDialog) {
+      await window.electronAPI.saveTextExportDialog({
+        defaultPath: fileName,
+        filters: [{ name: 'SVG Vector Image', extensions: ['svg'] }, { name: 'All Files', extensions: ['*'] }],
+        content: svgCode
+      })
+      setSaveStatusMessage(`✓ Downloaded ${fileName}!`)
+      setTimeout(() => setSaveStatusMessage(''), 2500)
+      return
     }
+    const blob = new Blob([svgCode], { type: 'image/svg+xml;charset=utf-8' })
+    saveAs(blob, fileName)
+    setSaveStatusMessage(`✓ Downloaded ${fileName}!`)
+    setTimeout(() => setSaveStatusMessage(''), 2500)
+  }
+
+  const handleCopySvg = () => {
+    const svgCode = getActiveVectorSvg()
+    navigator.clipboard.writeText(svgCode)
+    setSaveStatusMessage('✓ Copied SVG code to clipboard!')
+    setTimeout(() => setSaveStatusMessage(''), 2500)
   }
 
   // Generate Framed Markdown snippet for device mockups
@@ -465,44 +570,22 @@ export default function ImageStudioTab({
   // Master Generated Markdown Snippet
   const getGeneratedMarkdown = () => {
     if (activeMode === 'banner') {
-      if (LOCAL_SVG_TYPES.includes(bannerType)) {
-        if (bannerSyntaxMode === 'asset-path') {
-          return `<div align="center">\n  <img src="assets/${bannerType}-banner.svg" alt="${bannerTitle} Banner" width="100%" />\n</div>`
-        }
-        const svgCode = getActiveSvgCode({
-          bannerType,
-          bannerTitle,
-          bannerSubtitle,
-          hudStatus,
-          hudVersion,
-          bannerTheme,
-          customHex1,
-          customHex2,
-          isCustomColor,
-          hudMetric1,
-          hudMetric2,
-          hudMetric3,
-          neofetchOs,
-          neofetchLicense,
-          neofetchPrompt,
-          neofetchShell
-        })
-        return `<!-- Save as assets/${bannerType}-banner.svg -->\n${svgCode}`
-      }
-
-      if (bannerType === 'capsule') {
-        const capsuleUrl = getCapsuleUrl()
-        return `<div align="center">\n  <img src="${capsuleUrl}" alt="${bannerTitle} Header" width="100%" />\n</div>`
-      }
-
       if (bannerType === 'typing') {
-        const typingUrl = getTypingUrl()
-        return `<p align="center">\n  <img src="${typingUrl}" alt="${bannerTitle} Typing" />\n</p>`
+        if (bannerSyntaxMode === 'service-url') {
+          return `<p align="${typingAlign || 'center'}">\n  <img src="${getTypingUrl()}" alt="${escapeXml(bannerTitle || 'README Studio Typing')}" />\n</p>`
+        }
+        const fileName = getActiveVectorFileName()
+        const widthAttr = typingLayout === 'clean' ? `width="${typingWidth || 750}"` : 'width="100%"'
+        if (bannerSyntaxMode === 'data-uri') {
+          const svgCode = getActiveVectorSvg()
+          const dataUri = `data:image/svg+xml;utf8,${encodeURIComponent(svgCode)}`
+          return `<p align="${typingAlign || 'center'}">\n  <img src="${dataUri}" alt="${escapeXml(bannerTitle || 'Project')} Banner" ${widthAttr} />\n</p>`
+        }
+        return `<p align="${typingAlign || 'center'}">\n  <img src="assets/${fileName}" alt="${escapeXml(bannerTitle || 'Project')} Banner" ${widthAttr} />\n</p>`
       }
 
-      if (bannerType === 'cover') {
-        return `<p align="center">\n  <img src="${bannerTheme.coverUrl}" alt="${bannerTitle} Cover" width="100%" />\n</p>`
-      }
+      const fileName = getActiveVectorFileName()
+      return `<div align="center">\n  <img src="assets/${fileName}" alt="${escapeXml(bannerTitle || 'Project')} Banner" width="100%" />\n</div>`
     }
 
     if (activeMode === 'motion') {
@@ -510,23 +593,44 @@ export default function ImageStudioTab({
       const widthAttr = motionWidth === '100%' ? 'width="100%"' : `width="${motionWidth}"`
       const captionSub = motionCaption ? `\n  <br/>\n  <sub><em>${motionCaption}</em></sub>` : ''
 
+      // Check if URL is YouTube, Vimeo, or Loom embed
+      const embed = parseVideoEmbed(targetSrc)
+      if (embed) {
+        if (motionFrameStyle === 'mac-window') {
+          return `<div align="${motionAlign}">
+  <table border="0" cellpadding="0" cellspacing="0" ${widthAttr}>
+    <thead>
+      <tr>
+        <th bgcolor="#161b22" align="left" style="padding: 6px 12px; border-radius: 6px 6px 0 0; color: #8b949e; font-family: monospace; font-size: 11px;">
+          <span style="color: #ef4444;">●</span> <span style="color: #eab308;">●</span> <span style="color: #22c55e;">●</span> &nbsp; ${escapeXml(motionTitle || 'Video Demo')}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td bgcolor="#000000" align="center" style="padding: 0; border-radius: 0 0 6px 6px;">
+          <iframe width="100%" height="380" src="${embed.embedUrl}" title="${escapeXml(motionTitle || 'Video Demo')}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="display: block; border-radius: 0 0 6px 6px; border: none;"></iframe>
+        </td>
+      </tr>
+    </tbody>
+  </table>${captionSub}
+</div>`
+        }
+
+        return `<div align="${motionAlign}">
+  <iframe width="${motionWidth === '100%' ? '100%' : motionWidth}" height="380" src="${embed.embedUrl}" title="${escapeXml(motionTitle || 'Video Demo')}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius: 8px; border: none;"></iframe>${captionSub}
+</div>`
+      }
+
       if (motionType === 'video') {
         const autoplayAttr = motionAutoplay ? 'autoplay ' : ''
         const loopAttr = motionLoop ? 'loop ' : ''
         const mutedAttr = motionMuted ? 'muted ' : ''
         const controlsAttr = motionControls ? 'controls ' : ''
 
-        return `<div align="${motionAlign}">
-  <video ${autoplayAttr}${loopAttr}${mutedAttr}${controlsAttr}playsinline ${widthAttr}>
-    <source src="${targetSrc}" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>${captionSub}
-</div>`
-      }
-
-      if (motionFrameStyle === 'mac-window') {
-        return `<div align="${motionAlign}">
-  <table border="0" cellpadding="0" cellspacing="0">
+        if (motionFrameStyle === 'mac-window') {
+          return `<div align="${motionAlign}">
+  <table border="0" cellpadding="0" cellspacing="0" ${widthAttr}>
     <thead>
       <tr>
         <th bgcolor="#161b22" align="left" style="padding: 6px 12px; border-radius: 6px 6px 0 0; color: #8b949e; font-family: monospace; font-size: 11px;">
@@ -537,7 +641,39 @@ export default function ImageStudioTab({
     <tbody>
       <tr>
         <td bgcolor="#000000" align="center" style="padding: 0; border-radius: 0 0 6px 6px;">
-          <img src="${targetSrc}" alt="${escapeXml(motionTitle || 'Demo')}" ${widthAttr} />
+          <video ${autoplayAttr}${loopAttr}${mutedAttr}${controlsAttr}playsinline width="100%" style="display: block; border-radius: 0 0 6px 6px;">
+            <source src="${targetSrc}" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+        </td>
+      </tr>
+    </tbody>
+  </table>${captionSub}
+</div>`
+        }
+
+        return `<div align="${motionAlign}">
+  <video ${autoplayAttr}${loopAttr}${mutedAttr}${controlsAttr}playsinline ${widthAttr} style="border-radius: 8px;">
+    <source src="${targetSrc}" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>${captionSub}
+</div>`
+      }
+
+      if (motionFrameStyle === 'mac-window') {
+        return `<div align="${motionAlign}">
+  <table border="0" cellpadding="0" cellspacing="0" ${widthAttr}>
+    <thead>
+      <tr>
+        <th bgcolor="#161b22" align="left" style="padding: 6px 12px; border-radius: 6px 6px 0 0; color: #8b949e; font-family: monospace; font-size: 11px;">
+          <span style="color: #ef4444;">●</span> <span style="color: #eab308;">●</span> <span style="color: #22c55e;">●</span> &nbsp; ${escapeXml(motionTitle || 'Demo')}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td bgcolor="#000000" align="center" style="padding: 0; border-radius: 0 0 6px 6px;">
+          <img src="${targetSrc}" alt="${escapeXml(motionTitle || 'Demo')}" width="100%" style="display: block; border-radius: 0 0 6px 6px;" />
         </td>
       </tr>
     </tbody>
@@ -546,7 +682,7 @@ export default function ImageStudioTab({
       }
 
       return `<div align="${motionAlign}">
-  <img src="${targetSrc}" alt="${escapeXml(motionTitle || 'Demo')}" ${widthAttr} />${captionSub}
+  <img src="${targetSrc}" alt="${escapeXml(motionTitle || 'Demo')}" ${widthAttr} style="border-radius: 8px;" />${captionSub}
 </div>`
     }
 
@@ -596,23 +732,152 @@ export default function ImageStudioTab({
 
   const markdownSnippet = getGeneratedMarkdown()
 
-  const handleInsert = () => {
-    if (typeof onInsertImage === 'function') {
-      onInsertImage(markdownSnippet)
+  const handleInsert = async () => {
+    try {
+      // 0. Non-vector tabs (Comparison, Motion & Video, Device Mockups, Screenshot Upload, Theme Adaptive)
+      // insert their rich markdown / HTML snippet directly without generating a dummy banner graphic
+      if (activeMode !== 'banner') {
+        const snippet = getGeneratedMarkdown()
+        if (snippet && typeof onInsertImage === 'function') {
+          onInsertImage(snippet)
+          setSaveStatusMessage('✓ Graphic inserted into document!')
+          setTimeout(() => setSaveStatusMessage(''), 3000)
+          return
+        }
+      }
+
+      if (activeMode === 'banner' && bannerType === 'typing') {
+        if (bannerSyntaxMode === 'service-url') {
+          const snippet = `<p align="${typingAlign || 'center'}">\n  <img src="${getTypingUrl()}" alt="${escapeXml(bannerTitle || 'README Studio Typing')}" />\n</p>`
+          if (typeof onInsertImage === 'function') {
+            onInsertImage(snippet)
+          }
+          setSaveStatusMessage('✓ Cloud Typing SVG embedded into document!')
+          setTimeout(() => setSaveStatusMessage(''), 3000)
+          return
+        }
+        if (bannerSyntaxMode === 'data-uri') {
+          const svgCode = getActiveVectorSvg()
+          const widthAttr = typingLayout === 'clean' ? `width="${typingWidth || 750}"` : 'width="100%"'
+          const snippet = `<p align="${typingAlign || 'center'}">\n  <img src="data:image/svg+xml;utf8,${encodeURIComponent(svgCode)}" alt="${escapeXml(bannerTitle || 'Project')} Banner" ${widthAttr} />\n</p>`
+          if (typeof onInsertImage === 'function') {
+            onInsertImage(snippet)
+          }
+          setSaveStatusMessage('✓ Data URI embedded into document!')
+          setTimeout(() => setSaveStatusMessage(''), 3000)
+          return
+        }
+      }
+
+      const svgCode = getActiveVectorSvg()
+      const fileName = getActiveVectorFileName()
+      const relativePath = `assets/${fileName}`
+      let saved = false
+
+      // 1. Immediately cache SVG in memory so live preview never shows broken image
+      if (typeof window !== 'undefined' && svgCode) {
+        window.__visualmarkSvgCache = window.__visualmarkSvgCache || {}
+        window.__visualmarkSvgCache[relativePath] = svgCode
+        window.__visualmarkSvgCache[`./${relativePath}`] = svgCode
+        window.dispatchEvent(
+          new CustomEvent('visualmark:svg-cache-updated', {
+            detail: { path: relativePath, svg: svgCode }
+          })
+        )
+      }
+
+      // 2. Persist SVG to active workspace disk
+      if (typeof window !== 'undefined' && window.electronAPI && svgCode) {
+        let baseDir = workspaceDirectory?.path
+        if (!baseDir && window.electronAPI.getDefaultWorkspace) {
+          try {
+            const ws = await window.electronAPI.getDefaultWorkspace()
+            if (ws && ws.rootPath) baseDir = ws.rootPath
+          } catch {}
+        }
+
+        if (baseDir && window.electronAPI.createFileDirect) {
+          const cleanRoot = baseDir.replace(/[/\\]+$/, '')
+          const fullPath = `${cleanRoot}/${relativePath}`
+          try {
+            const res = await window.electronAPI.createFileDirect(fullPath, svgCode)
+            if (res && res.success) saved = true
+          } catch (e) {
+            console.warn('Could not save SVG to workspace path:', e)
+          }
+        }
+
+        if (saved) {
+          window.dispatchEvent(new CustomEvent('workspace-tree-refresh'))
+        }
+      }
+
+      const widthAttr = (bannerType === 'typing' && typingLayout === 'clean') ? `width="${typingWidth || 750}"` : 'width="100%"'
+      const snippet = bannerType === 'typing'
+        ? `<p align="${typingAlign || 'center'}">\n  <img src="${relativePath}" alt="${escapeXml(bannerTitle || 'Project')} Banner" ${widthAttr} />\n</p>`
+        : `<div align="center">\n  <img src="${relativePath}" alt="${escapeXml(bannerTitle || 'Project')} Banner" width="100%" />\n</div>`
+      if (typeof onInsertImage === 'function') {
+        onInsertImage(snippet)
+      }
+
+      setSaveStatusMessage(saved ? `✓ Saved to ${relativePath} and embedded!` : '✓ Vector SVG embedded into document!')
+      setTimeout(() => setSaveStatusMessage(''), 3000)
+    } catch (err) {
+      console.error('Insert image error:', err)
+      const snippet = activeMode !== 'banner'
+        ? getGeneratedMarkdown()
+        : `<div align="center">\n  <img src="assets/${getActiveVectorFileName()}" alt="${escapeXml(bannerTitle || 'Project')} Banner" width="100%" />\n</div>`
+      if (typeof onInsertImage === 'function' && snippet) {
+        onInsertImage(snippet)
+      }
     }
   }
 
-  // Download asset action button in top header
+  // Copy Markdown snippet
+  const handleCopyMarkdown = () => {
+    const snippet = getGeneratedMarkdown()
+    if (snippet) {
+      navigator.clipboard.writeText(snippet)
+      setSaveStatusMessage('✓ Copied snippet to clipboard!')
+      setTimeout(() => setSaveStatusMessage(''), 2500)
+    }
+  }
+
+  // Header action buttons
   const extraHeaderActions = (
-    <button
-      type="button"
-      className="studio-shell-btn studio-shell-btn-secondary"
-      onClick={handleDownloadAsset}
-      title="Download active graphic as standalone file"
-    >
-      <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>download</span>
-      <span>Download</span>
-    </button>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      {activeMode !== 'banner' && (
+        <button
+          type="button"
+          className="studio-shell-btn studio-shell-btn-secondary"
+          onClick={handleCopyMarkdown}
+          title="Copy Markdown embed snippet to clipboard"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>code</span>
+          <span>Copy Snippet</span>
+        </button>
+      )}
+      {(activeMode === 'banner' || activeMode === 'link' || activeMode === 'upload') && (
+        <button
+          type="button"
+          className="studio-shell-btn studio-shell-btn-secondary"
+          onClick={handleCopySvg}
+          title="Copy raw vector SVG code to clipboard"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>content_copy</span>
+          <span>Copy SVG</span>
+        </button>
+      )}
+      <button
+        type="button"
+        className="studio-shell-btn studio-shell-btn-secondary"
+        onClick={handleDownloadAsset}
+        title="Download active graphic as standalone vector SVG file"
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>download</span>
+        <span>Download SVG</span>
+      </button>
+    </div>
   )
 
   // Status tag in canvas header
@@ -622,6 +887,11 @@ export default function ImageStudioTab({
       <span className="canvas-mode-tag">
         {activeMode.toUpperCase()}{activeMode === 'banner' ? ` • ${bannerType.toUpperCase()}` : ''}
       </span>
+      {saveStatusMessage && (
+        <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 600 }}>
+          {saveStatusMessage}
+        </span>
+      )}
     </div>
   )
 
@@ -710,6 +980,20 @@ export default function ImageStudioTab({
                 setTypingPause={setTypingPause}
                 typingColor={typingColor}
                 setTypingColor={setTypingColor}
+                typingSpeed={typingSpeed}
+                setTypingSpeed={setTypingSpeed}
+                typingEffect={typingEffect}
+                setTypingEffect={setTypingEffect}
+                typingLayout={typingLayout}
+                setTypingLayout={setTypingLayout}
+                typingAlign={typingAlign}
+                setTypingAlign={setTypingAlign}
+                typingFontSize={typingFontSize}
+                setTypingFontSize={setTypingFontSize}
+                typingWidth={typingWidth}
+                setTypingWidth={setTypingWidth}
+                typingHeight={typingHeight}
+                setTypingHeight={setTypingHeight}
                 capsuleShape={capsuleShape}
                 setCapsuleShape={setCapsuleShape}
                 bannerHeight={bannerHeight}
@@ -826,6 +1110,7 @@ export default function ImageStudioTab({
         }
         canvasContent={
           <ImageStudioLivePreview
+            workspaceDirectory={workspaceDirectory}
             activeMode={activeMode}
             bannerType={bannerType}
             bannerTitle={bannerTitle}
@@ -856,9 +1141,18 @@ export default function ImageStudioTab({
             getTypingUrl={getTypingUrl}
             typingError={typingError}
             setTypingError={setTypingError}
+            bannerSyntaxMode={bannerSyntaxMode}
             typingColor={typingColor}
             typingFont={typingFont}
             typingLines={typingLines}
+            typingPause={typingPause}
+            typingSpeed={typingSpeed}
+            typingEffect={typingEffect}
+            typingLayout={typingLayout}
+            typingAlign={typingAlign}
+            typingFontSize={typingFontSize}
+            typingWidth={typingWidth}
+            typingHeight={typingHeight}
             resolvedUrl={resolvedUrl}
             imageUrl={imageUrl}
             imageAlt={imageAlt}

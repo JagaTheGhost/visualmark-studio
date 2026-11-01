@@ -312,252 +312,595 @@ export const GITHUB_LANG_COLORS = {
 }
 
 
-// 16 Curated Tech Packs
+// 45+ Curated Tech Packs organized into clean, production-grade categories
 export const CURATED_PACKS = [
+  // --- Category: Web & Full-Stack ---
   {
-    id: 'pack-fullstack',
-    title: 'Modern Full-Stack Web',
-    desc: 'React 19, Next.js 15, TypeScript 5, Tailwind CSS, Node.js 22, Docker',
-    category: 'Web Development',
+    id: 'pack-fullstack-next',
+    title: 'Modern Next.js 15 & React 19',
+    desc: 'React 19, Next.js 15, TypeScript 5, Tailwind CSS v4, Node.js 22, Docker',
+    category: 'Web & Full-Stack',
     badges: [
-      { label: 'React', message: '19.0', color: '61dafb', logo: 'react', style: 'for-the-badge' },
-      { label: 'Next.js', message: '15.0', color: '000000', logo: 'nextdotjs', style: 'for-the-badge' },
-      { label: 'TypeScript', message: '5.8+', color: '3178c6', logo: 'typescript', style: 'for-the-badge' },
-      { label: 'Tailwind', message: 'v4.0', color: '06b6d4', logo: 'tailwindcss', style: 'for-the-badge' },
-      { label: 'Node.js', message: '22_LTS', color: '5fa04e', logo: 'nodedotjs', style: 'for-the-badge' },
-      { label: 'Container', message: 'Docker', color: '2496ed', logo: 'docker', style: 'for-the-badge' }
+      { label: 'React', message: '19.0', color: '61dafb', logo: 'react' },
+      { label: 'Next.js', message: '15.0', color: '000000', logo: 'nextdotjs' },
+      { label: 'TypeScript', message: '5.8+', color: '3178c6', logo: 'typescript' },
+      { label: 'Tailwind', message: 'v4.0', color: '06b6d4', logo: 'tailwindcss' },
+      { label: 'Node.js', message: '22_LTS', color: '5fa04e', logo: 'nodedotjs' },
+      { label: 'Container', message: 'Docker', color: '2496ed', logo: 'docker' }
     ]
   },
   {
-    id: 'pack-python-ai',
-    title: 'Python AI & Data Stack',
-    desc: 'Python 3.12, FastAPI, PyTorch, Docker, Poetry, Pytest',
-    category: 'AI & Data Science',
+    id: 'pack-t3-stack',
+    title: 'T3 Stack Production',
+    desc: 'Next.js, TypeScript, tRPC, Tailwind CSS, Prisma ORM, PostgreSQL',
+    category: 'Web & Full-Stack',
     badges: [
-      { label: 'Python', message: '3.12+', color: '3776ab', logo: 'python', style: 'for-the-badge' },
-      { label: 'FastAPI', message: 'v0.115', color: '009688', logo: 'fastapi', style: 'for-the-badge' },
-      { label: 'PyTorch', message: '2.5+', color: 'ee4c2c', logo: 'pytorch', style: 'for-the-badge' },
-      { label: 'Docker', message: 'ready', color: '2496ed', logo: 'docker', style: 'for-the-badge' },
-      { label: 'Poetry', message: 'managed', color: '60a5fa', logo: 'poetry', style: 'for-the-badge' },
-      { label: 'Tests', message: 'Pytest_Passed', color: '0a9edc', logo: 'pytest', style: 'for-the-badge' }
+      { label: 'Next.js', message: '15.0', color: '000000', logo: 'nextdotjs' },
+      { label: 'tRPC', message: 'v11', color: '2596be', logo: 'trpc' },
+      { label: 'TypeScript', message: '5.8', color: '3178c6', logo: 'typescript' },
+      { label: 'Prisma', message: 'ORM', color: '2d3748', logo: 'prisma' },
+      { label: 'PostgreSQL', message: '16', color: '4169e1', logo: 'postgresql' },
+      { label: 'Tailwind', message: 'CSS', color: '06b6d4', logo: 'tailwindcss' }
     ]
   },
   {
-    id: 'pack-devops',
-    title: 'Container & DevOps Pipeline',
-    desc: 'Kubernetes, Docker Compose, Terraform, Linux, GitHub Actions',
-    category: 'DevOps & Infrastructure',
+    id: 'pack-vite-remix',
+    title: 'Vite 6 & Remix SPA',
+    desc: 'React 19, Remix / React Router 7, Vite 6, Tailwind CSS, Vitest, Netlify',
+    category: 'Web & Full-Stack',
     badges: [
-      { label: 'Kubernetes', message: 'Cluster', color: '326ce5', logo: 'kubernetes', style: 'for-the-badge' },
-      { label: 'Docker', message: 'Compose', color: '2496ed', logo: 'docker', style: 'for-the-badge' },
-      { label: 'Terraform', message: 'IaC', color: '844fba', logo: 'terraform', style: 'for-the-badge' },
-      { label: 'CI/CD', message: 'GitHub Actions', color: '2088ff', logo: 'githubactions', style: 'for-the-badge' },
-      { label: 'Platform', message: 'Linux', color: 'fcc624', logo: 'linux', style: 'for-the-badge' }
+      { label: 'Vite', message: '6.0', color: '646cff', logo: 'vite' },
+      { label: 'React', message: '19.0', color: '61dafb', logo: 'react' },
+      { label: 'Router', message: 'Remix_v7', color: '000000', logo: 'remix' },
+      { label: 'Tailwind', message: 'v4.0', color: '06b6d4', logo: 'tailwindcss' },
+      { label: 'Tests', message: 'Vitest', color: '729b1b', logo: 'vitest' },
+      { label: 'Deploy', message: 'Netlify', color: '00c7b7', logo: 'netlify' }
     ]
   },
   {
-    id: 'pack-oss-health',
-    title: 'Open Source Project Health',
-    desc: 'MIT License, PRs Welcome, Semantic Release, Codecov 98%, GitHub Stars',
-    category: 'Open Source Essentials',
+    id: 'pack-astro-content',
+    title: 'Astro 5 Content & SSG',
+    desc: 'Astro 5, MDX Markdown, Tailwind CSS, TypeScript, Vercel Edge',
+    category: 'Web & Full-Stack',
     badges: [
-      { label: 'License', message: 'MIT', color: '10b981', logo: '', style: 'for-the-badge' },
-      { label: 'PRs', message: 'welcome', color: '3b82f6', logo: 'git', style: 'for-the-badge' },
-      { label: 'Release', message: 'v1.0.0', color: '6366f1', logo: 'github', style: 'for-the-badge' },
-      { label: 'Codecov', message: '98%', color: '06b6d4', logo: 'codecov', style: 'for-the-badge' },
-      { label: 'Semantic', message: 'Release', color: 'e11d48', logo: 'semanticrelease', style: 'for-the-badge' }
+      { label: 'Astro', message: '5.0', color: 'ff5d01', logo: 'astro' },
+      { label: 'Format', message: 'MDX', color: '1b1f24', logo: 'markdown' },
+      { label: 'TypeScript', message: 'Strict', color: '3178c6', logo: 'typescript' },
+      { label: 'Tailwind', message: 'v4.0', color: '06b6d4', logo: 'tailwindcss' },
+      { label: 'Deploy', message: 'Vercel', color: '000000', logo: 'vercel' }
     ]
   },
   {
-    id: 'pack-mern',
+    id: 'pack-mern-modern',
     title: 'MERN Enterprise Stack',
-    desc: 'MongoDB, Express.js, React 19, Node.js, Redux, Jest',
-    category: 'Full-Stack JavaScript',
+    desc: 'MongoDB 7, Express.js, React 19, Node.js 22 LTS, Redux Toolkit, Docker',
+    category: 'Web & Full-Stack',
     badges: [
-      { label: 'MongoDB', message: '7.0', color: '47a248', logo: 'mongodb', style: 'for-the-badge' },
-      { label: 'Express', message: '4.21', color: '000000', logo: 'express', style: 'for-the-badge' },
-      { label: 'React', message: '19.0', color: '61dafb', logo: 'react', style: 'for-the-badge' },
-      { label: 'Node.js', message: '22 LTS', color: '5fa04e', logo: 'nodedotjs', style: 'for-the-badge' },
-      { label: 'Redux', message: 'Toolkit', color: '764abc', logo: 'redux', style: 'for-the-badge' }
+      { label: 'MongoDB', message: '7.0', color: '47a248', logo: 'mongodb' },
+      { label: 'Express', message: '4.21', color: '000000', logo: 'express' },
+      { label: 'React', message: '19.0', color: '61dafb', logo: 'react' },
+      { label: 'Node.js', message: '22_LTS', color: '5fa04e', logo: 'nodedotjs' },
+      { label: 'Redux', message: 'Toolkit', color: '764abc', logo: 'redux' },
+      { label: 'Container', message: 'Docker', color: '2496ed', logo: 'docker' }
     ]
   },
-  {
-    id: 'pack-systems-rust',
-    title: 'Systems & High-Performance Rust',
-    desc: 'Rust 2024, WebAssembly, Cargo, Linux, C++20',
-    category: 'Systems Programming',
-    badges: [
-      { label: 'Rust', message: '2024', color: 'dea584', logo: 'rust', style: 'for-the-badge' },
-      { label: 'WebAssembly', message: 'Wasm', color: '654ff0', logo: 'webassembly', style: 'for-the-badge' },
-      { label: 'Build', message: 'Cargo', color: 'ea580c', logo: 'rust', style: 'for-the-badge' },
-      { label: 'C++', message: 'C++20', color: '00599c', logo: 'cplusplus', style: 'for-the-badge' },
-      { label: 'Memory', message: 'Safe', color: '10b981', logo: 'shield', style: 'for-the-badge' }
-    ]
-  },
-  {
-    id: 'pack-mobile',
-    title: 'Mobile Cross-Platform',
-    desc: 'Flutter, React Native, Swift, Kotlin, Firebase',
-    category: 'Mobile Applications',
-    badges: [
-      { label: 'Flutter', message: '3.24', color: '02569b', logo: 'flutter', style: 'for-the-badge' },
-      { label: 'React Native', message: '0.76', color: '61dafb', logo: 'react', style: 'for-the-badge' },
-      { label: 'iOS', message: 'Swift 6', color: 'f05138', logo: 'swift', style: 'for-the-badge' },
-      { label: 'Android', message: 'Kotlin 2.0', color: '7f52ff', logo: 'kotlin', style: 'for-the-badge' },
-      { label: 'Backend', message: 'Firebase', color: 'ffca28', logo: 'firebase', style: 'for-the-badge' }
-    ]
-  },
-  {
-    id: 'pack-community',
-    title: 'Sponsor & Community Engagement',
-    desc: 'Discord Chat, X / Twitter, YouTube Channel, GitHub Sponsors',
-    category: 'Social & Community',
-    badges: [
-      { label: 'Discord', message: 'Join Chat', color: '5865f2', logo: 'discord', style: 'for-the-badge' },
-      { label: 'Twitter', message: 'Follow', color: '000000', logo: 'x', style: 'for-the-badge' },
-      { label: 'YouTube', message: 'Subscribe', color: 'ff0000', logo: 'youtube', style: 'for-the-badge' },
-      { label: 'Sponsor', message: 'GitHub', color: 'ea4aaa', logo: 'githubsponsors', style: 'for-the-badge' },
-      { label: 'LinkedIn', message: 'Connect', color: '0077b5', logo: 'linkedin', style: 'for-the-badge' }
-    ]
-  },
-  {
-    id: 'pack-ai-llm',
-    title: 'Generative AI & LLM Stack',
-    desc: 'OpenAI GPT-4o, LangChain, Hugging Face, Ollama, Python 3.12, Pinecone Vector DB',
-    category: 'GenAI & Machine Learning',
-    badges: [
-      { label: 'OpenAI', message: 'GPT-4o', color: '412991', logo: 'openai', style: 'for-the-badge' },
-      { label: 'LangChain', message: '0.3', color: '1c3c3c', logo: 'langchain', style: 'for-the-badge' },
-      { label: 'Hugging Face', message: 'Transformers', color: 'ffd21e', logo: 'huggingface', style: 'for-the-badge' },
-      { label: 'Ollama', message: 'Local LLMs', color: 'ffffff', logo: 'ollama', style: 'for-the-badge' },
-      { label: 'Vector_DB', message: 'Pinecone', color: '000000', logo: 'pinecone', style: 'for-the-badge' },
-      { label: 'Python', message: '3.12+', color: '3776ab', logo: 'python', style: 'for-the-badge' }
-    ]
-  },
+
+  // --- Category: Frontend Frameworks ---
   {
     id: 'pack-vue-nuxt',
     title: 'Vue 3 & Nuxt 3 Ecosystem',
-    desc: 'Vue.js 3.5, Nuxt 3.13, TypeScript 5, Vite, Pinia, Tailwind CSS',
+    desc: 'Vue.js 3.5, Nuxt 3.14, TypeScript 5, Vite, Pinia, Tailwind CSS',
     category: 'Frontend Frameworks',
     badges: [
-      { label: 'Vue.js', message: 'v3.5', color: '4fc08d', logo: 'vuedotjs', style: 'for-the-badge' },
-      { label: 'Nuxt', message: 'v3.13', color: '00dc82', logo: 'nuxt', style: 'for-the-badge' },
-      { label: 'TypeScript', message: '5.8+', color: '3178c6', logo: 'typescript', style: 'for-the-badge' },
-      { label: 'Vite', message: 'v6.0', color: '646cff', logo: 'vite', style: 'for-the-badge' },
-      { label: 'Pinia', message: 'Store', color: 'ffd859', logo: 'vuedotjs', style: 'for-the-badge' },
-      { label: 'Tailwind', message: 'CSS', color: '06b6d4', logo: 'tailwindcss', style: 'for-the-badge' }
+      { label: 'Vue.js', message: 'v3.5', color: '4fc08d', logo: 'vuedotjs' },
+      { label: 'Nuxt', message: 'v3.14', color: '00dc82', logo: 'nuxt' },
+      { label: 'TypeScript', message: '5.8+', color: '3178c6', logo: 'typescript' },
+      { label: 'Vite', message: 'v6.0', color: '646cff', logo: 'vite' },
+      { label: 'Pinia', message: 'Store', color: 'ffd859', logo: 'vuedotjs' },
+      { label: 'Tailwind', message: 'CSS', color: '06b6d4', logo: 'tailwindcss' }
     ]
   },
+  {
+    id: 'pack-svelte-runes',
+    title: 'Svelte 5 Runes & SvelteKit',
+    desc: 'Svelte 5 Runes, SvelteKit 2, TypeScript, Tailwind, Vitest, Netlify',
+    category: 'Frontend Frameworks',
+    badges: [
+      { label: 'Svelte', message: 'v5.0_Runes', color: 'ff3e00', logo: 'svelte' },
+      { label: 'SvelteKit', message: 'v2.0', color: 'ff3e00', logo: 'svelte' },
+      { label: 'TypeScript', message: 'Strict', color: '3178c6', logo: 'typescript' },
+      { label: 'Tailwind', message: 'v4.0', color: '06b6d4', logo: 'tailwindcss' },
+      { label: 'Vitest', message: 'Passing', color: '729b1b', logo: 'vitest' }
+    ]
+  },
+  {
+    id: 'pack-angular-enterprise',
+    title: 'Angular 18 Enterprise',
+    desc: 'Angular 18, RxJS 7, TypeScript, Signals, NgRx Store, Karma',
+    category: 'Frontend Frameworks',
+    badges: [
+      { label: 'Angular', message: '18.2', color: 'dd0031', logo: 'angular' },
+      { label: 'TypeScript', message: '5.8', color: '3178c6', logo: 'typescript' },
+      { label: 'RxJS', message: 'Reactive', color: 'b7178c', logo: 'reactivex' },
+      { label: 'NgRx', message: 'State', color: 'ba2bd2', logo: 'ngrx' },
+      { label: 'Signals', message: 'Native', color: '00b4d8', logo: 'angular' }
+    ]
+  },
+  {
+    id: 'pack-solidjs-reactive',
+    title: 'SolidJS Ultra-Reactive',
+    desc: 'SolidStart, SolidJS, TypeScript, Vite 6, Tailwind CSS',
+    category: 'Frontend Frameworks',
+    badges: [
+      { label: 'SolidJS', message: '1.9', color: '2c4f7c', logo: 'solid' },
+      { label: 'Meta', message: 'SolidStart', color: '4488aa', logo: 'solid' },
+      { label: 'TypeScript', message: '5.8', color: '3178c6', logo: 'typescript' },
+      { label: 'Vite', message: '6.0', color: '646cff', logo: 'vite' },
+      { label: 'Tailwind', message: 'CSS', color: '06b6d4', logo: 'tailwindcss' }
+    ]
+  },
+
+  // --- Category: Backend & Microservices ---
   {
     id: 'pack-go-microservices',
-    title: 'Go Microservices Architecture',
-    desc: 'Go 1.23, gRPC, Docker, PostgreSQL 16, Redis 7, Prometheus',
-    category: 'Backend & Distributed Systems',
+    title: 'Go High-Throughput Microservices',
+    desc: 'Go 1.23, gRPC, PostgreSQL 16, Redis 7, Prometheus, Docker',
+    category: 'Backend & Microservices',
     badges: [
-      { label: 'Golang', message: '1.23', color: '00add8', logo: 'go', style: 'for-the-badge' },
-      { label: 'Protocol', message: 'gRPC', color: '244c5a', logo: 'grpc', style: 'for-the-badge' },
-      { label: 'PostgreSQL', message: '16', color: '4169e1', logo: 'postgresql', style: 'for-the-badge' },
-      { label: 'Cache', message: 'Redis 7', color: 'dc382d', logo: 'redis', style: 'for-the-badge' },
-      { label: 'Metrics', message: 'Prometheus', color: 'e6522c', logo: 'prometheus', style: 'for-the-badge' },
-      { label: 'Container', message: 'Docker', color: '2496ed', logo: 'docker', style: 'for-the-badge' }
+      { label: 'Golang', message: '1.23', color: '00add8', logo: 'go' },
+      { label: 'Protocol', message: 'gRPC', color: '244c5a', logo: 'grpc' },
+      { label: 'PostgreSQL', message: '16', color: '4169e1', logo: 'postgresql' },
+      { label: 'Cache', message: 'Redis_7', color: 'dc382d', logo: 'redis' },
+      { label: 'Metrics', message: 'Prometheus', color: 'e6522c', logo: 'prometheus' },
+      { label: 'Container', message: 'Docker', color: '2496ed', logo: 'docker' }
     ]
   },
   {
-    id: 'pack-svelte',
-    title: 'Svelte 5 & SvelteKit',
-    desc: 'Svelte 5 Runes, SvelteKit 2, TypeScript, Tailwind, Vitest, Netlify',
-    category: 'Modern Web',
+    id: 'pack-rust-axum',
+    title: 'Rust Axum & Tokio Async',
+    desc: 'Rust 2024, Axum Web, Tokio Runtime, SQLx, Redis, Docker',
+    category: 'Backend & Microservices',
     badges: [
-      { label: 'Svelte', message: 'v5.0 Runes', color: 'ff3e00', logo: 'svelte', style: 'for-the-badge' },
-      { label: 'SvelteKit', message: 'v2.0', color: 'ff3e00', logo: 'svelte', style: 'for-the-badge' },
-      { label: 'TypeScript', message: 'Strict', color: '3178c6', logo: 'typescript', style: 'for-the-badge' },
-      { label: 'Tailwind', message: 'v4.0', color: '06b6d4', logo: 'tailwindcss', style: 'for-the-badge' },
-      { label: 'Vitest', message: 'Passing', color: '729b1b', logo: 'vitest', style: 'for-the-badge' },
-      { label: 'Deploy', message: 'Netlify', color: '00c7b7', logo: 'netlify', style: 'for-the-badge' }
+      { label: 'Rust', message: '2024_Edition', color: 'dea584', logo: 'rust' },
+      { label: 'Web', message: 'Axum_0.7', color: '000000', logo: 'rust' },
+      { label: 'Async', message: 'Tokio', color: '38a169', logo: 'rust' },
+      { label: 'Database', message: 'SQLx_Postgres', color: '4169e1', logo: 'postgresql' },
+      { label: 'Cache', message: 'Redis', color: 'dc382d', logo: 'redis' },
+      { label: 'Container', message: 'Docker', color: '2496ed', logo: 'docker' }
     ]
   },
   {
-    id: 'pack-data-engineering',
-    title: 'Data Engineering & Streaming Pipeline',
-    desc: 'Apache Spark, Apache Kafka, Airflow, Snowflake, Python, dbt',
-    category: 'Data Engineering & Big Data',
+    id: 'pack-fastapi-backend',
+    title: 'Python FastAPI Modern API',
+    desc: 'Python 3.12, FastAPI, Pydantic v2, PostgreSQL, Celery, Redis',
+    category: 'Backend & Microservices',
     badges: [
-      { label: 'Apache Spark', message: 'Analytics', color: 'e25a1c', logo: 'apachespark', style: 'for-the-badge' },
-      { label: 'Apache Kafka', message: 'Streaming', color: '231f20', logo: 'apachekafka', style: 'for-the-badge' },
-      { label: 'Airflow', message: 'Orchestration', color: '017cee', logo: 'apacheairflow', style: 'for-the-badge' },
-      { label: 'Snowflake', message: 'Warehouse', color: '29b5e8', logo: 'snowflake', style: 'for-the-badge' },
-      { label: 'Transforms', message: 'dbt', color: 'ff694b', logo: 'dbt', style: 'for-the-badge' },
-      { label: 'Python', message: '3.12', color: '3776ab', logo: 'python', style: 'for-the-badge' }
+      { label: 'Python', message: '3.12+', color: '3776ab', logo: 'python' },
+      { label: 'FastAPI', message: 'v0.115', color: '009688', logo: 'fastapi' },
+      { label: 'Schema', message: 'Pydantic_v2', color: 'e92063', logo: 'pydantic' },
+      { label: 'PostgreSQL', message: '16', color: '4169e1', logo: 'postgresql' },
+      { label: 'Queue', message: 'Celery', color: '37814a', logo: 'celery' },
+      { label: 'Cache', message: 'Redis', color: 'dc382d', logo: 'redis' }
     ]
   },
   {
-    id: 'pack-cybersecurity',
-    title: 'Security, SAST & DevSecOps',
-    desc: 'OWASP Verified, SonarQube A, Snyk Zero Vulns, Dependabot, Trivy, GPG Signed',
-    category: 'Cybersecurity & Compliance',
+    id: 'pack-node-fastify',
+    title: 'Node.js 22 & Fastify Microservices',
+    desc: 'Node.js 22 LTS, Fastify, TypeScript, Prisma ORM, Redis, Docker',
+    category: 'Backend & Microservices',
     badges: [
-      { label: 'Security', message: 'OWASP Verified', color: '0284c7', logo: 'security', style: 'for-the-badge' },
-      { label: 'SonarQube', message: 'Passed A', color: '4b9fd5', logo: 'sonarqube', style: 'for-the-badge' },
-      { label: 'Snyk', message: 'Zero Vulns', color: '4c1e95', logo: 'snyk', style: 'for-the-badge' },
-      { label: 'Dependabot', message: 'Active', color: '02569b', logo: 'dependabot', style: 'for-the-badge' },
-      { label: 'Container Scan', message: 'Trivy', color: '1976d2', logo: 'shield', style: 'for-the-badge' },
-      { label: 'Commits', message: 'GPG Signed', color: '10b981', logo: 'git', style: 'for-the-badge' }
-    ]
-  },
-  {
-    id: 'pack-game-dev',
-    title: 'Game Development & Graphics 3D',
-    desc: 'Unreal Engine 5.4, Unity 6, C#, C++, OpenGL, Blender 4',
-    category: 'Game Engine & Graphics',
-    badges: [
-      { label: 'Unreal Engine', message: '5.4', color: '0e1128', logo: 'unrealengine', style: 'for-the-badge' },
-      { label: 'Unity', message: '6.0', color: '000000', logo: 'unity', style: 'for-the-badge' },
-      { label: 'Language', message: 'C#', color: '239120', logo: 'csharp', style: 'for-the-badge' },
-      { label: 'Native', message: 'C++', color: '00599c', logo: 'cplusplus', style: 'for-the-badge' },
-      { label: '3D Assets', message: 'Blender 4', color: 'f5792a', logo: 'blender', style: 'for-the-badge' },
-      { label: 'Graphics', message: 'OpenGL', color: '5586a4', logo: 'opengl', style: 'for-the-badge' }
-    ]
-  },
-  {
-    id: 'pack-desktop-electron',
-    title: 'Cross-Platform Desktop Apps',
-    desc: 'Electron 32, Tauri 2, Rust, React 19, Vite, Node.js',
-    category: 'Desktop Engineering',
-    badges: [
-      { label: 'Electron', message: 'v32', color: '47848f', logo: 'electron', style: 'for-the-badge' },
-      { label: 'Tauri', message: 'v2.0', color: '24c8db', logo: 'tauri', style: 'for-the-badge' },
-      { label: 'Rust', message: 'Core', color: 'dea584', logo: 'rust', style: 'for-the-badge' },
-      { label: 'Frontend', message: 'React 19', color: '61dafb', logo: 'react', style: 'for-the-badge' },
-      { label: 'Bundler', message: 'Vite', color: '646cff', logo: 'vite', style: 'for-the-badge' },
-      { label: 'OS', message: 'Win / macOS / Linux', color: '374151', logo: 'windows', style: 'for-the-badge' }
-    ]
-  },
-  {
-    id: 'pack-web3-blockchain',
-    title: 'Web3 & Smart Contracts',
-    desc: 'Solidity 0.8.28, Ethereum EVM, Hardhat, Ethers.js, IPFS, Polygon',
-    category: 'Blockchain & DeFi',
-    badges: [
-      { label: 'Solidity', message: '0.8.28', color: '363636', logo: 'solidity', style: 'for-the-badge' },
-      { label: 'Ethereum', message: 'EVM', color: '3c3c3d', logo: 'ethereum', style: 'for-the-badge' },
-      { label: 'Toolchain', message: 'Hardhat', color: 'fff100', logo: 'hardhat', style: 'for-the-badge' },
-      { label: 'Network', message: 'Polygon', color: '8247e5', logo: 'polygon', style: 'for-the-badge' },
-      { label: 'Storage', message: 'IPFS', color: '65c2cb', logo: 'ipfs', style: 'for-the-badge' },
-      { label: 'Web3', message: 'Ethers.js', color: '2535a0', logo: 'javascript', style: 'for-the-badge' }
+      { label: 'Node.js', message: '22_LTS', color: '5fa04e', logo: 'nodedotjs' },
+      { label: 'Fastify', message: 'v5.0', color: '000000', logo: 'fastify' },
+      { label: 'TypeScript', message: '5.8', color: '3178c6', logo: 'typescript' },
+      { label: 'Prisma', message: 'ORM', color: '2d3748', logo: 'prisma' },
+      { label: 'Redis', message: 'Cache', color: 'dc382d', logo: 'redis' }
     ]
   },
   {
     id: 'pack-enterprise-java',
-    title: 'Enterprise Java & Spring Boot',
-    desc: 'Java 21 LTS, Spring Boot 3.3, Hibernate, PostgreSQL, Docker, Gradle',
-    category: 'Enterprise Backend',
+    title: 'Enterprise Java & Spring Boot 3.3',
+    desc: 'Java 21 LTS, Spring Boot 3.3, Hibernate, PostgreSQL, Gradle, Docker',
+    category: 'Backend & Microservices',
     badges: [
-      { label: 'Java', message: '21 LTS', color: 'ed8b00', logo: 'openjdk', style: 'for-the-badge' },
-      { label: 'Spring Boot', message: '3.3', color: '6db33f', logo: 'springboot', style: 'for-the-badge' },
-      { label: 'ORM', message: 'Hibernate', color: '59666c', logo: 'hibernate', style: 'for-the-badge' },
-      { label: 'Database', message: 'PostgreSQL', color: '4169e1', logo: 'postgresql', style: 'for-the-badge' },
-      { label: 'Build', message: 'Gradle', color: '02303a', logo: 'gradle', style: 'for-the-badge' },
-      { label: 'Deploy', message: 'Docker', color: '2496ed', logo: 'docker', style: 'for-the-badge' }
+      { label: 'Java', message: '21_LTS', color: 'ed8b00', logo: 'openjdk' },
+      { label: 'Spring Boot', message: '3.3', color: '6db33f', logo: 'springboot' },
+      { label: 'ORM', message: 'Hibernate', color: '59666c', logo: 'hibernate' },
+      { label: 'Database', message: 'PostgreSQL', color: '4169e1', logo: 'postgresql' },
+      { label: 'Build', message: 'Gradle', color: '02303a', logo: 'gradle' },
+      { label: 'Deploy', message: 'Docker', color: '2496ed', logo: 'docker' }
+    ]
+  },
+  {
+    id: 'pack-dotnet-core',
+    title: 'ASP.NET Core 8 Web API',
+    desc: 'C# 12, .NET 8 LTS, Entity Framework Core, SQL Server, Redis, Docker',
+    category: 'Backend & Microservices',
+    badges: [
+      { label: '.NET', message: '8.0_LTS', color: '512bd4', logo: 'dotnet' },
+      { label: 'C#', message: '12.0', color: '239120', logo: 'csharp' },
+      { label: 'ORM', message: 'EF_Core', color: '68217a', logo: 'dotnet' },
+      { label: 'Database', message: 'SQL_Server', color: 'cc292b', logo: 'microsoftsqlserver' },
+      { label: 'Deploy', message: 'Docker', color: '2496ed', logo: 'docker' }
+    ]
+  },
+
+  // --- Category: AI & Data Science ---
+  {
+    id: 'pack-pytorch-ai',
+    title: 'Deep Learning & PyTorch 2.5',
+    desc: 'Python 3.12, PyTorch 2.5, CUDA 12.4, Weights & Biases, Hugging Face, Poetry',
+    category: 'AI & Data Science',
+    badges: [
+      { label: 'Python', message: '3.12+', color: '3776ab', logo: 'python' },
+      { label: 'PyTorch', message: '2.5+', color: 'ee4c2c', logo: 'pytorch' },
+      { label: 'CUDA', message: '12.4', color: '76b900', logo: 'nvidia' },
+      { label: 'Hugging Face', message: 'Models', color: 'ffd21e', logo: 'huggingface' },
+      { label: 'Tracking', message: 'W&B', color: 'ffbe00', logo: 'weightsandbiases' },
+      { label: 'Poetry', message: 'Managed', color: '60a5fa', logo: 'poetry' }
+    ]
+  },
+  {
+    id: 'pack-genai-rag',
+    title: 'Generative AI & LLM Agents',
+    desc: 'OpenAI GPT-4o, LangChain, Hugging Face, Pinecone Vector DB, FastAPI, Python',
+    category: 'AI & Data Science',
+    badges: [
+      { label: 'OpenAI', message: 'GPT-4o', color: '412991', logo: 'openai' },
+      { label: 'LangChain', message: '0.3', color: '1c3c3c', logo: 'langchain' },
+      { label: 'Vector_DB', message: 'Pinecone', color: '000000', logo: 'pinecone' },
+      { label: 'API', message: 'FastAPI', color: '009688', logo: 'fastapi' },
+      { label: 'Python', message: '3.12', color: '3776ab', logo: 'python' }
+    ]
+  },
+  {
+    id: 'pack-local-llm',
+    title: 'Local LLM & Edge Inference',
+    desc: 'Ollama, vLLM, Hugging Face Transformers, Python, FastAPI, Docker',
+    category: 'AI & Data Science',
+    badges: [
+      { label: 'Ollama', message: 'Local_LLMs', color: 'ffffff', logo: 'ollama' },
+      { label: 'Inference', message: 'vLLM', color: '6366f1', logo: 'python' },
+      { label: 'Transformers', message: 'HuggingFace', color: 'ffd21e', logo: 'huggingface' },
+      { label: 'API', message: 'FastAPI', color: '009688', logo: 'fastapi' },
+      { label: 'Container', message: 'Docker', color: '2496ed', logo: 'docker' }
+    ]
+  },
+  {
+    id: 'pack-datascience-pandas',
+    title: 'Classical Data Science & ML',
+    desc: 'Python 3.12, Scikit-learn, Pandas, NumPy, Jupyter Notebooks, Matplotlib',
+    category: 'AI & Data Science',
+    badges: [
+      { label: 'Python', message: '3.12', color: '3776ab', logo: 'python' },
+      { label: 'Scikit-Learn', message: 'ML', color: 'f7931e', logo: 'scikitlearn' },
+      { label: 'Pandas', message: 'DataFrames', color: '150458', logo: 'pandas' },
+      { label: 'NumPy', message: 'Arrays', color: '013243', logo: 'numpy' },
+      { label: 'Jupyter', message: 'Notebooks', color: 'f37626', logo: 'jupyter' }
+    ]
+  },
+  {
+    id: 'pack-cv-vision',
+    title: 'Computer Vision & Media AI',
+    desc: 'OpenCV 4, PyTorch, MediaPipe, Python 3.12, CUDA, Albumentations',
+    category: 'AI & Data Science',
+    badges: [
+      { label: 'OpenCV', message: '4.10', color: '5c3ee8', logo: 'opencv' },
+      { label: 'PyTorch', message: 'Vision', color: 'ee4c2c', logo: 'pytorch' },
+      { label: 'MediaPipe', message: 'Vision', color: '00875a', logo: 'google' },
+      { label: 'CUDA', message: 'Accelerated', color: '76b900', logo: 'nvidia' },
+      { label: 'Python', message: '3.12', color: '3776ab', logo: 'python' }
+    ]
+  },
+
+  // --- Category: DevOps & Cloud ---
+  {
+    id: 'pack-k8s-gitops',
+    title: 'Cloud-Native Kubernetes & GitOps',
+    desc: 'Kubernetes Cluster, Helm, Docker, ArgoCD, Prometheus, Grafana',
+    category: 'DevOps & Cloud',
+    badges: [
+      { label: 'Kubernetes', message: 'Cluster', color: '326ce5', logo: 'kubernetes' },
+      { label: 'Package', message: 'Helm_v3', color: '0f1689', logo: 'helm' },
+      { label: 'GitOps', message: 'ArgoCD', color: 'ef7b4d', logo: 'argo' },
+      { label: 'Metrics', message: 'Prometheus', color: 'e6522c', logo: 'prometheus' },
+      { label: 'Dashboards', message: 'Grafana', color: 'f46800', logo: 'grafana' },
+      { label: 'Container', message: 'Docker', color: '2496ed', logo: 'docker' }
+    ]
+  },
+  {
+    id: 'pack-aws-serverless',
+    title: 'AWS Serverless Architecture',
+    desc: 'AWS Lambda, Terraform IaC, API Gateway, DynamoDB, CloudWatch, S3',
+    category: 'DevOps & Cloud',
+    badges: [
+      { label: 'AWS', message: 'Serverless', color: 'ff9900', logo: 'amazonwebservices' },
+      { label: 'Compute', message: 'Lambda', color: 'ff9900', logo: 'awslambda' },
+      { label: 'IaC', message: 'Terraform', color: '844fba', logo: 'terraform' },
+      { label: 'Database', message: 'DynamoDB', color: '4053d6', logo: 'amazondynamodb' },
+      { label: 'Storage', message: 'S3', color: '569a31', logo: 'amazons3' }
+    ]
+  },
+  {
+    id: 'pack-devops-pipeline',
+    title: 'Container & DevOps Pipeline',
+    desc: 'Kubernetes, Docker Compose, Terraform, Linux, GitHub Actions CI/CD',
+    category: 'DevOps & Cloud',
+    badges: [
+      { label: 'Kubernetes', message: 'Cluster', color: '326ce5', logo: 'kubernetes' },
+      { label: 'Docker', message: 'Compose', color: '2496ed', logo: 'docker' },
+      { label: 'Terraform', message: 'IaC', color: '844fba', logo: 'terraform' },
+      { label: 'CI/CD', message: 'GitHub_Actions', color: '2088ff', logo: 'githubactions' },
+      { label: 'Platform', message: 'Linux', color: 'fcc624', logo: 'linux' }
+    ]
+  },
+  {
+    id: 'pack-gcp-cloud',
+    title: 'Google Cloud Platform (GCP)',
+    desc: 'Google Cloud, Cloud Run, GKE Kubernetes, Terraform, BigQuery',
+    category: 'DevOps & Cloud',
+    badges: [
+      { label: 'Google Cloud', message: 'Platform', color: '4285f4', logo: 'googlecloud' },
+      { label: 'Serverless', message: 'Cloud_Run', color: '4285f4', logo: 'googlecloud' },
+      { label: 'Cluster', message: 'GKE', color: '326ce5', logo: 'kubernetes' },
+      { label: 'Warehouse', message: 'BigQuery', color: '669df6', logo: 'googlecloud' },
+      { label: 'IaC', message: 'Terraform', color: '844fba', logo: 'terraform' }
+    ]
+  },
+
+  // --- Category: Database & Big Data ---
+  {
+    id: 'pack-bigdata-spark',
+    title: 'Data Engineering & Streaming Pipeline',
+    desc: 'Apache Spark, Apache Kafka, Airflow, Snowflake, dbt, Python',
+    category: 'Database & Big Data',
+    badges: [
+      { label: 'Apache Spark', message: 'Analytics', color: 'e25a1c', logo: 'apachespark' },
+      { label: 'Apache Kafka', message: 'Streaming', color: '231f20', logo: 'apachekafka' },
+      { label: 'Airflow', message: 'Orchestration', color: '017cee', logo: 'apacheairflow' },
+      { label: 'Snowflake', message: 'Warehouse', color: '29b5e8', logo: 'snowflake' },
+      { label: 'Transforms', message: 'dbt', color: 'ff694b', logo: 'dbt' },
+      { label: 'Python', message: '3.12', color: '3776ab', logo: 'python' }
+    ]
+  },
+  {
+    id: 'pack-modern-db-edge',
+    title: 'Modern Edge SQL & Cache',
+    desc: 'PostgreSQL 16, Supabase, Redis 7, Prisma ORM, ClickHouse',
+    category: 'Database & Big Data',
+    badges: [
+      { label: 'PostgreSQL', message: '16', color: '4169e1', logo: 'postgresql' },
+      { label: 'Backend', message: 'Supabase', color: '3ecf8e', logo: 'supabase' },
+      { label: 'In-Memory', message: 'Redis_7', color: 'dc382d', logo: 'redis' },
+      { label: 'Analytics', message: 'ClickHouse', color: 'ffcc00', logo: 'clickhouse' },
+      { label: 'ORM', message: 'Prisma', color: '2d3748', logo: 'prisma' }
+    ]
+  },
+
+  // --- Category: Mobile Applications ---
+  {
+    id: 'pack-flutter-cross',
+    title: 'Flutter Cross-Platform Mobile',
+    desc: 'Flutter 3.24, Dart 3.5, Firebase, Riverpod, Android, iOS',
+    category: 'Mobile Applications',
+    badges: [
+      { label: 'Flutter', message: '3.24', color: '02569b', logo: 'flutter' },
+      { label: 'Dart', message: '3.5', color: '0175c2', logo: 'dart' },
+      { label: 'Backend', message: 'Firebase', color: 'ffca28', logo: 'firebase' },
+      { label: 'iOS', message: 'Ready', color: '000000', logo: 'apple' },
+      { label: 'Android', message: 'Ready', color: '3ddc84', logo: 'android' }
+    ]
+  },
+  {
+    id: 'pack-react-native-expo',
+    title: 'React Native & Expo SDK 52',
+    desc: 'Expo SDK 52, React Native, TypeScript, Tailwind CSS / NativeWind',
+    category: 'Mobile Applications',
+    badges: [
+      { label: 'React Native', message: '0.76', color: '61dafb', logo: 'react' },
+      { label: 'Expo', message: 'SDK_52', color: '000020', logo: 'expo' },
+      { label: 'TypeScript', message: '5.8', color: '3178c6', logo: 'typescript' },
+      { label: 'Styling', message: 'NativeWind', color: '06b6d4', logo: 'tailwindcss' }
+    ]
+  },
+  {
+    id: 'pack-ios-swift',
+    title: 'Native iOS & Swift 6',
+    desc: 'Swift 6, SwiftUI, Combine, CoreData, Xcode, TestFlight',
+    category: 'Mobile Applications',
+    badges: [
+      { label: 'iOS', message: '18+', color: '000000', logo: 'apple' },
+      { label: 'Swift', message: '6.0', color: 'f05138', logo: 'swift' },
+      { label: 'UI', message: 'SwiftUI', color: '0071e3', logo: 'swift' },
+      { label: 'IDE', message: 'Xcode_16', color: '1575f9', logo: 'xcode' }
+    ]
+  },
+  {
+    id: 'pack-android-kotlin',
+    title: 'Native Android & Kotlin 2.0',
+    desc: 'Kotlin 2.0, Jetpack Compose, Coroutines, Android SDK, Gradle',
+    category: 'Mobile Applications',
+    badges: [
+      { label: 'Android', message: 'API_35', color: '3ddc84', logo: 'android' },
+      { label: 'Kotlin', message: '2.0', color: '7f52ff', logo: 'kotlin' },
+      { label: 'UI', message: 'Jetpack_Compose', color: '4285f4', logo: 'jetpackcompose' },
+      { label: 'Build', message: 'Gradle', color: '02303a', logo: 'gradle' }
+    ]
+  },
+
+  // --- Category: Desktop Engineering ---
+  {
+    id: 'pack-tauri-rust',
+    title: 'Tauri 2.0 & Rust Desktop',
+    desc: 'Tauri 2.0, Rust, React 19, TypeScript, Vite, Cross-Platform',
+    category: 'Desktop Engineering',
+    badges: [
+      { label: 'Tauri', message: 'v2.0', color: '24c8db', logo: 'tauri' },
+      { label: 'Rust', message: 'Core', color: 'dea584', logo: 'rust' },
+      { label: 'Frontend', message: 'React_19', color: '61dafb', logo: 'react' },
+      { label: 'Bundler', message: 'Vite', color: '646cff', logo: 'vite' },
+      { label: 'OS', message: 'Win_macOS_Linux', color: '374151', logo: 'windows' }
+    ]
+  },
+  {
+    id: 'pack-electron-desktop',
+    title: 'Electron Enterprise Desktop',
+    desc: 'Electron 32, TypeScript, React 19, Vite, Node.js',
+    category: 'Desktop Engineering',
+    badges: [
+      { label: 'Electron', message: 'v32', color: '47848f', logo: 'electron' },
+      { label: 'Frontend', message: 'React_19', color: '61dafb', logo: 'react' },
+      { label: 'TypeScript', message: '5.8', color: '3178c6', logo: 'typescript' },
+      { label: 'Node.js', message: '22_LTS', color: '5fa04e', logo: 'nodedotjs' },
+      { label: 'Platforms', message: 'Cross_Platform', color: '0078d7', logo: 'windows' }
+    ]
+  },
+
+  // --- Category: Systems & Performance ---
+  {
+    id: 'pack-systems-rust',
+    title: 'Systems & High-Performance Rust',
+    desc: 'Rust 2024, WebAssembly, Cargo, Linux, C++20 Interop',
+    category: 'Systems & Performance',
+    badges: [
+      { label: 'Rust', message: '2024', color: 'dea584', logo: 'rust' },
+      { label: 'WebAssembly', message: 'Wasm', color: '654ff0', logo: 'webassembly' },
+      { label: 'Build', message: 'Cargo', color: 'ea580c', logo: 'rust' },
+      { label: 'C++', message: 'C++20', color: '00599c', logo: 'cplusplus' },
+      { label: 'Memory', message: 'Safe', color: '10b981', logo: 'shield' }
+    ]
+  },
+  {
+    id: 'pack-cpp-systems',
+    title: 'Modern C++20 Systems & Toolchain',
+    desc: 'C++20, CMake, Clang, Linux, LLVM, GDB',
+    category: 'Systems & Performance',
+    badges: [
+      { label: 'Language', message: 'C++20', color: '00599c', logo: 'cplusplus' },
+      { label: 'Build', message: 'CMake', color: '064f8c', logo: 'cmake' },
+      { label: 'Compiler', message: 'Clang/LLVM', color: '26888c', logo: 'cplusplus' },
+      { label: 'Platform', message: 'Linux', color: 'fcc624', logo: 'linux' }
+    ]
+  },
+
+  // --- Category: Cybersecurity & Quality ---
+  {
+    id: 'pack-cybersecurity-devsecops',
+    title: 'Security, SAST & DevSecOps',
+    desc: 'OWASP Verified, SonarQube A, Snyk Zero Vulns, Dependabot, Trivy, GPG Signed',
+    category: 'Cybersecurity & Quality',
+    badges: [
+      { label: 'Security', message: 'OWASP_Verified', color: '0284c7', logo: 'security' },
+      { label: 'SonarQube', message: 'Passed_A', color: '4b9fd5', logo: 'sonarqube' },
+      { label: 'Snyk', message: 'Zero_Vulns', color: '4c1e95', logo: 'snyk' },
+      { label: 'Dependabot', message: 'Active', color: '02569b', logo: 'dependabot' },
+      { label: 'Container_Scan', message: 'Trivy', color: '1976d2', logo: 'shield' },
+      { label: 'Commits', message: 'GPG_Signed', color: '10b981', logo: 'git' }
+    ]
+  },
+  {
+    id: 'pack-qa-testing',
+    title: 'Automated Testing & QA Suite',
+    desc: 'Playwright E2E, Vitest, Jest, Codecov 98%, GitHub Actions',
+    category: 'Cybersecurity & Quality',
+    badges: [
+      { label: 'E2E_Tests', message: 'Playwright', color: '2ead33', logo: 'playwright' },
+      { label: 'Unit_Tests', message: 'Vitest', color: '729b1b', logo: 'vitest' },
+      { label: 'Codecov', message: '98%', color: '06b6d4', logo: 'codecov' },
+      { label: 'CI', message: 'Passing', color: '2ea44f', logo: 'githubactions' }
+    ]
+  },
+
+  // --- Category: Game & 3D Graphics ---
+  {
+    id: 'pack-game-unreal',
+    title: 'Unreal Engine 5 Next-Gen',
+    desc: 'Unreal Engine 5.4, C++, DirectX 12, Blender 4, PhysX',
+    category: 'Game & 3D Graphics',
+    badges: [
+      { label: 'Unreal Engine', message: '5.4', color: '0e1128', logo: 'unrealengine' },
+      { label: 'Native', message: 'C++', color: '00599c', logo: 'cplusplus' },
+      { label: '3D_Assets', message: 'Blender_4', color: 'f5792a', logo: 'blender' },
+      { label: 'Graphics', message: 'DirectX_12', color: '0078d7', logo: 'windows' }
+    ]
+  },
+  {
+    id: 'pack-game-unity',
+    title: 'Unity 6 Cross-Platform',
+    desc: 'Unity 6.0, C#, Universal Render Pipeline, ShaderGraph, Blender',
+    category: 'Game & 3D Graphics',
+    badges: [
+      { label: 'Unity', message: '6.0', color: '000000', logo: 'unity' },
+      { label: 'Language', message: 'C#', color: '239120', logo: 'csharp' },
+      { label: 'Render', message: 'URP', color: '4c4c4c', logo: 'unity' },
+      { label: 'Assets', message: 'Blender', color: 'f5792a', logo: 'blender' }
+    ]
+  },
+  {
+    id: 'pack-threejs-webgl',
+    title: 'WebGL & Three.js 3D Web',
+    desc: 'Three.js, WebGL, TypeScript, Vite 6, GLSL Shaders, Blender',
+    category: 'Game & 3D Graphics',
+    badges: [
+      { label: 'Three.js', message: 'r169', color: '000000', logo: 'threedotjs' },
+      { label: 'API', message: 'WebGL', color: '990000', logo: 'opengl' },
+      { label: 'TypeScript', message: '5.8', color: '3178c6', logo: 'typescript' },
+      { label: 'Bundler', message: 'Vite', color: '646cff', logo: 'vite' }
+    ]
+  },
+
+  // --- Category: Blockchain & Web3 ---
+  {
+    id: 'pack-web3-ethereum',
+    title: 'Web3 & EVM Smart Contracts',
+    desc: 'Solidity 0.8.28, Ethereum EVM, Hardhat, Polygon, IPFS, Ethers.js',
+    category: 'Blockchain & Web3',
+    badges: [
+      { label: 'Solidity', message: '0.8.28', color: '363636', logo: 'solidity' },
+      { label: 'Ethereum', message: 'EVM', color: '3c3c3d', logo: 'ethereum' },
+      { label: 'Toolchain', message: 'Hardhat', color: 'fff100', logo: 'hardhat' },
+      { label: 'Network', message: 'Polygon', color: '8247e5', logo: 'polygon' },
+      { label: 'Storage', message: 'IPFS', color: '65c2cb', logo: 'ipfs' }
+    ]
+  },
+  {
+    id: 'pack-solana-web3',
+    title: 'Solana High-Speed Web3',
+    desc: 'Rust, Solana, Anchor Framework, TypeScript, Web3.js',
+    category: 'Blockchain & Web3',
+    badges: [
+      { label: 'Solana', message: 'Mainnet', color: '14f195', logo: 'solana' },
+      { label: 'Programs', message: 'Rust', color: 'dea584', logo: 'rust' },
+      { label: 'Framework', message: 'Anchor', color: '4e44e9', logo: 'solana' },
+      { label: 'Client', message: 'TypeScript', color: '3178c6', logo: 'typescript' }
+    ]
+  },
+
+  // --- Category: Open Source & Community ---
+  {
+    id: 'pack-oss-health',
+    title: 'Open Source Project Health',
+    desc: 'MIT License, PRs Welcome, Semantic Release, Codecov 98%, GitHub Stars',
+    category: 'Open Source & Community',
+    badges: [
+      { label: 'License', message: 'MIT', color: '10b981', logo: '' },
+      { label: 'PRs', message: 'welcome', color: '3b82f6', logo: 'git' },
+      { label: 'Release', message: 'v1.0.0', color: '6366f1', logo: 'github' },
+      { label: 'Codecov', message: '98%', color: '06b6d4', logo: 'codecov' },
+      { label: 'Semantic', message: 'Release', color: 'e11d48', logo: 'semanticrelease' }
+    ]
+  },
+  {
+    id: 'pack-community-hub',
+    title: 'Sponsor & Community Engagement',
+    desc: 'Discord Chat, X / Twitter, YouTube Channel, GitHub Sponsors, LinkedIn',
+    category: 'Open Source & Community',
+    badges: [
+      { label: 'Discord', message: 'Join_Chat', color: '5865f2', logo: 'discord' },
+      { label: 'Twitter', message: 'Follow', color: '000000', logo: 'x' },
+      { label: 'YouTube', message: 'Subscribe', color: 'ff0000', logo: 'youtube' },
+      { label: 'Sponsor', message: 'GitHub', color: 'ea4aaa', logo: 'githubsponsors' },
+      { label: 'LinkedIn', message: 'Connect', color: '0077b5', logo: 'linkedin' }
     ]
   }
 ]
+

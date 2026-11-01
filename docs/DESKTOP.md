@@ -91,12 +91,20 @@ cd frontend
 npm run sidecar:build
 ```
 
-### Step 2: Package the Windows Executable (`.exe`)
-Builds both the **Windows Setup Installer** (`frontend/release/VisualMark-Studio-Setup.exe`) and a **Standalone Portable `.exe`** (`frontend/release/VisualMark-Studio-Portable.exe`):
+### Step 2: Package Desktop Executables
+
+Package for Windows, Linux, or macOS:
 
 ```bash
 cd frontend
+
+# Build for current OS:
 npm run electron:dist
+
+# Or target specific operating systems:
+npm run electron:dist:win    # Windows Setup Installer (VisualMark-Studio-Setup.exe)
+npm run electron:dist:linux  # Linux AppImage & Debian package
+npm run electron:dist:mac    # macOS DMG & Zip (Apple Silicon & Intel)
 ```
 
-Testers can either run the setup installer or double-click the portable `.exe` and run the entire IDE offline with zero installation or Python configuration required.
+Users get a streamlined desktop installer with Start Menu/Desktop shortcuts, native file associations (`.md`), and automated updates.

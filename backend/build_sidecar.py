@@ -1,6 +1,6 @@
 """
 PyInstaller Packaging Script for README Studio FastAPI Sidecar
-Bundles desktop_server.py into a standalone executable server.exe for Electron.
+Bundles desktop_server.py into a standalone executable (server.exe on Windows, server on Linux/macOS) for Electron.
 """
 import os
 import sys
@@ -74,10 +74,18 @@ def build_sidecar():
     print("\nExecuting PyInstaller command:\n" + " ".join(cmd) + "\n")
     result = subprocess.run(cmd, cwd=backend_dir)
 
+    exe_name = "server.exe" if sys.platform == "win32" else "server"
+    binary_path = os.path.join(target_sidecar_dir, "server", exe_name)
+
     if result.returncode == 0:
+        if sys.platform != "win32" and os.path.exists(binary_path):
+            try:
+                os.chmod(binary_path, 0o755)
+            except Exception as e:
+                print(f"[Warning] Failed to set chmod +x on {binary_path}: {e}")
         print("\n" + "=" * 60)
         print("[OK] Standalone sidecar built successfully!")
-        print(f"Location: {os.path.join(target_sidecar_dir, 'server', 'server.exe')}")
+        print(f"Location: {binary_path}")
         print("=" * 60)
     else:
         print("\nPyInstaller build failed with exit code:", result.returncode)

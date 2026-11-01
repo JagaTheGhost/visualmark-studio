@@ -13,6 +13,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1] - 2026-11-1
+
+### Added
+- **Multi-Platform Desktop Releases**: Official packaging pipeline and binaries for **Linux** (`.AppImage` & `.deb`) and **macOS** (`.dmg` & `.zip` for Apple Silicon `arm64` and Intel `x64`).
+- **Dynamic Cross-Platform Python Sidecar**: Sidecar process manager automatically resolves `server.exe` (Windows) and `server` (Linux/macOS) with automated execution permissions (`chmod +x`) and `python3` live development fallback.
+- **Keybinding Conflict Detection**: Real-time shortcut collision analysis displaying badge warnings and conflict details in the Shortcuts manager.
+- **Community Feedback & Bug Reporting**: Bottom status bar expandable chat pill and drawer action linked directly to GitHub Discussions.
+- **In-Editor Video & Audio Playback**: Dedicated media rendering components for MP4, WebM, GIF, MP3, and WAV with responsive players and lightbox inspection.
+- **Dedicated Vector Studio Generators**: Isolated SVG generation for Image Studio modes including Motion Demo cards, Dual-Theme Adaptive SVGs, and Before/After Comparison matrices.
+
+### Fixed
+- **SVG Generation & Preview Isolation**: Fixed SVG mode fallbacks in Image Studio so each mode exports its authentic graphic instead of defaulting to HUD telemetry.
+- **Workspace Write Confinement**: Fixed Electron direct file creation to strictly resolve against active workspace paths, preventing inadvertent cross-environment file creation.
+- **Language Switcher Navigation**: Language indicator in the status bar now navigates directly to the Appearance section in Settings.: Official packaging pipeline and binaries for **Linux** (`.AppImage` & `.deb`) and **macOS** (`.dmg` & `.zip` for Apple Silicon `arm64` and Intel `x64`).
+- **Dynamic Cross-Platform Python Sidecar**: Sidecar process manager automatically resolves `server.exe` (Windows) and `server` (Linux/macOS) with automated execution permissions (`chmod +x`) and `python3` live development fallback.
+
+### Security & Hardening
+- **Workspace Path Containment & Confinement**: Native filesystem and Git IPC handlers strictly validate and confine all disk operations to authorized open workspaces (`isPathWithinWorkspace`), canonicalizing paths via `fs.realpathSync` to eliminate symlink and directory traversal escapes.
+- **IPC Origin & Sender Validation**: Privileged Electron IPC handlers validate `event.senderFrame` origin, ensuring only legitimate local UI frames can dispatch operations.
+- **Strict Vector & Markdown Sanitization**: Hardened DOMPurify allowlists for all Mermaid diagrams and Markdown HTML previews, stripping executable script tags, inline event handlers, and unsafe URI protocols.
+- **Windows AppContainer Sandbox Compliance**: NSIS installers and runtime enforce `ALL APPLICATION PACKAGES` (`*S-1-15-2-1`) read/execute permissions, preventing Chromium sandbox initialization aborts on secondary partitions while revoking unprivileged `Authenticated Users` write permissions.
+
+### Removed
+- **Unused Document Export Options**: Removed legacy Export to PDF and HTML UI controls and dead code from Settings and shortcut registries to focus on markdown documentation.
+
+### Changed
+- **Streamlined Windows Distribution**: Limited Windows packaging exclusively to the non-elevated NSIS setup installer (`VisualMark-Studio-Setup.exe`), removing redundant portable binaries to eliminate 200MB artifact clutter and guarantee persistent `.md` file associations and reliable `electron-updater` background updates.
+- **Repository Documentation Architecture**: Reorganized secondary reference guides into a dedicated `docs/` folder (`docs/SETUP.md`, `docs/DEPLOYMENT.md`, `docs/DESKTOP.md`, `docs/FEATURES.md`, `docs/DOCUMENTATION.md`, `docs/DESIGN_SYSTEM.md`, `docs/TESTING_GUIDE.md`), keeping only primary repository files open in the root.
+- **Zero-Telemetry Local Sovereignty**: Fully documented local-first architecture where user files remain strictly on the local machine with zero analytics or tracking beacons.
+
+---
+
 ## [1.2.0] - 2026-10-25
 
 ### Added
@@ -39,8 +71,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved selection HUD toolbar and floating actions.
 
 ### Changed
-- Refactored packaging configuration to support single-pass background auto-updates and portable binaries without elevation requirements.
-- Standardized 100% offline local-first security architecture with zero external telemetry and zero required cloud credentials.
+- **Multi-OS Desktop Release Architecture**: Expanded packaging pipeline to support Linux (`.AppImage` & `.deb`), macOS (`.dmg` & `.zip` for Apple Silicon `arm64` and Intel `x64`), and streamlined Windows distribution to a non-elevated NSIS setup installer (`VisualMark-Studio-Setup.exe`).
+- **Pruned Redundant Windows Portable Target**: Eliminated 200MB artifact bloat and assured 100% persistent `.md` file associations and seamless in-app background auto-updates.
+- **Local-First & Sandboxed Security Model**: Hardened filesystem and Git IPC handlers to enforce workspace containment (`isPathWithinWorkspace`), canonical path validation via `fs.realpathSync`, DOMPurify SVG/AST sanitization, zero background telemetry, and transparent user-initiated network boundaries.
 
 ---
 

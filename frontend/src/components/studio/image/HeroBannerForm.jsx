@@ -67,6 +67,20 @@ export default function HeroBannerForm({
   setTypingPause,
   typingColor,
   setTypingColor,
+  typingSpeed,
+  setTypingSpeed,
+  typingEffect,
+  setTypingEffect,
+  typingLayout,
+  setTypingLayout,
+  typingAlign,
+  setTypingAlign,
+  typingFontSize,
+  setTypingFontSize,
+  typingWidth,
+  setTypingWidth,
+  typingHeight,
+  setTypingHeight,
   capsuleShape,
   setCapsuleShape,
   bannerHeight,
@@ -111,6 +125,16 @@ export default function HeroBannerForm({
             >
               📁 Repository Asset (GitHub Recommended)
             </button>
+            {bannerType === 'typing' && (
+              <button
+                type="button"
+                className={`studio-style-btn ${bannerSyntaxMode === 'service-url' ? 'active' : ''}`}
+                onClick={() => setBannerSyntaxMode('service-url')}
+                title="Dynamic cloud typing SVG service (readme-typing-svg demolab.com)"
+              >
+                🌐 Cloud Service URL (demolab.com)
+              </button>
+            )}
             <button
               type="button"
               className={`studio-style-btn ${bannerSyntaxMode === 'data-uri' ? 'active' : ''}`}
@@ -120,7 +144,17 @@ export default function HeroBannerForm({
               ⚡ Direct Data URI (Local Only)
             </button>
           </div>
-          {bannerSyntaxMode === 'asset-path' ? (
+          {bannerSyntaxMode === 'service-url' ? (
+            <div style={{ marginTop: '8px', padding: '10px 14px', borderRadius: '6px', background: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.25)', fontSize: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', color: '#818cf8', marginBottom: '4px' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>cloud_sync</span>
+                <span>Cloud Service Mode (readme-typing-svg):</span>
+              </div>
+              <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+                Directly generates the hosted <code>readme-typing-svg.demolab.com</code> image tag. Renders live typing animation on GitHub and local markdown viewers with zero committed files required.
+              </p>
+            </div>
+          ) : bannerSyntaxMode === 'asset-path' ? (
             <div style={{ marginTop: '8px', padding: '10px 14px', borderRadius: '6px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', fontSize: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', color: '#38bdf8', marginBottom: '4px' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>verified</span>
@@ -400,7 +434,46 @@ export default function HeroBannerForm({
       {/* Specific Options: Typing SVG Configurator */}
       {bannerType === 'typing' && (
         <div className="studio-section">
-          <label className="studio-section-label">Animated Typing Text</label>
+          <label className="studio-section-label">Animated Typewriter Loop Configurator</label>
+
+          {/* Layout Presentation Mode */}
+          <div className="studio-field">
+            <span className="studio-field-label">Layout Architecture</span>
+            <div className="studio-segmented-styles">
+              <button
+                type="button"
+                className={`studio-style-btn ${(typingLayout || 'clean') === 'clean' ? 'active' : ''}`}
+                onClick={() => {
+                  setTypingLayout('clean')
+                  setTypingAlign('center')
+                }}
+                title="Minimalist transparent background with centered typing loop (demolab style)"
+              >
+                ✨ Clean / Transparent
+              </button>
+              <button
+                type="button"
+                className={`studio-style-btn ${typingLayout === 'terminal' ? 'active' : ''}`}
+                onClick={() => {
+                  setTypingLayout('terminal')
+                }}
+                title="macOS CLI dark terminal window with traffic lights & command prompt"
+              >
+                💻 Terminal Window
+              </button>
+              <button
+                type="button"
+                className={`studio-style-btn ${typingLayout === 'card' ? 'active' : ''}`}
+                onClick={() => {
+                  setTypingLayout('card')
+                }}
+                title="Modern card with rounded corners and subtle tech gradient frame"
+              >
+                🪪 Tech Card
+              </button>
+            </div>
+          </div>
+
           <div className="studio-field">
             <span className="studio-field-label">Typing Lines (Semicolon separated)</span>
             <textarea
@@ -408,8 +481,11 @@ export default function HeroBannerForm({
               className="studio-text-area"
               value={typingLines}
               onChange={(e) => setTypingLines(e.target.value)}
-              placeholder="Line 1;Line 2;Line 3"
+              placeholder="Your're right; I should have included a screenshot; to demonstrate the visual features; Thanks for pointing that out !"
             />
+            <span style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)', marginTop: '4px', display: 'block' }}>
+              Separate multiple rotating lines with semicolons (<code>;</code>). Each line will type out, pause, delete, and loop to the next.
+            </span>
           </div>
 
           <div className="studio-input-duo">
@@ -422,6 +498,7 @@ export default function HeroBannerForm({
               >
                 <option value="Fira Code">Fira Code</option>
                 <option value="Roboto Mono">Roboto Mono</option>
+                <option value="JetBrains Mono">JetBrains Mono</option>
                 <option value="Source Code Pro">Source Code Pro</option>
                 <option value="Courier New">Courier New</option>
                 <option value="monospace">Standard Monospace</option>
@@ -429,7 +506,29 @@ export default function HeroBannerForm({
             </div>
 
             <div className="studio-field">
-              <span className="studio-field-label">Pause Duration (ms)</span>
+              <span className="studio-field-label">Alignment</span>
+              <div className="studio-segmented-styles" style={{ height: '36px' }}>
+                <button
+                  type="button"
+                  className={`studio-style-btn ${(typingAlign || 'center') === 'center' ? 'active' : ''}`}
+                  onClick={() => setTypingAlign('center')}
+                >
+                  Center
+                </button>
+                <button
+                  type="button"
+                  className={`studio-style-btn ${typingAlign === 'left' ? 'active' : ''}`}
+                  onClick={() => setTypingAlign('left')}
+                >
+                  Left
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="studio-input-duo">
+            <div className="studio-field">
+              <span className="studio-field-label">Pause Duration</span>
               <select
                 className="studio-select-input"
                 value={typingPause}
@@ -441,10 +540,91 @@ export default function HeroBannerForm({
                 <option value="2500">Long (2500ms)</option>
               </select>
             </div>
+
+            <div className="studio-field">
+              <span className="studio-field-label">Typing Speed</span>
+              <select
+                className="studio-select-input"
+                value={typingSpeed || '45'}
+                onChange={(e) => setTypingSpeed(e.target.value)}
+              >
+                <option value="30">Fast (30ms/char)</option>
+                <option value="45">Normal (45ms/char)</option>
+                <option value="70">Relaxed (70ms/char)</option>
+              </select>
+            </div>
           </div>
 
           <div className="studio-field">
-            <span className="studio-field-label">Text Accent Hex Color</span>
+            <span className="studio-field-label">Typing Motion Mechanism</span>
+            <div className="studio-segmented-styles">
+              <button
+                type="button"
+                className={`studio-style-btn ${(typingEffect || 'discrete') === 'discrete' ? 'active' : ''}`}
+                onClick={() => setTypingEffect('discrete')}
+                title="Actual character-by-character mechanical typewriter keystrokes"
+              >
+                ⌨️ Letter-by-Letter (Actual Typing)
+              </button>
+              <button
+                type="button"
+                className={`studio-style-btn ${typingEffect === 'smooth' ? 'active' : ''}`}
+                onClick={() => setTypingEffect('smooth')}
+                title="Continuous sliding reveal animation"
+              >
+                🌊 Smooth Stream
+              </button>
+            </div>
+          </div>
+
+          <div className="studio-input-duo">
+            <div className="studio-field">
+              <span className="studio-field-label">Font Size</span>
+              <select
+                className="studio-select-input"
+                value={typingFontSize || '24'}
+                onChange={(e) => setTypingFontSize(e.target.value)}
+              >
+                <option value="18">Small (18px)</option>
+                <option value="22">Normal (22px)</option>
+                <option value="24">Medium (24px)</option>
+                <option value="28">Large (28px)</option>
+                <option value="32">Extra Large (32px)</option>
+              </select>
+            </div>
+
+            <div className="studio-field">
+              <span className="studio-field-label">Canvas Width</span>
+              <select
+                className="studio-select-input"
+                value={typingWidth || '750'}
+                onChange={(e) => setTypingWidth(e.target.value)}
+              >
+                <option value="600">600px</option>
+                <option value="650">650px (demolab default)</option>
+                <option value="750">750px</option>
+                <option value="850">850px</option>
+                <option value="950">950px</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="studio-field">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <span className="studio-field-label" style={{ margin: 0 }}>Text Accent Color</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <input
+                  type="color"
+                  value={typingColor.startsWith('#') ? typingColor : `#${typingColor}`}
+                  onChange={(e) => setTypingColor(e.target.value.replace('#', ''))}
+                  style={{ width: '22px', height: '22px', border: 'none', background: 'transparent', cursor: 'pointer', padding: 0 }}
+                  title="Pick custom color"
+                />
+                <span style={{ fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                  #{typingColor.replace('#', '').toUpperCase()}
+                </span>
+              </div>
+            </div>
             <div className="studio-segmented-styles">
               {[
                 { label: 'Indigo', hex: '6366F1' },
@@ -452,12 +632,13 @@ export default function HeroBannerForm({
                 { label: 'Emerald', hex: '10B981' },
                 { label: 'Amber', hex: 'F59E0B' },
                 { label: 'Rose', hex: 'F43F5E' },
+                { label: 'Purple', hex: 'A855F7' },
                 { label: 'White', hex: 'FFFFFF' }
               ].map((c) => (
                 <button
                   key={c.hex}
                   type="button"
-                  className={`studio-style-btn ${typingColor === c.hex ? 'active' : ''}`}
+                  className={`studio-style-btn ${typingColor.toLowerCase() === c.hex.toLowerCase() ? 'active' : ''}`}
                   onClick={() => setTypingColor(c.hex)}
                 >
                   <span

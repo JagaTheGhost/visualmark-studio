@@ -16,12 +16,58 @@ export default function UnsupportedFileViewer({ fileInfo, onCloseTab, onOpenStud
   } = fileInfo || {}
 
   const [copied, setCopied] = useState(false)
+  const [snippetCopied, setSnippetCopied] = useState(false)
+  const [mediaDataUrl, setMediaDataUrl] = useState(null)
+  const [mediaLoading, setMediaLoading] = useState(false)
 
   const ext = (extension || '').toLowerCase()
   const isImageOrMedia = ['gif', 'png', 'jpg', 'jpeg', 'webp', 'svg', 'ico', 'bmp', 'avif'].includes(ext)
   const isVideo = ['mp4', 'webm', 'mov', 'mkv', 'avi'].includes(ext)
   const isAudio = ['mp3', 'wav', 'ogg', 'm4a', 'flac'].includes(ext)
   const isArchive = ['zip', 'tar', 'gz', '7z', 'rar'].includes(ext)
+  const isMedia = isImageOrMedia || isVideo || isAudio
+
+  React.useEffect(() => {
+    let active = true
+    if (isMedia && filePath && window.electronAPI?.readLocalMedia) {
+      setMediaLoading(true)
+      window.electronAPI.readLocalMedia(filePath).then((res) => {
+        if (!active) return
+        if (res?.success) {
+          if (res.isSvg && res.content) {
+            setMediaDataUrl(`data:image/svg+xml;utf8,${encodeURIComponent(res.content)}`)
+          } else if (res.dataUrl) {
+            setMediaDataUrl(res.dataUrl)
+          }
+        }
+        setMediaLoading(false)
+      }).catch(() => {
+        if (active) setMediaLoading(false)
+      })
+    }
+    return () => {
+      active = false
+    }
+  }, [isMedia, filePath])
+
+  const handleCopySnippet = useCallback(async () => {
+    let snippet = ''
+    if (isVideo) {
+      snippet = `<video controls width="100%">\n  <source src="./assets/${fileName}" type="video/${ext === 'webm' ? 'webm' : 'mp4'}">\n  Your browser does not support the video tag.\n</video>`
+    } else if (isAudio) {
+      snippet = `<audio controls src="./assets/${fileName}"></audio>`
+    } else {
+      snippet = `![${fileName.replace(/\.[^/.]+$/, '')}](./assets/${fileName})`
+    }
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(snippet)
+      }
+      setSnippetCopied(true)
+      setTimeout(() => setSnippetCopied(false), 2000)
+    } catch {}
+  }, [isVideo, isAudio, fileName, ext])
 
   const getFormatIcon = () => {
     if (ext === 'gif') return 'gif'
@@ -94,16 +140,57 @@ export default function UnsupportedFileViewer({ fileInfo, onCloseTab, onOpenStud
           </div>
 
           <div className="welcome-title-row">
-            <h1 className="welcome-app-name">Cannot Open File in Editor</h1>
-            <span className="welcome-version-badge">.{extension ? extension.toUpperCase() : 'BINARY'}</span>
+            <h1 className="welcome-app-name">{isMedia ? 'Media Inspector & Player' : 'Cannot Open File in Editor'}</h1>
+            <span className="welcome-version-badge" style={isVideo ? { color: '#38bdf8' } : ext === 'gif' ? { color: '#ec4899' } : {}}>
+              .{extension ? extension.toUpperCase() : 'BINARY'}
+            </span>
           </div>
 
           <p className="welcome-tagline">
-            {isImageOrMedia
-              ? 'This media file cannot be rendered inside the plain text code editor.'
+            {isMedia
+              ? 'Interactive media preview and embed generator for markdown documentation.'
               : 'This file contains binary or compiled data that cannot be displayed as plain text.'}
           </p>
         </div>
+
+        {/* Embedded Interactive Media Stage */}
+        {isMedia && mediaDataUrl && (
+          <div className="welcome-media-preview-card" style={{ marginBottom: '20px', borderRadius: '10px', overflow: 'hidden', background: '#0a0d12', border: '1px solid rgba(255,255,255,0.08)', padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            {isVideo ? (
+              <video
+                src={mediaDataUrl}
+                controls
+                autoPlay
+                loop
+                muted
+                playsInline
+                style={{ width: '100%', maxHeight: '420px', borderRadius: '6px', background: '#000' }}
+              />
+            ) : isAudio ? (
+              <div style={{ width: '100%', padding: '12px' }}>
+                <audio src={mediaDataUrl} controls style={{ width: '100%' }} />
+              </div>
+            ) : (
+              <img
+                src={mediaDataUrl}
+                alt={fileName}
+                style={{ maxWidth: '100%', maxHeight: '420px', objectFit: 'contain', borderRadius: '6px' }}
+              />
+            )}
+            <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', fontSize: '11px', color: '#94a3b8' }}>
+              <span>Format: {extension?.toUpperCase()} {ext === 'gif' ? '• Animated' : ''}</span>
+              <button
+                type="button"
+                className="welcome-recent-clear-btn"
+                onClick={handleCopySnippet}
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 10px', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.2)' }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>{snippetCopied ? 'check' : 'content_copy'}</span>
+                <span>{snippetCopied ? 'Snippet Copied!' : 'Copy Markdown Embed'}</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Primary Action Buttons: Tactile Elevated Cards (Open in Default App & Reveal in Explorer) */}
         <div className="welcome-primary-cards">
@@ -175,6 +262,18 @@ export default function UnsupportedFileViewer({ fileInfo, onCloseTab, onOpenStud
             >
               <span className="material-symbols-outlined">{copied ? 'check' : 'content_copy'}</span>
               <span>{copied ? 'Path Copied!' : 'Copy Path'}</span>
+            </button>
+          )}
+
+          {isMedia && (
+            <button
+              type="button"
+              className="welcome-sub-btn"
+              onClick={handleCopySnippet}
+              title="Copy markdown / HTML embed snippet"
+            >
+              <span className="material-symbols-outlined">{snippetCopied ? 'check' : 'integration_instructions'}</span>
+              <span>{snippetCopied ? 'Snippet Copied!' : 'Copy Embed Code'}</span>
             </button>
           )}
 

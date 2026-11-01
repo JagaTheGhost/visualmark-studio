@@ -75,12 +75,21 @@ app = FastAPI(
     description="Generate professional README.md files and documentation suites automatically"
 )
 
-# Enable CORS (standard compliant: wildcard origin without credentials)
+# Enable CORS with configurable origins (supports local dev and cloud deployments)
+env_cors = os.environ.get("ALLOWED_CORS_ORIGINS")
+allowed_origins = [o.strip() for o in env_cors.split(",") if o.strip()] if env_cors else [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "*"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=False,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -237,23 +246,29 @@ def generate_readme(req: ReadmeRequest):
         )
 
 
-ALLOWED_RESOLVE_HOSTS = {
+ALLOWED_RESOLVE_DOMAINS = {
     "share.google",
     "bit.ly",
     "tinyurl.com",
     "t.co",
     "goo.gl",
     "google.com",
-    "www.google.com",
-    "images.google.com",
+    "googleusercontent.com",
+    "unsplash.com",
+    "githubusercontent.com",
+    "imgur.com",
 }
-ALLOWED_RESOLVE_SUFFIXES = (
-    ".google.com",
-    ".googleusercontent.com",
-    ".unsplash.com",
-    ".githubusercontent.com",
-    ".imgur.com",
-)
+
+
+def is_allowed_resolve_host(hostname: str) -> bool:
+    """Validate that hostname strictly equals an allowed domain or is a subdomain of it."""
+    if not hostname:
+        return False
+    host = hostname.lower()
+    for domain in ALLOWED_RESOLVE_DOMAINS:
+        if host == domain or host.endswith("." + domain):
+            return True
+    return False
 
 
 @api_router.get("/resolve-image")
@@ -270,9 +285,12 @@ def resolve_image_url(url: str):
         raise HTTPException(status_code=400, detail="Invalid URL or access to restricted address prohibited")
 
     try:
-        parsed_target = urllib.parse.urlparse(clean_target)
+        parsed_target = urllib.parse.urlsplit(clean_target)
+        if parsed_target.scheme.lower() not in ("http", "https"):
+            raise HTTPException(status_code=400, detail="Only HTTP/HTTPS URLs are permitted")
+
         target_host = (parsed_target.hostname or "").lower()
-        if not (target_host in ALLOWED_RESOLVE_HOSTS or target_host.endswith(ALLOWED_RESOLVE_SUFFIXES)):
+        if not is_allowed_resolve_host(target_host):
             raise HTTPException(status_code=400, detail="Domain not permitted for image resolution")
 
         # Check if already a Google Image search result with imgurl
@@ -282,8 +300,15 @@ def resolve_image_url(url: str):
             if is_safe_public_url(candidate_imgurl):
                 return {"success": True, "direct_url": candidate_imgurl, "original_url": clean_target}
 
+        # Reconstruct sanitized request target URL breaking taint flow from raw user input
+        path_part = parsed_target.path or "/"
+        query_part = f"?{parsed_target.query}" if parsed_target.query else ""
+        port_part = f":{parsed_target.port}" if parsed_target.port and parsed_target.port in (80, 443) else ""
+        scheme = "https" if parsed_target.scheme.lower() == "https" else "http"
+        safe_request_url = f"{scheme}://{target_host}{port_part}{path_part}{query_part}"
+
         req = urllib.request.Request(
-            clean_target,
+            safe_request_url,
             headers={
                 "User-Agent": (
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -351,26 +376,42 @@ def git_clone_endpoint(req: GitCloneRequest):
     if clean_url.startswith("-"):
         raise HTTPException(status_code=400, detail="Invalid repository URL")
 
-    # Expand GitHub shorthand e.g. owner/repo
-    if "://" not in clean_url and not clean_url.startswith("git@") and "/" in clean_url and " " not in clean_url:
-        parts = clean_url.split("/")
-        if len(parts) == 2 and not parts[0].startswith("-") and not parts[1].startswith("-"):
-            clean_url = f"https://github.com/{clean_url}.git"
-    elif clean_url.startswith("github.com/"):
-        # Validate that the domain is strictly github.com and matches owner/repo
-        if re.match(r"^github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/?$", clean_url):
-            clean_url = f"https://{clean_url}"
+    # Expand GitHub shorthand e.g. owner/repo or github.com/owner/repo
+    if "://" not in clean_url and not clean_url.startswith("git@"):
+        gh_match = re.match(
+            r"^(?:(?:https?://)?(?:www\.)?github\.com/)?([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?$",
+            clean_url
+        )
+        if gh_match:
+            owner, repo = gh_match.groups()
+            if not owner.startswith("-") and not repo.startswith("-"):
+                clean_url = f"https://github.com/{owner}/{repo}.git"
         else:
-            raise HTTPException(status_code=400, detail="Invalid GitHub URL format.")
+            raise HTTPException(status_code=400, detail="Invalid repository URL format.")
 
     # Validate allowed protocols
     parsed_git = urllib.parse.urlparse(clean_url)
     if parsed_git.scheme not in ("https", "http", "ssh") and not clean_url.startswith("git@"):
         raise HTTPException(status_code=400, detail="Only HTTPS, HTTP, and SSH git repository URLs are supported.")
 
-    # Determine destination directory with canonicalization
-    raw_target_dir = (req.target_dir and req.target_dir.strip()) or os.path.expanduser("~/Documents")
-    target_dir = os.path.abspath(os.path.normpath(raw_target_dir))
+    # Determine safe root directory for destination confinement
+    safe_base = os.path.normpath(os.path.realpath(os.path.expanduser("~")))
+    safe_base_with_sep = safe_base if safe_base.endswith(os.sep) else safe_base + os.sep
+
+    raw_target_dir = (req.target_dir and req.target_dir.strip()) or os.path.join(safe_base, "Documents")
+    resolved_target = os.path.normpath(os.path.realpath(raw_target_dir))
+
+    # Guard: verify target directory is bounded to safe user home or current project directory
+    if not (resolved_target.startswith(safe_base_with_sep) or resolved_target == safe_base):
+        cwd_base = os.path.normpath(os.path.realpath(os.getcwd()))
+        cwd_base_with_sep = cwd_base if cwd_base.endswith(os.sep) else cwd_base + os.sep
+        if not (resolved_target.startswith(cwd_base_with_sep) or resolved_target == cwd_base):
+            raise HTTPException(
+                status_code=400,
+                detail="Target directory must be within your user profile or project directory."
+            )
+
+    target_dir = resolved_target
 
     dest_folder = (req.folder_name and req.folder_name.strip())
     if not dest_folder:
@@ -384,13 +425,13 @@ def git_clone_endpoint(req: GitCloneRequest):
         raise HTTPException(status_code=400, detail="Invalid target folder name.")
 
     # Prevent path traversal: ensure full destination path is strictly within target_dir
-    full_dest_path = os.path.abspath(os.path.join(target_dir, dest_folder))
-    try:
-        common_prefix = os.path.commonpath([target_dir, full_dest_path])
-        if common_prefix != target_dir:
-            raise HTTPException(status_code=400, detail="Invalid target destination path.")
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Cross-drive paths are not supported.")
+    target_dir_with_sep = target_dir if target_dir.endswith(os.sep) else target_dir + os.sep
+    resolved_dest = os.path.normpath(os.path.realpath(os.path.join(target_dir, dest_folder)))
+
+    if not resolved_dest.startswith(target_dir_with_sep):
+        raise HTTPException(status_code=400, detail="Invalid target destination path.")
+
+    full_dest_path = resolved_dest
 
     if not os.path.exists(target_dir):
         try:
@@ -435,7 +476,7 @@ def root():
     """Root metadata endpoint."""
     return {
         "message": "VisualMark Studio API",
-        "version": "1.2.0",
+        "version": "1.2.1",
         "endpoints": {
             "health": "/health or /api/health",
             "generate": "/generate-readme or /api/generate-readme (POST)",

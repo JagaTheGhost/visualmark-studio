@@ -801,36 +801,96 @@ export default function MonacoEditorPane({
     window.activeMonacoEditor = editor
 
     // Intercept Monaco's built-in quickCommand action so clicking "Command Palette"
-    // in the right-click context menu (Image 1) opens VisualMark Studio's customizable
-    // Command Palette with configurable keybinding options (Image 3).
+    // in the right-click context menu opens VisualMark Studio's customizable Command Palette
     try {
+      const origTrigger = editor.trigger.bind(editor)
+      editor.trigger = function (source, handlerId, payload) {
+        if (handlerId === 'editor.action.quickCommand') {
+          window.dispatchEvent(new CustomEvent('open-command-palette'))
+          return
+        }
+        return origTrigger(source, handlerId, payload)
+      }
+
       const quickCommand = editor.getAction('editor.action.quickCommand')
       if (quickCommand) {
         quickCommand.run = () => {
           window.dispatchEvent(new CustomEvent('open-command-palette'))
           return Promise.resolve()
         }
-      } else {
-        editor.addAction({
-          id: 'visualmark.openCommandPalette',
-          label: 'Command Palette',
-          keybindings: [
-            monaco.KeyCode.F1,
-            monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyP
-          ],
-          contextMenuGroupId: 'navigation',
-          contextMenuOrder: 1.5,
-          run: () => {
-            window.dispatchEvent(new CustomEvent('open-command-palette'))
-          }
-        })
       }
 
-      // Explicitly bind F1 and Ctrl+Shift+P on editor instance
+      // Intercept key events on the editor canvas before Monaco's internal commands / chord service process them
+      editor.onKeyDown((e) => {
+        // 1. F1 -> VisualMark Command Palette
+        if (e.keyCode === monaco.KeyCode.F1) {
+          e.preventDefault()
+          e.stopPropagation()
+          window.dispatchEvent(new CustomEvent('open-command-palette'))
+          return
+        }
+
+        // 2. Ctrl+K (or Cmd+K) -> VisualMark Command Palette (breaks Monaco chord-mode)
+        if (
+          (e.ctrlKey || e.metaKey) &&
+          !e.shiftKey &&
+          !e.altKey &&
+          (e.keyCode === monaco.KeyCode.KeyK || e.browserEvent?.key === 'k' || e.browserEvent?.key === 'K')
+        ) {
+          e.preventDefault()
+          e.stopPropagation()
+          window.dispatchEvent(new CustomEvent('open-command-palette'))
+          return
+        }
+
+        // 3. Ctrl+Shift+P (or Cmd+Shift+P) -> VisualMark Command Palette
+        if (
+          (e.ctrlKey || e.metaKey) &&
+          e.shiftKey &&
+          !e.altKey &&
+          (e.keyCode === monaco.KeyCode.KeyP || e.browserEvent?.key === 'p' || e.browserEvent?.key === 'P')
+        ) {
+          e.preventDefault()
+          e.stopPropagation()
+          window.dispatchEvent(new CustomEvent('open-command-palette'))
+          return
+        }
+
+        // 4. Ctrl+S -> Quick Save
+        if (
+          (e.ctrlKey || e.metaKey) &&
+          !e.shiftKey &&
+          !e.altKey &&
+          (e.keyCode === monaco.KeyCode.KeyS || e.browserEvent?.key === 's' || e.browserEvent?.key === 'S')
+        ) {
+          e.preventDefault()
+          e.stopPropagation()
+          window.dispatchEvent(new CustomEvent('app-save-file', { detail: false }))
+          return
+        }
+
+        // 5. Ctrl+Shift+S -> Save As
+        if (
+          (e.ctrlKey || e.metaKey) &&
+          e.shiftKey &&
+          !e.altKey &&
+          (e.keyCode === monaco.KeyCode.KeyS || e.browserEvent?.key === 's' || e.browserEvent?.key === 'S')
+        ) {
+          e.preventDefault()
+          e.stopPropagation()
+          window.dispatchEvent(new CustomEvent('app-save-file', { detail: true }))
+          return
+        }
+      })
+
+      // Explicitly bind F1, Ctrl+Shift+P, and Ctrl+K on editor instance
       editor.addCommand(monaco.KeyCode.F1, () => {
         window.dispatchEvent(new CustomEvent('open-command-palette'))
       })
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyP, () => {
+        window.dispatchEvent(new CustomEvent('open-command-palette'))
+      })
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
         window.dispatchEvent(new CustomEvent('open-command-palette'))
       })
 

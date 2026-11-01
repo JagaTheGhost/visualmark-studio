@@ -1432,3 +1432,378 @@
   position: relative;
 }
 
+/* ==========================================================================
+   Responsive Media & SVG Rendering Engine (Editor Preview Pane)
+   ========================================================================== */
+
+/* 1. Global Responsive Media Scaling */
+.preview-canvas svg,
+.markdown-body svg,
+.preview-inline-svg-stage svg,
+.preview-standalone-svg-wrapper svg,
+.preview-markdown-svg-wrapper svg {
+  max-width: 100% !important;
+  height: auto;
+  box-sizing: border-box;
+}
+
+.preview-canvas img,
+.markdown-body img,
+.preview-markdown-image {
+  max-width: 100% !important;
+  height: auto;
+  box-sizing: border-box;
+}
+
+.preview-inline-svg-stage {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+  margin: 10px 0;
+}
+
+/* 2. Standalone SVG Document Artboard Preview */
+.preview-standalone-svg-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 180px);
+  width: 100%;
+  padding: 24px 16px;
+  box-sizing: border-box;
+}
+
+.preview-standalone-svg-artboard {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 960px;
+  padding: 32px 24px;
+  background-color: var(--surface-low, #18181b);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.preview-standalone-svg-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+}
+
+.preview-standalone-svg-wrapper svg {
+  display: block;
+  margin: 0 auto;
+  max-width: 100% !important;
+  height: auto !important;
+  filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.3));
+}
+
+/* 3. Image Wrappers & Animated GIF Badges */
+.preview-image-wrapper {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+  margin: 4px 0;
+}
+
+.preview-image-wrapper.is-full-width {
+  display: block;
+  width: 100%;
+  margin: 14px 0;
+}
+
+.preview-markdown-image {
+  border-radius: var(--radius-sm, 6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  cursor: zoom-in;
+}
+
+.preview-markdown-image.is-loading {
+  opacity: 0.3;
+}
+
+.preview-markdown-image.is-loaded {
+  opacity: 1;
+}
+
+.preview-image-skeleton {
+  position: absolute;
+  inset: 0;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(90deg, var(--surface-low, #1e1e24) 25%, var(--surface-mid, #272730) 50%, var(--surface-low, #1e1e24) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.6s infinite;
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-muted, #64748b);
+}
+
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.preview-gif-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.preview-image-fallback-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background-color: var(--surface-low, #1e1e24);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-muted, #94a3b8);
+  font-size: 11.5px;
+  margin: 4px 0;
+}
+
+.fallback-mini-icon {
+  font-size: 16px;
+  color: #f87171;
+}
+
+.fallback-mini-title {
+  max-width: 220px;
+}
+
+.fallback-mini-action {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #cbd5e1);
+  cursor: pointer;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+}
+.fallback-mini-action:hover {
+  color: var(--primary, #38bdf8);
+}
+
+/* 4. HTML5 Video Player */
+.preview-video-container {
+  display: block;
+  position: relative;
+  max-width: 100%;
+  margin: 16px 0;
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  background-color: #000000;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.preview-video-stage {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #09090b;
+}
+
+.preview-markdown-video {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  border-radius: var(--radius-md, 8px);
+}
+
+.preview-video-skeleton {
+  position: absolute;
+  inset: 0;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #121216;
+  color: var(--text-muted, #64748b);
+}
+
+.skeleton-pulse-icon {
+  font-size: 40px;
+  opacity: 0.6;
+  animation: pulse 1.8s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.96); }
+  50% { opacity: 0.8; transform: scale(1.04); }
+}
+
+.preview-video-fallback {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background-color: var(--surface-low, #18181b);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-md, 8px);
+  margin: 14px 0;
+}
+
+.video-fallback-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.video-fallback-icon {
+  font-size: 28px;
+  color: #f87171;
+}
+
+.video-fallback-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.video-fallback-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #f1f5f9);
+}
+
+.video-fallback-desc {
+  font-size: 11.5px;
+  color: var(--text-muted, #94a3b8);
+}
+
+.video-fallback-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.video-fallback-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background-color: var(--surface-mid, #27272a);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: var(--radius-xs, 4px);
+  color: var(--text-primary, #f1f5f9);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.video-fallback-btn:hover {
+  background-color: var(--surface-high, #3f3f46);
+}
+
+.video-fallback-btn .material-symbols-outlined {
+  font-size: 14px;
+}
+
+/* 5. Lightbox Modal Overlay */
+.preview-image-lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  box-sizing: border-box;
+  animation: fadeIn 0.18s ease-out;
+}
+
+.lightbox-content {
+  position: relative;
+  max-width: 95vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #09090b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+.lightbox-image {
+  max-width: 90vw;
+  max-height: 80vh;
+  object-fit: contain;
+  display: block;
+}
+
+.lightbox-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 16px;
+  background-color: #121216;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-sizing: border-box;
+}
+
+.lightbox-alt {
+  font-size: 12px;
+  color: var(--text-secondary, #cbd5e1);
+  font-family: var(--font-sans, sans-serif);
+}
+
+.lightbox-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lightbox-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #cbd5e1);
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.lightbox-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+

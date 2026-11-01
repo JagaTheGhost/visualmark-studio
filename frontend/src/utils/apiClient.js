@@ -55,7 +55,11 @@ export async function getApiUrl(route) {
  */
 export async function apiPost(route, data, config = {}) {
   const url = await getApiUrl(route)
-  return axios.post(url, data, config)
+  const headers = {
+    'X-Requested-With': 'VisualMarkStudio',
+    ...(config.headers || {})
+  }
+  return axios.post(url, data, { ...config, headers })
 }
 
 /**
@@ -63,5 +67,9 @@ export async function apiPost(route, data, config = {}) {
  */
 export async function apiGet(route, config = {}) {
   const url = await getApiUrl(route)
-  return axios.get(url, config)
+  const headers = {
+    'X-Requested-With': 'VisualMarkStudio',
+    ...(config.headers || {})
+  }
+  return axios.get(url, { ...config, headers })
 }

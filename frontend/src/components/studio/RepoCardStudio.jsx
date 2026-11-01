@@ -12,12 +12,14 @@ import {
   generateTerminalCliSvg
 } from '../../utils/modernRepoCardEngine'
 import { GITHUB_LANG_COLORS } from '../../data/badgeStudioData'
+import { sanitizeSvg } from '../../utils/securityUtils'
 
 /**
  * Custom Hook containing all GitHub Repo Card state and actions.
  */
 export function useRepoCardState({
   repoUrl = '',
+  workspaceDirectory = null,
   onInsertBadge = () => {}
 } = {}) {
   // Target Repo & Sync
@@ -248,26 +250,50 @@ export function useRepoCardState({
       const relativePath = `assets/${filename}`
       let saved = false
 
+      // 1. Immediately cache SVG in memory so live preview never shows broken image
+      if (typeof window !== 'undefined') {
+        window.__visualmarkSvgCache = window.__visualmarkSvgCache || {}
+        window.__visualmarkSvgCache[relativePath] = currentSvg
+        window.__visualmarkSvgCache[`./${relativePath}`] = currentSvg
+        window.dispatchEvent(
+          new CustomEvent('visualmark:svg-cache-updated', {
+            detail: { path: relativePath, svg: currentSvg }
+          })
+        )
+      }
+
+      // 2. Persist SVG to active workspace disk
       if (typeof window !== 'undefined' && window.electronAPI) {
-        if (window.electronAPI.getDefaultWorkspace) {
-          const ws = await window.electronAPI.getDefaultWorkspace()
-          if (ws && ws.rootPath) {
-            const cleanRoot = ws.rootPath.replace(/[/\\]+$/, '')
-            const fullPath = `${cleanRoot}/${relativePath}`
+        let baseDir = workspaceDirectory?.path
+        if (!baseDir && window.electronAPI.getDefaultWorkspace) {
+          try {
+            const ws = await window.electronAPI.getDefaultWorkspace()
+            if (ws && ws.rootPath) baseDir = ws.rootPath
+          } catch {}
+        }
+
+        if (baseDir && window.electronAPI.createFileDirect) {
+          const cleanRoot = baseDir.replace(/[/\\]+$/, '')
+          const fullPath = `${cleanRoot}/${relativePath}`
+          try {
             const res = await window.electronAPI.createFileDirect(fullPath, currentSvg)
             if (res && res.success) saved = true
+          } catch (e) {
+            console.warn('Could not save SVG to workspace path:', e)
           }
         }
-        if (!saved && window.electronAPI.createFileDirect) {
-          const res = await window.electronAPI.createFileDirect(relativePath, currentSvg)
-          if (res && res.success) saved = true
+
+
+
+        if (saved) {
+          window.dispatchEvent(new CustomEvent('workspace-tree-refresh'))
         }
       }
 
       const snippet = `<div align="center">\n  <a href="https://github.com/${cleanRepo}">\n    <img src="${relativePath}" alt="${repoName}" width="500" />\n  </a>\n</div>`
       onInsertBadge(snippet)
 
-      setSaveStatusMessage(saved ? `✓ Saved to ${relativePath} and embedded!` : '✓ Embedded into markdown document!')
+      setSaveStatusMessage(saved ? `✓ Saved to ${relativePath} and embedded!` : '✓ Vector SVG embedded into document!')
       setTimeout(() => setSaveStatusMessage(''), 3000)
     } catch (err) {
       console.error('Insert card error:', err)
@@ -716,7 +742,7 @@ export function RepoCardPreview(props) {
         <div className={`repo-canvas-stage ${previewBg === 'light' ? 'stage-light' : 'stage-dark'}`}>
           <div
             className="repo-svg-render-wrapper"
-            dangerouslySetInnerHTML={{ __html: currentSvg }}
+            dangerouslySetInnerHTML={{ __html: sanitizeSvg(currentSvg) }}
           />
         </div>
 

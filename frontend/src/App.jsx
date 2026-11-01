@@ -23,10 +23,7 @@ import StudioWorkspaceRenderer, { isStudioTabId } from './components/app/StudioW
 import AppModals from './components/app/AppModals'
 import {
   copyDocumentToClipboard,
-  downloadActiveFile,
-  downloadDocumentationSuite,
-  downloadHtmlDocument,
-  downloadPdfDocument
+  downloadActiveFile
 } from './utils/documentExportUtils'
 import { validateDocFilename } from './utils/filenameUtils'
 import { foldDataUris, unfoldDataUris } from './utils/dataUriFold'
@@ -223,6 +220,7 @@ Distributed under the MIT License.
   const [keybindings, setKeybindings] = useState(() => loadKeybindings())
   const [shortcutsInitialQuery, setShortcutsInitialQuery] = useState('')
   const [shortcutsAutoEditId, setShortcutsAutoEditId] = useState(null)
+  const [settingsCategory, setSettingsCategory] = useState('all')
   const [dirtyFiles, setDirtyFiles] = useState({}) // Tracks unsaved modifications { [fileName]: true }
   const [tabGroupingEnabled, setTabGroupingEnabled] = useState(() => {
     try {
@@ -534,6 +532,13 @@ Distributed under the MIT License.
       safeSetItem('readme_workspace_directory', JSON.stringify({ name: wsObj.name, path: wsObj.path }))
       addRecentWorkspace(folderPath, resolvedName)
 
+      // Notify Electron main process of active workspace
+      if (window.electronAPI?.setWorkspaceActive) {
+        try {
+          await window.electronAPI.setWorkspaceActive(folderPath)
+        } catch {}
+      }
+
       // Fetch live Git info
       if (window.electronAPI?.getGitInfo) {
         const git = await window.electronAPI.getGitInfo(folderPath)
@@ -560,7 +565,16 @@ Distributed under the MIT License.
       let fileToActive = null
 
       if (savedSession && Array.isArray(savedSession.openTabs)) {
-        tabsToOpen = savedSession.openTabs.filter((t) => newPathsMap[t] !== undefined)
+        tabsToOpen = savedSession.openTabs.filter((t) => {
+          if (newPathsMap[t] !== undefined) return true
+          if (t && typeof t === 'string' && !isStudioTabId(t) && !isPresetTabId(t)) {
+            const cleanRel = t.replace(/^\.[\\/]/, '')
+            const cleanWs = folderPath.replace(/[\\/]+$/, '')
+            newPathsMap[t] = `${cleanWs}/${cleanRel}`
+            return true
+          }
+          return false
+        })
         if (savedSession.activeFile && tabsToOpen.includes(savedSession.activeFile)) {
           fileToActive = savedSession.activeFile
         } else if (tabsToOpen.length > 0) {
@@ -597,6 +611,7 @@ Distributed under the MIT License.
         }
       }
 
+      setDirtyFiles({})
       setAdditionalFiles(loadedAdditional)
       setFilePathsMap(newPathsMap)
       setOpenDocTabs(tabsToOpen)
@@ -1065,41 +1080,80 @@ Distributed under the MIT License.
       return
     }
 
-    // Direct unsupported file info passed
-    if (unsupportedInfo) {
-      setUnsupportedFilesMap((prev) => ({ ...prev, [filename]: unsupportedInfo }))
+    // Direct unsupported file info passed or already in unsupportedFilesMap
+    const existingUnsupported = unsupportedInfo || unsupportedFilesMap[filename] || null
+    if (existingUnsupported) {
+      const infoToSet = unsupportedInfo || existingUnsupported
+      setUnsupportedFilesMap((prev) => ({
+        ...prev,
+        [filename]: infoToSet
+      }))
       setOpenDocTabs((prev) => (prev.includes(filename) ? prev : [...prev, filename]))
       setActiveFile(filename)
-      if (filePath) {
-        setLocalFilePath(filePath)
-        setFilePathsMap((prev) => ({ ...prev, [filename]: filePath }))
+      const targetPath = filePath || filePathsMap[filename] || existingUnsupported.filePath || null
+      if (targetPath) {
+        setLocalFilePath(targetPath)
+        setFilePathsMap((prev) => ({
+          ...prev,
+          [filename]: targetPath
+        }))
       }
       return
     }
 
-    // If filePath is passed but content is null, read file from disk
-    let resolvedContent = content
     let resolvedPath = filePath || filePathsMap[filename] || null
-    if (resolvedContent === null && resolvedPath && typeof window !== 'undefined' && window.electronAPI?.readFile) {
-      try {
-        const readRes = await window.electronAPI.readFile(resolvedPath)
-        if (readRes?.success) {
-          if (readRes.isUnsupported) {
-            setUnsupportedFilesMap((prev) => ({ ...prev, [filename]: readRes }))
-            setOpenDocTabs((prev) => (prev.includes(filename) ? prev : [...prev, filename]))
-            setActiveFile(filename)
-            setLocalFilePath(resolvedPath)
-            setFilePathsMap((prev) => ({ ...prev, [filename]: resolvedPath }))
-            return
+    if (!resolvedPath && workspaceDirectory?.path) {
+      const cleanWs = workspaceDirectory.path.replace(/[\\/]+$/, '')
+      resolvedPath = `${cleanWs}/${filename}`
+    }
+
+    let resolvedContent = content
+
+    // If content was not passed directly:
+    if (resolvedContent === null || resolvedContent === undefined) {
+      // 1. If active README and we have in-memory markdown edits
+      if (filename === 'README.md' && markdown && dirtyFiles['README.md']) {
+        resolvedContent = markdown
+      } else if (dirtyFiles[filename] && additionalFiles[filename] !== undefined) {
+        // 2. If this file has UNSAVED in-memory edits, keep user's active typing
+        resolvedContent = additionalFiles[filename]
+      } else if (resolvedPath && typeof window !== 'undefined' && window.electronAPI?.readFile) {
+        // 3. Otherwise, DISK is the authoritative source of truth! Read fresh from disk!
+        try {
+          const readRes = await window.electronAPI.readFile(resolvedPath)
+          if (readRes?.success) {
+            if (readRes.isUnsupported) {
+              setUnsupportedFilesMap((prev) => ({
+                ...prev,
+                [filename]: readRes
+              }))
+              setOpenDocTabs((prev) => (prev.includes(filename) ? prev : [...prev, filename]))
+              setActiveFile(filename)
+              setLocalFilePath(resolvedPath)
+              setFilePathsMap((prev) => ({
+                ...prev,
+                [filename]: resolvedPath
+              }))
+              return
+            }
+            resolvedContent = readRes.content
           }
-          resolvedContent = readRes.content
+        } catch (err) {
+          console.warn('Error reading file from disk:', err)
         }
-      } catch (err) {
-        console.warn('Error reading file:', err)
+      }
+
+      // 4. Fallback if not on disk (e.g. untitled in-memory file or offline web sandbox)
+      if (resolvedContent === null || resolvedContent === undefined) {
+        if (filename === 'README.md' && markdown) {
+          resolvedContent = markdown
+        } else if (additionalFiles[filename] !== undefined) {
+          resolvedContent = additionalFiles[filename]
+        }
       }
     }
 
-    // Supported text file: clear unsupported flag
+    // Supported text file: clear unsupported flag if it was previously set
     setUnsupportedFilesMap((prev) => {
       if (!prev[filename]) return prev
       const next = { ...prev }
@@ -1118,11 +1172,13 @@ Distributed under the MIT License.
       }
     }
 
-    if (filePath) {
-      setLocalFilePath(filePath)
-      setFilePathsMap((prev) => ({ ...prev, [filename]: filePath }))
-    } else {
-      setLocalFilePath(filePathsMap[filename] || null)
+    const finalPath = resolvedPath || filePath || filePathsMap[filename] || null
+    setLocalFilePath(finalPath)
+    if (finalPath) {
+      setFilePathsMap((prev) => ({
+        ...prev,
+        [filename]: finalPath
+      }))
     }
 
     setOpenDocTabs((prev) => (prev.includes(filename) ? prev : [...prev, filename]))
@@ -1141,7 +1197,7 @@ Distributed under the MIT License.
     window.requestAnimationFrame(restore)
     setTimeout(restore, 50)
     setTimeout(restore, 150)
-  }, [activeFile, filePathsMap])
+  }, [activeFile, filePathsMap, additionalFiles, unsupportedFilesMap, markdown, workspaceDirectory])
 
   const openWorkspaceDirectoryRef = useRef(openWorkspaceDirectory)
   openWorkspaceDirectoryRef.current = openWorkspaceDirectory
@@ -1288,7 +1344,10 @@ Distributed under the MIT License.
     return () => window.removeEventListener('visualmark:open-studio-tab', handleOpenStudio)
   }, [handleOpenStudioTab])
 
-  const handleOpenSettingsTab = useCallback(() => {
+  const handleOpenSettingsTab = useCallback((category = 'all') => {
+    const raw = typeof category === 'string' ? category.trim() : 'all'
+    const targetCat = raw === 'language' ? 'appearance' : (raw || 'all')
+    setSettingsCategory(targetCat)
     setOpenDocTabs((prev) => prev.filter((f) => !isStudioTabId(f)))
     setOpenStudioTabs((prev) => (prev.includes('settings') ? prev : [...prev, 'settings']))
     setActiveFile('settings')
@@ -1394,8 +1453,8 @@ Use the **Table Designer Studio** to visually craft, sort, and format tables wit
   }, [])
 
 
-  const handleUpdateKeybinding = useCallback((commandId, newKey) => {
-    saveKeybindingOverride(commandId, newKey)
+  const handleUpdateKeybinding = useCallback((commandId, newKey, replaceConflicts = false) => {
+    saveKeybindingOverride(commandId, newKey, replaceConflicts)
     setKeybindings(loadKeybindings())
   }, [])
 
@@ -1579,20 +1638,7 @@ Use the **Table Designer Studio** to visually craft, sort, and format tables wit
 
   const handleDownloadActiveFile = () => downloadActiveFile(currentContent, activeFile, showToast)
 
-  const handleDownloadSuite = () => downloadDocumentationSuite(markdown, additionalFiles, showToast)
-
   const handleDownload = handleDownloadActiveFile
-
-  const handleDownloadHtml = () => downloadHtmlDocument(currentContent, activeFile, showToast)
-
-  const handleDownloadPdf = () =>
-    downloadPdfDocument({
-      content: currentContent,
-      filename: activeFile,
-      themeMode,
-      previewElement: document.querySelector('.preview-canvas'),
-      showToast
-    })
 
   // Desktop Native Open File
   const handleOpenNativeFile = useCallback(async () => {
@@ -1898,10 +1944,12 @@ Use the **Table Designer Studio** to visually craft, sort, and format tables wit
     handleOpenNativeFile,
     handleOpenNativeFolder,
     handleSaveNativeFile,
-    handleDownloadPdf,
     handleCreateUntitledFile,
     handleCloseFile,
+    handleCloseWorkspace,
     handleCloseStudioTab,
+    handleCopy,
+    toggleThemeMode,
     setActiveActivityTab,
     setSidebarCollapsed,
     setViewMode,
@@ -1921,12 +1969,8 @@ Use the **Table Designer Studio** to visually craft, sort, and format tables wit
     handleOpenNativeFolder,
     setIsCloneModalOpen,
     handleCloseWorkspace,
-    handleDownloadPdf,
     setViewMode,
     handleCopy,
-    handleDownloadActiveFile,
-    handleDownloadSuite,
-    handleDownloadHtml,
     setSidebarCollapsed,
     setIsZenMode,
     setOrientation,
@@ -1972,9 +2016,6 @@ Use the **Table Designer Studio** to visually craft, sort, and format tables wit
           onGenerate={() => handleGenerate()}
           onCopy={handleCopy}
           onDownload={handleDownloadActiveFile}
-          onDownloadSuite={handleDownloadSuite}
-          onDownloadHtml={handleDownloadHtml}
-          onDownloadPdf={handleDownloadPdf}
           onOpenFile={handleOpenNativeFile}
           onOpenFolder={handleOpenNativeFolder}
           onSaveFile={handleSaveNativeFile}
@@ -2218,6 +2259,7 @@ Use the **Table Designer Studio** to visually craft, sort, and format tables wit
                 handleResetKeybindings={handleResetKeybindings}
                 shortcutsInitialQuery={shortcutsInitialQuery}
                 shortcutsAutoEditId={shortcutsAutoEditId}
+                settingsCategory={settingsCategory}
                 handleOpenSettingsTab={handleOpenSettingsTab}
                 setIsCloneModalOpen={setIsCloneModalOpen}
                 handleOpenNativeFolder={handleOpenNativeFolder}

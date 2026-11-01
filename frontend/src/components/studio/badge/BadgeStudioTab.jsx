@@ -7,7 +7,17 @@ import {
   GITHUB_METRICS,
   CURATED_PACKS
 } from '../../../data/badgeStudioData'
-import { escapeShieldsText } from '../../../utils/modernRepoCardEngine'
+import {
+  generateShieldsBadgeUrl,
+  generateSkillIconsUrl,
+  formatSingleBadgeMarkdown,
+  formatSingleBadgeHtml,
+  formatRackMarkdown,
+  formatSkillIconsMarkdown,
+  formatPackMarkdown,
+  getRackBadgeUrl,
+  getStoredCustomPacks
+} from '../../../utils/badgeEngine'
 import SingleBadgeForm from './SingleBadgeForm'
 import SkillIconsForm from './SkillIconsForm'
 import BadgeRackForm from './BadgeRackForm'
@@ -21,11 +31,11 @@ export default function BadgeStudioTab({
   onBackToReadme,
   targetContext = null
 }) {
-  // Navigation Mode
+  // Navigation Mode: 'single' | 'rack' | 'skillicons' | 'github' | 'packs'
   const [activeMode, setActiveMode] = useState('single')
 
-  // Badge Architecture Format
-  const [formatType, setFormatType] = useState('brand-plate') // 'split' | 'brand-plate' | 'icon-only' | 'badgen'
+  // Badge Architecture Format: 'split' | 'brand-plate' | 'icon-only' | 'badgen'
+  const [formatType, setFormatType] = useState('brand-plate')
 
   // Single Badge Parameters
   const [label, setLabel] = useState('React')
@@ -124,13 +134,15 @@ export default function BadgeStudioTab({
 
   // GitHub Metrics Mode State
   const [customRepo, setCustomRepo] = useState('')
+  const [ciWorkflow, setCiWorkflow] = useState('ci.yml')
   const [githubMetricsStyle, setGithubMetricsStyle] = useState('for-the-badge')
   const [selectedMetrics, setSelectedMetrics] = useState(['stars', 'forks', 'issues', 'prs', 'release', 'license'])
 
   // Curated Packs State
-  const [selectedPackId, setSelectedPackId] = useState('pack-fullstack')
+  const [selectedPackId, setSelectedPackId] = useState('pack-fullstack-next')
+  const [packLayout, setPackLayout] = useState('centered')
 
-  // Output Syntax view (markdown vs html vs url)
+  // Output Syntax view (markdown vs html vs url vs svg)
   const [syntaxView, setSyntaxView] = useState('markdown')
 
   // Error States
@@ -155,122 +167,45 @@ export default function BadgeStudioTab({
 
   // Single Badge Image URL generator
   const singleBadgeUrl = useMemo(() => {
-    const cleanC = color.replace('#', '').trim() || '6366f1'
-
-    if (formatType === 'brand-plate') {
-      const cleanT = escapeShieldsText(plateTitle || label || 'brand')
-      let url = `https://img.shields.io/badge/${cleanT}-${cleanC}?style=${style}`
-      if (logo.trim()) {
-        url += `&logo=${encodeURIComponent(logo.trim())}`
-        if (logoColor) url += `&logoColor=${encodeURIComponent(logoColor)}`
-      }
-      return url
-    }
-
-    if (formatType === 'icon-only') {
-      let url = `https://img.shields.io/badge/--${cleanC}?style=${style}`
-      if (logo.trim()) {
-        url += `&logo=${encodeURIComponent(logo.trim())}&logoColor=white`
-      }
-      return url
-    }
-
-    if (formatType === 'badgen') {
-      const bLabel = encodeURIComponent(label.trim() || 'badge')
-      const bStatus = encodeURIComponent(message.trim() || 'status')
-      return `https://badgen.net/badge/${bLabel}/${bStatus}/${cleanC}`
-    }
-
-    // Default: 'split' dual-segment
-    const cleanL = escapeShieldsText(label || 'badge')
-    const cleanM = escapeShieldsText(message || 'value')
-    let url = `https://img.shields.io/badge/${cleanL}-${cleanM}-${cleanC}?style=${style}`
-    if (twoTone && labelColor.trim()) {
-      url += `&labelColor=${encodeURIComponent(labelColor.replace('#', '').trim())}`
-    }
-    if (logo.trim()) {
-      url += `&logo=${encodeURIComponent(logo.trim())}`
-      if (logoColor) url += `&logoColor=${encodeURIComponent(logoColor)}`
-    }
-    return url
-  }, [formatType, label, message, color, labelColor, style, logo, logoColor, plateTitle, twoTone])
+    return generateShieldsBadgeUrl({
+      formatType,
+      plateTitle,
+      label,
+      message,
+      color,
+      labelColor,
+      twoTone,
+      style,
+      logo,
+      logoColor
+    })
+  }, [formatType, plateTitle, label, message, color, labelColor, twoTone, style, logo, logoColor])
 
   // Single Badge Markdown code
   const singleBadgeMarkdown = useMemo(() => {
     const alt = plateTitle || `${label} ${message}`.trim() || 'Badge'
-    if (linkUrl.trim()) {
-      return `[![${alt}](${singleBadgeUrl})](${linkUrl.trim()})`
-    }
-    return `![${alt}](${singleBadgeUrl})`
+    return formatSingleBadgeMarkdown({ url: singleBadgeUrl, alt, link: linkUrl })
   }, [singleBadgeUrl, linkUrl, plateTitle, label, message])
 
   // Single Badge HTML code
   const singleBadgeHtml = useMemo(() => {
     const alt = plateTitle || `${label} ${message}`.trim() || 'Badge'
-    if (linkUrl.trim()) {
-      return `<a href="${linkUrl.trim()}"><img src="${singleBadgeUrl}" alt="${alt}" /></a>`
-    }
-    return `<img src="${singleBadgeUrl}" alt="${alt}" />`
+    return formatSingleBadgeHtml({ url: singleBadgeUrl, alt, link: linkUrl })
   }, [singleBadgeUrl, linkUrl, plateTitle, label, message])
 
   // SkillIcons Image URL generator
   const skillIconsUrl = useMemo(() => {
-    const iconsParam = selectedSkillIcons.join(',')
-    return `https://skillicons.dev/icons?i=${iconsParam}&theme=${skillTheme}&perline=${skillPerLine}`
+    return generateSkillIconsUrl(selectedSkillIcons, skillTheme, skillPerLine)
   }, [selectedSkillIcons, skillTheme, skillPerLine])
 
   // SkillIcons Markdown
   const skillIconsMarkdown = useMemo(() => {
-    const link = repoUrl ? repoUrl : 'https://skillicons.dev'
-    return `<div align="center">\n  <a href="${link}">\n    <img src="${skillIconsUrl}" alt="My Skills" />\n  </a>\n</div>`
+    return formatSkillIconsMarkdown(skillIconsUrl, repoUrl)
   }, [skillIconsUrl, repoUrl])
-
-  // Rack Mode Item URL
-  const getRackItemUrl = (b) => {
-    const bC = (b.color || '6366f1').replace('#', '')
-    const logoColorParam = b.logoColor ? `&logoColor=${encodeURIComponent(b.logoColor)}` : '&logoColor=white'
-    if (b.format === 'brand-plate') {
-      let u = `https://img.shields.io/badge/${escapeShieldsText(b.title || b.label)}-${bC}?style=${b.style || style}`
-      if (b.logo) u += `&logo=${encodeURIComponent(b.logo)}${logoColorParam}`
-      return u
-    }
-    if (b.format === 'icon-only') {
-      let u = `https://img.shields.io/badge/--${bC}?style=${b.style || style}`
-      if (b.logo) u += `&logo=${encodeURIComponent(b.logo)}${logoColorParam}`
-      return u
-    }
-    let u = `https://img.shields.io/badge/${escapeShieldsText(b.label)}-${escapeShieldsText(b.message)}-${bC}?style=${b.style || style}`
-    if (b.labelColor) u += `&labelColor=${encodeURIComponent(b.labelColor.replace('#', ''))}`
-    if (b.logo) u += `&logo=${encodeURIComponent(b.logo)}${logoColorParam}`
-    return u
-  }
 
   // Rack Markdown code
   const rackMarkdown = useMemo(() => {
-    if (rackBadges.length === 0) return '<!-- Empty Badge Rack -->'
-    const badgeMarkdownItems = rackBadges.map((b) => {
-      const url = getRackItemUrl(b)
-      const alt = b.title || `${b.label} ${b.message}`
-      return b.link ? `[![${alt}](${url})](${b.link})` : `![${alt}](${url})`
-    })
-
-    if (rackLayout === 'center-div') {
-      return `<div align="center">\n\n${badgeMarkdownItems.join('\n')}\n\n</div>`
-    }
-    if (rackLayout === 'paragraph') {
-      return `<p align="center">\n  ${badgeMarkdownItems.join('\n  ')}\n</p>`
-    }
-    if (rackLayout === 'table') {
-      const headers = '| Technology | Status | Role |\n| :--- | :---: | :--- |'
-      const rows = rackBadges.map((b) => {
-        const url = getRackItemUrl(b)
-        const alt = b.title || `${b.label} ${b.message}`
-        const img = `![${alt}](${url})`
-        return `| **${b.title || b.label}** | ${img} | Core Stack |`
-      })
-      return `${headers}\n${rows.join('\n')}`
-    }
-    return badgeMarkdownItems.join(' ')
+    return formatRackMarkdown(rackBadges, rackLayout, style)
   }, [rackBadges, rackLayout, style])
 
   // GitHub Metrics Markdown
@@ -279,7 +214,7 @@ export default function BadgeStudioTab({
     const lines = metricsToRender.map((m) => {
       let bUrl = ''
       if (m.id === 'actions') {
-        bUrl = `https://img.shields.io/github/actions/workflow/status/${cleanRepo}/${m.workflow || 'ci.yml'}?style=${githubMetricsStyle}&logo=githubactions&logoColor=white`
+        bUrl = `https://img.shields.io/github/actions/workflow/status/${cleanRepo}/${ciWorkflow || 'ci.yml'}?style=${githubMetricsStyle}&logo=githubactions&logoColor=white`
       } else {
         bUrl = `https://img.shields.io/github/${m.path}/${cleanRepo}?style=${githubMetricsStyle}`
       }
@@ -288,26 +223,21 @@ export default function BadgeStudioTab({
     })
 
     return `<div align="center">\n\n${lines.join('\n')}\n\n</div>`
-  }, [selectedMetrics, cleanRepo, githubMetricsStyle])
+  }, [selectedMetrics, cleanRepo, githubMetricsStyle, ciWorkflow])
 
-  // Curated Pack selected
+  // Curated & Custom Packs selected
   const selectedPack = useMemo(() => {
-    return CURATED_PACKS.find((p) => p.id === selectedPackId) || CURATED_PACKS[0]
+    const custom = getStoredCustomPacks()
+    const all = [...custom, ...CURATED_PACKS]
+    return all.find((p) => p.id === selectedPackId) || CURATED_PACKS[0]
   }, [selectedPackId])
 
   // Curated Pack Markdown
   const packMarkdown = useMemo(() => {
-    if (!selectedPack || !selectedPack.badges) return ''
-    const lines = selectedPack.badges.map((b) => {
-      const bC = (b.color || '6366f1').replace('#', '')
-      const bUrl = `https://img.shields.io/badge/${escapeShieldsText(b.label)}-${escapeShieldsText(b.message)}-${bC}?style=${b.style || style}&logo=${encodeURIComponent(b.logo || '')}&logoColor=white`
-      const alt = `${b.label} ${b.message}`
-      return repoUrl ? `[![${alt}](${bUrl})](${repoUrl})` : `![${alt}](${bUrl})`
-    })
-    return `<div align="center">\n\n${lines.join('\n')}\n\n</div>`
-  }, [selectedPack, style, repoUrl])
+    return formatPackMarkdown(selectedPack, style, repoUrl, packLayout)
+  }, [selectedPack, style, repoUrl, packLayout])
 
-  // Active Output Snippet based on current mode
+  // Active Output Snippet based on current mode & syntax switcher
   const activeSnippet = useMemo(() => {
     if (activeMode === 'single') {
       if (syntaxView === 'html') return singleBadgeHtml
@@ -319,7 +249,17 @@ export default function BadgeStudioTab({
     if (activeMode === 'github') return dynamicMetricsMarkdown
     if (activeMode === 'packs') return packMarkdown
     return singleBadgeMarkdown
-  }, [activeMode, syntaxView, singleBadgeHtml, singleBadgeUrl, singleBadgeMarkdown, rackMarkdown, skillIconsMarkdown, dynamicMetricsMarkdown, packMarkdown])
+  }, [
+    activeMode,
+    syntaxView,
+    singleBadgeHtml,
+    singleBadgeUrl,
+    singleBadgeMarkdown,
+    rackMarkdown,
+    skillIconsMarkdown,
+    dynamicMetricsMarkdown,
+    packMarkdown
+  ])
 
   // Filtered SimpleIcons
   const filteredIcons = useMemo(() => {
@@ -380,7 +320,7 @@ export default function BadgeStudioTab({
     )
   }
 
-  const handleAddCurrentToRack = () => {
+  const handleAddCurrentToRack = useCallback(() => {
     const newBadge = {
       id: Date.now().toString(),
       format: formatType,
@@ -391,11 +331,27 @@ export default function BadgeStudioTab({
       labelColor: twoTone ? labelColor : '',
       style: style,
       logo: logo,
+      logoColor: logoColor,
       link: linkUrl
     }
     setRackBadges((prev) => [...prev, newBadge])
     setActiveMode('rack')
-  }
+  }, [formatType, plateTitle, label, message, color, twoTone, labelColor, style, logo, logoColor, linkUrl])
+
+  const handleEditBadgeInSingle = useCallback((b) => {
+    setFormatType(b.format || 'brand-plate')
+    setPlateTitle(b.title || b.label || '')
+    setLabel(b.label || '')
+    setMessage(b.message || '')
+    setColor(b.color || '6366f1')
+    setLabelColor(b.labelColor || '18181b')
+    setTwoTone(Boolean(b.labelColor))
+    setStyle(b.style || 'for-the-badge')
+    setLogo(b.logo || '')
+    setLogoColor(b.logoColor || 'white')
+    setLinkUrl(b.link || '')
+    setActiveMode('single')
+  }, [])
 
   const handleRemoveRackBadge = (id) => {
     setRackBadges((prev) => prev.filter((b) => b.id !== id))
@@ -416,16 +372,18 @@ export default function BadgeStudioTab({
   }
 
   const handleLoadPackIntoRack = (pack) => {
+    if (!pack || !pack.badges) return
     const loaded = pack.badges.map((b, idx) => ({
       id: `${Date.now()}_${idx}`,
-      format: 'split',
-      title: `${b.label} ${b.message}`,
-      label: b.label,
-      message: b.message,
-      color: b.color,
-      labelColor: '',
+      format: b.message ? 'split' : 'brand-plate',
+      title: b.title || `${b.label} ${b.message}`.trim(),
+      label: b.label || 'tech',
+      message: b.message || '',
+      color: b.color || '6366f1',
+      labelColor: b.labelColor || '',
       style: b.style || style,
       logo: b.logo || '',
+      logoColor: 'white',
       link: repoUrl || ''
     }))
     setRackBadges(loaded)
@@ -484,7 +442,7 @@ export default function BadgeStudioTab({
           ? `${selectedSkillIcons.length} skills • ${skillTheme}`
           : activeMode === 'github'
           ? `${selectedMetrics.length} metrics`
-          : selectedPack.title}
+          : selectedPack?.title || 'Pack'}
       </span>
     </div>
   )
@@ -496,7 +454,7 @@ export default function BadgeStudioTab({
       case 'rack': return 'Insert Badge Rack'
       case 'skillicons': return 'Insert SkillIcons'
       case 'github': return 'Insert GitHub Metrics'
-      case 'packs': return 'Insert Curated Pack'
+      case 'packs': return 'Insert Tech Pack'
       default: return 'Insert Badge'
     }
   }, [activeMode, targetContext])
@@ -505,7 +463,7 @@ export default function BadgeStudioTab({
     <StudioShell
       studioId="badges.studio"
       title="Shields.io Badge Studio"
-      subtitle="SVG shields, developer tech racks, and real-time repository metrics"
+      subtitle="Vector shields, developer tech racks, and real-time repository metrics"
       badge="Shields.io"
       accentColor="#38bdf8"
       icon={
@@ -558,6 +516,7 @@ export default function BadgeStudioTab({
               setLinkUrl={setLinkUrl}
               repoUrl={repoUrl}
               onAddToRack={handleAddCurrentToRack}
+              handleAddCurrentToRack={handleAddCurrentToRack}
             />
           )}
 
@@ -565,12 +524,15 @@ export default function BadgeStudioTab({
             <BadgeRackForm
               rackBadges={rackBadges}
               setRackBadges={setRackBadges}
+              style={style}
               handleRemoveRackBadge={handleRemoveRackBadge}
               handleApplyStyleToRack={handleApplyStyleToRack}
               handleApplyThemeToRack={handleApplyThemeToRack}
               rackLayout={rackLayout}
               setRackLayout={setRackLayout}
+              setActiveMode={setActiveMode}
               onSwitchToSingle={() => setActiveMode('single')}
+              onEditBadgeInSingle={handleEditBadgeInSingle}
             />
           )}
 
@@ -594,7 +556,8 @@ export default function BadgeStudioTab({
               customRepo={customRepo}
               cleanRepo={cleanRepo}
               setCustomRepo={setCustomRepo}
-              repoUrl={repoUrl}
+              ciWorkflow={ciWorkflow}
+              setCiWorkflow={setCiWorkflow}
               githubMetricsStyle={githubMetricsStyle}
               setGithubMetricsStyle={setGithubMetricsStyle}
               selectedMetrics={selectedMetrics}
@@ -607,7 +570,13 @@ export default function BadgeStudioTab({
             <CuratedPacksForm
               selectedPackId={selectedPackId}
               setSelectedPackId={setSelectedPackId}
+              style={style}
+              setStyle={setStyle}
+              packLayout={packLayout}
+              setPackLayout={setPackLayout}
+              repoUrl={repoUrl}
               handleLoadPackIntoRack={handleLoadPackIntoRack}
+              onInsertBadge={onInsertBadge}
             />
           )}
         </div>
@@ -632,12 +601,16 @@ export default function BadgeStudioTab({
           skillIconsError={skillIconsError}
           setSkillIconsError={setSkillIconsError}
           rackBadges={rackBadges}
+          rackLayout={rackLayout}
           selectedMetrics={selectedMetrics}
           githubMetricsStyle={githubMetricsStyle}
           cleanRepo={cleanRepo}
+          ciWorkflow={ciWorkflow}
           metricsError={metricsError}
           setMetricsError={setMetricsError}
           selectedPack={selectedPack}
+          packLayout={packLayout}
+          logo={logo}
         />
       }
     />

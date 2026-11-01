@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { sanitizeSafeMediaUrl } from '../../../utils/securityUtils'
+import { sanitizeSafeMediaUrl, sanitizeSvg } from '../../../utils/securityUtils'
+import { parseVideoEmbed, resolveLocalMediaPath } from '../../../utils/mediaUtils'
 import {
   getHudTelemetrySvg,
   getNeofetchSvg,
@@ -7,7 +8,10 @@ import {
   getSwissMinimalSvg,
   getGlassOrbitSvg,
   getGradientRibbonSvg,
-  getCapsuleSvg
+  getCapsuleSvg,
+  getTypingSvg,
+  getGeometricMeshSvg,
+  getMockupSvg
 } from './svgBannerGenerators'
 
 export default function ImageStudioLivePreview({
@@ -35,6 +39,7 @@ export default function ImageStudioLivePreview({
   capsuleDescAlignY,
   capsuleShape,
   bannerHeight,
+  bannerSyntaxMode,
   neofetchOs,
   neofetchLicense,
   getCapsuleUrl,
@@ -44,6 +49,14 @@ export default function ImageStudioLivePreview({
   typingColor,
   typingFont,
   typingLines,
+  typingPause,
+  typingSpeed,
+  typingEffect,
+  typingLayout,
+  typingAlign,
+  typingFontSize,
+  typingWidth,
+  typingHeight,
   resolvedUrl,
   imageUrl,
   imageAlt,
@@ -78,10 +91,53 @@ export default function ImageStudioLivePreview({
   motionMuted,
   motionControls,
   motionGlow,
-  motionBrowserUrl
+  motionBrowserUrl,
+  workspaceDirectory = null
 }) {
   const [capsuleError, setCapsuleError] = useState(false)
   const [motionMediaError, setMotionMediaError] = useState(false)
+  const [resolvedMotionSrc, setResolvedMotionSrc] = useState(motionUrl)
+
+  useEffect(() => {
+    let active = true
+    setMotionMediaError(false)
+
+    if (!motionUrl || !motionUrl.trim()) {
+      setResolvedMotionSrc('')
+      return
+    }
+
+    const clean = motionUrl.trim()
+    const embed = parseVideoEmbed(clean)
+    if (embed) {
+      setResolvedMotionSrc(embed.embedUrl)
+      return
+    }
+
+    if (/^(https?:|\/\/|data:|blob:)/i.test(clean)) {
+      setResolvedMotionSrc(clean)
+      return
+    }
+
+    const localPath = resolveLocalMediaPath(clean, workspaceDirectory)
+    if (localPath && window.electronAPI?.readLocalMedia) {
+      window.electronAPI.readLocalMedia(localPath).then((res) => {
+        if (!active) return
+        if (res?.success && res.dataUrl) {
+          setResolvedMotionSrc(res.dataUrl)
+        } else {
+          setResolvedMotionSrc(clean)
+        }
+      }).catch(() => {
+        if (active) setResolvedMotionSrc(clean)
+      })
+      return () => {
+        active = false
+      }
+    }
+
+    setResolvedMotionSrc(clean)
+  }, [motionUrl, workspaceDirectory])
 
   // Reset motion error on url or type change
   useEffect(() => {
@@ -192,7 +248,36 @@ export default function ImageStudioLivePreview({
   }
 
   const renderMotionMediaContent = () => {
-    if (!motionUrl || !motionUrl.trim() || motionMediaError) {
+    const cleanUrl = (motionUrl || '').trim()
+
+    // 1. Video Embeds (YouTube, Vimeo, Loom)
+    const embed = parseVideoEmbed(cleanUrl)
+    if (embed) {
+      return (
+        <div className="motion-video-wrapper" style={{ width: '100%', lineHeight: 0, position: 'relative' }}>
+          <iframe
+            key={embed.embedUrl}
+            src={embed.embedUrl}
+            title={motionTitle || 'Video Demo'}
+            width="100%"
+            height="380"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            style={{
+              width: '100%',
+              minHeight: '340px',
+              border: 'none',
+              display: 'block',
+              borderRadius: motionFrameStyle === 'clean-border' ? '8px' : '0 0 6px 6px'
+            }}
+          />
+        </div>
+      )
+    }
+
+    // 2. Playback / Error Handling
+    if (!cleanUrl) {
       return (
         <div className="motion-placeholder-card">
           <div className="motion-placeholder-icon-wrap">
@@ -202,41 +287,83 @@ export default function ImageStudioLivePreview({
           </div>
           <div className="motion-placeholder-title">{motionTitle || 'Motion Showcase Canvas'}</div>
           <div className="motion-placeholder-desc">
-            {motionUrl && motionUrl.trim()
-              ? `Video / GIF format (${motionType.toUpperCase()}) cannot be rendered directly in current preview. Markdown syntax is 100% valid for GitHub.`
-              : 'Enter a local workspace path (e.g. assets/demo.mp4) or select a sample preset from the left panel.'}
+            Enter a YouTube link, local workspace path (e.g. <code>assets/demo.mp4</code>), or select a sample preset.
           </div>
           <div className="motion-placeholder-badge">
             <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>verified</span>
-            <span>{motionType === 'video' ? 'HTML5 Video Ready' : 'Animated GIF Ready'}</span>
+            <span>{motionType === 'video' ? 'Video Player Ready' : 'Animated GIF Ready'}</span>
           </div>
         </div>
       )
     }
 
-    if (motionType === 'video') {
+    if (motionMediaError) {
       return (
-        <div className="motion-video-wrapper">
+        <div className="motion-placeholder-card" style={{ borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+          <div className="motion-placeholder-icon-wrap" style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '28px', color: '#f87171' }}>
+              movie_off
+            </span>
+          </div>
+          <div className="motion-placeholder-title" style={{ color: '#fca5a5' }}>Unable to Play Media Stream</div>
+          <div className="motion-placeholder-desc">
+            Failed to load video codec or media file at: <code style={{ wordBreak: 'break-all', color: '#cbd5e1' }}>{cleanUrl}</code>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+            <button
+              type="button"
+              className="video-fallback-btn"
+              onClick={() => {
+                if (window.electronAPI?.openExternalUrl && cleanUrl.startsWith('http')) {
+                  window.electronAPI.openExternalUrl(cleanUrl)
+                } else if (cleanUrl.startsWith('http')) {
+                  window.open(cleanUrl, '_blank')
+                }
+              }}
+            >
+              <span className="material-symbols-outlined">open_in_new</span>
+              <span>Open in Browser</span>
+            </button>
+            <button
+              type="button"
+              className="video-fallback-btn"
+              onClick={() => setMotionMediaError(false)}
+            >
+              <span className="material-symbols-outlined">refresh</span>
+              <span>Retry</span>
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    // 3. Direct HTML5 Video
+    if (motionType === 'video') {
+      const videoSrc = resolvedMotionSrc || cleanUrl
+      return (
+        <div className="motion-video-wrapper" style={{ width: '100%', position: 'relative' }}>
           <video
-            key={motionUrl}
-            src={sanitizeSafeMediaUrl(motionUrl, '')}
+            key={videoSrc}
+            src={sanitizeSafeMediaUrl(videoSrc, '')}
             autoPlay={motionAutoplay}
             loop={motionLoop}
             muted={motionMuted}
             controls={motionControls}
             playsInline
             onError={() => setMotionMediaError(true)}
-            style={{ width: '100%', height: 'auto', display: 'block', minHeight: '200px', objectFit: 'contain' }}
+            style={{ width: '100%', height: 'auto', display: 'block', minHeight: '200px', objectFit: 'contain', background: '#000' }}
           />
         </div>
       )
     }
 
+    // 4. Animated GIF / Image
+    const imgSrc = resolvedMotionSrc || cleanUrl
     return (
-      <div className="motion-video-wrapper">
+      <div className="motion-video-wrapper" style={{ width: '100%', position: 'relative' }}>
         <img
-          key={motionUrl}
-          src={sanitizeSafeMediaUrl(motionUrl, '')}
+          key={imgSrc}
+          src={sanitizeSafeMediaUrl(imgSrc, '')}
           alt={motionTitle || 'Motion Demo'}
           onError={() => setMotionMediaError(true)}
           style={{ width: '100%', height: 'auto', display: 'block', minHeight: '160px', objectFit: 'contain' }}
@@ -294,117 +421,136 @@ export default function ImageStudioLivePreview({
         <div className="banner-preview-box" style={{ width: '100%' }}>
           {/* Stitch HUD Telemetry */}
           {bannerType === 'hud-telemetry' && (
-            <div dangerouslySetInnerHTML={{ __html: getHudTelemetrySvg(svgParams) }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeSvg(getHudTelemetrySvg(svgParams)) }} />
           )}
 
           {/* Neofetch Terminal */}
           {bannerType === 'neofetch' && (
-            <div dangerouslySetInnerHTML={{ __html: getNeofetchSvg(svgParams) }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeSvg(getNeofetchSvg(svgParams)) }} />
           )}
 
           {/* Cyberpunk Perspective Grid */}
           {bannerType === 'cyberpunk-grid' && (
-            <div dangerouslySetInnerHTML={{ __html: getCyberpunkGridSvg(svgParams) }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeSvg(getCyberpunkGridSvg(svgParams)) }} />
           )}
 
           {/* Swiss Typographic Grid */}
           {bannerType === 'swiss-minimal' && (
-            <div dangerouslySetInnerHTML={{ __html: getSwissMinimalSvg(svgParams) }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeSvg(getSwissMinimalSvg(svgParams)) }} />
           )}
 
           {/* Glassmorphism Tech Matrix */}
           {bannerType === 'glass-orbit' && (
-            <div dangerouslySetInnerHTML={{ __html: getGlassOrbitSvg(svgParams) }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeSvg(getGlassOrbitSvg(svgParams)) }} />
           )}
 
           {/* Aurora Flowing Ribbon */}
           {bannerType === 'gradient-ribbon' && (
-            <div dangerouslySetInnerHTML={{ __html: getGradientRibbonSvg(svgParams) }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeSvg(getGradientRibbonSvg(svgParams)) }} />
           )}
 
 
 
-          {/* Dynamic Capsule Header with Resilient Vector Fallback */}
+          {/* Dynamic Capsule Vector Header */}
           {bannerType === 'capsule' && (
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              {!capsuleError ? (
-                <img
-                  src={getCapsuleUrl()}
-                  alt={`${bannerTitle} Banner`}
-                  style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '8px' }}
-                  onError={() => setCapsuleError(true)}
-                />
-              ) : (
-                <div style={{ width: '100%' }}>
-                  <div
-                    dangerouslySetInnerHTML={{
-                      __html: getCapsuleSvg({
-                        bannerTitle,
-                        bannerSubtitle,
-                        capsuleShape,
-                        bannerTheme: activeTheme,
-                        customHex1,
-                        customHex2,
-                        isCustomColor,
-                        fontColor: capsuleFontColor,
-                        descColor: capsuleDescColor,
-                        bannerHeight,
-                        fontSize: capsuleTitleSize,
-                        descSize: capsuleDescSize,
-                        fontAlignY: capsuleFontAlignY,
-                        descAlignY: capsuleDescAlignY,
-                        capsuleAnimation
-                      })
-                    }}
-                    style={{ width: '100%', borderRadius: '8px', overflow: 'hidden' }}
-                  />
-                  <div className="capsule-offline-pill">
-                    <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>bolt</span>
-                    <span>Offline Vector Preview active • 100% Vector fidelity preview • Markdown URL is ready</span>
-                  </div>
-                </div>
-              )}
-            </div>
+            <div
+              style={{ width: '100%', borderRadius: '8px', overflow: 'hidden' }}
+              dangerouslySetInnerHTML={{
+                __html: sanitizeSvg(getCapsuleSvg({
+                  bannerTitle,
+                  bannerSubtitle,
+                  capsuleShape,
+                  bannerTheme: activeTheme,
+                  customHex1,
+                  customHex2,
+                  isCustomColor,
+                  fontColor: capsuleFontColor,
+                  descColor: capsuleDescColor,
+                  bannerHeight,
+                  fontSize: capsuleTitleSize,
+                  descSize: capsuleDescSize,
+                  fontAlignY: capsuleFontAlignY,
+                  descAlignY: capsuleDescAlignY,
+                  capsuleAnimation
+                }))
+              }}
+            />
           )}
 
-
-          {/* Animated Typing Loop */}
+          {/* Animated Typing Terminal Loop */}
           {bannerType === 'typing' && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-              {!typingError ? (
+            bannerSyntaxMode === 'service-url' && !typingError ? (
+              <div
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: (typingAlign || 'center') === 'center' ? 'center' : 'flex-start',
+                  padding: '24px 16px',
+                  background: typingLayout === 'clean' ? 'transparent' : 'rgba(0, 0, 0, 0.25)',
+                  borderRadius: '10px',
+                  overflow: 'hidden'
+                }}
+              >
                 <img
-                  src={sanitizeSafeMediaUrl(getTypingUrl(), '')}
-                  alt={`${bannerTitle} Typing`}
-                  style={{ maxWidth: '100%', height: 'auto' }}
+                  src={getTypingUrl()}
+                  alt="README Typing SVG Preview"
                   onError={() => setTypingError(true)}
+                  style={{
+                    maxWidth: '100%',
+                    height: 'auto',
+                    display: 'block'
+                  }}
                 />
-              ) : (
-                <div className="simulated-typing-banner">
-                  <div
-                    className="simulated-typing-text"
-                    style={{
-                      color: `#${(typingColor || '6366F1').replace('#', '')}`,
-                      fontFamily: typingFont === 'Fira Code' ? "'Fira Code', monospace" : 'monospace'
-                    }}
-                  >
-                    <span>{typingLines.split(';')[0] || bannerTitle}</span>
-                    <span className="simulated-typing-cursor">|</span>
-                  </div>
-                  <div className="offline-notice-pill">
-                    <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>wifi_off</span>
-                    <span>Typing CDN timed out • Simulated preview active • Markdown is ready</span>
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: (typingAlign || 'center') === 'center' ? 'center' : 'flex-start',
+                  borderRadius: '10px',
+                  overflow: 'hidden',
+                  padding: typingLayout === 'clean' ? '16px 0' : '0'
+                }}
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeSvg(getTypingSvg({
+                    bannerTitle,
+                    bannerSubtitle,
+                    typingLines,
+                    typingFont,
+                    typingColor,
+                    typingPause,
+                    typingSpeed,
+                    typingEffect,
+                    typingLayout,
+                    typingAlign,
+                    typingFontSize,
+                    typingWidth,
+                    typingHeight: typingLayout === 'clean' ? 90 : 160,
+                    bannerTheme: activeTheme,
+                    customHex1,
+                    customHex2,
+                    isCustomColor
+                  }))
+                }}
+              />
+            )
           )}
 
-          {/* Curated Tech Cover */}
-          {bannerType === 'cover' && (
-            <img
-              src={sanitizeSafeMediaUrl(bannerTheme?.coverUrl, '')}
-              alt={`${bannerTitle} Cover`}
-              style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '10px' }}
+          {/* Geometric Polygon & Crystal Mesh Cover */}
+          {(bannerType === 'geometric-mesh' || bannerType === 'cover') && (
+            <div
+              style={{ width: '100%', borderRadius: '10px', overflow: 'hidden' }}
+              dangerouslySetInnerHTML={{
+                __html: sanitizeSvg(getGeometricMeshSvg({
+                  bannerTitle,
+                  bannerSubtitle,
+                  bannerTheme: activeTheme,
+                  customHex1,
+                  customHex2,
+                  isCustomColor
+                }))
+              }}
             />
           )}
         </div>

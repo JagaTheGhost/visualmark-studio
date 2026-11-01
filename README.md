@@ -27,7 +27,7 @@
 
 Writing technical documentation is notoriously fragmented across disconnected browser tabs: drafting Markdown in basic text boxes, generating badges on web forms, drawing architecture diagrams on third-party whiteboards, building tables in online converters, and manually tracking release notes.
 
-**VisualMark Studio** unites all of this under a single, **100% offline native desktop IDE**. It pairs the industry-standard **Monaco code editor** (the engine powering VS Code) with **12 specialized interactive visual studios**, direct local disk I/O, rich documentation architecture tools, and automated documentation generation.
+**VisualMark Studio** unites all of this under a dedicated, **local-first desktop IDE**. It pairs the industry-standard **Monaco code editor** (the engine powering VS Code) with **12 specialized interactive visual studios**, direct local disk I/O, rich documentation architecture tools, and automated documentation generation.
 
 | Traditional Documentation Workflow | The VisualMark Studio Experience |
 | :--- | :--- |
@@ -36,21 +36,35 @@ Writing technical documentation is notoriously fragmented across disconnected br
 | ❌ Manual formatting and hunting for syntax callouts | ✅ **Floating Selection HUD Toolbar** with live headings, callouts, and code fences |
 | ❌ Manual copy-pasting into local repositories | ✅ **Direct Local Disk I/O** (`Ctrl+S`, `Ctrl+O`) and real-time File Explorer |
 | ❌ Blind guessing whether Markdown structure is complete | ✅ **README Auditor & Linter** with automated health scoring (A+ to F) |
-| ❌ Cloud data leakage and external telemetry | ✅ **100% Local-First** with zero telemetry or network tracking |
+| ❌ Cloud data leakage and external telemetry | ✅ **Local-First & Private** with zero background tracking or telemetry |
 
 ---
 
-## 💾 Download for Windows
+## 💾 Download VisualMark Studio Desktop
 
-Pre-compiled, standalone Windows binaries are available directly from the latest [GitHub Release](https://github.com/JagaTheGhost/visualmark-studio/releases/latest):
+Pre-compiled, standalone desktop binaries are available directly from the latest [GitHub Release](https://github.com/JagaTheGhost/visualmark-studio/releases/latest):
 
-| Package | Format | Description | Direct Download |
+| Operating System | Package | Description | Direct Download |
 | :--- | :--- | :--- | :--- |
-| **Windows Installer** | `.exe` (NSIS) | Complete desktop installer with Start Menu, Desktop shortcut & Explorer integration | [Download Setup (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark-Studio-Setup.exe) |
-| **Windows Portable** | `.exe` (Standalone) | Zero-installation portable binary (runs from any folder or USB drive) | [Download Portable (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark-Studio-Portable.exe) |
+| **Windows** | `.exe` (NSIS Setup) | Complete desktop installer with Start Menu, Desktop shortcuts, auto-updates & Explorer integration | [Download Setup (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark-Studio-Setup.exe) |
+| **Linux** | `.AppImage` / `.deb` | Universal AppImage (plug-and-play) & Debian/Ubuntu `.deb` package | [Download Linux Packages](https://github.com/JagaTheGhost/visualmark-studio/releases/latest) |
+| **macOS** | `.dmg` (Apple Silicon & Intel) | Drag-and-drop installer for macOS (`arm64` Apple Silicon & `x64` Intel) | [Download macOS DMG](https://github.com/JagaTheGhost/visualmark-studio/releases/latest) |
 
 > [!NOTE]
-> **Windows SmartScreen Notice**: Because VisualMark Studio is open-source and community-distributed, Windows SmartScreen may present an *"Unrecognized app"* prompt on initial launch. Click **More info → Run anyway** to proceed.
+> **Windows SmartScreen & macOS Gatekeeper Notice**: 
+> - **Windows**: Click **More info → Run anyway** if prompted by SmartScreen on initial launch.
+> - **macOS**: Right-click the app in `/Applications` → select **Open** (or run `xattr -cr /Applications/VisualMark\ Studio.app` in Terminal) to approve the open-source binary.
+
+---
+
+## 💡 Why a Dedicated IDE instead of a VS Code Extension?
+
+Developers often ask: *"Why download a standalone desktop app when I can install an extension in my existing editor?"*
+
+1. 🎨 **Visual Design Studios vs. Plain Text**: VS Code Markdown extensions only preview raw text and basic syntax. VisualMark Studio provides **12 bespoke interactive visual design studios** (live vector Repo Card designer, visual Devicon Badge builder, spreadsheet table grids, pan/zoom Mermaid architecture canvas, and marketing hero banners) that cannot run cleanly inside generic text editor tabs.
+2. 🧰 **Zero Extension Sprawl & Conflict**: Replicating even half of these capabilities in general-purpose editors requires installing and configuring 8+ disparate extensions that conflict over keybindings, themes, webview resources, and command palettes. VisualMark Studio provides a cohesive, zero-config documentation environment out of the box.
+3. 🛡️ **Hardened Sandboxed Workspace**: VS Code extensions run with full, unrestricted Node.js system privileges—a frequent target for supply chain attacks. VisualMark Studio strictly confines file operations to your open workspace (`isPathWithinWorkspace`), sanitizes SVG and Markdown outputs with hardened DOMPurify allowlists, and enforces zero background telemetry.
+4. 🎯 **Context Separation & Focus**: When you write code, you need linters, compilers, and debuggers. When you write documentation, you need a creative studio tailored for storytelling, visual assets, and high-impact presentation.
 
 ---
 
@@ -73,7 +87,7 @@ VisualMark Studio features dedicated, visual designer environments accessible as
 | 📝 **Changelog & Releases** | `changelog.studio` | Keep-a-Changelog standard release notes with SemVer bumping (`Major`, `Minor`, `Patch`) |
 | 🔍 **README Auditor** | `audit.studio` | Documentation scorecard, A+ to F grade, section completeness check, 1-click boilerplate injector |
 
-👉 **For an exhaustive top-to-bottom manual of all 12 studios, consult [FEATURES.md](FEATURES.md).**
+👉 **For an exhaustive top-to-bottom manual of all 12 studios, consult [FEATURES.md](docs/FEATURES.md).**
 
 ---
 
@@ -102,14 +116,14 @@ VisualMark Studio features dedicated, visual designer environments accessible as
 
 | Document | Description |
 | :--- | :--- |
-| 📖 **[FEATURES.md](FEATURES.md)** | **Complete Capabilities Tour** — Master guide detailing all 12 studios, Monaco ergonomics, HUD toolbar, and workflows. |
-| 📘 **[DOCUMENTATION.md](DOCUMENTATION.md)** | **System & Architecture Guide** — Exhaustive architectural breakdown, user flows, and backend FastAPI specifications. |
-| 🛠️ **[SETUP.md](SETUP.md)** | **Developer Setup Guide** — Step-by-step instructions for running from source, prerequisites, and troubleshooting. |
-| 📦 **[DEPLOYMENT.md](DEPLOYMENT.md)** | **Packaging & Distribution** — Instructions for building standalone installers (.exe / portable) via Electron Builder. |
-| 🖥️ **[DESKTOP.md](DESKTOP.md)** | **Desktop Technical Architecture** — Electron main process, FastAPI sidecar daemon, and IPC context bridge specs. |
-| 🎨 **[DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)** | **Visual Design System** — Color tokens, typography, dark/light theme tokens, and component guidelines. |
+| 📖 **[FEATURES.md](docs/FEATURES.md)** | **Complete Capabilities Tour** — Master guide detailing all 12 studios, Monaco ergonomics, HUD toolbar, and workflows. |
+| 📘 **[DOCUMENTATION.md](docs/DOCUMENTATION.md)** | **System & Architecture Guide** — Exhaustive architectural breakdown, user flows, and backend FastAPI specifications. |
+| 🛠️ **[SETUP.md](docs/SETUP.md)** | **Developer Setup Guide** — Step-by-step instructions for running from source, prerequisites, and troubleshooting. |
+| 📦 **[DEPLOYMENT.md](docs/DEPLOYMENT.md)** | **Packaging & Distribution** — Instructions for building standalone installers (.exe / portable) via Electron Builder. |
+| 🖥️ **[DESKTOP.md](docs/DESKTOP.md)** | **Desktop Technical Architecture** — Electron main process, FastAPI sidecar daemon, and IPC context bridge specs. |
+| 🎨 **[DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)** | **Visual Design System** — Color tokens, typography, dark/light theme tokens, and component guidelines. |
 | 🔒 **[SECURITY.md](SECURITY.md)** | **Security Policy** — SSRF protection, IPC isolation, and vulnerability disclosure policies. |
-| 🧪 **[TESTING_GUIDE.md](TESTING_GUIDE.md)** | **Quality & Test Automation** — Unit tests, integration suites, and manual verification protocols. |
+| 🧪 **[TESTING_GUIDE.md](docs/TESTING_GUIDE.md)** | **Quality & Test Automation** — Unit tests, integration suites, and manual verification protocols. |
 | 📋 **[CHANGELOG.md](CHANGELOG.md)** | **Version Changelog** — Detailed version history adhering to Keep a Changelog and SemVer standards. |
 
 ---

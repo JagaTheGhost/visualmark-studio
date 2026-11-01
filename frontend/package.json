@@ -12,7 +12,7 @@
     "url": "https://github.com/JagaTheGhost/visualmark-studio/issues"
   },
   "private": true,
-  "version": "1.2.0",
+  "version": "1.2.1",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -24,9 +24,11 @@
     "electron:dev": "concurrently -k \"vite\" \"wait-on tcp:3000 && electron .\"",
     "electron:start": "electron .",
     "electron:pack": "vite build && electron-builder --dir",
-    "electron:portable": "vite build && electron-builder --win portable",
     "electron:manual": "powershell -ExecutionPolicy Bypass -File scripts/manual-pack.ps1",
-    "electron:dist": "vite build && electron-builder"
+    "electron:dist": "vite build && electron-builder",
+    "electron:dist:win": "vite build && electron-builder --win",
+    "electron:dist:mac": "vite build && electron-builder --mac",
+    "electron:dist:linux": "vite build && electron-builder --linux"
   },
   "build": {
     "appId": "com.visualmark.studio",
@@ -54,12 +56,6 @@
       "target": [
         {
           "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "portable",
           "arch": [
             "x64"
           ]
@@ -97,10 +93,8 @@
       "uninstallerIcon": "public/icon.ico",
       "artifactName": "VisualMark-Studio-Setup.${ext}",
       "deleteAppDataOnUninstall": false,
-      "differentialPackage": false
-    },
-    "portable": {
-      "artifactName": "VisualMark-Studio-Portable.${ext}"
+      "differentialPackage": false,
+      "include": "build/installer.nsh"
     },
     "publish": [
       {
@@ -108,7 +102,60 @@
         "owner": "JagaTheGhost",
         "repo": "visualmark-studio"
       }
-    ]
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "public/icon.png",
+      "category": "public.app-category.developer-tools",
+      "artifactName": "VisualMark-Studio-${version}-${arch}.${ext}",
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "fileAssociations": [
+        {
+          "ext": "md",
+          "name": "Markdown Document",
+          "role": "Editor"
+        },
+        {
+          "ext": "markdown",
+          "name": "Markdown Document",
+          "role": "Editor"
+        }
+      ]
+    },
+    "dmg": {
+      "title": "VisualMark Studio",
+      "artifactName": "VisualMark-Studio-${version}-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "public/icon.png",
+      "category": "Development",
+      "artifactName": "VisualMark-Studio-${version}-${arch}.${ext}",
+      "synopsis": "Code + Visual Markdown & Documentation IDE",
+      "description": "VisualMark Studio - Code + Visual Markdown & Documentation IDE",
+      "fileAssociations": [
+        {
+          "ext": "md",
+          "name": "Markdown Document",
+          "mimeType": "text/markdown",
+          "role": "Editor"
+        },
+        {
+          "ext": "markdown",
+          "name": "Markdown Document",
+          "mimeType": "text/markdown",
+          "role": "Editor"
+        }
+      ]
+    }
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

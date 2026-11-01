@@ -347,6 +347,64 @@ export default function EditorToolbar({
           <span className="material-symbols-outlined icon-tool">image</span>
         </button>
 
+        {/* Media (Video, GIF, Audio & Embeds) */}
+        <div className="relative-dropdown">
+          <button
+            type="button"
+            className={`toolbar-tool-btn dropdown-btn ${activeDropdown === 'media' ? 'active' : ''}`}
+            onClick={(e) => toggleDropdown('media', e)}
+            title="Insert Video, GIF, Audio & Embeds"
+          >
+            <span className="material-symbols-outlined icon-tool">video_library</span>
+            <span className="material-symbols-outlined icon-xs">
+              {activeDropdown === 'media' ? 'arrow_drop_up' : 'arrow_drop_down'}
+            </span>
+          </button>
+
+          {activeDropdown === 'media' && typeof document !== 'undefined' && createPortal(
+            <div
+              ref={dropdownRef}
+              className="heading-dropdown-menu media-dropdown-menu"
+              style={{ position: 'fixed', top: `${dropdownPos.top}px`, left: `${dropdownPos.left}px`, zIndex: 9999, minWidth: '220px' }}
+            >
+              <div className="dropdown-menu-title">Insert Media</div>
+              <button type="button" className="heading-item" onClick={() => executeFormat('video', { format: 'html5' })}>
+                <span className="material-symbols-outlined text-sm" style={{ color: '#38bdf8' }}>movie</span>
+                <span>HTML5 Video Player</span>
+              </button>
+              <button type="button" className="heading-item" onClick={() => executeFormat('video', { format: 'markdown' })}>
+                <span className="material-symbols-outlined text-sm" style={{ color: '#60a5fa' }}>videocam</span>
+                <span>Markdown Video Link</span>
+              </button>
+              <button type="button" className="heading-item" onClick={() => executeFormat('gif')}>
+                <span className="material-symbols-outlined text-sm" style={{ color: '#ec4899' }}>gif_box</span>
+                <span>Animated GIF Demo</span>
+              </button>
+              <button type="button" className="heading-item" onClick={() => executeFormat('youtube')}>
+                <span className="material-symbols-outlined text-sm" style={{ color: '#ef4444' }}>play_circle</span>
+                <span>YouTube Video Embed</span>
+              </button>
+              <button type="button" className="heading-item" onClick={() => executeFormat('audio')}>
+                <span className="material-symbols-outlined text-sm" style={{ color: '#a855f7' }}>headphones</span>
+                <span>Audio Player</span>
+              </button>
+              <div className="dropdown-divider" />
+              <button
+                type="button"
+                className="heading-item text-primary"
+                onClick={() => {
+                  setActiveDropdown(null)
+                  if (onOpenImageStudio) onOpenImageStudio()
+                }}
+              >
+                <span className="material-symbols-outlined text-sm">auto_videocam</span>
+                <span>Motion &amp; Video Studio...</span>
+              </button>
+            </div>,
+            document.body
+          )}
+        </div>
+
         <span className="tool-separator" />
 
         {/* Lists & Task Checklists */}

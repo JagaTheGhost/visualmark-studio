@@ -28,7 +28,6 @@ export default defineConfig({
           vendor: ['react', 'react-dom'],
           markdown: ['react-markdown', 'remark-gfm', 'remark-breaks', 'rehype-raw'],
           syntax: ['react-syntax-highlighter', 'prismjs'],
-          pdf: ['jspdf', 'html2canvas'],
           mermaid: ['mermaid']
         }
       }
