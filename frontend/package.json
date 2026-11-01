@@ -1,7 +1,7 @@
 {
   "name": "visualmark-studio",
   "description": "VisualMark Studio - Code + Visual Markdown & Documentation IDE",
-  "author": "JagaTheGhost",
+  "author": "JagaTheGhost <JagaTheGhost.jagadeeswarancoc@gmail.com>",
   "license": "MIT",
   "homepage": "https://github.com/JagaTheGhost/visualmark-studio#readme",
   "repository": {
@@ -149,7 +149,10 @@
           "mimeType": "text/markdown",
           "role": "Editor"
         }
-      ]
+      ],
+      "maintainer": "JagaTheGhost <JagaTheGhost.jagadeeswarancoc@gmail.com>",
+      "desktopName": "visualmark-studio",
+      "syncDesktopName": true
     }
   },
   "dependencies": {
