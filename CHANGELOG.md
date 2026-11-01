@@ -13,6 +13,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1] - 2026-11-1
+
+### Added
+- **Multi-Platform Desktop Releases**: Official packaging pipeline and binaries for **Linux** (`.AppImage` & `.deb`) and **macOS** (`.dmg` & `.zip` for Apple Silicon `arm64` and Intel `x64`).
+- **Dynamic Cross-Platform Python Sidecar**: Sidecar process manager automatically resolves `server.exe` (Windows) and `server` (Linux/macOS) with automated execution permissions (`chmod +x`) and `python3` live development fallback.
+- **Keybinding Conflict Detection**: Real-time shortcut collision analysis displaying badge warnings and conflict details in the Shortcuts manager.
+- **Community Feedback & Bug Reporting**: Bottom status bar expandable chat pill and drawer action linked directly to GitHub Discussions.
+- **In-Editor Video & Audio Playback**: Dedicated media rendering components for MP4, WebM, GIF, MP3, and WAV with responsive players and lightbox inspection.
+- **Dedicated Vector Studio Generators**: Isolated SVG generation for Image Studio modes including Motion Demo cards, Dual-Theme Adaptive SVGs, and Before/After Comparison matrices.
+
+### Fixed
+- **SVG Generation & Preview Isolation**: Fixed SVG mode fallbacks in Image Studio so each mode exports its authentic graphic instead of defaulting to HUD telemetry.
+- **Workspace Write Confinement**: Fixed Electron direct file creation to strictly resolve against active workspace paths, preventing inadvertent cross-environment file creation.
+- **Language Switcher Navigation**: Language indicator in the status bar now navigates directly to the Appearance section in Settings.: Official packaging pipeline and binaries for **Linux** (`.AppImage` & `.deb`) and **macOS** (`.dmg` & `.zip` for Apple Silicon `arm64` and Intel `x64`).
+- **Dynamic Cross-Platform Python Sidecar**: Sidecar process manager automatically resolves `server.exe` (Windows) and `server` (Linux/macOS) with automated execution permissions (`chmod +x`) and `python3` live development fallback.
+
+### Security & Hardening
+- **Workspace Path Containment & Confinement**: Native filesystem and Git IPC handlers strictly validate and confine all disk operations to authorized open workspaces (`isPathWithinWorkspace`), canonicalizing paths via `fs.realpathSync` to eliminate symlink and directory traversal escapes.
+- **IPC Origin & Sender Validation**: Privileged Electron IPC handlers validate `event.senderFrame` origin, ensuring only legitimate local UI frames can dispatch operations.
+- **Strict Vector & Markdown Sanitization**: Hardened DOMPurify allowlists for all Mermaid diagrams and Markdown HTML previews, stripping executable script tags, inline event handlers, and unsafe URI protocols.
+- **Windows AppContainer Sandbox Compliance**: NSIS installers and runtime enforce `ALL APPLICATION PACKAGES` (`*S-1-15-2-1`) read/execute permissions, preventing Chromium sandbox initialization aborts on secondary partitions while revoking unprivileged `Authenticated Users` write permissions.
+
+### Removed
+- **Unused Document Export Options**: Removed legacy Export to PDF and HTML UI controls and dead code from Settings and shortcut registries to focus on markdown documentation.
+
+### Changed
+- **Streamlined Windows Distribution**: Limited Windows packaging exclusively to the non-elevated NSIS setup installer (`VisualMark-Studio-Setup.exe`), removing redundant portable binaries to eliminate 200MB artifact clutter and guarantee persistent `.md` file associations and reliable `electron-updater` background updates.
+- **Repository Documentation Architecture**: Reorganized secondary reference guides into a dedicated `docs/` folder (`docs/SETUP.md`, `docs/DEPLOYMENT.md`, `docs/DESKTOP.md`, `docs/FEATURES.md`, `docs/DOCUMENTATION.md`, `docs/DESIGN_SYSTEM.md`, `docs/TESTING_GUIDE.md`), keeping only primary repository files open in the root.
+- **Zero-Telemetry Local Sovereignty**: Fully documented local-first architecture where user files remain strictly on the local machine with zero analytics or tracking beacons.
+
+---
+
+## [1.2.0] - 2026-10-25
+
+### Added
+- **10-Theme Palette Suite & Top Bar Quick Switcher**:
+  - 10 hand-calibrated themes across Dark & Light modes (Tokyo Night, Dracula, GitHub Slate Light, GitHub Dark, One Dark, Solarized Dark, Solarized Light, Monokai Pro, Nord, and Synthwave '84).
+  - Fast Dark/Light mode toggle button pinned to the top header bar.
+  - Interactive theme picker flyout with color palette swatch dots and badge indicators.
+- **Glassmorphic Welcome Launcher Hub (`WelcomeLauncher.jsx`)**:
+  - Streamlined start screen featuring Quick Start actions (Open Folder, Clone Repo, New File, Doc Generator).
+  - Integrated Interactive Live Playground launcher (`Playground.md`) pre-loaded with live Mermaid flowcharts, Shields.io badges, and markdown tables.
+  - Recent workspaces list with one-click path opening and clear history action.
+  - Visual studio exploration grid showcasing Badges, Diagrams, Tables, Directory Trees, Changelogs, and Contributors studios.
+  - Startup preference toggle (*"Show Welcome page on startup"*).
+- **15-Second Quick Setup Wizard Modal (`FirstTimeSetupModal.jsx`)**:
+  - Modal onboarding wizard for new and returning users to configure themes, editor engines (Monaco Pro vs Basic), and default view modes.
+- **Source Control / Git Drawer Overhaul (`SourceControlDrawer.jsx`)**:
+  - Redesigned commit composer with staged vs. unstaged change tracking, unstaged file counters, and character validation.
+  - Commit Confirmation modal (`CommitConfirmModal.jsx`) with pre-commit checklist.
+  - Commit Guide modal (`CommitHelpModal.jsx`) detailing Conventional Commits prefixes (`feat`, `fix`, `docs`, etc.).
+  - Commit history inspector with date formatting and commit hash copying.
+- **Monaco Pro Editor Hardening**:
+  - Native markdown lint diagnostics and problem reporting panel integration.
+  - Word wrap toggle, minimap visibility toggle, and configurable line-height / typography.
+  - Improved selection HUD toolbar and floating actions.
+
+### Changed
+- **Multi-OS Desktop Release Architecture**: Expanded packaging pipeline to support Linux (`.AppImage` & `.deb`), macOS (`.dmg` & `.zip` for Apple Silicon `arm64` and Intel `x64`), and streamlined Windows distribution to a non-elevated NSIS setup installer (`VisualMark-Studio-Setup.exe`).
+- **Pruned Redundant Windows Portable Target**: Eliminated 200MB artifact bloat and assured 100% persistent `.md` file associations and seamless in-app background auto-updates.
+- **Local-First & Sandboxed Security Model**: Hardened filesystem and Git IPC handlers to enforce workspace containment (`isPathWithinWorkspace`), canonical path validation via `fs.realpathSync`, DOMPurify SVG/AST sanitization, zero background telemetry, and transparent user-initiated network boundaries.
+
+---
+
 ## [1.1.4] - 2026-10-19
 
 ### Added
@@ -180,7 +244,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Enhanced Presets Grid**: Pre-configured REST endpoints (Users API, Auth Tokens, Webhooks, Billing) with one-click form population.
 - **Modular Floating Quick-Action Toolbar (HUD)**:
   - Word / Notion-style contextual HUD anchored dynamically above text selections in the Monaco editor.
-  - Interactive dropdowns for Headings (H1–H4), Code Blocks (8 languages), Hyperlinks (with live inline URL input), GitHub Alert Callouts (`[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`), and tools for Bold, Italic, Strikethrough, Inline Code, Lists, Tables, Diagrams, and Badges.
+  - Interactive dropdowns for Headings (H1ΓÇôH4), Code Blocks (8 languages), Hyperlinks (with live inline URL input), GitHub Alert Callouts (`[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`), and tools for Bold, Italic, Strikethrough, Inline Code, Lists, Tables, Diagrams, and Badges.
   - Preserves native Monaco Undo/Redo history via `editor.executeEdits` and prevents editor blur on click.
   - Dedicated Settings tab category with modular quick-action toggles ("Enable All", "Disable All", "Reset HUD Defaults") and live cross-component synchronization.
 - **Modern GitHub Repo Cards Studio**:
@@ -214,7 +278,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.3] - 2026-10-12
 
 ### Added
-- **Command Palette Keybinding Configuration (⚙️)**: Every command row in the Command Palette now displays a settings gear icon on hover/selection to configure its shortcut directly. Pressing `Alt + Enter` on any highlighted item triggers the configuration flow (matching VS Code standard).
+- **Command Palette Keybinding Configuration (ΓÜÖ∩╕Å)**: Every command row in the Command Palette now displays a settings gear icon on hover/selection to configure its shortcut directly. Pressing `Alt + Enter` on any highlighted item triggers the configuration flow (matching VS Code standard).
 - **Monaco Right-Click & F1 Interception**: Intercepted Monaco's native `editor.action.quickCommand` so selecting "Command Palette" in the right-click menu or pressing `F1` / `Ctrl+Shift+P` directly launches VisualMark Studio's palette.
 - **Deep-Linked Shortcuts Tab**: Triggering keybinding configuration automatically switches to the `Keyboard Shortcuts` tab, pre-filters the command list, and opens the interactive Keybinding Recorder modal.
 - **Multi-Cursor & Formatting Editor Commands**:

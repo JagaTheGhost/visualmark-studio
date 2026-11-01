@@ -168,8 +168,9 @@ npm run electron:dist
 ```
 Generated artifacts in `frontend/release/`:
 - `VisualMark-Studio-Setup.exe` — Windows setup installer (Non-elevated user-level installation, Start Menu & Desktop shortcuts)
-- `VisualMark-Studio-Portable.exe` — Zero-install portable standalone executable
 - `latest.yml` — Release manifest for Electron Updater
+- `VisualMark-Studio-*.AppImage` / `.deb` — Linux desktop packages
+- `VisualMark-Studio-*.dmg` — macOS drag-and-drop installer
 
 ---
 
@@ -184,7 +185,7 @@ VisualMark Studio supports automated in-app updates via GitHub Releases:
    git tag v1.1.4
    git push origin main --tags
    ```
-3. **CI/CD Build & Publish:** GitHub Actions (`release.yml`) builds the assets and uploads `VisualMark-Studio-Setup.exe`, `VisualMark-Studio-Portable.exe`, and `latest.yml` to the Release.
+3. **CI/CD Build & Publish:** GitHub Actions (`release.yml`) builds the assets and uploads `VisualMark-Studio-Setup.exe`, macOS/Linux packages, and `latest.yml` to the Release.
 4. **Verification:** Launch installed application, open **Settings → Updates**, click **"Check for updates"**, and observe the app download the release cleanly in a single pass and prompt to restart.
 
 ---

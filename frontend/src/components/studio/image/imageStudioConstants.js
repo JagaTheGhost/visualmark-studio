@@ -9,19 +9,30 @@ export const STUDIO_MODES = [
 
 
 export const BANNER_STYLES = [
-  { id: 'capsule', label: 'Dynamic GitHub Header', icon: 'waves', desc: 'Capsule Render waving/curved gradient (works on GitHub instantly)' },
-  { id: 'typing', label: 'Animated Typing Loop', icon: 'keyboard', desc: 'Live terminal typing text animation (works on GitHub instantly)' },
-  { id: 'cover', label: 'Tech Photo Cover', icon: 'photo_camera', desc: 'Curated high-res developer landscape from Unsplash' },
-  { id: 'hud-telemetry', label: 'Sci-Fi HUD Telemetry', icon: 'sensors', desc: 'Stitch bio-telemetry HUD card (requires SVG file in repo)' },
-  { id: 'neofetch', label: 'Neofetch CLI Terminal', icon: 'terminal', desc: 'Developer terminal with system info (requires SVG file in repo)' },
-  { id: 'cyberpunk-grid', label: 'Cyberpunk Neon Grid', icon: 'grid_view', desc: 'Perspective wireframe matrix horizon (requires SVG file in repo)' },
-  { id: 'swiss-minimal', label: 'Swiss Typographic Grid', icon: 'view_quilt', desc: 'High-contrast editorial layout (requires SVG file in repo)' },
-  { id: 'glass-orbit', label: 'Glassmorphism Tech Matrix', icon: 'blur_on', desc: 'Translucent frosted glass card (requires SVG file in repo)' },
-  { id: 'gradient-ribbon', label: 'Aurora Flowing Ribbon', icon: 'grain', desc: 'Sleek abstract gradient ribbon (requires SVG file in repo)' }
+  { id: 'capsule', label: 'Dynamic GitHub Header', icon: 'waves', desc: 'Sleek wave/curved gradient vector banner' },
+  { id: 'typing', label: 'Animated Typing Loop', icon: 'keyboard', desc: 'Vector CLI terminal with animated typing loop' },
+  { id: 'geometric-mesh', label: 'Geometric Mesh Cover', icon: 'category', desc: 'Modern polygon & crystal tech vector cover' },
+  { id: 'hud-telemetry', label: 'Sci-Fi HUD Telemetry', icon: 'sensors', desc: 'Stitch bio-telemetry HUD vector card' },
+  { id: 'neofetch', label: 'Neofetch CLI Terminal', icon: 'terminal', desc: 'Developer terminal with system info in vector' },
+  { id: 'cyberpunk-grid', label: 'Cyberpunk Neon Grid', icon: 'grid_view', desc: 'Perspective wireframe matrix vector horizon' },
+  { id: 'swiss-minimal', label: 'Swiss Typographic Grid', icon: 'view_quilt', desc: 'High-contrast editorial vector layout' },
+  { id: 'glass-orbit', label: 'Glassmorphism Tech Matrix', icon: 'blur_on', desc: 'Translucent frosted glass vector card' },
+  { id: 'gradient-ribbon', label: 'Aurora Flowing Ribbon', icon: 'grain', desc: 'Sleek abstract gradient ribbon vector' }
 ]
 
 
-export const LOCAL_SVG_TYPES = ['hud-telemetry', 'neofetch', 'cyberpunk-grid', 'swiss-minimal', 'glass-orbit', 'gradient-ribbon']
+export const LOCAL_SVG_TYPES = [
+  'capsule',
+  'typing',
+  'geometric-mesh',
+  'hud-telemetry',
+  'neofetch',
+  'cyberpunk-grid',
+  'swiss-minimal',
+  'glass-orbit',
+  'gradient-ribbon',
+  'cover'
+]
 
 export const POPULAR_TECH_STACK = []
 
@@ -199,6 +210,12 @@ export const MOTION_PRESETS = [
     url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
     type: 'video',
     title: 'Cinematic Motion Demo'
+  },
+  {
+    name: 'YouTube Stream',
+    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    type: 'video',
+    title: 'YouTube Showcase Demo'
   }
 ]
 

@@ -102,6 +102,7 @@ export default function StudioWorkspaceRenderer({
   handleResetKeybindings,
   shortcutsInitialQuery,
   shortcutsAutoEditId,
+  settingsCategory = 'all',
   handleOpenSettingsTab,
   setIsCloneModalOpen,
   handleOpenNativeFolder,
@@ -166,6 +167,7 @@ export default function StudioWorkspaceRenderer({
           <Suspense fallback={<StudioLoadingFallback title="GitHub Repo Card Studio" />}>
             <RepoCardStudioTab
               repoUrl={repoUrl}
+              workspaceDirectory={workspaceDirectory}
               onInsertCard={(cardMd) => handleRequestInsertSnippet(cardMd, 'GitHub Repo Card')}
               onBackToReadme={handleBackToReadme}
             />
@@ -203,6 +205,7 @@ export default function StudioWorkspaceRenderer({
           <Suspense fallback={<StudioLoadingFallback title="Image & Banner Studio" />}>
             <ImageStudioTab
               repoUrl={repoUrl}
+              workspaceDirectory={workspaceDirectory}
               onInsertImage={(imageMd) => handleRequestInsertSnippet(imageMd, 'Image')}
               onBackToReadme={handleBackToReadme}
             />
@@ -275,6 +278,7 @@ export default function StudioWorkspaceRenderer({
         return (
           <Suspense fallback={<StudioLoadingFallback title="Settings" />}>
             <SettingsTab
+              initialCategory={settingsCategory}
               themeMode={themeMode}
               setThemeMode={setThemeMode}
               tabSize={tabSize}
@@ -356,10 +360,6 @@ export default function StudioWorkspaceRenderer({
               setActiveActivityTab('generator')
               setSidebarCollapsed(false)
             }}
-            onOpenAiAgent={() => {
-              setActiveActivityTab('ai-agent')
-              setSidebarCollapsed(false)
-            }}
             recentWorkspaces={recentWorkspaces}
             onOpenRecentWorkspace={handleOpenRecentWorkspace}
             onClearRecentWorkspaces={handleClearRecentWorkspaces}
@@ -416,10 +416,6 @@ export default function StudioWorkspaceRenderer({
             setActiveActivityTab('generator')
             setSidebarCollapsed(false)
           }}
-          onOpenAiAgent={() => {
-            setActiveActivityTab('ai-agent')
-            setSidebarCollapsed(false)
-          }}
           recentWorkspaces={recentWorkspaces}
           onOpenRecentWorkspace={handleOpenRecentWorkspace}
           onClearRecentWorkspaces={handleClearRecentWorkspaces}
@@ -436,6 +432,7 @@ export default function StudioWorkspaceRenderer({
       {/* 3. Unsupported File Viewer */}
       {isUnsupportedActive && (
         <UnsupportedFileViewer
+          key={activeFile}
           fileInfo={unsupportedFilesMap[activeFile]}
           onCloseTab={() => handleCloseFile(activeFile)}
           onOpenStudioTab={handleOpenStudioTab}

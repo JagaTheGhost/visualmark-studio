@@ -10,9 +10,8 @@ Only the latest active minor release receives official security patches and upda
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.1.x   | :white_check_mark: |
-| 1.0.x   | :white_check_mark: |
-| < 1.0.0 | :x:                |
+| 1.2.x   | :white_check_mark: |
+| < 1.2.0 | :x:                |
 
 ---
 
@@ -41,7 +40,7 @@ When a security vulnerability is reported:
 1. **Acknowledgment:** We will acknowledge receipt of your vulnerability report within **48 hours**.
 2. **Investigation & Triage:** We will verify the vulnerability, evaluate its severity using CVSS scoring, and reproduce the issue in an isolated test environment.
 3. **Remediation:** A patch will be authored, reviewed, and validated against regression tests.
-4. **Coordinated Release:** A new patch release will be cut (e.g. `v1.0.1`) and published with an accompanying GitHub Security Advisory crediting the researcher (unless anonymity is requested).
+4. **Coordinated Release:** A new patch release will be cut (e.g. `v1.2.1`) and published with an accompanying GitHub Security Advisory crediting the researcher (unless anonymity is requested).
 
 ---
 
@@ -49,10 +48,13 @@ When a security vulnerability is reported:
 
 VisualMark Studio incorporates several security layers by design:
 
-- **Electron Process Isolation:** Renderer processes run with `contextIsolation: true` and `nodeIntegration: false`. System APIs are accessed strictly through explicitly exposed IPC bridges in `preload.cjs`.
+- **Electron Process Isolation & Sender Validation:** Renderer processes run with `contextIsolation: true` and `nodeIntegration: false`. Privileged IPC handlers validate `event.senderFrame` origin before processing.
+- **Workspace Path Containment & Confinement:** Native filesystem and Git IPC handlers restrict all read, write, create, move, copy, and delete operations strictly to explicitly opened workspaces and user-selected files (`isPathWithinWorkspace`), canonicalizing paths with `fs.realpathSync` to eliminate symlink and directory traversal escapes. Active workspace root directories are guarded against accidental or malicious deletion.
+- **Strict Vector & Markdown Sanitization:** Markdown and Mermaid diagram previews run in `securityLevel: 'strict'` mode and sanitize all generated SVG elements using hardened DOMPurify allowlists, stripping active script tags, executable URL schemes, and inline event handlers before DOM insertion.
+- **Windows AppContainer Sandbox Compliance:** NSIS installers and desktop runtime enforce `ALL APPLICATION PACKAGES` (`*S-1-15-2-1`) read/execute permissions, preventing Chromium sandbox initialization aborts on secondary partitions while revoking unprivileged `Authenticated Users` write permissions.
 - **Navigation & Protocol Hardening:** The application blocks arbitrary in-window navigation (`will-navigate`) and validates external URL schemes (`shell.openExternal`) strictly against `['http:', 'https:', 'mailto:']`.
 - **Localhost-Only Backend Sidecar:** The bundled Python/FastAPI daemon binds exclusively to `127.0.0.1`, preventing any unauthorized exposure over local networks.
 - **Git Command Parameterization:** Internal Git operations use parameterized argument arrays (`execFile`) rather than string interpolation, eliminating shell command injection risks.
-- **Content Security Policy (CSP):** The application interface enforces a strict CSP restricting execution contexts and third-party script loading.
+- **Transparent Network Boundaries & Zero Telemetry:** VisualMark Studio operates on a local-first architecture. All workspace files, markdown content, and local repository metadata remain strictly on your machine. There is zero telemetry, analytics tracking, or advertising scripts. External network operations are transparent and strictly user-initiated (querying the GitHub API for repo statistics, loading Shields.io badges, or checking GitHub Releases for updates), protected by origin validation and SSRF defenses.
 
 Thank you for helping keep VisualMark Studio safe for everyone!

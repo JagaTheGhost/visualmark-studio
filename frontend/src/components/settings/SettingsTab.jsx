@@ -7,10 +7,10 @@ import {
   DEFAULT_FLOATING_TOOLBAR_CONFIG
 } from '../../utils/floatingToolbarConfig'
 
+import { useI18n } from '../../i18n/I18nContext'
 import AppearanceSettingsSection from './AppearanceSettingsSection'
 import EditorSettingsSection from './EditorSettingsSection'
 import ToolbarSettingsSection from './ToolbarSettingsSection'
-import ExportSettingsSection from './ExportSettingsSection'
 import NotificationsSettingsSection from './NotificationsSettingsSection'
 import UpdateSettingsSection from './UpdateSettingsSection'
 import IntegrationsSettingsSection from './IntegrationsSettingsSection'
@@ -20,13 +20,13 @@ const CATEGORIES = [
   { id: 'editor', label: 'Text Editor' },
   { id: 'toolbar', label: 'Floating Toolbar' },
   { id: 'appearance', label: 'Appearance' },
-  { id: 'files', label: 'Files & Export' },
   { id: 'notifications', label: 'Notifications & Toasts' },
   { id: 'updates', label: 'App Updates' },
   { id: 'github', label: 'GitHub & Integrations' }
 ]
 
 export default function SettingsTab({
+  initialCategory = 'all',
   themeMode,
   setThemeMode,
   tabSize,
@@ -67,9 +67,18 @@ export default function SettingsTab({
   onToggleShowWelcomeOnStartup = () => {}
 }) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeCategory, setActiveCategory] = useState('all')
+  const [activeCategory, setActiveCategory] = useState(initialCategory || 'all')
+
+  useEffect(() => {
+    if (initialCategory) {
+      const resolved = initialCategory === 'language' ? 'appearance' : initialCategory
+      setActiveCategory(resolved)
+      setSearchQuery('')
+    }
+  }, [initialCategory])
   const [showToken, setShowToken] = useState(false)
 
+  const { t } = useI18n()
   const {
     toastFilterLevel,
     setToastFilterLevel,
@@ -96,12 +105,6 @@ export default function SettingsTab({
   const [autoSaveMode, setAutoSaveMode] = useState(
     localStorage.getItem('readme_auto_save_mode') || 'afterDelay'
   )
-  const [badgeStyle, setBadgeStyle] = useState(
-    localStorage.getItem('readme_default_badge_style') || 'flat-square'
-  )
-  const [pdfPageSize, setPdfPageSize] = useState(
-    localStorage.getItem('readme_pdf_size') || 'A4'
-  )
   const [toolbarConfig, setToolbarConfig] = useState(loadFloatingToolbarConfig)
 
   const handleFontFamilyChange = (val) => {
@@ -120,18 +123,9 @@ export default function SettingsTab({
     localStorage.setItem('readme_auto_save_mode', val)
   }
 
-  const handleBadgeStyleChange = (val) => {
-    setBadgeStyle(val)
-    localStorage.setItem('readme_default_badge_style', val)
-  }
-
-  const handlePdfPageSizeChange = (val) => {
-    setPdfPageSize(val)
-    localStorage.setItem('readme_pdf_size', val)
-  }
 
   const handleResetDefaults = () => {
-    if (window.confirm('Reset all editor and application settings to defaults?')) {
+    if (window.confirm(t('settings.resetConfirm', 'Reset all editor and application settings to defaults?'))) {
       setThemeMode('dark')
       if (setEditorEngine) setEditorEngine('monaco')
       setFontSize(13)
@@ -144,8 +138,6 @@ export default function SettingsTab({
       handleFontFamilyChange("'JetBrains Mono', Consolas, monospace")
       handleFormatOnSaveChange(true)
       handleAutoSaveModeChange('afterDelay')
-      handleBadgeStyleChange('flat-square')
-      handlePdfPageSizeChange('A4')
       setToolbarConfig({ ...DEFAULT_FLOATING_TOOLBAR_CONFIG })
       saveFloatingToolbarConfig(DEFAULT_FLOATING_TOOLBAR_CONFIG)
     }
@@ -163,8 +155,8 @@ export default function SettingsTab({
         <div className="settings-header-top">
           <div className="settings-title-group">
             <span className="material-symbols-outlined text-primary">settings</span>
-            <h2 className="settings-main-title">Settings</h2>
-            <span className="settings-env-badge">User & Workspace</span>
+            <h2 className="settings-main-title">{t('settings.title', 'Settings')}</h2>
+            <span className="settings-env-badge">{t('settings.workspaceBadge', 'User & Workspace')}</span>
           </div>
 
           <div className="settings-header-actions">
@@ -177,7 +169,7 @@ export default function SettingsTab({
               <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M14 2H2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM2 3h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm1 2h2v2H3V5zm3 0h2v2H6V5zm3 0h2v2H9V5zm3 0h1v2h-1V5zM3 8h1v2H3V8zm2 0h6v2H5V8zm7 0h1v2h-1V8z" />
               </svg>
-              <span>Keyboard Shortcuts</span>
+              <span>{t('settings.shortcuts', 'Keyboard Shortcuts')}</span>
             </button>
             <button
               type="button"
@@ -186,7 +178,7 @@ export default function SettingsTab({
               title="Reset all settings to default"
             >
               <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>restart_alt</span>
-              <span>Reset Defaults</span>
+              <span>{t('settings.resetDefaults', 'Reset Defaults')}</span>
             </button>
           </div>
         </div>
@@ -199,7 +191,7 @@ export default function SettingsTab({
           <input
             type="text"
             className="settings-search-input"
-            placeholder="Search settings (e.g. font, wrap, gemini, theme, indentation)..."
+            placeholder={t('settings.searchPlaceholder', 'Search settings (e.g. font, wrap, theme, git, indentation)...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -209,14 +201,22 @@ export default function SettingsTab({
               className="settings-search-clear"
               onClick={() => setSearchQuery('')}
             >
-              ✕
+              Γ£ò
             </button>
           )}
         </div>
 
         {/* Filter Pills */}
         <div className="settings-category-pills">
-          {CATEGORIES.map((cat) => (
+          {[
+            { id: 'all', label: t('settings.categories.all', 'All Settings') },
+            { id: 'editor', label: t('settings.categories.editor', 'Text Editor') },
+            { id: 'toolbar', label: t('settings.categories.toolbar', 'Floating Toolbar') },
+            { id: 'appearance', label: t('settings.categories.appearance', 'Appearance') },
+            { id: 'notifications', label: t('settings.categories.notifications', 'Notifications & Toasts') },
+            { id: 'updates', label: t('settings.categories.updates', 'App Updates') },
+            { id: 'github', label: t('settings.categories.github', 'GitHub & Integrations') }
+          ].map((cat) => (
             <button
               key={cat.id}
               type="button"
@@ -275,16 +275,9 @@ export default function SettingsTab({
           setTabGroupingEnabled={setTabGroupingEnabled}
           showWelcomeOnStartup={showWelcomeOnStartup}
           onToggleShowWelcomeOnStartup={onToggleShowWelcomeOnStartup}
+          showToast={showToast}
         />
 
-        <ExportSettingsSection
-          activeCategory={activeCategory}
-          matchesSearch={matchesSearch}
-          badgeStyle={badgeStyle}
-          handleBadgeStyleChange={handleBadgeStyleChange}
-          pdfPageSize={pdfPageSize}
-          handlePdfPageSizeChange={handlePdfPageSizeChange}
-        />
 
         <NotificationsSettingsSection
           activeCategory={activeCategory}

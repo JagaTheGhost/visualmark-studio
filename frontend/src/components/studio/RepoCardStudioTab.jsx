@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import StudioShell from './common/StudioShell'
 import { useRepoCardState, RepoCardInspector } from './RepoCardStudio'
+import { sanitizeSvg } from '../../utils/securityUtils'
 
 
 
@@ -11,11 +12,13 @@ import { useRepoCardState, RepoCardInspector } from './RepoCardStudio'
  */
 export default function RepoCardStudioTab({
   repoUrl = '',
+  workspaceDirectory = null,
   onInsertCard = () => {},
   onBackToReadme = () => {}
 }) {
   const cardState = useRepoCardState({
     repoUrl,
+    workspaceDirectory,
     onInsertBadge: onInsertCard
   })
 
@@ -93,7 +96,7 @@ export default function RepoCardStudioTab({
         </div>
       }
       canvasContent={
-        <div className="repo-svg-render-wrapper" dangerouslySetInnerHTML={{ __html: currentSvg }} />
+        <div className="repo-svg-render-wrapper" dangerouslySetInnerHTML={{ __html: sanitizeSvg(currentSvg) }} />
       }
     />
   )

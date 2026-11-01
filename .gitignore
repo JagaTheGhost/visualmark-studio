@@ -40,6 +40,7 @@ ENV/
 node_modules/
 dist/
 build/
+!frontend/build/
 .env.local
 .env.*.local
 npm-debug.log*

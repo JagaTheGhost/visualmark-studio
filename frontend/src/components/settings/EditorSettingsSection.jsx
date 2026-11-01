@@ -1,6 +1,9 @@
 import React from 'react'
+import { useI18n } from '../../i18n/I18nContext'
 
 export default function EditorSettingsSection({
+  // i18n hook
+
   activeCategory,
   matchesSearch,
   editorEngine,
@@ -22,23 +25,23 @@ export default function EditorSettingsSection({
   autoSaveMode,
   handleAutoSaveModeChange
 }) {
+  const { t } = useI18n()
+
   if (activeCategory !== 'all' && activeCategory !== 'editor') return null
 
   return (
     <section className="settings-group-section">
       <div className="settings-group-header">
         <span className="material-symbols-outlined">edit_note</span>
-        <h3>Text Editor</h3>
+        <h3>{t('settings.editor.title', 'Text Editor')}</h3>
       </div>
 
       {/* Editor Engine */}
-      {matchesSearch('editor engine monaco vs code classic lightweight') && (
+      {matchesSearch('editor engine monaco vs code classic lightweight πé¿πâ│πé╕πâ│ πé¿πâçπéúπé┐πâ╝') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label">Editor: Engine</div>
-            <div className="settings-card-sublabel">
-              Choose between the high-performance Monaco Editor (with minimap, code folding, smart autocompletion) or the Classic lightweight editor.
-            </div>
+            <div className="settings-card-label">{t('settings.editor.engine', 'Editor: Engine')}</div>
+            <div className="settings-card-sublabel">{t('settings.editor.engineDesc', 'Choose between the high-performance Monaco Editor (with minimap, code folding, smart autocompletion) or the Classic lightweight editor.')}</div>
           </div>
           <div className="settings-card-control">
             <select
@@ -54,11 +57,11 @@ export default function EditorSettingsSection({
       )}
 
       {/* Font Size */}
-      {matchesSearch('font size scale editor') && (
+      {matchesSearch('font size scale editor µûçσ¡ù πâòπé⌐πâ│πâê πé╡πéñπé║') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label">Editor: Font Size</div>
-            <div className="settings-card-sublabel">Controls the font size in pixels for the markdown code editor.</div>
+            <div className="settings-card-label">{t('settings.editor.fontSize', 'Editor: Font Size')}</div>
+            <div className="settings-card-sublabel">{t('settings.editor.fontSizeDesc', 'Controls the font size in pixels for the markdown code editor.')}</div>
           </div>
           <div className="settings-card-control">
             <select
@@ -81,8 +84,8 @@ export default function EditorSettingsSection({
       {matchesSearch('font family jetbrains monospace') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label">Editor: Font Family</div>
-            <div className="settings-card-sublabel">Controls the primary monospaced typography font family.</div>
+            <div className="settings-card-label">{t('settings.editor.fontFamily', 'Editor: Font Family')}</div>
+            <div className="settings-card-sublabel">{t('settings.editor.fontFamilyDesc', 'Controls the primary monospaced typography font family.')}</div>
           </div>
           <div className="settings-card-control">
             <select
@@ -104,8 +107,8 @@ export default function EditorSettingsSection({
       {matchesSearch('tab size indentation spaces') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label">Editor: Tab Size</div>
-            <div className="settings-card-sublabel">The number of spaces to insert when pressing the Tab key.</div>
+            <div className="settings-card-label">{t('settings.editor.tabSize', 'Editor: Tab Size')}</div>
+            <div className="settings-card-sublabel">{t('settings.editor.tabSizeDesc', 'The number of spaces to insert when pressing the Tab key.')}</div>
           </div>
           <div className="settings-card-control">
             <select
@@ -121,11 +124,11 @@ export default function EditorSettingsSection({
       )}
 
       {/* Word Wrap */}
-      {matchesSearch('word wrap lines') && (
+      {matchesSearch('word wrap lines µèÿπéèΦ┐öπüù σÅ│τ½»') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label">Editor: Word Wrap</div>
-            <div className="settings-card-sublabel">Controls whether long markdown lines wrap at the editor viewport edge.</div>
+            <div className="settings-card-label">{t('settings.editor.wordWrap', 'Editor: Word Wrap')}</div>
+            <div className="settings-card-sublabel">{t('settings.editor.wordWrapDesc', 'Controls whether long markdown lines wrap at the editor viewport edge.')}</div>
           </div>
           <div className="settings-card-control">
             <label className="settings-toggle-switch">
@@ -141,11 +144,11 @@ export default function EditorSettingsSection({
       )}
 
       {/* Line Numbers Gutter */}
-      {matchesSearch('line numbers gutter') && (
+      {matchesSearch('line numbers gutter Φíîτò¬σÅ╖') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label">Editor: Line Numbers</div>
-            <div className="settings-card-sublabel">Controls the display of numerical line gutters on the left of the editor.</div>
+            <div className="settings-card-label">{t('settings.editor.lineNumbers', 'Editor: Line Numbers')}</div>
+            <div className="settings-card-sublabel">{t('settings.editor.lineNumbersDesc', 'Controls the display of numerical line gutters on the left of the editor.')}</div>
           </div>
           <div className="settings-card-control">
             <label className="settings-toggle-switch">
@@ -164,8 +167,8 @@ export default function EditorSettingsSection({
       {matchesSearch('synchronized scroll sync scroll preview editor split') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label">Editor: Synchronized Scrolling</div>
-            <div className="settings-card-sublabel">Synchronizes the scroll positions of the editor and live preview panes based on document line anchors.</div>
+            <div className="settings-card-label">{t('settings.editor.syncScroll', 'Editor: Synchronized Scrolling')}</div>
+            <div className="settings-card-sublabel">{t('settings.editor.syncScrollDesc', 'Synchronizes the scroll positions of the editor and live preview panes based on document line anchors.')}</div>
           </div>
           <div className="settings-card-control">
             <label className="settings-toggle-switch">
@@ -181,11 +184,11 @@ export default function EditorSettingsSection({
       )}
 
       {/* Format On Save */}
-      {matchesSearch('format on save auto') && (
+      {matchesSearch('format on save auto πâòπé⌐πâ╝πâ₧πââπâê µò┤σ╜ó') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label">Editor: Format On Save</div>
-            <div className="settings-card-sublabel">Automatically clean up markdown headers, tables, and spacing when saving (Ctrl+S).</div>
+            <div className="settings-card-label">{t('settings.editor.formatOnSave', 'Editor: Format On Save')}</div>
+            <div className="settings-card-sublabel">{t('settings.editor.formatOnSaveDesc', 'Automatically clean up markdown headers, tables, and spacing when saving (Ctrl+S).')}</div>
           </div>
           <div className="settings-card-control">
             <label className="settings-toggle-switch">
@@ -201,11 +204,11 @@ export default function EditorSettingsSection({
       )}
 
       {/* Auto Save Mode */}
-      {matchesSearch('auto save delay buffer') && (
+      {matchesSearch('auto save delay buffer Φç¬σïòΣ┐¥σ¡ÿ Σ┐¥σ¡ÿ') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label">Editor: Auto Save</div>
-            <div className="settings-card-sublabel">Controls how documents are automatically saved to local workspace storage.</div>
+            <div className="settings-card-label">{t('settings.editor.autoSave', 'Editor: Auto Save')}</div>
+            <div className="settings-card-sublabel">{t('settings.editor.autoSaveDesc', 'Controls how documents are automatically saved to local workspace storage.')}</div>
           </div>
           <div className="settings-card-control">
             <select

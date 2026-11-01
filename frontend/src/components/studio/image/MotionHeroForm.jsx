@@ -1,3 +1,4 @@
+import { parseVideoEmbed } from '../../../utils/mediaUtils'
 import React from 'react'
 import { MOTION_FRAME_STYLES, MOCKUP_GLOW_STYLES, MOTION_PRESETS } from './imageStudioConstants'
 
@@ -61,12 +62,26 @@ export default function MotionHeroForm({
             type="text"
             className="studio-text-input"
             value={motionUrl}
-            onChange={(e) => setMotionUrl(e.target.value)}
-            placeholder={motionType === 'video' ? 'assets/demo.mp4 or https://...' : 'assets/preview.gif or https://...'}
+            onChange={(e) => {
+              const val = e.target.value
+              setMotionUrl(val)
+              const embed = parseVideoEmbed(val)
+              if (embed && motionType !== 'video') {
+                setMotionType('video')
+              }
+            }}
+            placeholder={motionType === 'video' ? 'YouTube link, assets/demo.mp4, or https://...' : 'assets/preview.gif or https://...'}
           />
-          <span style={{ fontSize: '10.5px', color: 'var(--text-muted, #8b949e)', marginTop: '4px' }}>
-            Supports relative workspace paths (e.g. <code>assets/demo.mp4</code>) or direct HTTPS URLs.
-          </span>
+          {parseVideoEmbed(motionUrl) ? (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '6px', padding: '3px 8px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', fontSize: '11px', fontWeight: 600 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>smart_display</span>
+              <span>{parseVideoEmbed(motionUrl).type.toUpperCase()} Video Stream Detected (Auto-Embedded)</span>
+            </div>
+          ) : (
+            <span style={{ fontSize: '10.5px', color: 'var(--text-muted, #8b949e)', marginTop: '4px' }}>
+              Supports YouTube / Vimeo links, local workspace paths (e.g. <code>assets/demo.mp4</code>), or direct HTTPS URLs.
+            </span>
+          )}
         </div>
 
         {/* Quick Demo Presets */}

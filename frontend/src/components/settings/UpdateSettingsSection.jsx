@@ -1,4 +1,5 @@
 import React from 'react'
+import { useI18n } from '../../i18n/I18nContext'
 
 function formatBytes(bytes) {
   if (!bytes || isNaN(bytes) || bytes <= 0) return '0 MB'
@@ -25,23 +26,22 @@ export default function UpdateSettingsSection({
   onStartDownloadUpdate = () => {},
   onRestartToUpdate = () => {}
 }) {
+  const { t } = useI18n()
   if (activeCategory !== 'all' && activeCategory !== 'updates') return null
 
   return (
     <section className="settings-group-section">
       <div className="settings-group-header">
         <span className="material-symbols-outlined">system_update</span>
-        <h3>Application Updates</h3>
+        <h3>{t('settings.updates.title', 'Application Updates')}</h3>
       </div>
 
       {/* Auto vs Manual Updates Setting */}
-      {matchesSearch('updates auto manual download automatic background version upgrade mode') && (
+      {matchesSearch('updates auto manual download automatic background version upgrade mode µ¢┤µû░ πéóπââπâùπâçπâ╝πâê') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label">Automatically Download Updates</div>
-            <div className="settings-card-sublabel">
-              When enabled (Automatic), updates are downloaded silently in the background. When disabled (Manual), VisualMark Studio asks for your confirmation before downloading.
-            </div>
+            <div className="settings-card-label">{t('settings.updates.autoDownload', 'Automatically Download Updates')}</div>
+            <div className="settings-card-sublabel">{t('settings.updates.autoDownloadDesc', 'When enabled (Automatic), updates are downloaded silently in the background. When disabled (Manual), VisualMark Studio asks for your confirmation before downloading.')}</div>
           </div>
           <div className="settings-card-control">
             <label className="settings-toggle-switch" title={autoDownloadUpdates ? "Automatic updates enabled (Click to switch to Manual)" : "Manual updates enabled (Click to switch to Automatic)"}>

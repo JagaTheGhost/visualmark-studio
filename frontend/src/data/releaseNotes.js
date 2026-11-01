@@ -2,15 +2,155 @@
  * VisualMark Studio - Release Notes & Update History Dataset
  * Powers the "What's New" modal dialog, update notifications, and in-IDE release history.
  */
-export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.1.4'
+export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.2.1'
 
 export const RELEASE_HISTORY = [
+  {
+    version: '1.2.1',
+    type: 'patch',
+    title: 'VisualMark Studio 1.2.1 — Multi-Platform Releases, Security Confinement & Zero-Telemetry Transparency',
+    date: 'November 2026',
+    isCurrent: true,
+    overview: 'VisualMark Studio **1.2.1** expands desktop distribution to **Linux** (`.AppImage`, `.deb`) and **macOS** (`.dmg`, `.zip` for **Apple Silicon** & **Intel**), while streamlining Windows to a dedicated **NSIS Setup installer**. This release hardens **workspace boundary confinement** (`isPathWithinWorkspace`), enforces strict **DOMPurify vector sanitization** for Mermaid and Markdown previews, and solidifies our **local-first, zero-telemetry** architecture with dynamic Python sidecar lifecycle management.',
+    highlights: [
+      'Multi-Platform Desktop Releases: Official distribution for Linux (.AppImage, .deb) and macOS (.dmg, .zip for Apple Silicon arm64 & Intel x64)',
+      'Windows Distribution Streamlining: Exclusively packages the non-elevated NSIS setup installer, eliminating redundant portable bloat and ensuring reliable background updates',
+      'Workspace Path Confinement & Sandboxing: Hardened IPC filesystem and Git handlers strictly confine disk operations to authorized project roots (isPathWithinWorkspace)',
+      'Strict Vector & AST Sanitization: Hardened DOMPurify allowlists for all Mermaid diagrams and Markdown HTML previews, eliminating script injection and unsafe protocols',
+      'Zero-Telemetry Local Sovereignty: Transparently documented local-first architecture where workspace data remains local with zero background analytics or cloud lock-in',
+      'Cross-Platform Python Sidecar: Dynamic server/server.exe lifecycle management with automated Unix execution permissions and python3 fallback'
+    ],
+    sections: [
+      {
+        category: 'Multi-Platform Distribution',
+        icon: 'devices',
+        badge: 'Cross-Platform',
+        color: '#6366f1',
+        items: [
+          {
+            title: 'Linux Support (AppImage & deb)',
+            desc: 'Universal plug-and-play AppImage running seamlessly across Ubuntu, Fedora, Arch, and Debian distributions alongside native .deb packages.'
+          },
+          {
+            title: 'macOS Support (Apple Silicon & Intel)',
+            desc: 'Dedicated drag-and-drop DMG installers and zip archives tailored for both Apple Silicon (M-series arm64) and Intel (x64) Macs.'
+          },
+          {
+            title: 'Windows Setup Installer Focus',
+            desc: 'Streamlined Windows releases to the fast, per-user NSIS installer, guaranteeing proper .md file associations and seamless background auto-updates.'
+          }
+        ]
+      },
+      {
+        category: 'Security Hardening',
+        icon: 'security',
+        badge: 'Security',
+        color: '#10b981',
+        items: [
+          {
+            title: 'Workspace Boundary Confinement',
+            desc: 'All file read, write, create, move, and delete actions are strictly locked to explicitly opened workspace directories, blocking directory traversal and symlink escapes.'
+          },
+          {
+            title: 'IPC Origin & Sender Validation',
+            desc: 'Privileged Electron IPC handlers validate event.senderFrame origin to verify that all requests originate from legitimate local UI frames.'
+          },
+          {
+            title: 'Strict SVG & Markdown Sanitization',
+            desc: 'Previews run in strict security mode with DOMPurify allowlists that strip inline executable handlers, malicious script tags, and unauthorized protocols.'
+          }
+        ]
+      },
+      {
+        category: 'Architecture & Privacy',
+        icon: 'lock',
+        badge: 'Privacy',
+        color: '#f59e0b',
+        items: [
+          {
+            title: 'Zero-Telemetry Local Sovereignty',
+            desc: 'All documents, AST scans, and edits remain strictly local with zero background telemetry, user tracking, or forced cloud accounts.'
+          },
+          {
+            title: 'Cross-Platform Sidecar Engine',
+            desc: 'The embedded FastAPI sidecar daemon now automatically adapts between server.exe and server with proper Unix execution permissions.'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    version: '1.2.0',
+    type: 'feature',
+    title: 'VisualMark Studio 1.2.0 — Theme Suite, Welcome Hub, Source Control Suite & Quick Setup Wizard',
+    date: 'October 2026',
+    isCurrent: false,
+    overview: 'VisualMark Studio **1.2.0** introduces a **10-Theme Palette Suite** with an instant header switcher, a sleek glassmorphic **Workspace Welcome Launcher** featuring an interactive playground, a **15-second Quick Setup Wizard**, and an overhauled **Source Control Git Drawer** with staging controls and commit validation.',
+    highlights: [
+      '10-Theme Palette Suite & Quick Picker: Tokyo Night, Dracula, GitHub Dark/Light, One Dark, Solarized Dark/Light, Monokai, Nord, Synthwave 84, and Modern with 1-click Dark/Light toggle and top bar quick-switcher',
+      'Workspace Welcome Launcher: Glassmorphic onboarding hub with quick start templates, recent workspaces, and an interactive sample document (Playground.md)',
+      '15-Second Quick Setup Wizard: Instant setup modal for new and existing users to configure theme, editor engine, and view mode',
+      'Source Control / Git Drawer Overhaul: Native commit box with staged vs. unstaged diffs, Commit Confirmation safeguard modal, Commit Guide, and commit history',
+      'Monaco Pro Editor Hardening: Real-time markdown lint diagnostics, word wrap, smooth minimap, line-height & font controls, and enhanced selection HUD',
+      '100% Local-First & Zero-Cloud: Zero network telemetry, pure offline privacy, and lightning-fast local disk performance'
+    ],
+    sections: [
+      {
+        category: 'Theme System',
+        icon: 'palette',
+        badge: 'Appearance',
+        color: '#8b5cf6',
+        items: [
+          {
+            title: '10 Calibrated Color Themes',
+            desc: 'Custom-tailored themes across high-contrast dark and clean light modes, including Tokyo Night, Dracula, GitHub Slate, One Dark, Solarized, and Synthwave.'
+          },
+          {
+            title: 'Fast Dark / Light Mode Toggle',
+            desc: 'Instant one-click toggle in the top menu bar to switch between dark and light variants with automatic Monaco tokenizer matching.'
+          }
+        ]
+      },
+      {
+        category: 'Welcome & Onboarding',
+        icon: 'rocket_launch',
+        badge: 'Productivity',
+        color: '#06b6d4',
+        items: [
+          {
+            title: 'Workspace Welcome Launcher',
+            desc: 'Visual hub with instant access to recent workspaces, template starters, visual studios, and interactive Playground.'
+          },
+          {
+            title: 'Quick Setup Wizard Modal',
+            desc: '15-second configuration wizard allowing quick personalization of theme, editor engine, and view modes.'
+          }
+        ]
+      },
+      {
+        category: 'Git & Source Control',
+        icon: 'fork_right',
+        badge: 'Version Control',
+        color: '#10b981',
+        items: [
+          {
+            title: 'Redesigned Git Drawer & Commit Box',
+            desc: 'Integrated commit composer with staged vs unstaged change counters, commit message validation, and commit history.'
+          },
+          {
+            title: 'Commit Confirmation & Help Safeguards',
+            desc: 'Safety modals preventing accidental commits and providing conventional commit message guidelines.'
+          }
+        ]
+      }
+    ]
+  },
   {
     version: '1.1.4',
     type: 'feature',
     title: 'VisualMark Studio 1.1.4 — Diagram Studio Rebuild: 7 Visual Builders, 8 Themes & Monaco Tokenizer',
     date: 'October 2026',
-    isCurrent: true,
+    isCurrent: false,
     highlights: [
       '7 Specialized Visual Builders: Complete visual designer suites for Architecture Flowcharts, Sequence Diagrams, Database ER Models, Class & Object Models, State Machines, Git Branch Graphs, and Mindmaps',
       '8 Curated Diagram Themes: Midnight Obsidian, Tokyo Night, Cyber Neon, Forest Emerald, Dracula, Monokai Pro, Sunset Horizon, and GitHub Slate Light',
@@ -83,6 +223,7 @@ export const RELEASE_HISTORY = [
           {
             title: 'Console Error Loop Resolution',
             desc: 'Eliminated recursive missing favicon requests that caused over 16,000 console errors, ensuring smooth launch performance.'
+
           },
           {
             title: 'Launcher Brand Asset Bundling',
@@ -362,7 +503,7 @@ export const RELEASE_HISTORY = [
           },
           {
             title: 'Dual-Flavor SVG Export Engine',
-            desc: 'Exports customized icons via direct local .svg downloads with baked-in vector fills, or generates remote Iconify markdown image syntax (<img src="https://api.iconify.design/material-symbols:...svg?color=..." />).'
+            desc: 'Exports customized icons via direct local .svg downloads with baked-in vector fills, or generates remote Iconify markdown image syntax (<img src="https://api.iconify.design/material-symbols/...svg?color=..." />).'
           },
           {
             title: 'Monaco ":" Inline Autocomplete',

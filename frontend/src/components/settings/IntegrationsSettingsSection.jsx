@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useI18n } from '../../i18n/I18nContext'
 
 export default function IntegrationsSettingsSection({
   activeCategory,
@@ -8,6 +9,7 @@ export default function IntegrationsSettingsSection({
   showToken,
   setShowToken
 }) {
+  const { t } = useI18n()
   const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem('visualmark_gemini_key') || '')
   const [showGeminiKey, setShowGeminiKey] = useState(false)
 
@@ -17,7 +19,7 @@ export default function IntegrationsSettingsSection({
     <section className="settings-group-section">
       <div className="settings-group-header">
         <span className="material-symbols-outlined">hub</span>
-        <h3>AI & Cloud Integrations</h3>
+        <h3>{t('settings.github.title', 'GitHub & AI Integrations')}</h3>
       </div>
 
       {/* Google Gemini AI Studio API Key */}
@@ -81,7 +83,7 @@ export default function IntegrationsSettingsSection({
       {matchesSearch('github token pat rate limit authorization api private repo') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label">GitHub: Personal Access Token (PAT)</div>
+            <div className="settings-card-label">{t('settings.github.token', 'GitHub: Personal Access Token (PAT)')}</div>
             <div className="settings-card-sublabel">
               Increases GitHub API rate limits from 60 to 5,000 requests/hour and enables scanning of private repositories.
               Stored only on your local device.
@@ -112,7 +114,7 @@ export default function IntegrationsSettingsSection({
                 type="button"
                 className="settings-action-btn"
                 onClick={() => setShowToken(!showToken)}
-                title={showToken ? 'Hide token' : 'Show token'}
+                title={showToken ? t('settings.github.hideToken', 'Hide token') : t('settings.github.showToken', 'Show token')}
                 style={{ padding: '4px 8px', height: '28px', display: 'flex', alignItems: 'center' }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>

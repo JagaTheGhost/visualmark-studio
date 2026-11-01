@@ -2,6 +2,12 @@ import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { getOptimizedImageUrl, requiresAsyncResolution, resolveRedirectImageUrl } from '../../utils/imageUtils'
 import { sanitizeSafeMediaUrl, sanitizeSvg, isSafeDomain } from '../../utils/securityUtils'
+import { isVideoUrl, isAudioUrl, isGifUrl } from '../../utils/mediaUtils'
+import MarkdownVideo from './MarkdownVideo'
+import MarkdownAudio from './MarkdownAudio'
+
+// Global cache to remember successfully loaded image sources across keystrokes/re-renders
+const loadedImageCache = new Set()
 
 /**
  * Safely decodes an SVG from any data:image/svg+xml URI (base64, utf-8, or percent-encoded).
@@ -81,6 +87,7 @@ function isBadgeImage(src, alt = '', props = {}) {
   const bannerExclusionKeywords = [
     'capsule-render',
     'readme-typing-svg',
+    'typing',
     'github-readme-stats',
     'github-readme-streak-stats',
     'streak-stats',
@@ -151,20 +158,64 @@ function isBadgeImage(src, alt = '', props = {}) {
 
 export default function MarkdownImage({ src, alt, title, workspaceDirectory, activeFile, ...props }) {
   const cleanSrc = typeof src === 'string' ? src.replace(/[\r\n\t]/g, '').trim() : ''
+
+  // 0. Smoothly delegate video or audio file paths to dedicated media players
+  if (isVideoUrl(cleanSrc || src)) {
+    return (
+      <MarkdownVideo
+        src={cleanSrc || src}
+        alt={alt}
+        title={title}
+        workspaceDirectory={workspaceDirectory}
+        activeFile={activeFile}
+        {...props}
+      />
+    )
+  }
+
+  if (isAudioUrl(cleanSrc || src)) {
+    return (
+      <MarkdownAudio
+        src={cleanSrc || src}
+        title={title || alt}
+        workspaceDirectory={workspaceDirectory}
+        activeFile={activeFile}
+        {...props}
+      />
+    )
+  }
   const isDataUri = cleanSrc.startsWith('data:')
-  const cleanInitialSrc = isDataUri ? cleanSrc : getOptimizedImageUrl(src)
+  const isRemote = /^(https?:|\/\/|data:)/i.test(cleanSrc)
+  const isLocalFile = !isDataUri && !isRemote && typeof window !== 'undefined' && Boolean(window.electronAPI?.readLocalMedia)
+  const cleanInitialSrc = isDataUri ? cleanSrc : (isLocalFile ? '' : getOptimizedImageUrl(src))
+
+  // Synchronously check global vector cache so live-generated SVGs render with 0 flash/skeleton
+  const initialSvgRaw = useMemo(() => {
+    if (typeof window !== 'undefined' && window.__visualmarkSvgCache && cleanSrc) {
+      const cache = window.__visualmarkSvgCache
+      const cleanRel = cleanSrc.replace(/^\.[\\/]/, '')
+      return cache[cleanSrc] || cache[cleanRel] || cache[`assets/${cleanRel}`] || null
+    }
+    return null
+  }, [cleanSrc])
 
   const [currentSrc, setCurrentSrc] = useState(cleanInitialSrc)
-  const [localSvgRaw, setLocalSvgRaw] = useState(null)
-  const [isLoading, setIsLoading] = useState(!isDataUri)
+  const [localSvgRaw, setLocalSvgRaw] = useState(initialSvgRaw)
+  const [isLoading, setIsLoading] = useState(() => {
+    if (isDataUri || initialSvgRaw) return false
+    if (!isLocalFile && (loadedImageCache.has(cleanInitialSrc) || loadedImageCache.has(cleanSrc))) return false
+    return true
+  })
   const [hasError, setHasError] = useState(false)
   const [hasAttemptedResolution, setHasAttemptedResolution] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const isMountedRef = useRef(true)
+  const imgRef = useRef(null)
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 
   const isBadge = useMemo(() => isBadgeImage(cleanSrc || currentSrc || src, alt, props), [cleanSrc, currentSrc, src, alt, props])
+  const isGif = useMemo(() => isGifUrl(cleanSrc || currentSrc || src), [cleanSrc, currentSrc, src])
   const isForTheBadge = useMemo(() => {
     const combined = `${cleanSrc} ${currentSrc} ${src}`.toLowerCase()
     return combined.includes('for-the-badge') || combined.includes('forthebadge')
@@ -181,6 +232,7 @@ export default function MarkdownImage({ src, alt, title, workspaceDirectory, act
     return (
       combined.includes('capsule-render') ||
       combined.includes('readme-typing-svg') ||
+      combined.includes('typing') ||
       isSafeDomain(cleanSrc, 'demolab.com') ||
       isSafeDomain(currentSrc, 'demolab.com') ||
       isSafeDomain(src, 'demolab.com')
@@ -196,18 +248,48 @@ export default function MarkdownImage({ src, alt, title, workspaceDirectory, act
     return raw ? sanitizeSvg(raw) : null
   }, [localSvgRaw, cleanSrc, currentSrc, src])
 
-  // Resolve relative workspace paths (e.g. assets/banner.svg) to absolute disk path
+  // Immediately clear loading flag if the browser has already downloaded/cached this image
+  useEffect(() => {
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+      if (cleanSrc) loadedImageCache.add(cleanSrc)
+      if (currentSrc) loadedImageCache.add(currentSrc)
+      setIsLoading(false)
+      setHasError(false)
+    }
+  }, [currentSrc, cleanSrc])
+
+  // Resolve relative workspace paths (e.g. assets/banner.svg) to absolute disk path or clean relative path
   const resolveLocalPath = (relativePath) => {
     if (!relativePath || typeof relativePath !== 'string') return null
-    if (/^(https?:|\/\/|data:)/i.test(relativePath)) return null
+    if (/^(https?:|\/\/|data:|blob:)/i.test(relativePath)) return null
+
+    let clean = relativePath.split('?')[0].split('#')[0].trim()
+    try {
+      clean = decodeURIComponent(clean)
+    } catch {}
 
     // Absolute Windows or Unix path
-    if (/^[a-zA-Z]:[\\/]/.test(relativePath) || relativePath.startsWith('/')) {
-      return relativePath
+    if (/^[a-zA-Z]:[\\/]/.test(clean) || clean.startsWith('/')) {
+      return clean
     }
 
-    const cleanRel = relativePath.replace(/^\.[\\/]/, '')
+    const cleanRel = clean.replace(/^\.[\\/]/, '')
     const wsPath = workspaceDirectory?.path || (typeof workspaceDirectory === 'string' ? workspaceDirectory : null)
+
+    // Check relative to activeFile's directory
+    if (activeFile && typeof activeFile === 'string') {
+      const cleanActive = activeFile.split('?')[0].split('#')[0].replace(/\\/g, '/')
+      const lastSlash = cleanActive.lastIndexOf('/')
+      if (lastSlash !== -1) {
+        const activeDir = cleanActive.slice(0, lastSlash)
+        if (wsPath) {
+          const sep = wsPath.includes('\\') ? '\\' : '/'
+          const normalizedWs = wsPath.replace(/[\\/]+$/, '')
+          const combinedRel = `${activeDir}/${cleanRel}`.replace(/[\\/]+/g, sep)
+          return `${normalizedWs}${sep}${combinedRel}`
+        }
+      }
+    }
 
     if (wsPath) {
       const sep = wsPath.includes('\\') ? '\\' : '/'
@@ -215,15 +297,33 @@ export default function MarkdownImage({ src, alt, title, workspaceDirectory, act
       const normalizedRel = cleanRel.replace(/[\\/]+/g, sep)
       return `${normalizedWs}${sep}${normalizedRel}`
     }
-    return null
+
+    // Fallback: return clean relative path so Electron IPC can check activeWorkspaces directly
+    return cleanRel
   }
 
   useEffect(() => {
     isMountedRef.current = true
+    const handleCacheUpdated = (e) => {
+      const cleanRel = cleanSrc ? cleanSrc.replace(/^\.[\\/]/, '') : ''
+      if (
+        e.detail?.path === cleanSrc ||
+        (cleanRel && e.detail?.path === cleanRel) ||
+        (cleanRel && e.detail?.path === `assets/${cleanRel}`)
+      ) {
+        if (e.detail?.svg) {
+          setLocalSvgRaw(e.detail.svg)
+          setIsLoading(false)
+          setHasError(false)
+        }
+      }
+    }
+    window.addEventListener('visualmark:svg-cache-updated', handleCacheUpdated)
     return () => {
       isMountedRef.current = false
+      window.removeEventListener('visualmark:svg-cache-updated', handleCacheUpdated)
     }
-  }, [])
+  }, [cleanSrc])
 
   useEffect(() => {
     let active = true
@@ -231,10 +331,29 @@ export default function MarkdownImage({ src, alt, title, workspaceDirectory, act
     const isRemote = /^(https?:|\/\/|data:)/i.test(cleanSrc)
     const optimized = isData ? src.replace(/[\r\n\t]/g, '').trim() : getOptimizedImageUrl(src)
 
+    // 0. Check in-memory global SVG vector cache first!
+    if (typeof window !== 'undefined' && window.__visualmarkSvgCache) {
+      const cache = window.__visualmarkSvgCache
+      const cleanRel = cleanSrc ? cleanSrc.replace(/^\.[\\/]/, '') : ''
+      const cached = cache[cleanSrc] || cache[cleanRel] || cache[`assets/${cleanRel}`]
+      if (cached) {
+        setLocalSvgRaw(cached)
+        setCurrentSrc(optimized)
+        setIsLoading(false)
+        setHasError(false)
+        return
+      }
+    }
+
     setLocalSvgRaw(null)
     setCurrentSrc(optimized)
     setHasError(false)
-    setIsLoading(!isData)
+
+    if (isData || loadedImageCache.has(optimized) || loadedImageCache.has(cleanSrc)) {
+      setIsLoading(false)
+    } else {
+      setIsLoading(true)
+    }
 
     // Handle Local Workspace Media in Electron
     if (!isData && !isRemote) {
@@ -264,9 +383,19 @@ export default function MarkdownImage({ src, alt, title, workspaceDirectory, act
                   }
                   setIsLoading(false)
                   setHasError(true)
+                }).catch(() => {
+                  if (active) {
+                    setIsLoading(false)
+                    setHasError(true)
+                  }
                 })
                 return
               }
+              setIsLoading(false)
+              setHasError(true)
+            }
+          }).catch(() => {
+            if (active) {
               setIsLoading(false)
               setHasError(true)
             }
@@ -285,6 +414,11 @@ export default function MarkdownImage({ src, alt, title, workspaceDirectory, act
               setIsLoading(false)
               setHasError(true)
             }
+          }).catch(() => {
+            if (active) {
+              setIsLoading(false)
+              setHasError(true)
+            }
           })
           return () => {
             active = false
@@ -299,7 +433,7 @@ export default function MarkdownImage({ src, alt, title, workspaceDirectory, act
           setCurrentSrc(resolved)
           setHasAttemptedResolution(true)
         }
-      })
+      }).catch(() => {})
     }
 
     return () => {
@@ -309,6 +443,11 @@ export default function MarkdownImage({ src, alt, title, workspaceDirectory, act
 
 
   const handleImageError = async () => {
+    // If still resolving a local workspace file in Electron, do not immediately fail
+    if (isLocalFile && !currentSrc.startsWith('data:') && !currentSrc.startsWith('blob:') && !currentSrc.startsWith('http')) {
+      return
+    }
+
     if (isDataUri || (typeof src === 'string' && src.trim().startsWith('data:')) || isBadge) {
       setIsLoading(false)
       setHasError(true)
@@ -334,6 +473,8 @@ export default function MarkdownImage({ src, alt, title, workspaceDirectory, act
   }
 
   const handleImageLoad = () => {
+    if (cleanSrc) loadedImageCache.add(cleanSrc)
+    if (currentSrc) loadedImageCache.add(currentSrc)
     setIsLoading(false)
     setHasError(false)
   }
@@ -416,16 +557,22 @@ export default function MarkdownImage({ src, alt, title, workspaceDirectory, act
         <span className="material-symbols-outlined fallback-mini-icon">image_not_supported</span>
         <span className="fallback-mini-title truncate">{alt || 'Image Preview'}</span>
         {src && (
-          <a
-            href={src}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
             className="fallback-mini-action"
-            title="Open URL in new tab"
-            onClick={(e) => e.stopPropagation()}
+            title="Open URL"
+            onClick={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              if (window.electronAPI?.openExternalUrl) {
+                window.electronAPI.openExternalUrl(src)
+              } else {
+                window.open(src, '_blank', 'noopener,noreferrer')
+              }
+            }}
           >
             <span className="material-symbols-outlined">open_in_new</span>
-          </a>
+          </button>
         )}
         <button
           type="button"
@@ -447,7 +594,6 @@ export default function MarkdownImage({ src, alt, title, workspaceDirectory, act
           src={sanitizeSafeMediaUrl(currentSrc, '')}
           alt={alt || ''}
           title={title || alt || ''}
-          loading="lazy"
           className="preview-markdown-badge is-loaded"
           onLoad={handleImageLoad}
           onError={handleImageError}
@@ -464,16 +610,24 @@ export default function MarkdownImage({ src, alt, title, workspaceDirectory, act
         className={`preview-image-wrapper ${isFullWidth ? 'is-full-width' : ''} ${isTransparentSvgWidget ? 'is-transparent-widget' : ''}`}
         style={isFullWidth ? { display: 'block', width: '100%', maxWidth: '100%' } : undefined}
       >
-        {isLoading && (
-          <span className="preview-image-skeleton">
+        {isLoading && !isTransparentSvgWidget && (
+          <span
+            className="preview-image-skeleton"
+            style={props.width && props.width !== '100%' ? { width: props.width, maxWidth: '100%' } : undefined}
+          >
             <span className="material-symbols-outlined skeleton-pulse-icon">image</span>
           </span>
         )}
+        {isGif && !isLoading && !hasError && (
+          <span className="preview-gif-badge select-none" title="Animated GIF (Click to enlarge)">
+            GIF
+          </span>
+        )}
         <img
+          ref={imgRef}
           src={sanitizeSafeMediaUrl(currentSrc, '')}
           alt={alt || ''}
           title={title || alt || ''}
-          loading="lazy"
           className={`preview-markdown-image ${isLoading ? 'is-loading' : 'is-loaded'} ${isTransparentSvgWidget ? 'no-shadow' : ''}`}
           onLoad={handleImageLoad}
           onError={handleImageError}

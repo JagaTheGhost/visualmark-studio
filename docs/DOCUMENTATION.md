@@ -283,17 +283,25 @@ npm install
 npm run electron:dev
 ```
 
-### Packaging Windows Binaries
+### Packaging Desktop Binaries
 ```bash
-# Step 1: Compile the frozen Python sidecar
+# Step 1: Compile the frozen Python sidecar (server.exe on Windows, server on Linux/macOS)
 cd backend
 python build_sidecar.py
 
-# Step 2: Build the standalone installer & portable binary
+# Step 2: Build the desktop distribution packages
 cd ../frontend
+
+# Build for current OS:
 npm run electron:dist
+
+# Or target specific operating systems:
+npm run electron:dist:win    # Windows Setup Installer (VisualMark-Studio-Setup.exe)
+npm run electron:dist:linux  # Linux AppImage & Debian package
+npm run electron:dist:mac    # macOS DMG & Zip (Apple Silicon & Intel)
 ```
 Generated artifacts in `frontend/release/`:
-- `VisualMark-Studio-Setup.exe` (NSIS Installer)
-- `VisualMark-Studio-Portable.exe` (Standalone Portable)
-- `latest.yml` (Electron-updater metadata)
+- `VisualMark-Studio-Setup.exe` (Windows NSIS Setup Installer)
+- `latest.yml` (Electron-updater metadata for Windows)
+- `VisualMark-Studio-*.AppImage` / `.deb` (Linux standalone and Debian packages)
+- `VisualMark-Studio-*.dmg` / `*.zip` (macOS drag-and-drop disk images)

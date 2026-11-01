@@ -83,7 +83,7 @@ export default function IconEmojiStudioTab({
     navigator.clipboard.writeText(text).then(() => {
       setCopyFeedback(label)
       setTimeout(() => setCopyFeedback(''), 1800)
-    })
+    }).catch(() => {})
   }, [])
 
   // Switch between Vector Icons and Developer Emojis
@@ -108,10 +108,10 @@ export default function IconEmojiStudioTab({
   // Download SVG Helper
   const handleDownloadSvg = useCallback(async (item) => {
     const iconName = item?.icon || 'icon'
-    const iconifyId = toIconifyName(iconName)
+    const iconifyId = toIconifyName(iconName).replace(/_/g, '-')
     const hex = safeHexColor
     try {
-      const url = `https://api.iconify.design/material-symbols:${iconifyId}.svg?color=${encodeURIComponent(hex)}`
+      const url = `https://api.iconify.design/material-symbols/${encodeURIComponent(iconifyId)}.svg?color=${encodeURIComponent(hex)}`
       const res = await fetch(url)
       if (!res.ok) throw new Error('CDN download failed')
       const svgText = await res.text()
@@ -187,7 +187,7 @@ export default function IconEmojiStudioTab({
     }
 
     // Default: 'vector-cdn'
-    return `<img src="https://api.iconify.design/material-symbols:${iconifyId}.svg${colorParam}" width="${svgSize}" align="center" alt="${selectedItem.name}" />`
+    return `<img src="https://api.iconify.design/material-symbols/${iconifyId}.svg${colorParam}" width="${svgSize}" align="center" alt="${selectedItem.name}" />`
   }, [selectedItem, studioMode, iconFormat, svgSize, safeHexColor])
 
   // Computed Markdown Heading
@@ -865,7 +865,7 @@ export default function IconEmojiStudioTab({
                     studioMode === 'vector' && selectedItem?.icon ? (
                       !previewImgError ? (
                         <img
-                          src={`https://api.iconify.design/material-symbols:${selectedIconifyId}.svg?color=${encodeURIComponent(safeHexColor)}`}
+                          src={`https://api.iconify.design/material-symbols/${selectedIconifyId}.svg?color=${encodeURIComponent(safeHexColor)}`}
                           width={svgSize + 4}
                           height={svgSize + 4}
                           alt={selectedItem.name}
@@ -911,7 +911,7 @@ export default function IconEmojiStudioTab({
                     studioMode === 'vector' && selectedItem?.icon ? (
                       !previewImgError ? (
                         <img
-                          src={`https://api.iconify.design/material-symbols:${selectedIconifyId}.svg?color=${encodeURIComponent(safeHexColor)}`}
+                          src={`https://api.iconify.design/material-symbols/${selectedIconifyId}.svg?color=${encodeURIComponent(safeHexColor)}`}
                           width={svgSize + 4}
                           height={svgSize + 4}
                           alt={selectedItem.name}

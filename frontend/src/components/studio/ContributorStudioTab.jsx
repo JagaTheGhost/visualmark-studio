@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import DOMPurify from 'dompurify'
 import StudioShell from './common/StudioShell'
 import '../../styles/studios/extendedStudios.css'
 
@@ -78,9 +79,13 @@ export default function ContributorStudioTab({
 
   const safeSponsorUrl = useMemo(() => {
     if (!sponsorUrl || typeof sponsorUrl !== 'string') return 'https://github.com/sponsors'
-    const trimmed = sponsorUrl.trim()
-    if (/^https?:\/\//i.test(trimmed)) {
-      return trimmed
+    try {
+      const parsed = new URL(sponsorUrl.trim())
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+        return DOMPurify.sanitize(parsed.href)
+      }
+    } catch {
+      // Invalid URL format
     }
     return 'https://github.com/sponsors'
   }, [sponsorUrl])
@@ -206,11 +211,11 @@ export default function ContributorStudioTab({
     if (includeSponsors) {
       md += `### 💖 Sponsors & Backers\n\n`
       md += `Support this project by becoming a sponsor. Your avatar or organization logo will appear here with a link to your profile!\n\n`
-      md += `[![Sponsor via GitHub](https://img.shields.io/badge/Sponsor-GitHub_Sponsors-ea4aaa?style=for-the-badge&logo=github-sponsors)](${sponsorUrl})\n`
+      md += `[![Sponsor via GitHub](https://img.shields.io/badge/Sponsor-GitHub_Sponsors-ea4aaa?style=for-the-badge&logo=github-sponsors)](${safeSponsorUrl})\n`
     }
 
     return md
-  }, [contributors, layoutStyle, columnsCount, avatarSize, includeSponsors, sponsorUrl])
+  }, [contributors, layoutStyle, columnsCount, avatarSize, includeSponsors, safeSponsorUrl])
 
   const handleInsert = () => {
     onInsertContributors(generatedMarkdown)

@@ -63,7 +63,11 @@ export function useEditorExternalDrop({
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       const isImage = /\.(png|jpe?g|gif|svg|webp|bmp|avif)$/i.test(file.name)
-      if (isImage) {
+      const isVideo = /\.(mp4|webm|ogg|ogv|mov|m4v|mkv)$/i.test(file.name)
+      const isAudio = /\.(mp3|wav|ogg|oga|m4a|aac|flac)$/i.test(file.name)
+      const isGif = /\.gif$/i.test(file.name)
+
+      if (isImage || isVideo || isAudio) {
         let imported = false
         if (typeof window !== 'undefined' && window.electronAPI?.copyFileDirect && workspaceDirectory?.path && file.path) {
           try {
@@ -74,23 +78,41 @@ export function useEditorExternalDrop({
             const destPath = `${assetsDir}/${file.name}`
             const copyRes = await window.electronAPI.copyFileDirect(file.path, destPath)
             if (copyRes?.success) {
-              const snippet = `\n![${file.name.replace(/\.[^/.]+$/, '')}](./assets/${file.name})\n`
+              let snippet = ''
+              if (isVideo) {
+                const mime = file.name.endsWith('.webm') ? 'video/webm' : 'video/mp4'
+                snippet = `\n<video controls width="100%">\n  <source src="./assets/${file.name}" type="${mime}">\n  Your browser does not support the video tag.\n</video>\n`
+              } else if (isAudio) {
+                snippet = `\n<audio controls src="./assets/${file.name}">\n  Your browser does not support the audio element.\n</audio>\n`
+              } else {
+                snippet = `\n![${file.name.replace(/\.[^/.]+$/, '')}](./assets/${file.name})\n`
+              }
               insertSnippetAtCursor(snippet)
               window.dispatchEvent(new CustomEvent('workspace-tree-refresh'))
-              if (showToast) showToast(`✓ Imported ${file.name} to ./assets/ and inserted image`, 'success')
+              const label = isVideo ? 'video' : isAudio ? 'audio track' : isGif ? 'animated GIF' : 'image'
+              if (showToast) showToast(`Γ£ô Imported ${file.name} to ./assets/ and inserted ${label}`, 'success')
               imported = true
             }
           } catch (err) {
-            console.warn('Error copying image to workspace assets:', err)
+            console.warn('Error copying media to workspace assets:', err)
           }
         }
         if (!imported) {
           const reader = new FileReader()
           reader.onload = (ev) => {
-            const folded = foldDataUris(ev.target.result)
-            const snippet = `\n![${file.name.replace(/\.[^/.]+$/, '')}](${folded})\n`
+            const resultUrl = ev.target.result
+            let snippet = ''
+            if (isVideo) {
+              snippet = `\n<video controls width="100%">\n  <source src="${resultUrl}">\n</video>\n`
+            } else if (isAudio) {
+              snippet = `\n<audio controls src="${resultUrl}"></audio>\n`
+            } else {
+              const folded = foldDataUris(resultUrl)
+              snippet = `\n![${file.name.replace(/\.[^/.]+$/, '')}](${folded})\n`
+            }
             insertSnippetAtCursor(snippet)
-            if (showToast) showToast(`✓ Inserted image ${file.name}`, 'info')
+            const label = isVideo ? 'video' : isAudio ? 'audio track' : isGif ? 'animated GIF' : 'image'
+            if (showToast) showToast(`Γ£ô Inserted ${label} ${file.name}`, 'info')
           }
           reader.readAsDataURL(file)
         }

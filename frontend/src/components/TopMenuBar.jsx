@@ -16,9 +16,6 @@ export default function TopMenuBar({
   onGenerate,
   onCopy,
   onDownload,
-  onDownloadSuite,
-  onDownloadHtml,
-  onDownloadPdf,
   onOpenFile,
   onOpenFolder,
   onSaveFile,
@@ -89,7 +86,7 @@ export default function TopMenuBar({
   useEffect(() => {
     if (typeof window !== 'undefined' && window.electronAPI?.isElectron) {
       setIsElectron(true)
-      window.electronAPI.isWindowMaximized().then((max) => setIsMaximized(max))
+      window.electronAPI.isWindowMaximized().then((max) => setIsMaximized(max)).catch(() => {})
       if (window.electronAPI.getIsDev) {
         window.electronAPI.getIsDev().then((res) => {
           if (typeof res === 'boolean') setIsDevMode(res)
@@ -202,7 +199,7 @@ export default function TopMenuBar({
                     <span className="material-symbols-outlined dropdown-icon">history</span>
                     <span>Open Recent</span>
                   </span>
-                  <span className="submenu-arrow">›</span>
+                  <span className="submenu-arrow">ΓÇ║</span>
                   {activeSubmenu === 'recent' && (
                     <div className="menubar-submenu" onClick={(e) => e.stopPropagation()}>
                       {recentWorkspaces && recentWorkspaces.length > 0 ? (
@@ -250,17 +247,6 @@ export default function TopMenuBar({
                 <button type="button" className="dropdown-item" onClick={() => handleItemClick(onDownload)} disabled={!activeFile}>
                   <span>Save Copy As Markdown...</span>
                 </button>
-                <button type="button" className="dropdown-item" onClick={() => handleItemClick(onDownloadHtml)}>
-                  <span>Export as HTML...</span>
-                </button>
-                <button type="button" className="dropdown-item" onClick={() => handleItemClick(onDownloadPdf)}>
-                  <span>Export as PDF...</span>
-                </button>
-                {isDocPack && onDownloadSuite && (
-                  <button type="button" className="dropdown-item" onClick={() => handleItemClick(onDownloadSuite)}>
-                    <span>Export Suite (.zip)...</span>
-                  </button>
-                )}
                 <div className="dropdown-divider" />
                 <button
                   type="button"
@@ -377,13 +363,13 @@ export default function TopMenuBar({
                 </button>
                 <div className="dropdown-divider" />
                 <button type="button" className="dropdown-item" onClick={() => handleItemClick(() => setViewMode && setViewMode('split'))}>
-                  <span>{viewMode === 'split' ? '✓ ' : '  '}Split View (Side-by-Side)</span>
+                  <span>{viewMode === 'split' ? 'Γ£ô ' : '  '}Split View (Side-by-Side)</span>
                 </button>
                 <button type="button" className="dropdown-item" onClick={() => handleItemClick(() => setViewMode && setViewMode('editor'))}>
-                  <span>{viewMode === 'editor' ? '✓ ' : '  '}Editor Only</span>
+                  <span>{viewMode === 'editor' ? 'Γ£ô ' : '  '}Editor Only</span>
                 </button>
                 <button type="button" className="dropdown-item" onClick={() => handleItemClick(() => setViewMode && setViewMode('preview'))}>
-                  <span>{viewMode === 'preview' ? '✓ ' : '  '}Preview Only</span>
+                  <span>{viewMode === 'preview' ? 'Γ£ô ' : '  '}Preview Only</span>
                 </button>
                 <div className="dropdown-divider" />
                 <button type="button" className="dropdown-item" onClick={() => handleItemClick(onToggleSidebar)}>
@@ -402,15 +388,15 @@ export default function TopMenuBar({
                   <span>Toggle Output Panel</span>
                 </button>
                 <button type="button" className="dropdown-item" onClick={() => handleItemClick(onToggleZen)}>
-                  <span>{isZenMode ? '✓ ' : '  '}Toggle Zen Mode</span>
+                  <span>{isZenMode ? 'Γ£ô ' : '  '}Toggle Zen Mode</span>
                   <kbd>F11</kbd>
                 </button>
                 <div className="dropdown-divider" />
                 <button type="button" className="dropdown-item" onClick={() => handleItemClick(() => setEditorEngine && setEditorEngine('monaco'))}>
-                  <span>{editorEngine === 'monaco' ? '✓ ' : '  '}Editor: Monaco (VS Code)</span>
+                  <span>{editorEngine === 'monaco' ? 'Γ£ô ' : '  '}Editor: Monaco (VS Code)</span>
                 </button>
                 <button type="button" className="dropdown-item" onClick={() => handleItemClick(() => setEditorEngine && setEditorEngine('classic'))}>
-                  <span>{editorEngine === 'classic' ? '✓ ' : '  '}Editor: Classic (Lightweight)</span>
+                  <span>{editorEngine === 'classic' ? 'Γ£ô ' : '  '}Editor: Classic (Lightweight)</span>
                 </button>
                 <div className="dropdown-divider" />
                 <div
@@ -421,7 +407,7 @@ export default function TopMenuBar({
                     <span className="material-symbols-outlined dropdown-icon">palette</span>
                     <span>Color Theme</span>
                   </span>
-                  <span className="submenu-arrow">›</span>
+                  <span className="submenu-arrow">ΓÇ║</span>
                   {activeSubmenu === 'theme' && (
                     <div className="menubar-submenu" style={{ minWidth: '230px' }}>
                       <div style={{ padding: '6px 12px 2px', fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.05em' }}>DARK THEMES</div>
@@ -438,7 +424,7 @@ export default function TopMenuBar({
                                 <span key={i} style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: c, display: 'inline-block' }} />
                               ))}
                             </span>
-                            <span>{themeMode === theme.id ? '✓ ' : '  '}{theme.name}</span>
+                            <span>{themeMode === theme.id ? 'Γ£ô ' : '  '}{theme.name}</span>
                           </span>
                         </button>
                       ))}
@@ -457,7 +443,7 @@ export default function TopMenuBar({
                                 <span key={i} style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: c, display: 'inline-block' }} />
                               ))}
                             </span>
-                            <span>{themeMode === theme.id ? '✓ ' : '  '}{theme.name}</span>
+                            <span>{themeMode === theme.id ? 'Γ£ô ' : '  '}{theme.name}</span>
                           </span>
                         </button>
                       ))}
@@ -506,7 +492,7 @@ export default function TopMenuBar({
               <div className="menubar-dropdown">
                 <button type="button" className="dropdown-item" onClick={() => handleItemClick(onGenerate)} disabled={loading}>
                   <span>Create Documentation</span>
-                  <kbd>Ctrl+↵</kbd>
+                  <kbd>Ctrl+Γå╡</kbd>
                 </button>
                 <button type="button" className="dropdown-item" onClick={() => handleItemClick(onGenerate)} disabled={loading}>
                   <span>Build Skeleton Documentation</span>
@@ -635,7 +621,7 @@ export default function TopMenuBar({
                     if (window.electronAPI?.openExternalUrl) {
                       window.electronAPI.openExternalUrl(url)
                     } else {
-                      window.open(url, '_blank')
+                      window.open(url, '_blank', 'noopener,noreferrer')
                     }
                   })}
                 >
@@ -916,7 +902,7 @@ export default function TopMenuBar({
                 <span style={{ color: 'var(--text-muted, #64748b)' }}>Engine:</span>
                 <span style={{ color: '#4ade80', fontFamily: 'monospace' }}>FastAPI Local Sidecar</span>
                 <span style={{ color: 'var(--text-muted, #64748b)' }}>Architecture:</span>
-                <span style={{ color: '#f59e0b', fontFamily: 'monospace' }}>Local-Core Architecture / Optional Cloud Enhancements</span>
+                <span style={{ color: '#f59e0b', fontFamily: 'monospace' }}>100% Local-First / Zero Cloud</span>
                 <span style={{ color: 'var(--text-muted, #64748b)' }}>Platform:</span>
                 <span style={{ fontFamily: 'monospace', color: '#cbd5e1' }}>{typeof navigator !== 'undefined' ? navigator.platform : 'win32'}</span>
               </div>

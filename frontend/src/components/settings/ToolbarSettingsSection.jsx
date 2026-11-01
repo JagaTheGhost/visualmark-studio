@@ -1,4 +1,5 @@
 import React from 'react'
+import { useI18n } from '../../i18n/I18nContext'
 import {
   FLOATING_TOOLBAR_ACTIONS,
   saveFloatingToolbarConfig,
@@ -12,13 +13,14 @@ export default function ToolbarSettingsSection({
   setToolbarConfig,
   showToast
 }) {
+  const { t } = useI18n()
   if (activeCategory !== 'all' && activeCategory !== 'toolbar') return null
 
   return (
     <section className="settings-group-section">
       <div className="settings-group-header">
         <span className="material-symbols-outlined">auto_fix_high</span>
-        <h3>Floating Quick-Action Toolbar</h3>
+        <h3>{t('settings.toolbar.title', 'Floating Quick-Action Toolbar')}</h3>
         <span className="settings-env-badge" style={{ marginLeft: 'auto', textTransform: 'none' }}>
           {toolbarConfig.enabled
             ? `${FLOATING_TOOLBAR_ACTIONS.filter(a => toolbarConfig[a.id]).length} / ${FLOATING_TOOLBAR_ACTIONS.length} tools active`
@@ -27,13 +29,11 @@ export default function ToolbarSettingsSection({
       </div>
 
       {/* Master Enable/Disable */}
-      {matchesSearch('floating toolbar quick actions highlight selection word notion popup hud') && (
+      {matchesSearch('floating toolbar quick actions highlight selection word notion popup hud πâäπâ╝πâ½πâÉπâ╝') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label">Enable Floating Selection Toolbar</div>
-            <div className="settings-card-sublabel">
-              When text is highlighted in the editor, display a floating HUD with quick formatting actions, headings, lists, and callout insertion.
-            </div>
+            <div className="settings-card-label">{t('settings.toolbar.enable', 'Enable Floating Selection Toolbar')}</div>
+            <div className="settings-card-sublabel">{t('settings.toolbar.enableDesc', 'When text is highlighted in the editor, display a floating HUD with quick formatting actions, headings, lists, and callout insertion.')}</div>
           </div>
           <div className="settings-card-control">
             <label className="settings-toggle-switch">

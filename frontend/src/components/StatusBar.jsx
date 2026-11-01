@@ -108,11 +108,12 @@ export default function StatusBar({
         </div>
       </div>
 
+
       {/* Right Cluster */}
       <div className="status-cluster-right">
         {/* Estimated Reading Time */}
         <div className="status-item hide-mobile" data-tooltip="Estimated Document Reading Time" data-tooltip-pos="top">
-          <span>⏱️ ~{readMinutes} {t('statusBar.readTime', 'min read')}</span>
+          <span>ΓÅ▒∩╕Å ~{readMinutes} {t('statusBar.readTime', 'min read')}</span>
         </div>
 
         {/* Character Count */}
@@ -143,7 +144,7 @@ export default function StatusBar({
         {updateProgress && !updateDownloaded && (
           <div
             className="status-item update-progress-badge"
-            data-tooltip={`Downloading update: ${updateProgress.percent || 0}% (${Math.round((updateProgress.transferred || 0) / 1048576)} MB / ${Math.round((updateProgress.total || 0) / 1048576)} MB${updateProgress.bytesPerSecond ? ` • ${(updateProgress.bytesPerSecond / 1048576).toFixed(1)} MB/s` : ''})`}
+            data-tooltip={`Downloading update: ${updateProgress.percent || 0}% (${Math.round((updateProgress.transferred || 0) / 1048576)} MB / ${Math.round((updateProgress.total || 0) / 1048576)} MB${updateProgress.bytesPerSecond ? ` ΓÇó ${(updateProgress.bytesPerSecond / 1048576).toFixed(1)} MB/s` : ''})`}
             data-tooltip-pos="top"
             style={{
               display: 'flex',
@@ -207,13 +208,26 @@ export default function StatusBar({
         {/* Language Switcher Pill */}
         <div
           className="status-item language-pill"
-          onClick={onOpenSettings}
+          onClick={() => onOpenSettings('appearance')}
           data-tooltip={`VisualMark Studio Language: ${currentLanguage?.label || 'English'} (Click to change in Settings)`}
           data-tooltip-pos="top"
           style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
         >
-          <span>{currentLanguage?.flag || '🌐'} {currentLanguage?.code?.toUpperCase() || 'EN'}</span>
+          <span>{currentLanguage?.flag || '≡ƒîÉ'} {currentLanguage?.code?.toUpperCase() || 'EN'}</span>
         </div>
+
+                {/* Community & Bug Feedback Expandable Chat Icon (near version pill) */}
+        <a
+          href="https://github.com/JagaTheGhost/visualmark-studio/discussions"
+          target="_blank"
+          rel="noreferrer"
+          className="status-item status-community-expandable"
+          data-tooltip="This is an open-source project under active development. Bugs, issues, and other user-related problems may occur ΓÇö please share your experience with the VisualMark community so the developers can resolve your problems!"
+          data-tooltip-pos="top"
+        >
+          <span className="material-symbols-outlined status-icon">chat</span>
+          <span className="community-expand-label">Bugs & Feedback</span>
+        </a>
 
         {/* Version Pill (Click to open Release Notes tab) */}
         <div

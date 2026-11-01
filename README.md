@@ -23,102 +23,116 @@
 
 ---
 
-## ⚡ The Unified Documentation Experience
+## ΓÜí The Unified Documentation Experience
 
 Writing technical documentation is notoriously fragmented across disconnected browser tabs: drafting Markdown in basic text boxes, generating badges on web forms, drawing architecture diagrams on third-party whiteboards, building tables in online converters, and manually tracking release notes.
 
-**VisualMark Studio** unites all of this under a single, **privacy-first native desktop IDE**. It pairs the industry-standard **Monaco code editor** (the engine powering VS Code) with **12 specialized interactive visual studios**, direct local disk I/O, rich documentation architecture tools, and automated documentation generation.
+**VisualMark Studio** unites all of this under a dedicated, **local-first desktop IDE**. It pairs the industry-standard **Monaco code editor** (the engine powering VS Code) with **12 specialized interactive visual studios**, direct local disk I/O, rich documentation architecture tools, and automated documentation generation.
 
 | Traditional Documentation Workflow | The VisualMark Studio Experience |
 | :--- | :--- |
-| ❌ Jumping across 6+ web tabs to build badges, diagrams, and tables | ✅ **12 Integrated Visual Studios** right in the IDE workspace |
-| ❌ Generic web textareas with no multi-cursor or formatting | ✅ **Full Monaco Engine** with GFM syntax, multi-cursor, and hotkeys |
-| ❌ Manual formatting and hunting for syntax callouts | ✅ **Floating Selection HUD Toolbar** with live headings, callouts, and code fences |
-| ❌ Manual copy-pasting into local repositories | ✅ **Direct Local Disk I/O** (`Ctrl+S`, `Ctrl+O`) and real-time File Explorer |
-| ❌ Blind guessing whether Markdown structure is complete | ✅ **README Auditor & Linter** with automated health scoring (A+ to F) |
-| ❌ Forced cloud lock-in and telemetry tracking | ✅ **Local-Core Architecture** with zero unwanted telemetry and optional cloud enhancements |
+| Γ¥î Jumping across 6+ web tabs to build badges, diagrams, and tables | Γ£à **12 Integrated Visual Studios** right in the IDE workspace |
+| Γ¥î Generic web textareas with no multi-cursor or formatting | Γ£à **Full Monaco Engine** with GFM syntax, multi-cursor, and hotkeys |
+| Γ¥î Manual formatting and hunting for syntax callouts | Γ£à **Floating Selection HUD Toolbar** with live headings, callouts, and code fences |
+| Γ¥î Manual copy-pasting into local repositories | Γ£à **Direct Local Disk I/O** (`Ctrl+S`, `Ctrl+O`) and real-time File Explorer |
+| Γ¥î Blind guessing whether Markdown structure is complete | Γ£à **README Auditor & Linter** with automated health scoring (A+ to F) |
+| Γ¥î Cloud data leakage and external telemetry | Γ£à **Local-First & Private** with zero background tracking or telemetry |
 
 ---
 
-## 💾 Download for Windows
+## ≡ƒÆ╛ Download VisualMark Studio Desktop
 
-Pre-compiled, standalone Windows binaries are available directly from the latest [GitHub Release](https://github.com/JagaTheGhost/visualmark-studio/releases/latest):
+Pre-compiled, standalone desktop binaries are available directly from the latest [GitHub Release](https://github.com/JagaTheGhost/visualmark-studio/releases/latest):
 
-| Package | Format | Description | Direct Download |
+| Operating System | Package | Description | Direct Download |
 | :--- | :--- | :--- | :--- |
-| **Windows Installer** | `.exe` (NSIS) | Complete desktop installer with Start Menu, Desktop shortcut & Explorer integration | [Download Setup (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark-Studio-Setup.exe) |
-| **Windows Portable** | `.exe` (Standalone) | Zero-installation portable binary (runs from any folder or USB drive) | [Download Portable (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark-Studio-Portable.exe) |
+| **Windows** | `.exe` (NSIS Setup) | Complete desktop installer with Start Menu, Desktop shortcuts, auto-updates & Explorer integration | [Download Setup (.exe)](https://github.com/JagaTheGhost/visualmark-studio/releases/latest/download/VisualMark-Studio-Setup.exe) |
+| **Linux** | `.AppImage` / `.deb` | Universal AppImage (plug-and-play) & Debian/Ubuntu `.deb` package | [Download Linux Packages](https://github.com/JagaTheGhost/visualmark-studio/releases/latest) |
+| **macOS** | `.dmg` (Apple Silicon & Intel) | Drag-and-drop installer for macOS (`arm64` Apple Silicon & `x64` Intel) | [Download macOS DMG](https://github.com/JagaTheGhost/visualmark-studio/releases/latest) |
 
 > [!NOTE]
-> **Windows SmartScreen Notice**: Because VisualMark Studio is open-source and community-distributed, Windows SmartScreen may present an *"Unrecognized app"* prompt on initial launch. Click **More info → Run anyway** to proceed.
+> **Windows SmartScreen & macOS Gatekeeper Notice**: 
+> - **Windows**: Click **More info ΓåÆ Run anyway** if prompted by SmartScreen on initial launch.
+> - **macOS**: Right-click the app in `/Applications` ΓåÆ select **Open** (or run `xattr -cr /Applications/VisualMark\ Studio.app` in Terminal) to approve the open-source binary.
 
 ---
 
-## 🎨 12 Specialized Visual Studio Suites
+## ≡ƒÆí Why a Dedicated IDE instead of a VS Code Extension?
+
+Developers often ask: *"Why download a standalone desktop app when I can install an extension in my existing editor?"*
+
+1. ≡ƒÄ¿ **Visual Design Studios vs. Plain Text**: VS Code Markdown extensions only preview raw text and basic syntax. VisualMark Studio provides **12 bespoke interactive visual design studios** (live vector Repo Card designer, visual Devicon Badge builder, spreadsheet table grids, pan/zoom Mermaid architecture canvas, and marketing hero banners) that cannot run cleanly inside generic text editor tabs.
+2. ≡ƒº░ **Zero Extension Sprawl & Conflict**: Replicating even half of these capabilities in general-purpose editors requires installing and configuring 8+ disparate extensions that conflict over keybindings, themes, webview resources, and command palettes. VisualMark Studio provides a cohesive, zero-config documentation environment out of the box.
+3. ≡ƒ¢í∩╕Å **Hardened Sandboxed Workspace**: VS Code extensions run with full, unrestricted Node.js system privilegesΓÇöa frequent target for supply chain attacks. VisualMark Studio strictly confines file operations to your open workspace (`isPathWithinWorkspace`), sanitizes SVG and Markdown outputs with hardened DOMPurify allowlists, and enforces zero background telemetry.
+4. ≡ƒÄ» **Context Separation & Focus**: When you write code, you need linters, compilers, and debuggers. When you write documentation, you need a creative studio tailored for storytelling, visual assets, and high-impact presentation.
+
+---
+
+## ≡ƒÄ¿ 12 Specialized Visual Studio Suites
 
 VisualMark Studio features dedicated, visual designer environments accessible as persistent IDE tabs:
 
 | Studio | Tab ID | Capabilities |
 | :--- | :--- | :--- |
-| 🛡️ **Shields.io Badges** | `badges.studio` | 100+ Devicon tech presets, custom hex pickers, styles (`for-the-badge`, `flat`), SVG download |
-| 💳 **GitHub Repo Cards** | `repocard.studio` | 100% client-side vector SVG repo cards, auto-adaptive dark/light themes, live GitHub sync, 4 layout templates |
-| 📊 **Mermaid Architecture** | `diagrams.studio` | 7 visual builders (Flowchart, Sequence, ER Models, Class, State, Git, Mindmap), 8 high-DPI themes, Monaco tokenizer, pan/zoom canvas, blueprint presets, SVG/PNG export |
-| 🧮 **Visual Tables** | `tables.studio` | Interactive spreadsheet grid, column alignment, CSV import/export, 1-click Markdown generation |
-| 🧩 **Snippets & Callouts** | `snippets.studio` | GitHub alert callouts (`[!NOTE]`, `[!TIP]`, `[!WARNING]`), collapsible `<details>`, shortcut tables |
-| 🖼️ **Images & Banners** | `images.studio` | Gradient hero banners, motion heroes (GIF/MP4), macOS/Windows window frames, image optimization |
-| 🌳 **Directory Trees** | `tree.studio` | Auto-scans workspace folders into ASCII, Unicode box-drawing, or Emoji visual directory trees |
-| 🌐 **REST API & Endpoints** | `api.studio` | Live interactive preview (REST Blueprint card & GFM render), route matrix, request/response schemas, cURL commands |
-| 🎨 **Icons & Emojis** | `icons.studio` | Dual-mode Material Symbols & developer emojis, color wheel customizer, live catalog tinting, colored SVG download & Iconify markdown |
-| 👥 **Contributors & Team** | `contributors.studio` | All-Contributors standard grid, GitHub avatar auto-fetch, contribution role badges |
-| 📝 **Changelog & Releases** | `changelog.studio` | Keep-a-Changelog standard release notes with SemVer bumping (`Major`, `Minor`, `Patch`) |
-| 🔍 **README Auditor** | `audit.studio` | Documentation scorecard, A+ to F grade, section completeness check, 1-click boilerplate injector |
+| ≡ƒ¢í∩╕Å **Shields.io Badges** | `badges.studio` | 100+ Devicon tech presets, custom hex pickers, styles (`for-the-badge`, `flat`), SVG download |
+| ≡ƒÆ│ **GitHub Repo Cards** | `repocard.studio` | 100% client-side vector SVG repo cards, auto-adaptive dark/light themes, live GitHub sync, 4 layout templates |
+| ≡ƒôè **Mermaid Architecture** | `diagrams.studio` | 7 visual builders (Flowchart, Sequence, ER Models, Class, State, Git, Mindmap), 8 high-DPI themes, Monaco tokenizer, pan/zoom canvas, blueprint presets, SVG/PNG export |
+| ≡ƒº« **Visual Tables** | `tables.studio` | Interactive spreadsheet grid, column alignment, CSV import/export, 1-click Markdown generation |
+| ≡ƒº⌐ **Snippets & Callouts** | `snippets.studio` | GitHub alert callouts (`[!NOTE]`, `[!TIP]`, `[!WARNING]`), collapsible `<details>`, shortcut tables |
+| ≡ƒû╝∩╕Å **Images & Banners** | `images.studio` | Gradient hero banners, motion heroes (GIF/MP4), macOS/Windows window frames, image optimization |
+| ≡ƒî│ **Directory Trees** | `tree.studio` | Auto-scans workspace folders into ASCII, Unicode box-drawing, or Emoji visual directory trees |
+| ≡ƒîÉ **REST API & Endpoints** | `api.studio` | Live interactive preview (REST Blueprint card & GFM render), route matrix, request/response schemas, cURL commands |
+| ≡ƒÄ¿ **Icons & Emojis** | `icons.studio` | Dual-mode Material Symbols & developer emojis, color wheel customizer, live catalog tinting, colored SVG download & Iconify markdown |
+| ≡ƒæÑ **Contributors & Team** | `contributors.studio` | All-Contributors standard grid, GitHub avatar auto-fetch, contribution role badges |
+| ≡ƒô¥ **Changelog & Releases** | `changelog.studio` | Keep-a-Changelog standard release notes with SemVer bumping (`Major`, `Minor`, `Patch`) |
+| ≡ƒöì **README Auditor** | `audit.studio` | Documentation scorecard, A+ to F grade, section completeness check, 1-click boilerplate injector |
 
-👉 **For an exhaustive top-to-bottom manual of all 12 studios, consult [FEATURES.md](FEATURES.md).**
+≡ƒæë **For an exhaustive top-to-bottom manual of all 12 studios, consult [FEATURES.md](docs/FEATURES.md).**
 
 ---
 
-## ✨ Core Desktop IDE Highlights
+## Γ£¿ Core Desktop IDE Highlights
 
-- 🖥️ **Monaco Editor Engine** — Multi-cursor editing, bracket matching, line numbers, soft word wrap toggle (`Alt+Z`), and full formatting.
-- 🌐 **Comprehensive Internationalization (i18n)** — Full UI localized across 10 world languages (EN, ZH-CN, ES, JA, DE, FR, RU, HI, PT-BR, IT) with custom language pack import/export.
-- 📑 **Chrome/Arc-Style Collapsible Tab Groups** — Workspace tab bar partitioning open documents and active studios into organized collapsible groups.
-- 🏗️ **Universal StudioShell Workspace Container** — Standardized 2-pane resizable container across all 12 studios with persistent action bars and live code drawers.
-- 🪄 **Floating Selection HUD Toolbar** — Notion/Word-style contextual quick-actions anchored to highlighted text (Headings, Code Fences, Links, Callouts, Lists).
-- ⚡ **Synchronized Split Preview** — Live GFM compilation with proportional scroll synchronization between editor and preview panes.
-- 🖼️ **Local Media Streaming** — Renders workspace relative images, SVGs, and videos directly in live preview with zero web servers.
-- 🎯 **Universal Command Palette** — Quick input (`F1` / `Ctrl+Shift+P` / `Ctrl+K`) with live search and **`⚙ Configure Keybinding`** button on hover (or `Alt+Enter`) matching modern IDE workflows.
-- ⌨️ **Keyboard Shortcuts Tab** — Deep-linked hotkey recorder modal to inspect, customize, and persist any keybinding across the IDE.
-- 📁 **Native Disk I/O & Workspaces** — Mount local folders, save directly to disk (`Ctrl+S`), create untitled files (`Ctrl+N`), and manage files with live context menus.
-- 💻 **Integrated Bottom Panel Drawer** — Full-featured bottom panel (`Ctrl+``) housing:
+- ≡ƒûÑ∩╕Å **Monaco Editor Engine** ΓÇö Multi-cursor editing, bracket matching, line numbers, soft word wrap toggle (`Alt+Z`), and full formatting.
+- ≡ƒîÉ **Comprehensive Internationalization (i18n)** ΓÇö Full UI localized across 10 world languages (EN, ZH-CN, ES, JA, DE, FR, RU, HI, PT-BR, IT) with custom language pack import/export.
+- ≡ƒôæ **Chrome/Arc-Style Collapsible Tab Groups** ΓÇö Workspace tab bar partitioning open documents and active studios into organized collapsible groups.
+- ≡ƒÅù∩╕Å **Universal StudioShell Workspace Container** ΓÇö Standardized 2-pane resizable container across all 12 studios with persistent action bars and live code drawers.
+- ≡ƒ¬ä **Floating Selection HUD Toolbar** ΓÇö Notion/Word-style contextual quick-actions anchored to highlighted text (Headings, Code Fences, Links, Callouts, Lists).
+- ΓÜí **Synchronized Split Preview** ΓÇö Live GFM compilation with proportional scroll synchronization between editor and preview panes.
+- ≡ƒû╝∩╕Å **Local Media Streaming** ΓÇö Renders workspace relative images, SVGs, and videos directly in live preview with zero web servers.
+- ≡ƒÄ» **Universal Command Palette** ΓÇö Quick input (`F1` / `Ctrl+Shift+P` / `Ctrl+K`) with live search and **`ΓÜÖ Configure Keybinding`** button on hover (or `Alt+Enter`) matching modern IDE workflows.
+- Γî¿∩╕Å **Keyboard Shortcuts Tab** ΓÇö Deep-linked hotkey recorder modal to inspect, customize, and persist any keybinding across the IDE.
+- ≡ƒôü **Native Disk I/O & Workspaces** ΓÇö Mount local folders, save directly to disk (`Ctrl+S`), create untitled files (`Ctrl+N`), and manage files with live context menus.
+- ≡ƒÆ╗ **Integrated Bottom Panel Drawer** ΓÇö Full-featured bottom panel (`Ctrl+``) housing:
   - **Terminal**: Embedded PowerShell and Command Prompt shells with tabs, session management, and external launching.
   - **Problems**: Real-time Markdown linter catching broken links, malformed tables, and heading skips.
   - **Output**: Live system event logs with severity filtering and log export.
-- 🌙 **Zen / Focus Mode** — Full-screen distraction-free typography canvas (`F11`).
-- 📤 **Multi-Format Publishing** — Export directly to atomic disk files, GitHub-styled vector **PDF** (`Ctrl+P`), standalone **HTML**, or a complete documentation **ZIP** suite.
+- ≡ƒîÖ **Zen / Focus Mode** ΓÇö Full-screen distraction-free typography canvas (`F11`).
+- ≡ƒôñ **Multi-Format Publishing** ΓÇö Export directly to atomic disk files, GitHub-styled vector **PDF** (`Ctrl+P`), standalone **HTML**, or a complete documentation **ZIP** suite.
 
 ---
 
-## 📚 Documentation Directory
+## ≡ƒôÜ Documentation Directory
 
 | Document | Description |
 | :--- | :--- |
-| 📖 **[FEATURES.md](FEATURES.md)** | **Complete Capabilities Tour** — Master guide detailing all 12 studios, Monaco ergonomics, HUD toolbar, and workflows. |
-| 📘 **[DOCUMENTATION.md](DOCUMENTATION.md)** | **System & Architecture Guide** — Exhaustive architectural breakdown, user flows, and backend FastAPI specifications. |
-| 🛠️ **[SETUP.md](SETUP.md)** | **Developer Setup Guide** — Step-by-step instructions for running from source, prerequisites, and troubleshooting. |
-| 📦 **[DEPLOYMENT.md](DEPLOYMENT.md)** | **Packaging & Distribution** — Instructions for building standalone installers (.exe / portable) via Electron Builder. |
-| 🖥️ **[DESKTOP.md](DESKTOP.md)** | **Desktop Technical Architecture** — Electron main process, FastAPI sidecar daemon, and IPC context bridge specs. |
-| 🎨 **[DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)** | **Visual Design System** — Color tokens, typography, dark/light theme tokens, and component guidelines. |
-| 🔒 **[SECURITY.md](SECURITY.md)** | **Security Policy** — SSRF protection, IPC isolation, and vulnerability disclosure policies. |
-| 🧪 **[TESTING_GUIDE.md](TESTING_GUIDE.md)** | **Quality & Test Automation** — Unit tests, integration suites, and manual verification protocols. |
-| 📋 **[CHANGELOG.md](CHANGELOG.md)** | **Version Changelog** — Detailed version history adhering to Keep a Changelog and SemVer standards. |
+| ≡ƒôû **[FEATURES.md](docs/FEATURES.md)** | **Complete Capabilities Tour** ΓÇö Master guide detailing all 12 studios, Monaco ergonomics, HUD toolbar, and workflows. |
+| ≡ƒôÿ **[DOCUMENTATION.md](docs/DOCUMENTATION.md)** | **System & Architecture Guide** ΓÇö Exhaustive architectural breakdown, user flows, and backend FastAPI specifications. |
+| ≡ƒ¢á∩╕Å **[SETUP.md](docs/SETUP.md)** | **Developer Setup Guide** ΓÇö Step-by-step instructions for running from source, prerequisites, and troubleshooting. |
+| ≡ƒôª **[DEPLOYMENT.md](docs/DEPLOYMENT.md)** | **Packaging & Distribution** ΓÇö Instructions for building standalone installers (.exe / portable) via Electron Builder. |
+| ≡ƒûÑ∩╕Å **[DESKTOP.md](docs/DESKTOP.md)** | **Desktop Technical Architecture** ΓÇö Electron main process, FastAPI sidecar daemon, and IPC context bridge specs. |
+| ≡ƒÄ¿ **[DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)** | **Visual Design System** ΓÇö Color tokens, typography, dark/light theme tokens, and component guidelines. |
+| ≡ƒöÆ **[SECURITY.md](SECURITY.md)** | **Security Policy** ΓÇö SSRF protection, IPC isolation, and vulnerability disclosure policies. |
+| ≡ƒº¬ **[TESTING_GUIDE.md](docs/TESTING_GUIDE.md)** | **Quality & Test Automation** ΓÇö Unit tests, integration suites, and manual verification protocols. |
+| ≡ƒôï **[CHANGELOG.md](CHANGELOG.md)** | **Version Changelog** ΓÇö Detailed version history adhering to Keep a Changelog and SemVer standards. |
 
 ---
 
-## ⌨️ Essential Keyboard Shortcuts
+## Γî¿∩╕Å Essential Keyboard Shortcuts
 
 | Shortcut | Command | Action |
 | :--- | :--- | :--- |
-| **`F1`** / **`Ctrl + Shift + P`** | **Command Palette** | Open quick command palette with `⚙` keybinding configuration |
+| **`F1`** / **`Ctrl + Shift + P`** | **Command Palette** | Open quick command palette with `ΓÜÖ` keybinding configuration |
 | **`Ctrl + S`** | **Quick Save** | Directly write active document buffer to disk |
 | **`Ctrl + Shift + S`** | **Save As...** | Native OS Save dialog to export to a chosen path |
 | **`Ctrl + O`** | **Open File...** | Open native file picker for Markdown / text files |
@@ -136,36 +150,36 @@ VisualMark Studio features dedicated, visual designer environments accessible as
 
 ---
 
-## 🏗️ Desktop Architecture
+## ≡ƒÅù∩╕Å Desktop Architecture
 
 ```
 visualmark-studio/
-├── backend/
-│   ├── app.py              # FastAPI sidecar application
-│   ├── desktop_server.py   # Frozen desktop daemon entrypoint (dynamic port negotiation)
-│   ├── build_sidecar.py    # PyInstaller sidecar compilation script
-│   └── prompts.py          # Deterministic template & documentation engine
-├── frontend/
-│   ├── electron/
-│   │   ├── main.cjs        # Electron main process (native IPC, window management, disk I/O)
-│   │   └── preload.cjs     # Context bridge (file dialogs, native file operations, window controls)
-│   ├── src/
-│   │   ├── components/     # TopMenuBar, MonacoEditorPane, TabBar, Studios, BottomPanel
-│   │   ├── data/           # Preset templates, badge packs, devicon maps, release notes
-│   │   ├── styles/         # Modular CSS (tokens, layout, monaco, modals, studios)
-│   │   ├── utils/          # keybindingManager, apiClient, documentExportUtils
-│   │   └── App.jsx         # Workspace state orchestrator & lifecycle manager
-│   └── package.json        # Electron & frontend build manifest
-├── FEATURES.md             # Exhaustive top-to-bottom capabilities & features guide
-├── SETUP.md                # Local development & setup instructions
-├── TESTING_GUIDE.md        # Comprehensive manual & automated testing guide
-├── DEPLOYMENT.md           # Standalone packaging & release build guide
-└── README.md               # Master project showcase
+Γö£ΓöÇΓöÇ backend/
+Γöé   Γö£ΓöÇΓöÇ app.py              # FastAPI sidecar application
+Γöé   Γö£ΓöÇΓöÇ desktop_server.py   # Frozen desktop daemon entrypoint (dynamic port negotiation)
+Γöé   Γö£ΓöÇΓöÇ build_sidecar.py    # PyInstaller sidecar compilation script
+Γöé   ΓööΓöÇΓöÇ prompts.py          # Deterministic template & documentation engine
+Γö£ΓöÇΓöÇ frontend/
+Γöé   Γö£ΓöÇΓöÇ electron/
+Γöé   Γöé   Γö£ΓöÇΓöÇ main.cjs        # Electron main process (native IPC, window management, disk I/O)
+Γöé   Γöé   ΓööΓöÇΓöÇ preload.cjs     # Context bridge (file dialogs, native file operations, window controls)
+Γöé   Γö£ΓöÇΓöÇ src/
+Γöé   Γöé   Γö£ΓöÇΓöÇ components/     # TopMenuBar, MonacoEditorPane, TabBar, Studios, BottomPanel
+Γöé   Γöé   Γö£ΓöÇΓöÇ data/           # Preset templates, badge packs, devicon maps, release notes
+Γöé   Γöé   Γö£ΓöÇΓöÇ styles/         # Modular CSS (tokens, layout, monaco, modals, studios)
+Γöé   Γöé   Γö£ΓöÇΓöÇ utils/          # keybindingManager, apiClient, documentExportUtils
+Γöé   Γöé   ΓööΓöÇΓöÇ App.jsx         # Workspace state orchestrator & lifecycle manager
+Γöé   ΓööΓöÇΓöÇ package.json        # Electron & frontend build manifest
+Γö£ΓöÇΓöÇ FEATURES.md             # Exhaustive top-to-bottom capabilities & features guide
+Γö£ΓöÇΓöÇ SETUP.md                # Local development & setup instructions
+Γö£ΓöÇΓöÇ TESTING_GUIDE.md        # Comprehensive manual & automated testing guide
+Γö£ΓöÇΓöÇ DEPLOYMENT.md           # Standalone packaging & release build guide
+ΓööΓöÇΓöÇ README.md               # Master project showcase
 ```
 
 ---
 
-## 🤝 Contributing & Community
+## ≡ƒñ¥ Contributing & Community
 
 VisualMark Studio thrives on open-source community contributions! Whether you're reporting a bug, proposing a new visual studio, or polishing documentation, we welcome your involvement.
 
@@ -177,6 +191,6 @@ VisualMark Studio thrives on open-source community contributions! Whether you're
 
 ---
 
-## 📄 License
+## ≡ƒôä License
 
 VisualMark Studio is open-source software licensed under the **[MIT License](LICENSE)**.

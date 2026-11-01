@@ -10,18 +10,20 @@ import ru from './locales/ru.json'
 import hi from './locales/hi.json'
 import ptBR from './locales/pt-BR.json'
 import it from './locales/it.json'
+import ta from './locales/ta.json'
 
 export const BUILTIN_LANGUAGES = [
-  { code: 'en', label: 'English', native: 'English', flag: '🇺🇸', dir: 'ltr' },
-  { code: 'zh-CN', label: 'Chinese (Simplified)', native: '简体中文', flag: '🇨🇳', dir: 'ltr' },
-  { code: 'es', label: 'Spanish', native: 'Español', flag: '🇪🇸', dir: 'ltr' },
-  { code: 'ja', label: 'Japanese', native: '日本語', flag: '🇯🇵', dir: 'ltr' },
-  { code: 'de', label: 'German', native: 'Deutsch', flag: '🇩🇪', dir: 'ltr' },
-  { code: 'fr', label: 'French', native: 'Français', flag: '🇫🇷', dir: 'ltr' },
-  { code: 'ru', label: 'Russian', native: 'Русский', flag: '🇷🇺', dir: 'ltr' },
-  { code: 'hi', label: 'Hindi', native: 'हिन्दी', flag: '🇮🇳', dir: 'ltr' },
-  { code: 'pt-BR', label: 'Portuguese (BR)', native: 'Português', flag: '🇧🇷', dir: 'ltr' },
-  { code: 'it', label: 'Italian', native: 'Italiano', flag: '🇮🇹', dir: 'ltr' },
+  { code: 'en', label: 'English', native: 'English', flag: '🇺🇸', dir: 'ltr', tier: 'official' },
+  { code: 'ta', label: 'Tamil', native: 'தமிழ்', flag: '🇮🇳', dir: 'ltr', tier: 'official' },
+  { code: 'ja', label: 'Japanese', native: '日本語', flag: '🇯🇵', dir: 'ltr', tier: 'standard' },
+  { code: 'zh-CN', label: 'Chinese (Simplified)', native: '简体中文', flag: '🇨🇳', dir: 'ltr', tier: 'standard' },
+  { code: 'de', label: 'German', native: 'Deutsch', flag: '🇩🇪', dir: 'ltr', tier: 'standard' },
+  { code: 'es', label: 'Spanish', native: 'Español', flag: '🇪🇸', dir: 'ltr', tier: 'standard' },
+  { code: 'fr', label: 'French', native: 'Français', flag: '🇫🇷', dir: 'ltr', tier: 'standard' },
+  { code: 'ru', label: 'Russian', native: 'Русский', flag: '🇷🇺', dir: 'ltr', tier: 'standard' },
+  { code: 'hi', label: 'Hindi', native: 'हिन्दी', flag: '🇮🇳', dir: 'ltr', tier: 'standard' },
+  { code: 'pt-BR', label: 'Portuguese (BR)', native: 'Português', flag: '🇧🇷', dir: 'ltr', tier: 'standard' },
+  { code: 'it', label: 'Italian', native: 'Italiano', flag: '🇮🇹', dir: 'ltr', tier: 'standard' },
 ]
 
 export const SUPPORTED_LANGUAGES = BUILTIN_LANGUAGES
@@ -37,6 +39,7 @@ const BUILTIN_DICTIONARIES = {
   hi,
   'pt-BR': ptBR,
   it,
+  ta,
 }
 
 const I18nContext = createContext(null)
@@ -93,6 +96,7 @@ export function I18nProvider({ children }) {
       if (navLang.startsWith('hi')) return 'hi'
       if (navLang.startsWith('pt')) return 'pt-BR'
       if (navLang.startsWith('it')) return 'it'
+      if (navLang.startsWith('ta')) return 'ta'
     } catch {
       // Ignore
     }
@@ -117,15 +121,32 @@ export function I18nProvider({ children }) {
     }
 
     const code = pack.code.trim()
+    // Deep sanitize translation strings to prevent XSS / malicious injection
+    const sanitizeDict = (obj) => {
+      if (!obj || typeof obj !== 'object') return {}
+      const clean = {}
+      for (const [k, v] of Object.entries(obj)) {
+        if (typeof v === 'string') {
+          clean[k] = v.replace(/<[^>]*>/g, '').trim()
+        } else if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+          clean[k] = sanitizeDict(v)
+        }
+      }
+      return clean
+    }
+
+    const sanitizedTranslations = sanitizeDict(pack.translations)
+
     const newPack = {
       code,
-      label: pack.label || code,
-      native: pack.native || pack.label || code,
+      label: (pack.label || code).replace(/<[^>]*>/g, ''),
+      native: (pack.native || pack.label || code).replace(/<[^>]*>/g, ''),
       flag: pack.flag || '🌐',
       dir: pack.dir === 'rtl' ? 'rtl' : 'ltr',
-      author: pack.author || 'Community',
+      author: (pack.author || 'Community').replace(/<[^>]*>/g, ''),
       version: pack.version || '1.0.0',
-      translations: pack.translations,
+      tier: 'community',
+      translations: sanitizedTranslations,
     }
 
     setCustomPacks((prev) => {
@@ -211,6 +232,47 @@ export function I18nProvider({ children }) {
     return !!customPacks[code]
   }, [customPacks])
 
+  // Compute translation coverage and completeness stats against en.json
+  const getLanguageStats = useCallback((targetCode) => {
+    const code = targetCode || locale
+    const dict = allDictionaries[code] || BUILTIN_DICTIONARIES.en
+    const baseDict = BUILTIN_DICTIONARIES.en
+
+    let totalKeys = 0
+    let translatedKeys = 0
+
+    const countKeys = (base, target) => {
+      if (!base || typeof base !== 'object') return
+      for (const k of Object.keys(base)) {
+        const baseVal = base[k]
+        const targetVal = target ? target[k] : undefined
+
+        if (typeof baseVal === 'object' && baseVal !== null) {
+          countKeys(baseVal, typeof targetVal === 'object' ? targetVal : {})
+        } else {
+          totalKeys++
+          if (typeof targetVal === 'string' && targetVal.trim().length > 0) {
+            translatedKeys++
+          }
+        }
+      }
+    }
+
+    countKeys(baseDict, dict)
+    const percent = totalKeys > 0 ? Math.min(100, Math.round((translatedKeys / totalKeys) * 100)) : 100
+    const langMeta = supportedLanguages.find((l) => l.code === code)
+    const tier = langMeta?.tier || (customPacks[code] ? 'community' : 'standard')
+
+    return {
+      code,
+      totalKeys,
+      translatedKeys,
+      percent,
+      tier,
+      isCustom: Boolean(customPacks[code]),
+    }
+  }, [locale, allDictionaries, supportedLanguages, customPacks])
+
   const currentDict = allDictionaries[locale] || BUILTIN_DICTIONARIES.en
   const fallbackDict = BUILTIN_DICTIONARIES.en
 
@@ -263,6 +325,7 @@ export function I18nProvider({ children }) {
     exportLanguagePack,
     deleteCustomLanguage,
     isCustomLanguage,
+    getLanguageStats,
   }), [
     locale,
     setLocale,
@@ -274,6 +337,7 @@ export function I18nProvider({ children }) {
     exportLanguagePack,
     deleteCustomLanguage,
     isCustomLanguage,
+    getLanguageStats,
   ])
 
   return (
@@ -297,6 +361,7 @@ export function useI18n() {
       exportLanguagePack: () => {},
       deleteCustomLanguage: () => {},
       isCustomLanguage: () => false,
+      getLanguageStats: () => ({ percent: 100, tier: 'official', totalKeys: 1, translatedKeys: 1 }),
     }
   }
   return context

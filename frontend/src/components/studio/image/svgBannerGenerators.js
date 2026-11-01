@@ -369,6 +369,552 @@ export function getCapsuleSvg({
 </svg>`
 }
 
+// 8. Animated Typewriter Loop (100% Pure Vector SVG with Real Discrete Letter Typing & Erasing)
+export function getTypingSvg({
+  bannerTitle = 'VisualMark Studio',
+  bannerSubtitle = 'Documentation Platform',
+  typingLines = "Your're right; I should have included a screenshot; to demonstrate the visual features; Thanks for pointing that out !",
+  typingFont = 'Fira Code',
+  typingColor = '6366f1',
+  typingPause = '1000',
+  typingSpeed = '50',
+  typingEffect = 'discrete', // 'discrete' (real character-by-character keystrokes) | 'smooth'
+  typingLayout = 'clean', // 'clean' | 'terminal' | 'card'
+  typingAlign = 'center', // 'center' | 'left'
+  typingFontSize = '24',
+  typingWidth = 750,
+  typingHeight = 90,
+  bannerTheme,
+  customHex1,
+  customHex2,
+  isCustomColor
+} = {}) {
+  const hex = isCustomColor ? (customHex1 || '#6366f1') : (bannerTheme?.hex1 || '#6366f1')
+  const color = `#${(typingColor || hex).replace('#', '')}`
+
+  const rawLines = (typingLines || `${bannerTitle};${bannerSubtitle}`)
+    .split(';')
+    .map((l) => l.trim())
+    .filter(Boolean)
+  const lines = rawLines.length > 0 ? rawLines : [bannerTitle || 'VisualMark Studio']
+  const N = lines.length
+
+  const isClean = typingLayout === 'clean'
+  const isTerminal = typingLayout === 'terminal'
+  const isCard = typingLayout === 'card'
+
+  const fontSize = parseInt(typingFontSize, 10) || (isClean ? 24 : 22)
+  const charWidth = fontSize * 0.6
+
+  const width = parseInt(typingWidth, 10) || (isClean ? 750 : 850)
+  const height = parseInt(typingHeight, 10) || (isClean ? 90 : 160)
+  const align = typingAlign || (isClean ? 'center' : 'left')
+
+  const textY = isClean
+    ? Math.round(height / 2) + Math.round(fontSize * 0.35)
+    : 92
+  const cursorY = isClean
+    ? Math.round(height / 2) - Math.round(fontSize * 0.6)
+    : 70
+  const cursorHeight = Math.round(fontSize * 1.2)
+  const cursorWidth = Math.max(3, Math.round(fontSize * 0.45))
+
+  let defsContent = ''
+  let linesContent = ''
+
+  lines.forEach((lineText, idx) => {
+    const escaped = escapeXml(lineText)
+    const chars = Math.max(1, lineText.length)
+    const speed = parseInt(typingSpeed, 10) || 45
+
+    const typeDur = Math.max(700, chars * speed)
+    const pauseDur = parseInt(typingPause, 10) || 1000
+    const deleteDur = Math.max(350, Math.round(typeDur * 0.35))
+    const totalLineMs = typeDur + pauseDur + deleteDur
+
+    const t1 = (typeDur / totalLineMs).toFixed(3)
+    const t2 = ((typeDur + pauseDur) / totalLineMs).toFixed(3)
+
+    const prevIdx = (idx - 1 + N) % N
+    const isSingle = N === 1
+    const beginVal = isSingle
+      ? '0s;anim0.end'
+      : idx === 0
+      ? `0s;anim${prevIdx}.end`
+      : `anim${prevIdx}.end`
+
+    const repeatAttr = isSingle ? ' repeatCount="indefinite"' : ''
+
+    let textX
+    let startX
+    let endX
+    let textAnchor
+    const textPixelWidth = Math.round(chars * charWidth)
+
+    if (align === 'center') {
+      textX = Math.round(width / 2)
+      textAnchor = 'middle'
+      startX = Math.round(textX - textPixelWidth / 2)
+      endX = startX + textPixelWidth
+    } else {
+      textX = isTerminal ? 56 : 32
+      textAnchor = 'start'
+      startX = textX
+      endX = startX + textPixelWidth
+    }
+
+    const clipX = startX - 2
+    const calcMode = typingEffect === 'smooth' ? 'linear' : 'discrete'
+
+    let widthValues = ''
+    let cursorValues = ''
+    let keyTimes = ''
+
+    if (typingEffect === 'smooth') {
+      const maxClipW = textPixelWidth + 14
+      widthValues = `0; ${maxClipW}; ${maxClipW}; 0`
+      cursorValues = `${startX}; ${endX}; ${endX}; ${startX}`
+      keyTimes = `0; ${t1}; ${t2}; 1`
+    } else {
+      // Real mechanical typewriter discrete character-by-character step values
+      const wList = [0]
+      const cList = [startX]
+      const ktList = [0]
+
+      // Keystroke typing phase: each character reveals discretely one by one
+      for (let c = 1; c <= chars; c++) {
+        const w = Math.round(c * charWidth)
+        wList.push(w)
+        cList.push(startX + w)
+        const t = ((c / chars) * typeDur) / totalLineMs
+        ktList.push(t)
+      }
+
+      // Pause duration hold at fully typed line
+      const pauseEndT = (typeDur + pauseDur) / totalLineMs
+      wList.push(textPixelWidth + 4)
+      cList.push(endX)
+      ktList.push(pauseEndT)
+
+      // Deleting phase: backspacing character by character
+      for (let c = chars - 1; c >= 1; c--) {
+        const w = Math.round(c * charWidth)
+        wList.push(w)
+        cList.push(startX + w)
+        const progress = (chars - c) / chars
+        const t = (typeDur + pauseDur + progress * deleteDur) / totalLineMs
+        ktList.push(Math.min(0.9999, t))
+      }
+
+      // Final reset step: 0 characters
+      wList.push(0)
+      cList.push(startX)
+      ktList.push(1)
+
+      // Monotonic guard for keyTimes
+      for (let k = 1; k < ktList.length; k++) {
+        if (ktList[k] < ktList[k - 1]) {
+          ktList[k] = ktList[k - 1]
+        }
+      }
+
+      widthValues = wList.join('; ')
+      cursorValues = cList.join('; ')
+      keyTimes = ktList.map((t) => Number(t.toFixed(4))).join('; ')
+    }
+
+    defsContent += `
+    <clipPath id="typing-clip-${idx}">
+      <rect x="${clipX}" y="0" width="0" height="${height}">
+        <animate
+          id="anim${idx}"
+          attributeName="width"
+          begin="${beginVal}"
+          dur="${totalLineMs}ms"
+          fill="remove"
+          calcMode="${calcMode}"
+          values="${widthValues}"
+          keyTimes="${keyTimes}"${repeatAttr}
+        />
+      </rect>
+    </clipPath>`
+
+    linesContent += `
+    <g clip-path="url(#typing-clip-${idx})">
+      <text
+        x="${textX}"
+        y="${textY}"
+        fill="${color}"
+        font-family="'${escapeXml(typingFont)}', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+        font-size="${fontSize}px"
+        font-weight="600"
+        text-anchor="${textAnchor}"
+      >${escaped}</text>
+    </g>
+
+    <g opacity="0">
+      <animate
+        attributeName="opacity"
+        begin="${beginVal}"
+        dur="${totalLineMs}ms"
+        fill="remove"
+        values="1; 1; 1; 0"
+        keyTimes="0; 0.98; 0.99; 1"${repeatAttr}
+      />
+      <rect
+        x="${startX}"
+        y="${cursorY}"
+        width="${cursorWidth}"
+        height="${cursorHeight}"
+        rx="2"
+        fill="${color}"
+      >
+        <animate
+          attributeName="x"
+          begin="${beginVal}"
+          dur="${totalLineMs}ms"
+          fill="remove"
+          calcMode="${calcMode}"
+          values="${cursorValues}"
+          keyTimes="${keyTimes}"${repeatAttr}
+        />
+        <animate
+          attributeName="opacity"
+          values="1; 0; 1"
+          dur="700ms"
+          repeatCount="indefinite"
+        />
+      </rect>
+    </g>`
+  })
+
+  let backgroundMarkup = ''
+  if (isTerminal) {
+    backgroundMarkup = `
+  <rect width="${width}" height="${height}" rx="10" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
+  <rect width="${width}" height="36" rx="10" fill="#161b22"/>
+  <rect y="26" width="${width}" height="10" fill="#161b22"/>
+  <circle cx="24" cy="18" r="4.5" fill="#ff5f56"/>
+  <circle cx="38" cy="18" r="4.5" fill="#ffbd2e"/>
+  <circle cx="52" cy="18" r="4.5" fill="#27c93f"/>
+  <text x="${Math.round(width / 2)}" y="22" fill="#8b949e" font-family="ui-monospace,monospace" font-size="11" font-weight="600" text-anchor="middle">terminal ~ zsh</text>
+  <text x="32" y="${textY}" fill="#38bdf8" font-family="'${escapeXml(typingFont)}', monospace" font-size="${Math.round(fontSize * 0.9)}" font-weight="700">❯</text>`
+  } else if (isCard) {
+    backgroundMarkup = `
+  <rect width="${width}" height="${height}" rx="12" fill="#090d16" stroke="${color}" stroke-width="1.5" stroke-opacity="0.3"/>
+  <rect x="1" y="1" width="${width - 2}" height="${height - 2}" rx="11" fill="none" stroke="url(#cardGrad)" stroke-width="1" stroke-opacity="0.6"/>`
+    defsContent += `
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${color}" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.1"/>
+    </linearGradient>`
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+  <defs>${defsContent}
+  </defs>
+  ${backgroundMarkup}
+  ${linesContent}
+</svg>`
+}
+
+// 9. Geometric Polygon & Crystal Mesh Cover (100% Pure Vector SVG)
+export function getGeometricMeshSvg({
+  bannerTitle,
+  bannerSubtitle,
+  bannerTheme,
+  customHex1,
+  customHex2,
+  isCustomColor
+}) {
+  const h1 = isCustomColor ? (customHex1 || '#4f46e5') : (bannerTheme?.hex1 || '#4f46e5')
+  const h2 = isCustomColor ? (customHex2 || '#db2777') : (bannerTheme?.hex2 || '#db2777')
+  const safeTitle = escapeXml(bannerTitle || 'Project Title')
+  const safeSub = escapeXml(bannerSubtitle || 'Modern Vector Architecture')
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 240" width="900" height="240">
+  <defs>
+    <linearGradient id="meshGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${h1}"/>
+      <stop offset="100%" stop-color="${h2}"/>
+    </linearGradient>
+    <linearGradient id="meshGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="${h2}" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="${h1}" stop-opacity="0.3"/>
+    </linearGradient>
+    <radialGradient id="meshGlow" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.6"/>
+    </radialGradient>
+  </defs>
+  <rect width="900" height="240" rx="12" fill="#090d16"/>
+  <!-- Faceted Geometric Vector Mesh -->
+  <polygon points="0,0 300,0 200,140 0,100" fill="url(#meshGrad1)" fill-opacity="0.35"/>
+  <polygon points="300,0 600,0 520,120 200,140" fill="url(#meshGrad2)" fill-opacity="0.25"/>
+  <polygon points="600,0 900,0 900,110 520,120" fill="url(#meshGrad1)" fill-opacity="0.4"/>
+  <polygon points="0,100 200,140 120,240 0,240" fill="url(#meshGrad2)" fill-opacity="0.3"/>
+  <polygon points="200,140 520,120 460,240 120,240" fill="url(#meshGrad1)" fill-opacity="0.2"/>
+  <polygon points="520,120 900,110 900,240 460,240" fill="url(#meshGrad2)" fill-opacity="0.35"/>
+  <rect width="900" height="240" rx="12" fill="url(#meshGlow)"/>
+  <rect width="898" height="238" x="1" y="1" rx="11" fill="none" stroke="#334155" stroke-opacity="0.4" stroke-width="1"/>
+  <!-- Typography Stage -->
+  <g transform="translate(450, 105)" text-anchor="middle">
+    <text y="0" fill="#ffffff" font-family="'Space Grotesk', -apple-system, sans-serif" font-size="38" font-weight="800" letter-spacing="-0.5">${safeTitle}</text>
+    <text y="38" fill="#cbd5e1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="16" font-weight="500">${safeSub}</text>
+  </g>
+</svg>`
+}
+
+// 10. Device Frame Vector Mockup (macOS / Browser / Terminal in Pure SVG)
+export function getMockupSvg({
+  macWindowTitle = 'VisualMark Studio',
+  browserUrl = 'https://visualmark.dev',
+  terminalCommand = '$ npm run build',
+  frameStyle = 'mac-window',
+  bannerTheme,
+  customHex1,
+  customHex2,
+  isCustomColor
+}) {
+  const h1 = isCustomColor ? (customHex1 || '#38bdf8') : (bannerTheme?.hex1 || '#38bdf8')
+  const h2 = isCustomColor ? (customHex2 || '#818cf8') : (bannerTheme?.hex2 || '#818cf8')
+  const safeTitle = escapeXml(macWindowTitle || 'Application Preview')
+  const safeUrl = escapeXml(browserUrl || 'https://visualmark.dev')
+  const safeCmd = escapeXml(terminalCommand || '$ npm run start')
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" width="900" height="320">
+  <defs>
+    <linearGradient id="mockupGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${h1}" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="${h2}" stop-opacity="0.04"/>
+    </linearGradient>
+    <filter id="mockupShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+  <rect x="20" y="20" width="860" height="280" rx="10" fill="#0d1117" stroke="#30363d" stroke-width="1" filter="url(#mockupShadow)"/>
+  <rect x="20" y="20" width="860" height="38" rx="10" fill="#161b22"/>
+  <rect x="20" y="48" width="860" height="10" fill="#161b22"/>
+  <!-- Traffic Light Window Controls -->
+  <circle cx="44" cy="39" r="5" fill="#ff5f56"/>
+  <circle cx="60" cy="39" r="5" fill="#ffbd2e"/>
+  <circle cx="76" cy="39" r="5" fill="#27c93f"/>
+  ${frameStyle === 'browser-bar' ? `
+    <rect x="200" y="28" width="500" height="22" rx="4" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
+    <text x="450" y="43" fill="#8b949e" font-family="ui-monospace, monospace" font-size="11" text-anchor="middle">🔒 ${safeUrl}</text>
+  ` : `
+    <text x="450" y="44" fill="#8b949e" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12" font-weight="600" text-anchor="middle">${safeTitle}</text>
+  `}
+  <!-- Interior Canvas -->
+  <rect x="21" y="58" width="858" height="241" rx="0 0 10 10" fill="url(#mockupGrad)"/>
+  <!-- Vector Code/Output Content -->
+  <g transform="translate(60, 100)">
+    <text x="0" y="0" fill="#10b981" font-family="ui-monospace, monospace" font-size="13" font-weight="600">${safeCmd}</text>
+    <text x="0" y="28" fill="#58a6ff" font-family="ui-monospace, monospace" font-size="12">✔ Compiled visual assets in 18ms</text>
+    <text x="0" y="50" fill="#e6edf3" font-family="ui-monospace, monospace" font-size="12">  ➜  Assets:  dist/assets/ (100% Vector SVG Engine)</text>
+    <text x="0" y="72" fill="#8b949e" font-family="ui-monospace, monospace" font-size="12">  ➜  Status:  READY • 0 vulnerabilities • High-DPI Crisp</text>
+    <text x="0" y="100" fill="#38bdf8" font-family="ui-monospace, monospace" font-size="12">✔ Live vector preview running on localhost</text>
+  </g>
+</svg>`
+}
+
+// 11. Motion & Video Demo Player Card
+export function getMotionDemoCardSvg({
+  motionTitle,
+  motionCaption,
+  motionUrl,
+  motionType,
+  bannerTheme,
+  customHex1,
+  customHex2,
+  isCustomColor
+}) {
+  const hex1 = isCustomColor ? (customHex1 || '#6366f1') : (bannerTheme?.hex1 || '#6366f1')
+  const hex2 = isCustomColor ? (customHex2 || '#a855f7') : (bannerTheme?.hex2 || '#a855f7')
+  const safeTitle = escapeXml(motionTitle || 'Interactive Product Demonstration')
+  const safeCaption = escapeXml(motionCaption || 'Watch the high-performance developer workflow in action')
+  const safeType = escapeXml((motionType || 'Demo').toUpperCase())
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" width="900" height="420">
+  <defs>
+    <linearGradient id="motionBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="motionAccent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="${hex1}"/>
+      <stop offset="100%" stop-color="${hex2}"/>
+    </linearGradient>
+    <radialGradient id="motionGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="${hex1}" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="${hex1}" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Frame Background -->
+  <rect width="900" height="420" rx="12" fill="url(#motionBg)"/>
+  <rect width="898" height="418" x="1" y="1" rx="11" fill="none" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Top Window Header Bar -->
+  <path d="M 1 12 C 1 5.925 5.925 1 12 1 L 888 1 C 894.075 1 899 5.925 899 12 L 899 44 L 1 44 Z" fill="#1e293b"/>
+  <line x1="1" y1="44" x2="899" y2="44" stroke="#334155" stroke-width="1"/>
+
+  <!-- Window Dots -->
+  <circle cx="24" cy="22" r="5.5" fill="#ef4444"/>
+  <circle cx="42" cy="22" r="5.5" fill="#f59e0b"/>
+  <circle cx="60" cy="22" r="5.5" fill="#10b981"/>
+
+  <!-- Title & Mode Badge in Window Header -->
+  <text x="84" y="27" fill="#f1f5f9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">${safeTitle}</text>
+  <rect x="780" y="12" width="96" height="20" rx="10" fill="#0f172a"/>
+  <text x="828" y="26" fill="#38bdf8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10.5" font-weight="700" text-anchor="middle">▶ ${safeType}</text>
+
+  <!-- Player Canvas / Central Viewport -->
+  <rect x="24" y="64" width="852" height="280" rx="8" fill="#090d16"/>
+  <circle cx="450" cy="204" r="140" fill="url(#motionGlow)"/>
+
+  <!-- Central Play Button with Outer Pulse Ring -->
+  <circle cx="450" cy="204" r="42" fill="none" stroke="${hex1}" stroke-width="2" stroke-opacity="0.6"/>
+  <circle cx="450" cy="204" r="34" fill="url(#motionAccent)"/>
+  <polygon points="443,190 443,218 465,204" fill="#ffffff"/>
+
+  <!-- Subtitle Caption -->
+  <text x="450" y="266" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" text-anchor="middle">${safeCaption}</text>
+
+  <!-- Player Controls Bar -->
+  <g transform="translate(24, 362)">
+    <!-- Scrubber Timeline Background -->
+    <rect x="0" y="0" width="852" height="5" rx="2.5" fill="#334155"/>
+    <rect x="0" y="0" width="340" height="5" rx="2.5" fill="url(#motionAccent)"/>
+    <circle cx="340" cy="2.5" r="5" fill="#ffffff"/>
+
+    <!-- Bottom Action Row -->
+    <text x="0" y="26" fill="#64748b" font-family="ui-monospace, monospace" font-size="11">01:24 / 03:45</text>
+    <rect x="740" y="14" width="44" height="18" rx="4" fill="#1e293b"/>
+    <text x="762" y="27" fill="#cbd5e1" font-family="ui-monospace, monospace" font-size="10" font-weight="700" text-anchor="middle">1080p</text>
+    <rect x="792" y="14" width="60" height="18" rx="4" fill="#1e293b"/>
+    <text x="822" y="27" fill="#10b981" font-family="ui-monospace, monospace" font-size="10" font-weight="700" text-anchor="middle">60 FPS</text>
+  </g>
+</svg>`
+}
+
+// 12. Theme Adaptive Graphic (Dual Dark & Light Mode)
+export function getAdaptiveThemeSvg({
+  adaptiveAlt,
+  bannerTheme,
+  customHex1,
+  customHex2,
+  isCustomColor
+}) {
+  const hex1 = isCustomColor ? (customHex1 || '#6366f1') : (bannerTheme?.hex1 || '#6366f1')
+  const hex2 = isCustomColor ? (customHex2 || '#06b6d4') : (bannerTheme?.hex2 || '#06b6d4')
+  const safeAlt = escapeXml(adaptiveAlt || 'VisualMark Theme Adaptive Interface')
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 280" width="900" height="280">
+  <style>
+    .adaptive-bg { fill: #0f172a; }
+    .adaptive-card { fill: #1e293b; stroke: #334155; }
+    .adaptive-title { fill: #f8fafc; }
+    .adaptive-sub { fill: #94a3b8; }
+    .adaptive-badge { fill: #020617; stroke: #475569; }
+    .adaptive-badge-txt { fill: #38bdf8; }
+    @media (prefers-color-scheme: light) {
+      .adaptive-bg { fill: #f8fafc; }
+      .adaptive-card { fill: #ffffff; stroke: #e2e8f0; }
+      .adaptive-title { fill: #0f172a; }
+      .adaptive-sub { fill: #64748b; }
+      .adaptive-badge { fill: #f1f5f9; stroke: #cbd5e1; }
+      .adaptive-badge-txt { fill: #0284c7; }
+    }
+  </style>
+  <defs>
+    <linearGradient id="adaptGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="${hex1}"/>
+      <stop offset="100%" stop-color="${hex2}"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="900" height="280" rx="12" class="adaptive-bg"/>
+  <rect width="852" height="232" x="24" y="24" rx="10" class="adaptive-card" stroke-width="1.5"/>
+
+  <!-- Accent Indicator Top Strip -->
+  <path d="M 24 34 C 24 28.477 28.477 24 34 24 L 866 24 C 871.523 24 876 28.477 876 34 L 876 38 L 24 38 Z" fill="url(#adaptGrad)"/>
+
+  <!-- Content Group -->
+  <g transform="translate(64, 86)">
+    <rect x="0" y="0" width="130" height="24" rx="12" class="adaptive-badge" stroke-width="1"/>
+    <text x="65" y="16" class="adaptive-badge-txt" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" text-anchor="middle">THEME ADAPTIVE</text>
+
+    <text x="0" y="56" class="adaptive-title" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="800">${safeAlt}</text>
+    <text x="0" y="86" class="adaptive-sub" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14">Seamlessly responds to system and GitHub dark &amp; light theme preferences.</text>
+
+    <g transform="translate(0, 114)">
+      <circle cx="6" cy="6" r="4" fill="#10b981"/>
+      <text x="18" y="10" class="adaptive-sub" font-family="ui-monospace, monospace" font-size="12">Automatic Vector Media Queries Enabled (@media prefers-color-scheme)</text>
+    </g>
+  </g>
+</svg>`
+}
+
+// 13. Comparison Matrix Graphic (Before & After)
+export function getComparisonMatrixSvg({
+  compTitle1,
+  compTitle2,
+  bannerTheme,
+  customHex1,
+  customHex2,
+  isCustomColor
+}) {
+  const hex1 = isCustomColor ? (customHex1 || '#ef4444') : '#f43f5e'
+  const hex2 = isCustomColor ? (customHex2 || '#10b981') : '#10b981'
+  const t1 = escapeXml(compTitle1 || 'Standard / Before')
+  const t2 = escapeXml(compTitle2 || 'Optimized / After')
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" width="900" height="320">
+  <defs>
+    <linearGradient id="compBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0f19"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="900" height="320" rx="12" fill="url(#compBg)"/>
+  <rect width="898" height="318" x="1" y="1" rx="11" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+
+  <!-- Left Column: Before -->
+  <g transform="translate(24, 24)">
+    <rect width="406" height="272" rx="8" fill="#111827" stroke="#374151" stroke-width="1"/>
+    <path d="M 0 8 C 0 3.58 3.58 0 8 0 L 398 0 C 402.42 0 406 3.58 406 8 L 406 36 L 0 36 Z" fill="#1f2937"/>
+    <circle cx="20" cy="18" r="4" fill="${hex1}"/>
+    <text x="34" y="22" fill="#f87171" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700">BEFORE</text>
+    <text x="20" y="74" fill="#f3f4f6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="600">${t1}</text>
+    <text x="20" y="106" fill="#9ca3af" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13">• Complex manual configuration</text>
+    <text x="20" y="134" fill="#9ca3af" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13">• Inconsistent visual assets</text>
+    <text x="20" y="162" fill="#9ca3af" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13">• Broken relative paths and broken links</text>
+    <rect x="20" y="214" width="120" height="26" rx="13" fill="#374151"/>
+    <text x="80" y="231" fill="#e5e7eb" font-family="ui-monospace, monospace" font-size="11" font-weight="600" text-anchor="middle">Legacy State</text>
+  </g>
+
+  <!-- VS Badge -->
+  <circle cx="450" cy="160" r="22" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+  <text x="450" y="165" fill="#38bdf8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="900" text-anchor="middle">VS</text>
+
+  <!-- Right Column: After -->
+  <g transform="translate(470, 24)">
+    <rect width="406" height="272" rx="8" fill="#064e3b" fill-opacity="0.25" stroke="#059669" stroke-width="1.5"/>
+    <path d="M 0 8 C 0 3.58 3.58 0 8 0 L 398 0 C 402.42 0 406 3.58 406 8 L 406 36 L 0 36 Z" fill="#064e3b" fill-opacity="0.6"/>
+    <circle cx="20" cy="18" r="4" fill="${hex2}"/>
+    <text x="34" y="22" fill="#34d399" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700">AFTER</text>
+    <text x="20" y="74" fill="#ecfdf5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="600">${t2}</text>
+    <text x="20" y="106" fill="#a7f3d0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13">✔ Automated 1-Click Studio generation</text>
+    <text x="20" y="134" fill="#a7f3d0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13">✔ Crisp vector SVGs with High-DPI support</text>
+    <text x="20" y="162" fill="#a7f3d0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13">✔ Verified links and production badges</text>
+    <rect x="20" y="214" width="130" height="26" rx="13" fill="#047857"/>
+    <text x="85" y="231" fill="#ffffff" font-family="ui-monospace, monospace" font-size="11" font-weight="700" text-anchor="middle">✨ Production Ready</text>
+  </g>
+</svg>`
+}
+
 export function getActiveSvgCode(bannerTypeOrOptions, maybeParams) {
   const isObject = typeof bannerTypeOrOptions === 'object' && bannerTypeOrOptions !== null
   const bannerType = isObject ? bannerTypeOrOptions.bannerType : bannerTypeOrOptions
@@ -377,13 +923,20 @@ export function getActiveSvgCode(bannerTypeOrOptions, maybeParams) {
   let svg = ''
   switch (bannerType) {
     case 'capsule': svg = getCapsuleSvg(params); break
+    case 'typing': svg = getTypingSvg(params); break
+    case 'geometric-mesh':
+    case 'cover': svg = getGeometricMeshSvg(params); break
     case 'hud-telemetry': svg = getHudTelemetrySvg(params); break
     case 'neofetch': svg = getNeofetchSvg(params); break
     case 'cyberpunk-grid': svg = getCyberpunkGridSvg(params); break
     case 'swiss-minimal': svg = getSwissMinimalSvg(params); break
     case 'glass-orbit': svg = getGlassOrbitSvg(params); break
     case 'gradient-ribbon': svg = getGradientRibbonSvg(params); break
-    default: svg = getHudTelemetrySvg(params); break
+    case 'mockup': svg = getMockupSvg(params); break
+    case 'motion': svg = getMotionDemoCardSvg(params); break
+    case 'adaptive': svg = getAdaptiveThemeSvg(params); break
+    case 'comparison': svg = getComparisonMatrixSvg(params); break
+    default: svg = getCapsuleSvg(params); break
   }
   return svg.split('\n').filter((line) => line.trim().length > 0).join('\n')
 }

@@ -1,34 +1,39 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { APP_CURRENT_VERSION, RELEASE_HISTORY } from '../data/releaseNotes'
 import appLogo from '../assets/logo.png'
 
 /**
- * Wraps search query matches in an authentic <mark> element with glowing highlight styling.
+ * Parses inline markdown bold (**bold**) and backticks (`code`) into styled React elements.
  */
-function highlightSearchMatch(text, query) {
-  if (!query || !text || typeof text !== 'string') return text
-  const cleanQuery = query.trim()
-  if (!cleanQuery) return text
-  const escaped = cleanQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const parts = text.split(new RegExp(`(${escaped})`, 'gi'))
-  if (parts.length === 1) return text
+function formatMarkdownInline(text) {
+  if (!text || typeof text !== 'string') return ''
+  const tokenRegex = /(\b\*\*[^*]+\*\*\b|\*\*[^*]+\*\*|`[^`]+`)/g
+  const parts = text.split(tokenRegex)
 
-  return parts.map((part, index) =>
-    part.toLowerCase() === cleanQuery.toLowerCase() ? (
-      <mark key={index} className="whats-new-search-highlight">
-        {part}
-      </mark>
-    ) : (
-      part
-    )
-  )
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <strong key={i} className="notes-bold-emphasis">
+          {part.slice(2, -2)}
+        </strong>
+      )
+    }
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return (
+        <code key={i} className="whats-new-inline-code">
+          {part.slice(1, -1)}
+        </code>
+      )
+    }
+    return part
+  })
 }
 
 /**
  * Automatically detects keyboard shortcuts in descriptions (e.g. F1, Ctrl+Shift+P, Alt+Z, Ctrl+`)
- * and transforms them into authentic styled <kbd> keycaps, while also supporting search highlighting.
+ * and transforms them into authentic styled <kbd> keycaps.
  */
-function formatDescriptionWithKeycaps(text, searchQuery = '') {
+function formatDescriptionWithKeycaps(text) {
   if (!text) return ''
   const pattern = /(\((?:Ctrl|Cmd|Alt|Shift|F\d+)[^)]*\)|`[^`]+`|\b(?:Ctrl|Cmd|Alt|Shift)\+[A-Za-z0-9`~+-]+|\bF\d+\b)/g
   const parts = text.split(pattern)
@@ -40,7 +45,7 @@ function formatDescriptionWithKeycaps(text, searchQuery = '') {
     if (part.startsWith('`') && part.endsWith('`')) {
       return (
         <code key={index} className="whats-new-inline-code">
-          {highlightSearchMatch(part.slice(1, -1), searchQuery)}
+          {part.slice(1, -1)}
         </code>
       )
     }
@@ -66,14 +71,32 @@ function formatDescriptionWithKeycaps(text, searchQuery = '') {
       )
     }
 
-    return highlightSearchMatch(part, searchQuery)
+    return part
   })
 }
 
 /**
- * Builds a clean release series tree:
- * Groups releases by Series (e.g. v1.0.x Series)
- * Each series contains its chronologically ordered point releases.
+ * Transforms an array of highlight bullet points into a single cohesive narrative paragraph with bold keywords.
+ */
+function formatHighlightsAsParagraph(highlights) {
+  if (!highlights || highlights.length === 0) return null
+  return highlights.map((h, idx) => {
+    const colonIdx = h.indexOf(':')
+    if (colonIdx > 0 && colonIdx < 50) {
+      const prefix = h.slice(0, colonIdx)
+      const rest = h.slice(colonIdx + 1)
+      return (
+        <span key={idx}>
+          <strong className="notes-bold-emphasis">{prefix}</strong>:{formatDescriptionWithKeycaps(rest)}{' '}
+        </span>
+      )
+    }
+    return <span key={idx}>{formatDescriptionWithKeycaps(h)}{' '}</span>
+  })
+}
+
+/**
+ * Groups releases by Series (e.g. v1.2.x Series, v1.1.x Series)
  */
 function buildReleaseTree(releases) {
   const groups = {}
@@ -104,8 +127,8 @@ function buildReleaseTree(releases) {
 }
 
 export default function WhatsNewTab({
-  updateDownloaded = null, // { version, releaseNotes } if update is ready to install
-  updateProgress = null, // { percent, transferred, total, bytesPerSecond }
+  updateDownloaded = null,
+  updateProgress = null,
   updateError = null,
   onRestartToUpdate = () => {},
   onClose = () => {},
@@ -113,13 +136,17 @@ export default function WhatsNewTab({
   onOpenShortcuts = () => {},
   onCheckForUpdates = () => {}
 }) {
-  const [selectedVersion, setSelectedVersion] = useState(APP_CURRENT_VERSION)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [activeVersion, setActiveVersion] = useState(APP_CURRENT_VERSION)
   const [treeFilter, setTreeFilter] = useState('')
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // Docked open by default
+  const [isTreeSearchOpen, setIsTreeSearchOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [lightboxMedia, setLightboxMedia] = useState(null)
   const [checkingUpdates, setCheckingUpdates] = useState(false)
+  const [expandedCards, setExpandedCards] = useState({})
+  const treeSearchInputRef = useRef(null)
+  const mainPanelRef = useRef(null)
+  const isSmoothScrollingRef = useRef(false)
+
   const [suppressAutoShow, setSuppressAutoShow] = useState(() => {
     try {
       return localStorage.getItem('visualmark_suppress_whats_new') === 'true'
@@ -139,6 +166,38 @@ export default function WhatsNewTab({
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [lightboxMedia])
+
+  // Track currently visible release while user scrolls through the continuous feed
+  useEffect(() => {
+    const container = mainPanelRef.current
+    if (!container) return
+
+    const handleScroll = () => {
+      if (isSmoothScrollingRef.current) return
+      const containerRect = container.getBoundingClientRect()
+      let currentVisible = null
+      let minDistance = Infinity
+
+      for (const rel of RELEASE_HISTORY) {
+        const el = document.getElementById(`release-${rel.version}`)
+        if (el) {
+          const rect = el.getBoundingClientRect()
+          const dist = Math.abs(rect.top - containerRect.top - 60)
+          if (rect.top <= containerRect.top + 220 && dist < minDistance) {
+            minDistance = dist
+            currentVisible = rel.version
+          }
+        }
+      }
+
+      if (currentVisible && currentVisible !== activeVersion) {
+        setActiveVersion(currentVisible)
+      }
+    }
+
+    container.addEventListener('scroll', handleScroll, { passive: true })
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [activeVersion])
 
   const releaseTree = useMemo(() => buildReleaseTree(RELEASE_HISTORY), [])
 
@@ -163,27 +222,15 @@ export default function WhatsNewTab({
     }))
   }
 
-  const expandAll = () => {
-    const exp = {}
-    releaseTree.forEach((series) => {
-      exp[series.key] = true
-    })
-    setExpandedNodes(exp)
-  }
-
-  const collapseAll = () => {
-    const exp = {}
-    releaseTree.forEach((series) => {
-      exp[series.key] = false
-    })
-    setExpandedNodes(exp)
-  }
-
   const handleToggleAll = () => {
     if (areAllExpanded) {
-      collapseAll()
+      const exp = {}
+      releaseTree.forEach((series) => { exp[series.key] = false })
+      setExpandedNodes(exp)
     } else {
-      expandAll()
+      const exp = {}
+      releaseTree.forEach((series) => { exp[series.key] = true })
+      setExpandedNodes(exp)
     }
   }
 
@@ -195,6 +242,25 @@ export default function WhatsNewTab({
     } finally {
       setTimeout(() => setCheckingUpdates(false), 1200)
     }
+  }
+
+  const handleSelectVersion = (version) => {
+    setActiveVersion(version)
+    const el = document.getElementById(`release-${version}`)
+    if (el) {
+      isSmoothScrollingRef.current = true
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setTimeout(() => {
+        isSmoothScrollingRef.current = false
+      }, 700)
+    }
+  }
+
+  const toggleCard = (cardId) => {
+    setExpandedCards((prev) => ({
+      ...prev,
+      [cardId]: !prev[cardId]
+    }))
   }
 
   const filteredTree = useMemo(() => {
@@ -224,10 +290,6 @@ export default function WhatsNewTab({
       .filter((s) => s.matchingReleases.length > 0)
   }, [releaseTree, treeFilter])
 
-  const activeRelease = useMemo(() => {
-    return RELEASE_HISTORY.find((r) => r.version === selectedVersion) || RELEASE_HISTORY[0]
-  }, [selectedVersion])
-
   const handleToggleSuppress = (checked) => {
     setSuppressAutoShow(checked)
     try {
@@ -246,47 +308,9 @@ export default function WhatsNewTab({
     }
   }
 
-  const categories = useMemo(() => {
-    const list = [{ id: 'all', label: 'All Categories' }]
-    activeRelease.sections.forEach((sec) => {
-      list.push({ id: sec.category, label: sec.category })
-    })
-    return list
-  }, [activeRelease])
-
-  const filteredSections = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-
-    return activeRelease.sections
-      .filter((sec) => selectedCategory === 'all' || sec.category === selectedCategory)
-      .map((sec) => {
-        if (!query) return sec
-
-        const matchingItems = sec.items.filter((item) => {
-          return (
-            item.title.toLowerCase().includes(query) ||
-            item.desc.toLowerCase().includes(query) ||
-            sec.category.toLowerCase().includes(query)
-          )
-        })
-
-        return {
-          ...sec,
-          items: matchingItems
-        }
-      })
-      .filter((sec) => sec.items.length > 0)
-  }, [activeRelease, selectedCategory, searchQuery])
-
-  const filteredHighlights = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return activeRelease.highlights || []
-    return (activeRelease.highlights || []).filter((h) => h.toLowerCase().includes(query))
-  }, [activeRelease, searchQuery])
-
   return (
-    <div className="whats-new-tab-workspace custom-scrollbar select-none">
-      {/* 1. Header Toolbar (Clean, minimal, uncluttered) */}
+    <div className="whats-new-tab-workspace">
+      {/* 1. Header Toolbar (Sticky Brand Bar) */}
       <header className="whats-new-tab-header">
         <div className="whats-new-header-main-row">
           <div className="whats-new-brand-group">
@@ -294,7 +318,7 @@ export default function WhatsNewTab({
               type="button"
               className="sidebar-toggle-btn"
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              title={sidebarCollapsed ? 'Show Version Tree' : 'Hide Version Tree'}
+              title={sidebarCollapsed ? 'Expand Release Tree Sidebar' : 'Collapse Release Tree Sidebar'}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
                 {sidebarCollapsed ? 'dock_to_left' : 'left_panel_close'}
@@ -312,31 +336,14 @@ export default function WhatsNewTab({
             <div className="whats-new-header-text">
               <div className="whats-new-title-badge-wrap">
                 <h2 className="whats-new-tab-title">Release Notes</h2>
-                <span className={`whats-new-type-badge ${getTypeBadgeClass(activeRelease.type)}`}>
-                  v{activeRelease.version}
+                <span className="whats-new-type-badge badge-patch">
+                  v{APP_CURRENT_VERSION}
                 </span>
               </div>
               <p className="whats-new-tab-meta">
-                <span>{activeRelease.date}</span>
-                <span>&bull;</span>
-                <span>VisualMark Studio Changelog</span>
+                <span>VisualMark Studio Changelog &amp; Release History</span>
               </p>
             </div>
-          </div>
-
-          <div className="whats-new-header-actions">
-            <button
-              type="button"
-              className={`whats-new-action-btn check-update-btn ${checkingUpdates ? 'checking' : ''}`}
-              onClick={handleTriggerCheckUpdates}
-              disabled={checkingUpdates}
-              title="Check GitHub for application updates"
-            >
-              <span className={`material-symbols-outlined btn-icon ${checkingUpdates ? 'spinning' : ''}`}>
-                {checkingUpdates ? 'sync' : 'system_update'}
-              </span>
-              <span>{checkingUpdates ? 'Checking for Updates...' : 'Check for Updates'}</span>
-            </button>
           </div>
         </div>
       </header>
@@ -353,6 +360,26 @@ export default function WhatsNewTab({
             </div>
 
             <div className="tree-sidebar-actions">
+              {/* Search Toggle Icon */}
+              <button
+                type="button"
+                className={`ide-header-btn ${isTreeSearchOpen || treeFilter ? 'active' : ''}`}
+                onClick={() => {
+                  if (isTreeSearchOpen && !treeFilter) {
+                    setIsTreeSearchOpen(false)
+                  } else {
+                    setIsTreeSearchOpen(true)
+                    setTimeout(() => treeSearchInputRef.current?.focus(), 50)
+                  }
+                }}
+                title="Search release versions"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
+                  search
+                </span>
+              </button>
+
+              {/* Expand / Collapse All */}
               <button
                 type="button"
                 className="ide-header-btn"
@@ -366,27 +393,42 @@ export default function WhatsNewTab({
             </div>
           </div>
 
-          {/* Quick Tree Search Filter */}
-          <div className="tree-search-wrapper">
-            <span className="material-symbols-outlined tree-search-icon">search</span>
-            <input
-              type="text"
-              className="tree-search-input"
-              placeholder="Filter versions..."
-              value={treeFilter}
-              onChange={(e) => setTreeFilter(e.target.value)}
-            />
-            {treeFilter && (
+          {/* Collapsible Search Input Bar */}
+          {(isTreeSearchOpen || treeFilter) && (
+            <div className="tree-search-wrapper slide-down">
+              <span className="material-symbols-outlined tree-search-icon">search</span>
+              <input
+                ref={treeSearchInputRef}
+                type="text"
+                className="tree-search-input"
+                placeholder="Filter versions..."
+                value={treeFilter}
+                onChange={(e) => setTreeFilter(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setTreeFilter('')
+                    setIsTreeSearchOpen(false)
+                  }
+                }}
+                onBlur={() => {
+                  if (!treeFilter.trim()) {
+                    setIsTreeSearchOpen(false)
+                  }
+                }}
+              />
               <button
                 type="button"
                 className="tree-search-clear-btn"
-                onClick={() => setTreeFilter('')}
-                title="Clear filter"
+                onClick={() => {
+                  setTreeFilter('')
+                  setIsTreeSearchOpen(false)
+                }}
+                title="Close search"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>close</span>
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Hierarchical Tree Nodes (Grouped by Release Series) */}
           <div className="tree-scroll-container custom-scrollbar">
@@ -400,7 +442,10 @@ export default function WhatsNewTab({
                   <button
                     type="button"
                     className="tree-empty-clear-btn"
-                    onClick={() => setTreeFilter('')}
+                    onClick={() => {
+                      setTreeFilter('')
+                      setIsTreeSearchOpen(false)
+                    }}
                   >
                     Reset filter
                   </button>
@@ -433,14 +478,14 @@ export default function WhatsNewTab({
                     {isExpanded && (
                       <div className="tree-series-releases-list">
                         {series.matchingReleases.map((rel) => {
-                          const isSelected = selectedVersion === rel.version
+                          const isSelected = activeVersion === rel.version
 
                           return (
                             <button
                               key={rel.version}
                               type="button"
                               className={`tree-leaf-item ${isSelected ? 'active' : ''}`}
-                              onClick={() => setSelectedVersion(rel.version)}
+                              onClick={() => handleSelectVersion(rel.version)}
                             >
                               <div className="tree-leaf-left">
                                 <span className="material-symbols-outlined tree-leaf-icon">
@@ -470,10 +515,35 @@ export default function WhatsNewTab({
               })
             )}
           </div>
+
+          {/* Docked Sidebar Footer: Update Check & Auto-Open Preference */}
+          <div className="tree-sidebar-footer">
+            <button
+              type="button"
+              className={`sidebar-update-btn ${checkingUpdates ? 'checking' : ''}`}
+              onClick={handleTriggerCheckUpdates}
+              disabled={checkingUpdates}
+              title="Check GitHub for application updates"
+            >
+              <span className={`material-symbols-outlined sidebar-btn-icon ${checkingUpdates ? 'spinning' : ''}`}>
+                {checkingUpdates ? 'sync' : 'system_update'}
+              </span>
+              <span>{checkingUpdates ? 'Checking Updates...' : 'Check for Updates'}</span>
+            </button>
+
+            <label className="sidebar-checkbox-label" title="Do not open Release Notes automatically on minor application updates">
+              <input
+                type="checkbox"
+                checked={suppressAutoShow}
+                onChange={(e) => handleToggleSuppress(e.target.checked)}
+              />
+              <span>Don't open on minor updates</span>
+            </label>
+          </div>
         </aside>
 
-        {/* Right Column: Centered Document Preview Canvas (Matching Image 4) */}
-        <main className="whats-new-main-panel custom-scrollbar">
+        {/* Right Column: Continuous Scroll Document Canvas */}
+        <main ref={mainPanelRef} className="whats-new-main-panel custom-scrollbar">
           <div className="notes-preview-canvas">
             {/* Live Update Downloading Banner */}
             {updateProgress && !updateDownloaded && (
@@ -483,7 +553,7 @@ export default function WhatsNewTab({
                   <div style={{ flex: 1, marginRight: '16px' }}>
                     <p className="update-banner-title">
                       Downloading Update: {updateProgress.percent || 0}%
-                      {updateProgress.bytesPerSecond ? ` • ${(updateProgress.bytesPerSecond / 1048576).toFixed(1)} MB/s` : ''}
+                      {updateProgress.bytesPerSecond ? ` ΓÇó ${(updateProgress.bytesPerSecond / 1048576).toFixed(1)} MB/s` : ''}
                     </p>
                     <div style={{ background: 'rgba(255,255,255,0.08)', height: '4px', borderRadius: '2px', marginTop: '6px', overflow: 'hidden' }}>
                       <div style={{ background: '#007acc', height: '100%', width: `${updateProgress.percent || 0}%`, transition: 'width 0.3s ease' }} />
@@ -519,194 +589,133 @@ export default function WhatsNewTab({
               </div>
             )}
 
-            {/* Filter Bar (Search & Category tags) */}
-            <div className="notes-filter-bar">
-              <div className="notes-search-wrapper">
-                <span className="material-symbols-outlined notes-search-icon">search</span>
-                <input
-                  type="text"
-                  className="notes-search-input"
-                  placeholder="Filter release notes..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    className="notes-search-clear"
-                    onClick={() => setSearchQuery('')}
-                    title="Clear search"
+            {/* Continuous Stream of All Release Notes */}
+            <div className="notes-releases-stream">
+              {RELEASE_HISTORY.map((rel) => {
+                return (
+                  <article
+                    key={rel.version}
+                    id={`release-${rel.version}`}
+                    className="notes-release-block"
                   >
-                    ✕
-                  </button>
-                )}
-              </div>
-
-              <div className="notes-category-tags">
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    className={`notes-tag-btn ${selectedCategory === cat.id ? 'active' : ''}`}
-                    onClick={() => setSelectedCategory(cat.id)}
-                  >
-                    <span>{cat.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Document Body (Centered layout exactly like Image 4) */}
-            <article className="notes-document">
-              {/* Release Header */}
-              <header className="notes-doc-header">
-                <h1 className="notes-doc-h1">
-                  {highlightSearchMatch(activeRelease.title, searchQuery)}
-                </h1>
-                <div className="notes-doc-meta-row">
-                  <span className={`notes-version-tag ${getTypeBadgeClass(activeRelease.type)}`}>
-                    v{activeRelease.version}
-                  </span>
-                  <span className="notes-type-text">{activeRelease.type.toUpperCase()} RELEASE</span>
-                  <span className="notes-dot">•</span>
-                  <span className="notes-date-text">{activeRelease.date}</span>
-                </div>
-              </header>
-
-              {/* Highlights Callout Quote (Styled exactly like Image 4's blue accent callout) */}
-              {filteredHighlights.length > 0 && (
-                <blockquote className="notes-doc-callout">
-                  <div className="notes-callout-header">
-                    <span className="material-symbols-outlined notes-callout-icon">auto_awesome</span>
-                    <strong>Highlights &amp; Overview:</strong>
-                  </div>
-                  <ul className="notes-callout-list">
-                    {filteredHighlights.map((h, i) => (
-                      <li key={i}>{formatDescriptionWithKeycaps(h, searchQuery)}</li>
-                    ))}
-                  </ul>
-                </blockquote>
-              )}
-
-              {/* Document Sections (Styled like Image 4's numbered / titled sections) */}
-              {filteredSections.length > 0 ? (
-                <div className="notes-sections-flow">
-                  {filteredSections.map((sec, idx) => {
-                    const isFixes = sec.category.toLowerCase().includes('fix') || sec.category.toLowerCase().includes('stability') || sec.badge?.toLowerCase() === 'fix'
-
-                    return (
-                      <section key={idx} className="notes-doc-section">
-                        <div className="notes-section-heading-row">
-                          <h2 className="notes-section-h2">
-                            <span className="notes-section-num">{idx + 1}.</span>
-                            <span>{sec.category}</span>
-                          </h2>
-                          <span
-                            className="notes-section-pill"
-                            style={{
-                              borderColor: `${sec.color}44`,
-                              color: sec.color,
-                              backgroundColor: `${sec.color}15`
-                            }}
-                          >
-                            {sec.badge}
-                          </span>
-                        </div>
-
-                        {isFixes ? (
-                          <ul className="notes-fixes-checklist">
-                            {sec.items.map((item, itemIdx) => (
-                              <li key={itemIdx} className="notes-fix-row">
-                                <span className="material-symbols-outlined fix-bullet">check_circle</span>
-                                <div className="fix-desc-wrap">
-                                  <strong className="fix-item-title">{highlightSearchMatch(item.title, searchQuery)}: </strong>
-                                  <span className="fix-item-desc">{formatDescriptionWithKeycaps(item.desc, searchQuery)}</span>
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <div className="notes-items-list">
-                            {sec.items.map((item, itemIdx) => (
-                              <div key={itemIdx} className="notes-item-entry">
-                                <h3 className="notes-item-h3">
-                                  {highlightSearchMatch(item.title, searchQuery)}
-                                </h3>
-                                <p className="notes-item-paragraph">
-                                  {formatDescriptionWithKeycaps(item.desc, searchQuery)}
-                                </p>
-
-                                {/* Optional Media (Image / GIF / Video) */}
-                                {item.media && (
-                                  <div
-                                    className="notes-media-box"
-                                    onClick={() => setLightboxMedia(item.media)}
-                                    title="Click to enlarge"
-                                  >
-                                    {item.media.type === 'video' ? (
-                                      <video
-                                        src={item.media.url}
-                                        poster={item.media.poster}
-                                        autoPlay
-                                        loop
-                                        muted
-                                        playsInline
-                                        className="notes-media-player"
-                                      />
-                                    ) : (
-                                      <img
-                                        src={item.media.url}
-                                        alt={item.media.alt || item.title}
-                                        loading="lazy"
-                                        className="notes-media-img"
-                                      />
-                                    )}
-                                    <div className="notes-media-zoom-hint">
-                                      <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>zoom_in</span>
-                                      <span>Click to enlarge</span>
-                                    </div>
-                                    {item.media.caption && (
-                                      <div className="notes-media-caption-text">{item.media.caption}</div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
+                    {/* Release Header */}
+                    <header className="notes-doc-header">
+                      <div className="notes-doc-meta-row">
+                        <span className={`notes-version-tag ${getTypeBadgeClass(rel.type)}`}>
+                          v{rel.version}
+                        </span>
+                        <span className="notes-type-text">{rel.type.toUpperCase()} RELEASE</span>
+                        <span className="notes-dot">ΓÇó</span>
+                        <span className="notes-date-text">{rel.date}</span>
+                        {rel.isCurrent && (
+                          <span className="notes-latest-indicator-pill">Active Version</span>
                         )}
-                      </section>
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="whats-new-empty-search">
-                  <span className="material-symbols-outlined text-muted" style={{ fontSize: '36px' }}>search_off</span>
-                  <p>No changes found matching <strong>"{searchQuery}"</strong></p>
-                  <button
-                    type="button"
-                    className="whats-new-action-btn"
-                    onClick={() => {
-                      setSearchQuery('')
-                      setSelectedCategory('all')
-                    }}
-                  >
-                    Clear Filter
-                  </button>
-                </div>
-              )}
+                      </div>
+                      <h2 className="notes-release-title">{rel.title}</h2>
+                    </header>
 
-              {/* Document Footer */}
-              <footer className="notes-doc-footer">
-                <label className="whats-new-checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={suppressAutoShow}
-                    onChange={(e) => handleToggleSuppress(e.target.checked)}
-                  />
-                  <span>Don't open Release Notes automatically on minor application updates</span>
-                </label>
-              </footer>
-            </article>
+                    {/* Overview: Plain text written directly on the background (Professional MD Editor feel) */}
+                    {(rel.overview || rel.highlights?.length > 0) && (
+                      <p className="notes-doc-overview">
+                        {rel.overview ? (
+                          formatMarkdownInline(rel.overview)
+                        ) : (
+                          formatHighlightsAsParagraph(rel.highlights)
+                        )}
+                      </p>
+                    )}
+
+                    {/* Collapsible Section Cards (Matching WelcomeLauncher Card Style) */}
+                    {rel.sections && rel.sections.length > 0 && (
+                      <div className="notes-cards-grid">
+                        {rel.sections.map((sec, secIdx) => {
+                          const cardId = `${rel.version}-${secIdx}`
+                          const isExpanded = expandedCards[cardId] === true
+
+                          return (
+                            <div
+                              key={secIdx}
+                              className={`welcome-style-card ${isExpanded ? 'expanded' : ''}`}
+                              onClick={() => toggleCard(cardId)}
+                            >
+                              {/* Card Header Row */}
+                              <div className="welcome-card-header-row">
+                                <div className="welcome-card-left-group">
+                                  <div
+                                    className="welcome-card-icon-wrap"
+                                    style={{
+                                      backgroundColor: `${sec.color || '#6366f1'}15`,
+                                      color: sec.color || '#6366f1',
+                                      border: `1px solid ${sec.color || '#6366f1'}33`
+                                    }}
+                                  >
+                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                                      {sec.icon || 'folder'}
+                                    </span>
+                                  </div>
+                                  <div className="welcome-card-text-group">
+                                    <span className="welcome-card-title">{sec.category}</span>
+                                    <span className="welcome-card-desc">
+                                      {sec.items?.length || 0} {sec.items?.length === 1 ? 'topic' : 'topics'} ΓÇó Click to {isExpanded ? 'collapse' : 'view details'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="welcome-card-right-group">
+                                  {sec.badge && (
+                                    <span className="welcome-card-badge">{sec.badge}</span>
+                                  )}
+                                  <span className={`material-symbols-outlined welcome-card-chevron ${isExpanded ? 'rotated' : ''}`}>
+                                    expand_more
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Collapsible Content Revealed on Demand */}
+                              {isExpanded && (
+                                <div
+                                  className="welcome-card-expanded-body"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <div className="welcome-card-inner-divider" />
+                                  <div className="welcome-card-items-flow">
+                                    {sec.items?.map((item, itemIdx) => (
+                                      <div key={itemIdx} className="welcome-card-item-entry">
+                                        <h4 className="welcome-card-item-title">{item.title}</h4>
+                                        <p className="welcome-card-item-desc">
+                                          {formatDescriptionWithKeycaps(item.desc)}
+                                        </p>
+
+                                        {/* Optional Media (Image / Video) */}
+                                        {item.media && (
+                                          <div
+                                            className="notes-media-box"
+                                            onClick={() => setLightboxMedia(item.media)}
+                                            title="Click to enlarge"
+                                          >
+                                            <img
+                                              src={item.media.url}
+                                              alt={item.media.alt || item.title}
+                                              className="notes-media-img"
+                                            />
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    <div className="notes-release-stream-separator" />
+                  </article>
+                )
+              })}
+            </div>
           </div>
         </main>
       </div>

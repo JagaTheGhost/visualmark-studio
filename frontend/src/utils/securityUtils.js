@@ -18,18 +18,25 @@ export function sanitizeSafeMediaUrl(url, fallback = '') {
     return trimmed
   }
 
-  // 2. Allow relative workspace paths (e.g. assets/..., ./assets/..., images/..., etc.)
+  // 2. Allow relative workspace paths or local disk paths (including Windows drives C:\... or C:/...)
   if (
     trimmed.startsWith('/') ||
     trimmed.startsWith('./') ||
     trimmed.startsWith('../') ||
+    /^[a-zA-Z]:[\\/]/.test(trimmed) ||
     (!trimmed.includes(':') && !trimmed.startsWith('//'))
   ) {
     return trimmed
   }
 
-  // 3. Allow safe image/media data URIs (PNG, JPEG, WebP, GIF)
-  if (/^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/i.test(trimmed)) {
+  // 3. Allow safe raster image, video, and audio data URIs (PNG, JPEG, WebP, GIF, MP4, WebM, OGG, QuickTime, MP3, WAV, SVG)
+  // Check prefix to prevent regex stack limits on multi-megabyte base64 strings
+  if (/^data:(image\/(png|jpe?g|webp|gif|bmp|x-icon|avif|tiff|svg\+xml)|video\/(mp4|webm|ogg|quicktime|x-matroska|x-msvideo)|audio\/(mp3|wav|ogg|aac|m4a|webm|mpeg|flac));base64,/i.test(trimmed)) {
+    return trimmed
+  }
+
+  // 4. Allow blob URIs for local playback
+  if (/^blob:/i.test(trimmed)) {
     return trimmed
   }
 
@@ -47,18 +54,92 @@ export function sanitizeSafeMediaUrl(url, fallback = '') {
 }
 
 /**
+ * Automatically injects viewBox="0 0 w h" if missing but width and height are present,
+ * ensuring responsive scaling across all container widths and split panes.
+ */
+export function ensureSvgViewBox(svgCode) {
+  if (!svgCode || typeof svgCode !== 'string') return svgCode
+  if (/viewBox\s*=/i.test(svgCode)) return svgCode
+
+  const svgMatch = svgCode.match(/<svg\b([^>]*)>/i)
+  if (!svgMatch) return svgCode
+
+  const attrs = svgMatch[1]
+  const widthMatch = attrs.match(/\bwidth\s*=\s*["']?(\d+(?:\.\d+)?)(?:px)?["']?/i)
+  const heightMatch = attrs.match(/\bheight\s*=\s*["']?(\d+(?:\.\d+)?)(?:px)?["']?/i)
+
+  if (widthMatch && heightMatch) {
+    const w = widthMatch[1]
+    const h = heightMatch[1]
+    const updated = `<svg${attrs} viewBox="0 0 ${w} ${h}">`
+    return svgCode.replace(svgMatch[0], updated)
+  }
+
+  return svgCode
+}
+
+/**
  * Securely sanitizes SVG strings using DOMPurify with strict SVG profiles.
  */
 export function sanitizeSvg(svgCode) {
   if (!svgCode || typeof svgCode !== 'string') return ''
+  const withViewBox = ensureSvgViewBox(svgCode)
   try {
-    return DOMPurify.sanitize(svgCode, {
+    return DOMPurify.sanitize(withViewBox, {
       USE_PROFILES: { svg: true, svgFilters: true, html: true },
+      FORBID_TAGS: [
+        'script',
+        'iframe',
+        'object',
+        'embed',
+        'base',
+        'meta',
+        'link',
+        'form',
+        'input',
+        'button',
+        'textarea',
+        'select',
+        'option'
+      ],
+      FORBID_ATTR: [
+        'onerror',
+        'onload',
+        'onclick',
+        'onmouseover',
+        'onmouseout',
+        'onfocus',
+        'onblur',
+        'onmouseenter',
+        'onmouseleave',
+        'onchange',
+        'onsubmit',
+        'onkeydown',
+        'onkeypress',
+        'onkeyup',
+        'action',
+        'formaction',
+        'srcdoc'
+      ],
+      ALLOW_DATA_ATTR: false,
       ADD_TAGS: [
         'foreignObject',
         'style',
         'text',
         'tspan',
+        'textPath',
+        'path',
+        'defs',
+        'clipPath',
+        'rect',
+        'circle',
+        'line',
+        'polygon',
+        'polyline',
+        'g',
+        'linearGradient',
+        'radialGradient',
+        'stop',
         'use',
         'animate',
         'animateTransform',
@@ -69,11 +150,17 @@ export function sanitizeSvg(svgCode) {
         'i',
         'br',
         'strong',
-        'em'
+        'em',
+        'code',
+        'pre'
       ],
       ADD_ATTR: [
         'target',
         'xlink:href',
+        'href',
+        'id',
+        'clip-path',
+        'clipPathUnits',
         'dominant-baseline',
         'text-anchor',
         'transform-origin',
@@ -86,13 +173,39 @@ export function sanitizeSvg(svgCode) {
         'y',
         'dx',
         'dy',
+        'rx',
+        'ry',
+        'cx',
+        'cy',
+        'r',
+        'x1',
+        'x2',
+        'y1',
+        'y2',
+        'offset',
+        'stop-color',
+        'stop-opacity',
         'width',
         'height',
         'font-size',
         'font-family',
         'font-weight',
         'fill',
-        'stroke'
+        'stroke',
+        'stroke-width',
+        'stroke-opacity',
+        'opacity',
+        'visibility',
+        'attributeName',
+        'begin',
+        'dur',
+        'values',
+        'keyTimes',
+        'repeatCount',
+        'calcMode',
+        'keySplines',
+        'restart',
+        'd'
       ]
     })
   } catch (err) {
