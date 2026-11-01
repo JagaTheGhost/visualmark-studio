@@ -105,7 +105,6 @@
     ],
     "mac": {
       "target": [
-        "dmg",
         "zip"
       ],
       "icon": "public/icon.png",
@@ -126,10 +125,6 @@
           "role": "Editor"
         }
       ]
-    },
-    "dmg": {
-      "title": "VisualMark Studio",
-      "artifactName": "VisualMark-Studio-${version}-${arch}.${ext}"
     },
     "linux": {
       "target": [
