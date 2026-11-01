@@ -30,7 +30,7 @@ jobs:
             os: ubuntu-latest
             build-args: --linux
           - name: macOS Apple Silicon (arm64 zip)
-            os: macos-14
+            os: macos-latest
             build-args: --mac --arm64
           - name: macOS Intel (x64 zip)
             os: macos-13

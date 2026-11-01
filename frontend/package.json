@@ -150,9 +150,7 @@
           "role": "Editor"
         }
       ],
-      "maintainer": "JagaTheGhost <JagaTheGhost.jagadeeswarancoc@gmail.com>",
-      "desktopName": "visualmark-studio",
-      "syncDesktopName": true
+      "maintainer": "JagaTheGhost <JagaTheGhost.jagadeeswarancoc@gmail.com>"
     }
   },
   "dependencies": {
