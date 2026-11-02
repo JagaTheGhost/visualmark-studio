@@ -1,6 +1,7 @@
+import { sanitizeSafeMediaUrl } from '../../../utils/securityUtils'
 import React from 'react'
 import { GITHUB_METRICS, SKILL_ICONS_LIST } from '../../../data/badgeStudioData'
-import { escapeShieldsText, getRackBadgeUrl } from '../../../utils/badgeEngine'
+import { cleanHexColor, escapeShieldsText, getRackBadgeUrl } from '../../../utils/badgeEngine'
 
 /**
  * Focused Live Preview Surface for Shields.io Badges, SkillIcons, and Racks.
@@ -288,11 +289,13 @@ export default function BadgeLivePreview({
                 </thead>
                 <tbody>
                   {(selectedPack.badges || []).map((b, idx) => {
-                    const bC = (b.color || '6366f1').replace('#', '')
+                    const bC = cleanHexColor(b.color || '6366f1')
                     const bL = escapeShieldsText(b.label)
                     const bM = escapeShieldsText(b.message || '')
-                    const badgeStyle = style || b.style || 'for-the-badge'
-                    const bUrl = `https://img.shields.io/badge/${bL}-${bM}-${bC}?style=${badgeStyle}&logo=${encodeURIComponent(b.logo || '')}&logoColor=white`
+                    const badgeStyle = encodeURIComponent(style || b.style || 'for-the-badge')
+                    let bUrl = `https://img.shields.io/badge/${bL}-${bM}-${bC}?style=${badgeStyle}`
+                    if (b.logo) bUrl += `&logo=${encodeURIComponent(b.logo)}&logoColor=white`
+                    const safeSrc = sanitizeSafeMediaUrl(bUrl)
                     return (
                       <tr key={idx}>
                         <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
@@ -300,7 +303,7 @@ export default function BadgeLivePreview({
                         </td>
                         <td style={{ textAlign: 'center' }}>
                           <img
-                            src={bUrl}
+                            src={safeSrc}
                             alt={`${b.label} ${b.message || ''}`}
                             className="badge-render-img"
                             style={{ height: badgeStyle === 'for-the-badge' ? '26px' : '20px' }}
@@ -337,15 +340,17 @@ export default function BadgeLivePreview({
               }}
             >
               {(selectedPack.badges || []).map((b, idx) => {
-                const bC = (b.color || '6366f1').replace('#', '')
+                const bC = cleanHexColor(b.color || '6366f1')
                 const bL = escapeShieldsText(b.label)
                 const bM = escapeShieldsText(b.message || '')
-                const badgeStyle = style || b.style || 'for-the-badge'
-                const bUrl = `https://img.shields.io/badge/${bL}-${bM}-${bC}?style=${badgeStyle}&logo=${encodeURIComponent(b.logo || '')}&logoColor=white`
+                const badgeStyle = encodeURIComponent(style || b.style || 'for-the-badge')
+                let bUrl = `https://img.shields.io/badge/${bL}-${bM}-${bC}?style=${badgeStyle}`
+                if (b.logo) bUrl += `&logo=${encodeURIComponent(b.logo)}&logoColor=white`
+                const safeSrc = sanitizeSafeMediaUrl(bUrl)
                 return (
                   <img
                     key={idx}
-                    src={bUrl}
+                    src={safeSrc}
                     alt={`${b.label} ${b.message || ''}`}
                     className="badge-render-img"
                     style={{ height: badgeStyle === 'for-the-badge' ? '28px' : '20px' }}

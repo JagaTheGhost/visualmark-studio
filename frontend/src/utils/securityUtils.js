@@ -242,3 +242,16 @@ export function escapeXml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;')
 }
+
+/**
+ * Strips all HTML tags and extracts plain text securely using DOMPurify.
+ * Eliminates nested-tag bypasses and satisfies CodeQL rule js/incomplete-multi-character-sanitization.
+ */
+export function sanitizePlainText(str) {
+  if (str === null || str === undefined) return ''
+  try {
+    return DOMPurify.sanitize(String(str), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] }).trim()
+  } catch {
+    return String(str).replace(/[<>]/g, '').trim()
+  }
+}

@@ -1,3 +1,4 @@
+import { sanitizePlainText } from '../utils/securityUtils'
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 
 import en from './locales/en.json'
@@ -127,7 +128,7 @@ export function I18nProvider({ children }) {
       const clean = {}
       for (const [k, v] of Object.entries(obj)) {
         if (typeof v === 'string') {
-          clean[k] = v.replace(/<[^>]*>/g, '').trim()
+          clean[k] = sanitizePlainText(v)
         } else if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
           clean[k] = sanitizeDict(v)
         }
@@ -139,11 +140,11 @@ export function I18nProvider({ children }) {
 
     const newPack = {
       code,
-      label: (pack.label || code).replace(/<[^>]*>/g, ''),
-      native: (pack.native || pack.label || code).replace(/<[^>]*>/g, ''),
+      label: sanitizePlainText(pack.label || code),
+      native: sanitizePlainText(pack.native || pack.label || code),
       flag: pack.flag || '🌐',
       dir: pack.dir === 'rtl' ? 'rtl' : 'ltr',
-      author: (pack.author || 'Community').replace(/<[^>]*>/g, ''),
+      author: sanitizePlainText(pack.author || 'Community'),
       version: pack.version || '1.0.0',
       tier: 'community',
       translations: sanitizedTranslations,

@@ -142,12 +142,15 @@ export function parseVideoEmbed(url) {
   const trimmed = url.trim()
   if (!trimmed) return null
 
-  // 1. YouTube (youtube.com/watch?v=..., youtu.be/..., youtube.com/embed/..., youtube.com/shorts/...)
   try {
-    if (trimmed.includes('youtube.com') || trimmed.includes('youtu.be')) {
-      const parsed = new URL(trimmed.startsWith('http') ? trimmed : `https://${trimmed}`)
+    const parsed = new URL(trimmed.startsWith('http') ? trimmed : `https://${trimmed}`)
+    const hostname = (parsed.hostname || '').toLowerCase()
+
+    // 1. YouTube (youtube.com, youtu.be) - validated via exact hostname / domain suffix
+    const isYouTube = hostname === 'youtube.com' || hostname.endsWith('.youtube.com') || hostname === 'youtu.be' || hostname.endsWith('.youtu.be')
+    if (isYouTube) {
       let videoId = ''
-      if (parsed.hostname.includes('youtu.be')) {
+      if (hostname === 'youtu.be' || hostname.endsWith('.youtu.be')) {
         videoId = parsed.pathname.slice(1).split('/')[0].split('?')[0]
       } else if (parsed.searchParams.has('v')) {
         videoId = parsed.searchParams.get('v')
@@ -165,12 +168,11 @@ export function parseVideoEmbed(url) {
         }
       }
     }
-  } catch {}
 
-  // 2. Vimeo (vimeo.com/123456789 or player.vimeo.com/video/123456789)
-  try {
-    if (trimmed.includes('vimeo.com')) {
-      const vimeoMatch = trimmed.match(/(?:vimeo\.com\/(?:video\/)?|player\.vimeo\.com\/video\/)([0-9]+)/)
+    // 2. Vimeo (vimeo.com, player.vimeo.com) - validated via exact hostname / domain suffix
+    const isVimeo = hostname === 'vimeo.com' || hostname.endsWith('.vimeo.com')
+    if (isVimeo) {
+      const vimeoMatch = parsed.pathname.match(/^\/(?:video\/)?([0-9]+)/)
       if (vimeoMatch && vimeoMatch[1]) {
         return {
           type: 'vimeo',
@@ -180,12 +182,11 @@ export function parseVideoEmbed(url) {
         }
       }
     }
-  } catch {}
 
-  // 3. Loom (loom.com/share/... or loom.com/embed/...)
-  try {
-    if (trimmed.includes('loom.com')) {
-      const loomMatch = trimmed.match(/(?:loom\.com\/(?:share|embed)\/)([a-zA-Z0-9]+)/)
+    // 3. Loom (loom.com) - validated via exact hostname / domain suffix
+    const isLoom = hostname === 'loom.com' || hostname.endsWith('.loom.com')
+    if (isLoom) {
+      const loomMatch = parsed.pathname.match(/^\/(?:share|embed)\/([a-zA-Z0-9]+)/)
       if (loomMatch && loomMatch[1]) {
         return {
           type: 'loom',

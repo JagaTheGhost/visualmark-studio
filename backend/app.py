@@ -300,12 +300,28 @@ def resolve_image_url(url: str):
             if is_safe_public_url(candidate_imgurl):
                 return {"success": True, "direct_url": candidate_imgurl, "original_url": clean_target}
 
-        # Reconstruct sanitized request target URL breaking taint flow from raw user input
-        path_part = parsed_target.path or "/"
-        query_part = f"?{parsed_target.query}" if parsed_target.query else ""
+        # Strictly sanitize path and query components to neutralize traversal (..) and CRLF injection
+        raw_path = parsed_target.path or "/"
+        if ".." in raw_path or any(c in raw_path for c in "\r\n\t\x00"):
+            raise HTTPException(status_code=400, detail="Invalid URL path")
+
+        safe_path = urllib.parse.quote(urllib.parse.unquote(raw_path), safe="/-_.!~*'()")
+        if not safe_path.startswith("/"):
+            safe_path = "/" + safe_path
+
+        safe_query = ""
+        if parsed_target.query:
+            if any(c in parsed_target.query for c in "\r\n\t\x00"):
+                raise HTTPException(status_code=400, detail="Invalid URL query")
+            safe_query = "?" + urllib.parse.quote(urllib.parse.unquote(parsed_target.query), safe="=&-_.!~*'()")
+
         port_part = f":{parsed_target.port}" if parsed_target.port and parsed_target.port in (80, 443) else ""
         scheme = "https" if parsed_target.scheme.lower() == "https" else "http"
-        safe_request_url = f"{scheme}://{target_host}{port_part}{path_part}{query_part}"
+        safe_request_url = f"{scheme}://{target_host}{port_part}{safe_path}{safe_query}"
+
+        # Ensure entire reconstructed URL conforms to safe URL pattern without traversal or script schemes
+        if not re.match(r"^https?://[a-zA-Z0-9_\-\.]+(:[0-9]+)?(/[a-zA-Z0-9_\-\./%~]*)?(\?[a-zA-Z0-9_\-\./%~=&+]*)?$", safe_request_url) or ".." in safe_request_url:
+            raise HTTPException(status_code=400, detail="Malformed or restricted URL structure")
 
         req = urllib.request.Request(
             safe_request_url,
@@ -394,24 +410,30 @@ def git_clone_endpoint(req: GitCloneRequest):
     if parsed_git.scheme not in ("https", "http", "ssh") and not clean_url.startswith("git@"):
         raise HTTPException(status_code=400, detail="Only HTTPS, HTTP, and SSH git repository URLs are supported.")
 
-    # Determine safe root directory for destination confinement
-    safe_base = os.path.normpath(os.path.realpath(os.path.expanduser("~")))
-    safe_base_with_sep = safe_base if safe_base.endswith(os.sep) else safe_base + os.sep
+    # Determine safe root directories for destination confinement
+    safe_base = os.path.abspath(os.path.expanduser("~"))
+    cwd_base = os.path.abspath(os.getcwd())
 
     raw_target_dir = (req.target_dir and req.target_dir.strip()) or os.path.join(safe_base, "Documents")
-    resolved_target = os.path.normpath(os.path.realpath(raw_target_dir))
+    norm_target = os.path.abspath(os.path.normpath(raw_target_dir))
 
-    # Guard: verify target directory is bounded to safe user home or current project directory
-    if not (resolved_target.startswith(safe_base_with_sep) or resolved_target == safe_base):
-        cwd_base = os.path.normpath(os.path.realpath(os.getcwd()))
-        cwd_base_with_sep = cwd_base if cwd_base.endswith(os.sep) else cwd_base + os.sep
-        if not (resolved_target.startswith(cwd_base_with_sep) or resolved_target == cwd_base):
-            raise HTTPException(
-                status_code=400,
-                detail="Target directory must be within your user profile or project directory."
-            )
+    # Guard: verify target directory confinement using os.path.commonpath (CodeQL barrier for path injection)
+    is_safe_target = False
+    try:
+        if os.path.commonpath([safe_base, norm_target]) == safe_base:
+            is_safe_target = True
+        elif os.path.commonpath([cwd_base, norm_target]) == cwd_base:
+            is_safe_target = True
+    except (ValueError, Exception):
+        is_safe_target = False
 
-    target_dir = resolved_target
+    if not is_safe_target:
+        raise HTTPException(
+            status_code=400,
+            detail="Target directory must be within your user profile or project directory."
+        )
+
+    target_dir = norm_target
 
     dest_folder = (req.folder_name and req.folder_name.strip())
     if not dest_folder:
@@ -424,14 +446,15 @@ def git_clone_endpoint(req: GitCloneRequest):
     if not re.match(r"^[A-Za-z0-9_.-]+$", dest_folder) or dest_folder in (".", "..") or dest_folder.startswith("-"):
         raise HTTPException(status_code=400, detail="Invalid target folder name.")
 
-    # Prevent path traversal: ensure full destination path is strictly within target_dir
-    target_dir_with_sep = target_dir if target_dir.endswith(os.sep) else target_dir + os.sep
-    resolved_dest = os.path.normpath(os.path.realpath(os.path.join(target_dir, dest_folder)))
+    # Prevent path traversal: ensure full destination path is strictly within target_dir using commonpath
+    norm_dest = os.path.abspath(os.path.join(target_dir, dest_folder))
+    try:
+        if os.path.commonpath([target_dir, norm_dest]) != target_dir:
+            raise HTTPException(status_code=400, detail="Invalid target destination path.")
+    except (ValueError, Exception):
+        raise HTTPException(status_code=400, detail="Cross-drive paths are not supported.")
 
-    if not resolved_dest.startswith(target_dir_with_sep):
-        raise HTTPException(status_code=400, detail="Invalid target destination path.")
-
-    full_dest_path = resolved_dest
+    full_dest_path = norm_dest
 
     if not os.path.exists(target_dir):
         try:

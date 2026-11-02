@@ -1,6 +1,7 @@
+import { sanitizeSafeMediaUrl } from '../../../utils/securityUtils'
 import React, { useState, useEffect, useMemo } from 'react'
 import { CURATED_PACKS } from '../../../data/badgeStudioData'
-import { escapeShieldsText, formatPackMarkdown, getStoredCustomPacks, deleteCustomPack } from '../../../utils/badgeEngine'
+import { cleanHexColor, escapeShieldsText, formatPackMarkdown, getStoredCustomPacks, deleteCustomPack } from '../../../utils/badgeEngine'
 
 export default function CuratedPacksForm({
   selectedPackId,
@@ -536,15 +537,17 @@ export default function CuratedPacksForm({
                 }}
               >
                 {(pack.badges || []).map((b, idx) => {
+                  const bC = cleanHexColor(b.color || '6366f1')
                   const bL = escapeShieldsText(b.label)
                   const bM = escapeShieldsText(b.message || '')
-                  const bStyle = style || b.style || 'for-the-badge'
-                  let bUrl = `https://img.shields.io/badge/${bL}-${bM}-${b.color}?style=${bStyle}`
+                  const bStyle = encodeURIComponent(style || b.style || 'for-the-badge')
+                  let bUrl = `https://img.shields.io/badge/${bL}-${bM}-${bC}?style=${bStyle}`
                   if (b.logo) bUrl += `&logo=${encodeURIComponent(b.logo)}&logoColor=white`
+                  const safeSrc = sanitizeSafeMediaUrl(bUrl)
                   return (
                     <img
                       key={idx}
-                      src={bUrl}
+                      src={safeSrc}
                       alt={`${b.label} ${b.message || ''}`}
                       style={{
                         height: bStyle === 'for-the-badge' ? '22px' : '18px',

@@ -7,6 +7,8 @@ import sys
 import shutil
 import subprocess
 
+import stat
+
 def build_sidecar():
     backend_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.abspath(os.path.join(backend_dir, ".."))
@@ -80,7 +82,8 @@ def build_sidecar():
     if result.returncode == 0:
         if sys.platform != "win32" and os.path.exists(binary_path):
             try:
-                os.chmod(binary_path, 0o755)
+                # Restrict permissions to user (rwx) and group (r-x); revoke all permissions for others (0o750)
+                os.chmod(binary_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP)
             except Exception as e:
                 print(f"[Warning] Failed to set chmod +x on {binary_path}: {e}")
         print("\n" + "=" * 60)
