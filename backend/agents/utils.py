@@ -1,6 +1,7 @@
 """
-VisualMark Studio — Agent Utilities & Gemini Integration Engine
-Provides workspace inspection, GitHub context extraction, model failover, and JSON parsing.
+VisualMark Studio — Multi-Provider Agent Utilities & LLM Integration Engine
+Provides workspace inspection, GitHub context extraction, multi-model failover, and JSON parsing.
+Supported Providers: Google Gemini, OpenAI, Anthropic Claude, Groq Cloud, Ollama (Local Offline).
 """
 
 import os
@@ -9,21 +10,63 @@ import re
 import httpx
 from typing import Dict, Any, Optional, List
 from dotenv import load_dotenv
+from fastapi import HTTPException
 
+# Load .env from cwd as well as backend/.env and project root
 load_dotenv()
+_utils_dir = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(_utils_dir, "..", ".env"))
+load_dotenv(os.path.join(_utils_dir, "..", "..", ".env"))
 
-PREFERRED_MODELS = [
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro",
-]
+PROVIDER_FALLBACK_MODELS = {
+    "gemini": [
+        "gemini-3.5-flash",
+        "gemini-3-flash-preview",
+        "gemini-3.1-flash-lite",
+    ],
+    "openai": [
+        "gpt-4o-mini",
+        "gpt-4o",
+    ],
+    "anthropic": [
+        "claude-3-5-sonnet-latest",
+        "claude-3-5-haiku-latest",
+    ],
+    "groq": [
+        "llama-3.3-70b-versatile",
+        "deepseek-r1-distill-llama-70b",
+    ],
+    "ollama": [
+        "llama3.2",
+        "qwen2.5",
+        "mistral",
+    ]
+}
+
+PREFERRED_MODELS = PROVIDER_FALLBACK_MODELS["gemini"]
+
+
+def get_provider_api_key(provider: str = "gemini", custom_key: Optional[str] = None) -> Optional[str]:
+    """Retrieve API key for given provider from request or environment."""
+    if custom_key and custom_key.strip():
+        return custom_key.strip()
+    p = (provider or "gemini").lower()
+    if p == "gemini":
+        return os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    elif p == "openai":
+        return os.environ.get("OPENAI_API_KEY")
+    elif p == "anthropic":
+        return os.environ.get("ANTHROPIC_API_KEY")
+    elif p == "groq":
+        return os.environ.get("GROQ_API_KEY")
+    elif p == "ollama":
+        return ""
+    return None
 
 
 def get_gemini_api_key(custom_key: Optional[str] = None) -> Optional[str]:
-    """Retrieve Gemini API key from request or environment."""
-    if custom_key and custom_key.strip():
-        return custom_key.strip()
-    return os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    """Retrieve Gemini API key from request or environment (legacy wrapper)."""
+    return get_provider_api_key("gemini", custom_key)
 
 
 def find_project_root(start_path: str) -> str:
@@ -48,184 +91,110 @@ def find_project_root(start_path: str) -> str:
 
 
 def fetch_local_workspace_context(folder_path: str) -> dict:
-    """Scan local directory on disk for manifests, file structure, and project metadata."""
-    if not folder_path or not os.path.exists(folder_path):
-        return {"error": f"Directory not found: {folder_path}", "files": {}, "meta": {}}
+    """Scan local directory structure and manifests to provide deterministic context."""
+    context = {"meta": {}, "files": {}, "source": "local"}
+    if not os.path.isdir(folder_path):
+        return context
 
-    folder_path = find_project_root(folder_path)
-    folder_name = os.path.basename(os.path.abspath(folder_path))
-    context = {
-        "source": "local_workspace",
-        "slug": folder_name,
-        "files": {},
-        "meta": {"name": folder_name, "is_local": True}
-    }
-
-    # 1. Check git remote & branch if available
-    git_config_path = os.path.join(folder_path, ".git", "config")
-    if os.path.isfile(git_config_path):
-        try:
-            with open(git_config_path, "r", encoding="utf-8", errors="ignore") as f:
-                content = f.read()
-                match = re.search(r'url\s*=\s*(.+)', content)
-                if match:
-                    remote_url = match.group(1).strip()
-                    context["meta"]["remote_git_url"] = remote_url
-                    gh_match = re.search(r'github\.com[/:]([^/]+/[^/\.]+)', remote_url)
-                    if gh_match:
-                        context["slug"] = gh_match.group(1)
-        except Exception:
-            pass
-
-    git_head_path = os.path.join(folder_path, ".git", "HEAD")
-    if os.path.isfile(git_head_path):
-        try:
-            with open(git_head_path, "r", encoding="utf-8", errors="ignore") as f:
-                head_content = f.read().strip()
-                if head_content.startswith("ref: refs/heads/"):
-                    context["meta"]["git_branch"] = head_content.replace("ref: refs/heads/", "")
-        except Exception:
-            pass
-
-    # 2. Key manifests and license files to inspect
-    manifest_candidates = [
-        "package.json", "frontend/package.json",
-        "requirements.txt", "pyproject.toml",
-        "Cargo.toml", "go.mod", "pom.xml",
-        ".env.example", "docker-compose.yml",
-        "README.md", "LICENSE", "LICENSE.md"
+    # 1. Project Root & Core Files Scan
+    root_dir = find_project_root(folder_path)
+    core_manifests = [
+        "package.json", "requirements.txt", "pyproject.toml", "Cargo.toml",
+        "go.mod", "docker-compose.yml", "Makefile", "README.md"
     ]
-    for rel_path in manifest_candidates:
-        full_path = os.path.join(folder_path, rel_path)
-        if os.path.isfile(full_path):
+    for m in core_manifests:
+        p = os.path.join(root_dir, m)
+        if os.path.exists(p) and os.path.isfile(p):
             try:
-                with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
-                    content = f.read(3500)
-                    context["files"][rel_path] = content
-
-                    if rel_path.endswith("package.json"):
-                        try:
-                            pkg = json.loads(content)
-                            if pkg.get("name") and "name" not in context["meta"]:
-                                context["meta"]["name"] = pkg["name"]
-                            if pkg.get("description") and "description" not in context["meta"]:
-                                context["meta"]["description"] = pkg["description"]
-                            if pkg.get("version") and "version" not in context["meta"]:
-                                context["meta"]["version"] = pkg["version"]
-                            if pkg.get("license") and "license" not in context["meta"]:
-                                context["meta"]["license"] = pkg["license"]
-                            if pkg.get("dependencies"):
-                                context["meta"]["dependencies"] = list(pkg["dependencies"].keys())[:20]
-                            if pkg.get("devDependencies"):
-                                context["meta"]["devDependencies"] = list(pkg["devDependencies"].keys())[:20]
-                        except Exception:
-                            pass
-
-                    elif rel_path == "requirements.txt":
-                        req_lines = [
-                            re.split(r'[=><~]', line)[0].strip()
-                            for line in content.splitlines()
-                            if line.strip() and not line.strip().startswith("#")
-                        ]
-                        if req_lines:
-                            context["meta"]["python_dependencies"] = req_lines[:20]
-
-                    elif rel_path in ("LICENSE", "LICENSE.md") and "license" not in context["meta"]:
-                        if "MIT" in content:
-                            context["meta"]["license"] = "MIT"
-                        elif "Apache" in content:
-                            context["meta"]["license"] = "Apache-2.0"
-                        elif "General Public License" in content or "GPL" in content:
-                            context["meta"]["license"] = "GPL-3.0"
-                        elif "BSD" in content:
-                            context["meta"]["license"] = "BSD"
+                with open(p, "r", encoding="utf-8", errors="ignore") as f:
+                    context["files"][m] = f.read(8000)
             except Exception:
                 pass
 
-    # 3. Directory layout (tree preview, 2 levels deep)
-    ignore_dirs = {".git", "node_modules", "dist", "build", "__pycache__", "venv", ".venv", ".next", ".cache", "release"}
-    tree_lines = [f"{folder_name}/"]
-    try:
-        for entry in sorted(os.scandir(folder_path), key=lambda e: (not e.is_dir(), e.name.lower()))[:25]:
-            if entry.name in ignore_dirs or entry.name.startswith("."):
-                continue
-            if entry.is_dir():
-                tree_lines.append(f"├── {entry.name}/")
-                try:
-                    for sub in sorted(os.scandir(entry.path), key=lambda e: (not e.is_dir(), e.name.lower()))[:6]:
-                        if sub.name in ignore_dirs or sub.name.startswith("."):
-                            continue
-                        slash = "/" if sub.is_dir() else ""
-                        tree_lines.append(f"│   ├── {sub.name}{slash}")
-                except Exception:
-                    pass
-            else:
-                tree_lines.append(f"├── {entry.name}")
-        context["meta"]["directory_tree_sample"] = "\n".join(tree_lines)
-    except Exception:
-        pass
+    # 2. Extract structured dependencies
+    pkg_json_str = context["files"].get("package.json")
+    if pkg_json_str:
+        try:
+            pkg = json.loads(pkg_json_str)
+            deps = list(pkg.get("dependencies", {}).keys()) + list(pkg.get("devDependencies", {}).keys())
+            context["meta"]["dependencies"] = deps[:25]
+            context["meta"]["project_name"] = pkg.get("name")
+            context["meta"]["description"] = pkg.get("description")
+        except Exception:
+            pass
+
+    reqs_str = context["files"].get("requirements.txt")
+    if reqs_str:
+        lines = [l.strip().split("==")[0] for l in reqs_str.splitlines() if l.strip() and not l.startswith("#")]
+        context["meta"]["dependencies"] = (context["meta"].get("dependencies") or []) + lines[:25]
+
+    # 3. Detect framework / tech stack heuristics
+    detected_tech = []
+    all_content = " ".join(context["files"].values()).lower()
+    tech_keywords = {
+        "react": "React", "vue": "Vue.js", "vite": "Vite", "electron": "Electron",
+        "fastapi": "FastAPI", "flask": "Flask", "django": "Django", "docker": "Docker",
+        "tailwind": "TailwindCSS", "monaco": "Monaco Editor", "next": "Next.js",
+        "rust": "Rust", "python": "Python", "typescript": "TypeScript"
+    }
+    for k, v in tech_keywords.items():
+        if k in all_content:
+            detected_tech.append(v)
+    context["meta"]["detected_tech"] = detected_tech
 
     return context
 
 
-def fetch_repo_context_from_github(repo_slug: str, token: Optional[str] = None) -> dict:
-    """Fetch repository metadata and manifests via GitHub API."""
-    clean_slug = repo_slug.strip().replace("https://github.com/", "").rstrip("/")
-    if clean_slug.endswith(".git"):
-        clean_slug = clean_slug[:-4]
+def fetch_repo_context_from_github(repo_url: str, token: Optional[str] = None) -> dict:
+    """Fetch GitHub repository metadata and root files via GitHub REST API."""
+    context = {"meta": {}, "files": {}, "source": "github"}
+    match = re.search(r"github\.com[/:]([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?$", repo_url)
+    if not match:
+        return context
 
-    headers = {
-        "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "VisualMark-AI-Agent"
-    }
+    owner, repo = match.groups()
+    headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "VisualMark-Studio-AI"}
     if token:
         headers["Authorization"] = f"token {token}"
 
-    context = {"slug": clean_slug, "files": {}, "meta": {}}
+    api_base = f"https://api.github.com/repos/{owner}/{repo}"
+    with httpx.Client(timeout=10.0) as client:
+        try:
+            repo_resp = client.get(api_base, headers=headers)
+            if repo_resp.status_code == 200:
+                data = repo_resp.json()
+                context["meta"]["project_name"] = data.get("name")
+                context["meta"]["description"] = data.get("description")
+                context["meta"]["stars"] = data.get("stargazers_count")
+                context["meta"]["language"] = data.get("language")
+                context["meta"]["license"] = data.get("license", {}).get("spdx_id") if data.get("license") else None
+                context["meta"]["topics"] = data.get("topics", [])
+        except Exception:
+            pass
 
-    try:
-        with httpx.Client(headers=headers, timeout=12.0) as client:
-            meta_res = client.get(f"https://api.github.com/repos/{clean_slug}")
-            if meta_res.status_code == 200:
-                m = meta_res.json()
-                context["meta"] = {
-                    "name": m.get("name"),
-                    "description": m.get("description"),
-                    "stars": m.get("stargazers_count", 0),
-                    "forks": m.get("forks_count", 0),
-                    "license": m.get("license", {}).get("spdx_id") if m.get("license") else "None",
-                    "language": m.get("language"),
-                    "topics": m.get("topics", [])
-                }
-
-            for filename in ["package.json", "frontend/package.json", "requirements.txt", "Cargo.toml", "go.mod"]:
-                for branch in ["main", "master"]:
-                    url = f"https://raw.githubusercontent.com/{clean_slug}/{branch}/{filename}"
-                    file_res = client.get(url)
-                    if file_res.status_code == 200:
-                        context["files"][filename] = file_res.text[:2500]
-                        break
-                if context["files"]:
-                    break
-    except Exception as e:
-        context["error"] = str(e)
+        key_files = ["package.json", "requirements.txt", "README.md", "pyproject.toml", "Cargo.toml"]
+        for f in key_files:
+            try:
+                f_resp = client.get(f"{api_base}/contents/{f}", headers=headers)
+                if f_resp.status_code == 200:
+                    import base64
+                    raw_content = base64.b64decode(f_resp.json().get("content", "")).decode("utf-8", errors="ignore")
+                    context["files"][f] = raw_content[:8000]
+            except Exception:
+                pass
 
     return context
 
 
 def extract_json_from_llm(text: str) -> dict:
-    """Robustly extract JSON object from LLM response even with conversational preambles or code fences."""
-    text = text.strip()
+    """Extract valid JSON object from LLM response string."""
+    cleaned = re.sub(r"^```(?:json)?\s*", "", text.strip(), flags=re.MULTILINE)
+    cleaned = re.sub(r"\s*```$", "", cleaned.strip(), flags=re.MULTILINE)
     try:
-        return json.loads(text)
+        return json.loads(cleaned.strip())
     except Exception:
         pass
-    fence_match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
-    if fence_match:
-        try:
-            return json.loads(fence_match.group(1).strip())
-        except Exception:
-            pass
+
     start = text.find("{")
     end = text.rfind("}")
     if start != -1 and end != -1 and end > start:
@@ -236,20 +205,250 @@ def extract_json_from_llm(text: str) -> dict:
     raise ValueError(f"Could not parse valid JSON from LLM response: {text[:150]}")
 
 
-def call_gemini_with_fallback(payload: dict, api_key: str, timeout: float = 90.0) -> dict:
-    """Execute Gemini request with automatic failover across models to survive 503 high demand spikes."""
+def _contents_to_openai_messages(system_instruction: str, contents: List[dict]) -> List[dict]:
+    """Convert contents list to standard OpenAI message list."""
+    messages = []
+    if system_instruction and system_instruction.strip():
+        messages.append({"role": "system", "content": system_instruction.strip()})
+
+    for c in contents:
+        role = c.get("role", "user")
+        if role == "model":
+            role = "assistant"
+        text = ""
+        if "parts" in c:
+            text = "\n".join([p.get("text", "") for p in c["parts"] if isinstance(p, dict)])
+        elif "content" in c:
+            text = str(c["content"])
+        messages.append({"role": role, "content": text})
+    return messages
+
+
+def _contents_to_anthropic_messages(contents: List[dict]) -> List[dict]:
+    """Convert contents list to Anthropic user/assistant alternating turns."""
+    messages = []
+    for c in contents:
+        role = "assistant" if c.get("role") in ("model", "assistant") else "user"
+        text = ""
+        if "parts" in c:
+            text = "\n".join([p.get("text", "") for p in c["parts"] if isinstance(p, dict)])
+        elif "content" in c:
+            text = str(c["content"])
+
+        if messages and messages[-1]["role"] == role:
+            messages[-1]["content"] += f"\n\n{text}"
+        else:
+            messages.append({"role": role, "content": text})
+
+    # Anthropic requires the first message to be from user
+    while messages and messages[0]["role"] != "user":
+        messages.pop(0)
+    return messages
+
+
+def call_llm_with_fallback(
+    system_instruction: str,
+    contents: List[dict],
+    provider: str = "gemini",
+    model: Optional[str] = None,
+    api_key: Optional[str] = None,
+    base_url: Optional[str] = None,
+    temperature: float = 0.35,
+    max_tokens: int = 4096,
+    timeout: float = 90.0,
+    json_mode: bool = False
+) -> dict:
+    """
+    Universal Multi-Provider LLM caller with automatic graceful fallback.
+    Supported Providers: gemini, openai, anthropic, groq, ollama.
+    """
+    p = (provider or "gemini").lower()
+    # Auto-detect provider if model prefix indicates provider
+    if model:
+        if model.startswith("gpt-"):
+            p = "openai"
+        elif model.startswith("claude-"):
+            p = "anthropic"
+        elif model.startswith("llama-") or model.startswith("deepseek-"):
+            p = "groq"
+
+    resolved_key = get_provider_api_key(p, api_key)
+    if p != "ollama" and not resolved_key:
+        raise HTTPException(
+            status_code=400,
+            detail=f"API key is missing for provider '{p}'. Please configure your key in settings or the Copilot key prompt."
+        )
+
+    fallback_list = list(PROVIDER_FALLBACK_MODELS.get(p, ["gemini-3.5-flash"]))
+    requested_model = model or fallback_list[0]
+    if requested_model in fallback_list:
+        fallback_list.remove(requested_model)
+    models_to_try = [requested_model] + fallback_list
+
     last_error = None
     with httpx.Client(timeout=timeout) as client:
-        for model in PREFERRED_MODELS:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-            try:
-                res = client.post(url, json=payload)
-                if res.status_code == 200:
-                    return res.json()
-                last_error = f"Model {model} returned {res.status_code}: {res.text}"
-                continue
-            except httpx.RequestError as exc:
-                last_error = f"Model {model} network error: {exc}"
-                continue
+        # =====================================================================
+        # 1. Google Gemini Native
+        # =====================================================================
+        if p == "gemini":
+            for m in models_to_try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={resolved_key}"
+                generation_config = {"temperature": temperature, "maxOutputTokens": max_tokens}
+                if json_mode:
+                    generation_config["responseMimeType"] = "application/json"
 
-    raise RuntimeError(f"All Gemini models exhausted. Last error: {last_error}")
+                payload = {
+                    "contents": contents,
+                    "generationConfig": generation_config
+                }
+                if system_instruction:
+                    payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
+
+                try:
+                    res = client.post(url, json=payload)
+                    if res.status_code == 200:
+                        data = res.json()
+                        text = data["candidates"][0]["content"]["parts"][0]["text"]
+                        return {
+                            "text": text,
+                            "used_model": m,
+                            "provider": "gemini",
+                            "fallback_occurred": (m != requested_model),
+                            "raw": data
+                        }
+
+                    # Fail fast on bad API key
+                    if res.status_code in (400, 401, 403):
+                        try:
+                            err_msg = res.json().get("error", {}).get("message", "")
+                            if "API_KEY_INVALID" in res.text or "API key not valid" in err_msg or "API key expired" in err_msg:
+                                raise HTTPException(
+                                    status_code=400,
+                                    detail="Invalid Gemini API key. Please check your key from Google AI Studio (https://aistudio.google.com/app/apikey)."
+                                )
+                        except HTTPException:
+                            raise
+                        except Exception:
+                            pass
+
+                    last_error = f"Gemini {m} ({res.status_code}): {res.text[:200]}"
+                    continue
+                except HTTPException:
+                    raise
+                except httpx.RequestError as exc:
+                    last_error = f"Gemini {m} network error: {exc}"
+                    continue
+
+        # =====================================================================
+        # 2. OpenAI / Groq / Ollama (OpenAI Compatible)
+        # =====================================================================
+        elif p in ("openai", "groq", "ollama"):
+            messages = _contents_to_openai_messages(system_instruction, contents)
+            default_endpoints = {
+                "openai": "https://api.openai.com/v1/chat/completions",
+                "groq": "https://api.groq.com/openai/v1/chat/completions",
+                "ollama": f"{base_url or 'http://localhost:11434'}/v1/chat/completions"
+            }
+            target_url = default_endpoints.get(p)
+            headers = {"Content-Type": "application/json"}
+            if p != "ollama":
+                headers["Authorization"] = f"Bearer {resolved_key}"
+
+            for m in models_to_try:
+                body = {
+                    "model": m,
+                    "messages": messages,
+                    "temperature": temperature,
+                    "max_tokens": max_tokens
+                }
+                if json_mode and p != "ollama":
+                    body["response_format"] = {"type": "json_object"}
+
+                try:
+                    res = client.post(target_url, json=body, headers=headers)
+                    if res.status_code == 200:
+                        data = res.json()
+                        text = data["choices"][0]["message"]["content"]
+                        return {
+                            "text": text,
+                            "used_model": m,
+                            "provider": p,
+                            "fallback_occurred": (m != requested_model),
+                            "raw": data
+                        }
+
+                    if res.status_code in (401, 403):
+                        raise HTTPException(
+                            status_code=401,
+                            detail=f"Invalid {p.title()} API key. Please check your credentials in settings."
+                        )
+
+                    last_error = f"{p.title()} {m} ({res.status_code}): {res.text[:200]}"
+                    continue
+                except HTTPException:
+                    raise
+                except httpx.RequestError as exc:
+                    last_error = f"{p.title()} {m} network error: {exc}"
+                    continue
+
+        # =====================================================================
+        # 3. Anthropic Claude
+        # =====================================================================
+        elif p == "anthropic":
+            messages = _contents_to_anthropic_messages(contents)
+            url = "https://api.anthropic.com/v1/messages"
+            headers = {
+                "x-api-key": resolved_key,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json"
+            }
+            for m in models_to_try:
+                body = {
+                    "model": m,
+                    "messages": messages,
+                    "max_tokens": max_tokens,
+                    "temperature": temperature
+                }
+                if system_instruction:
+                    body["system"] = system_instruction
+
+                try:
+                    res = client.post(url, json=body, headers=headers)
+                    if res.status_code == 200:
+                        data = res.json()
+                        text = data["content"][0]["text"]
+                        return {
+                            "text": text,
+                            "used_model": m,
+                            "provider": "anthropic",
+                            "fallback_occurred": (m != requested_model),
+                            "raw": data
+                        }
+
+                    if res.status_code in (401, 403):
+                        raise HTTPException(
+                            status_code=401,
+                            detail="Invalid Anthropic API key. Please check your credentials in settings."
+                        )
+
+                    last_error = f"Claude {m} ({res.status_code}): {res.text[:200]}"
+                    continue
+                except HTTPException:
+                    raise
+                except httpx.RequestError as exc:
+                    last_error = f"Claude {m} network error: {exc}"
+                    continue
+
+    raise HTTPException(status_code=502, detail=f"All models for provider '{p}' failed. Last error: {last_error}")
+
+
+def call_gemini_with_fallback(payload: dict, api_key: str, timeout: float = 90.0) -> dict:
+    """Legacy wrapper for Gemini payload requests."""
+    res = call_llm_with_fallback(
+        system_instruction=payload.get("systemInstruction", {}).get("parts", [{}])[0].get("text", ""),
+        contents=payload.get("contents", []),
+        provider="gemini",
+        api_key=api_key,
+        timeout=timeout
+    )
+    return res.get("raw") or {"candidates": [{"content": {"parts": [{"text": res["text"]}]}}]}

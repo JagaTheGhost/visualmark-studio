@@ -220,9 +220,9 @@ def fetch_repo_context_from_github(repo_slug: str, token: Optional[str] = None) 
 
 
 PREFERRED_MODELS = [
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro",
+    "gemini-3.5-flash",
+    "gemini-3-flash-preview",
+    "gemini-3.1-flash-lite",
 ]
 
 

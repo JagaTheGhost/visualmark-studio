@@ -18,11 +18,13 @@ import json
 from typing import Dict, Any, Optional, List
 try:
     from .utils import (
+        call_llm_with_fallback,
         call_gemini_with_fallback,
         extract_json_from_llm,
     )
 except (ImportError, ValueError):
     from agents.utils import (
+        call_llm_with_fallback,
         call_gemini_with_fallback,
         extract_json_from_llm,
     )
@@ -70,12 +72,15 @@ CORE PHILOSOPHY & BEHAVIOR:
 def run_gemini_general_chat(
     prompt: str,
     history: List[Dict[str, str]],
-    api_key: str,
+    api_key: Optional[str] = None,
+    provider: str = "gemini",
+    model: Optional[str] = None,
+    base_url: Optional[str] = None,
     active_file: Optional[str] = None,
     file_content: Optional[str] = None,
     workspace_path: Optional[str] = None,
     project_memory_text: Optional[str] = None
-) -> str:
+) -> dict:
     """Conversational Co-Pilot & Studio Guide with visibility into active document, workspace, and memory."""
     context_prefix = ""
     if project_memory_text and project_memory_text.strip():
@@ -117,7 +122,7 @@ def run_gemini_general_chat(
                 "parts": [{"text": text}]
             })
 
-    # Gemini requires first turn to be 'user'
+    # Gemini & generic turns: ensure first turn is 'user'
     while contents and contents[0]["role"] != "user":
         contents.pop(0)
 
@@ -130,22 +135,29 @@ def run_gemini_general_chat(
             "parts": [{"text": full_prompt}]
         })
 
-    payload = {
-        "systemInstruction": {
-            "parts": [{"text": COPILOT_SYSTEM_INSTRUCTION}]
-        },
-        "contents": contents,
-        "generationConfig": {
-            "temperature": 0.35,
-            "maxOutputTokens": 4096
-        }
-    }
+    res = call_llm_with_fallback(
+        system_instruction=COPILOT_SYSTEM_INSTRUCTION,
+        contents=contents,
+        provider=provider or "gemini",
+        model=model,
+        api_key=api_key,
+        base_url=base_url,
+        temperature=0.35,
+        max_tokens=4096,
+        timeout=60.0
+    )
+    return res
 
-    data = call_gemini_with_fallback(payload, api_key, timeout=60.0)
-    return data["candidates"][0]["content"]["parts"][0]["text"]
 
-
-def run_gemini_analysis(repo_context: dict, api_key: str, user_instruction: Optional[str] = None, mode: str = "badge") -> dict:
+def run_gemini_analysis(
+    repo_context: dict,
+    api_key: Optional[str] = None,
+    provider: str = "gemini",
+    model: Optional[str] = None,
+    base_url: Optional[str] = None,
+    user_instruction: Optional[str] = None,
+    mode: str = "badge"
+) -> dict:
     """Analyze workspace manifests and synthesize Shields.io Badge Studio parameters."""
     system_instruction = (
         "You are VMarks, the VisualMark Studio Copilot. "
@@ -185,24 +197,31 @@ MANIFEST SAMPLES:
 {schema_guide}
 """
 
-    payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": f"{system_instruction}\n\n{prompt}"}
-                ]
-            }
-        ],
-        "generationConfig": {
-            "responseMimeType": "application/json",
-            "temperature": 0.2
+    contents = [
+        {
+            "role": "user",
+            "parts": [{"text": prompt}]
         }
-    }
+    ]
 
-    data = call_gemini_with_fallback(payload, api_key, timeout=90.0)
-    raw_text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+    res = call_llm_with_fallback(
+        system_instruction=system_instruction,
+        contents=contents,
+        provider=provider or "gemini",
+        model=model,
+        api_key=api_key,
+        base_url=base_url,
+        temperature=0.2,
+        json_mode=True,
+        timeout=90.0
+    )
+
+    raw_text = res["text"].strip()
     result = extract_json_from_llm(raw_text)
     result["mode"] = mode
+    result["used_model"] = res.get("used_model")
+    result["provider"] = res.get("provider")
+    result["fallback_occurred"] = res.get("fallback_occurred", False)
 
     # Ensure consistent keys between badge_studio and badges_studio
     if "badges_studio" in result and "badge_studio" not in result:
@@ -232,7 +251,10 @@ MANIFEST SAMPLES:
 def run_gemini_editor_diff(
     original_text: str,
     instruction: str,
-    api_key: str,
+    api_key: Optional[str] = None,
+    provider: str = "gemini",
+    model: Optional[str] = None,
+    base_url: Optional[str] = None,
     context_before: Optional[str] = None,
     context_after: Optional[str] = None,
     project_memory_text: Optional[str] = None
@@ -271,20 +293,28 @@ Generate a single JSON object with:
 3. "action_type": "polish" | "table" | "diagram" | "general"
 """
 
-    payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": f"{system_instruction}\n\n{prompt}"}
-                ]
-            }
-        ],
-        "generationConfig": {
-            "responseMimeType": "application/json",
-            "temperature": 0.2
+    contents = [
+        {
+            "role": "user",
+            "parts": [{"text": prompt}]
         }
-    }
+    ]
 
-    data = call_gemini_with_fallback(payload, api_key, timeout=45.0)
-    raw_text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
-    return extract_json_from_llm(raw_text)
+    res = call_llm_with_fallback(
+        system_instruction=system_instruction,
+        contents=contents,
+        provider=provider or "gemini",
+        model=model,
+        api_key=api_key,
+        base_url=base_url,
+        temperature=0.2,
+        json_mode=True,
+        timeout=45.0
+    )
+
+    raw_text = res["text"].strip()
+    result = extract_json_from_llm(raw_text)
+    result["used_model"] = res.get("used_model")
+    result["provider"] = res.get("provider")
+    result["fallback_occurred"] = res.get("fallback_occurred", False)
+    return result

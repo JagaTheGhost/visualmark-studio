@@ -11,6 +11,16 @@ import {
   formatMemoryForPrompt,
   extractMemoryTags
 } from '../../utils/projectMemoryManager'
+import {
+  AI_PROVIDERS,
+  DEFAULT_PROVIDER_ID,
+  DEFAULT_MODEL_ID,
+  getModelInfo,
+  getProviderForModel,
+  hasProviderKey,
+  hasAnyProviderConfigured,
+  getStoredKeyForProvider
+} from '../../data/aiModels'
 import '../../styles/aiAgent.css'
 
 export default function AiAgentPanel({
@@ -176,7 +186,101 @@ export default function AiAgentPanel({
   const [showKeyConfig, setShowKeyConfig] = useState(false)
   const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem('visualmark_gemini_key') || '')
   const [onboardingKeyInput, setOnboardingKeyInput] = useState('')
-  const [headerKeyInput, setHeaderKeyInput] = useState(() => localStorage.getItem('visualmark_gemini_key') || '')
+  const [headerKeyInput, setHeaderKeyInput] = useState(() => {
+    const prov = localStorage.getItem('visualmark_active_ai_provider') || DEFAULT_PROVIDER_ID
+    return getStoredKeyForProvider(prov) || localStorage.getItem('visualmark_gemini_key') || ''
+  })
+
+  // Multi-Provider & Model State
+  const [selectedProvider, setSelectedProvider] = useState(() => {
+    return localStorage.getItem('visualmark_active_ai_provider') || DEFAULT_PROVIDER_ID
+  })
+  const [selectedModel, setSelectedModel] = useState(() => {
+    return localStorage.getItem('visualmark_active_ai_model') || DEFAULT_MODEL_ID
+  })
+  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false)
+  const [onboardingActiveProvider, setOnboardingActiveProvider] = useState('gemini')
+  const [onboardingKeyInputs, setOnboardingKeyInputs] = useState({
+    gemini: localStorage.getItem('visualmark_gemini_key') || '',
+    openai: localStorage.getItem('visualmark_openai_key') || '',
+    anthropic: localStorage.getItem('visualmark_anthropic_key') || '',
+    groq: localStorage.getItem('visualmark_groq_key') || '',
+    ollama: localStorage.getItem('visualmark_ollama_url') || 'http://localhost:11434'
+  })
+  const modelSelectorRef = useRef(null)
+
+  // Dismiss model selector popover on outside click
+  useEffect(() => {
+    if (!isModelSelectorOpen) return
+    const handleClickOutside = (e) => {
+      if (modelSelectorRef.current && !modelSelectorRef.current.contains(e.target)) {
+        setIsModelSelectorOpen(false)
+      }
+    }
+    window.addEventListener('mousedown', handleClickOutside)
+    return () => window.removeEventListener('mousedown', handleClickOutside)
+  }, [isModelSelectorOpen])
+
+  // Listen for provider key updates from Settings
+  useEffect(() => {
+    const handleKeyUpdate = (e) => {
+      if (e.detail?.provider) {
+        setOnboardingKeyInputs((prev) => ({
+          ...prev,
+          [e.detail.provider]: e.detail.key || ''
+        }))
+        if (e.detail.provider === 'gemini') {
+          setGeminiKey(e.detail.key || '')
+        }
+      }
+    }
+    window.addEventListener('visualmark:ai-key-updated', handleKeyUpdate)
+    return () => window.removeEventListener('visualmark:ai-key-updated', handleKeyUpdate)
+  }, [])
+
+  const handleSelectModel = (modelId, providerId) => {
+    setSelectedModel(modelId)
+    setSelectedProvider(providerId)
+    localStorage.setItem('visualmark_active_ai_model', modelId)
+    localStorage.setItem('visualmark_active_ai_provider', providerId)
+    setIsModelSelectorOpen(false)
+    setHeaderKeyInput(getStoredKeyForProvider(providerId) || '')
+    const mInfo = getModelInfo(modelId)
+    showToast(`Switched to ${mInfo.name}`, 'info', { minor: true })
+  }
+
+  const handleSaveProviderKey = (providerId, customValue = null) => {
+    const provider = AI_PROVIDERS[providerId]
+    if (!provider) return
+    if (provider.isLocal) {
+      localStorage.setItem('visualmark_ollama_enabled', 'true')
+      const url = customValue || onboardingKeyInputs.ollama || 'http://localhost:11434'
+      localStorage.setItem('visualmark_ollama_url', url)
+      window.dispatchEvent(new CustomEvent('visualmark:ai-key-updated', { detail: { provider: 'ollama', enabled: true } }))
+      showToast('Ollama Local connected!', 'success')
+      setSelectedProvider('ollama')
+      setSelectedModel(AI_PROVIDERS.ollama.defaultModel)
+      setShowKeyConfig(false)
+      return
+    }
+
+    const keyVal = (customValue !== null ? customValue : onboardingKeyInputs[providerId] || '').trim()
+    if (!keyVal) {
+      showToast(`Please enter a valid key for ${provider.name}`, 'warning')
+      return
+    }
+    localStorage.setItem(provider.keyStorageKey, keyVal)
+    if (providerId === 'gemini') {
+      setGeminiKey(keyVal)
+      setHeaderKeyInput(keyVal)
+    }
+    setOnboardingKeyInputs((prev) => ({ ...prev, [providerId]: keyVal }))
+    window.dispatchEvent(new CustomEvent('visualmark:ai-key-updated', { detail: { provider: providerId, key: keyVal } }))
+    showToast(`${provider.name} connected!`, 'success')
+    setSelectedProvider(providerId)
+    setSelectedModel(provider.defaultModel)
+    setShowKeyConfig(false)
+  }
   const [copiedMsgId, setCopiedMsgId] = useState(null)
   const streamingTimerRef = useRef(null)
   const abortControllerRef = useRef(null)
@@ -482,6 +586,10 @@ export default function AiAgentPanel({
         workspace_path: workspacePath || undefined,
         query: 'Analyze project dependencies and architecture to build project memory profile',
         mode: 'badge',
+        provider: selectedProvider,
+        model: selectedModel,
+        api_key: getStoredKeyForProvider(selectedProvider) || undefined,
+        base_url: selectedProvider === 'ollama' ? (localStorage.getItem('visualmark_ollama_url') || 'http://localhost:11434') : undefined,
         gemini_api_key: geminiKey || undefined
       })
       if (response.data?.success && response.data?.data) {
@@ -688,6 +796,10 @@ export default function AiAgentPanel({
           workspace_path: workspacePath || undefined,
           query: customQuery || undefined,
           mode: 'badge',
+          provider: selectedProvider,
+          model: selectedModel,
+          api_key: getStoredKeyForProvider(selectedProvider) || undefined,
+          base_url: selectedProvider === 'ollama' ? (localStorage.getItem('visualmark_ollama_url') || 'http://localhost:11434') : undefined,
           gemini_api_key: geminiKey || undefined
         },
         { signal: controller.signal }
@@ -800,6 +912,10 @@ export default function AiAgentPanel({
           instruction,
           context_before: contextBefore,
           context_after: contextAfter,
+          provider: selectedProvider,
+          model: selectedModel,
+          api_key: getStoredKeyForProvider(selectedProvider) || undefined,
+          base_url: selectedProvider === 'ollama' ? (localStorage.getItem('visualmark_ollama_url') || 'http://localhost:11434') : undefined,
           gemini_api_key: geminiKey || undefined,
           project_memory_text: formatMemoryForPrompt(projectMemory) || undefined
         },
@@ -1013,11 +1129,16 @@ export default function AiAgentPanel({
       }))
 
       // Pass project memory text and workspace path to agent
+      const resolvedKey = getStoredKeyForProvider(selectedProvider)
       const response = await apiPost(
         '/ai/chat',
         {
           prompt: promptToSend,
           history: historyPayload,
+          provider: selectedProvider,
+          model: selectedModel,
+          api_key: resolvedKey || undefined,
+          base_url: selectedProvider === 'ollama' ? (localStorage.getItem('visualmark_ollama_url') || 'http://localhost:11434') : undefined,
           gemini_api_key: geminiKey || undefined,
           active_file: activeFile || 'README.md',
           file_content: activeContent || undefined,
@@ -1031,6 +1152,11 @@ export default function AiAgentPanel({
 
       if (response.data?.success) {
         const replyText = response.data.reply || ''
+        const usedModel = response.data.used_model || selectedModel
+        const fallbackOccurred = Boolean(response.data.fallback_occurred)
+        if (fallbackOccurred) {
+          showToast(`Primary model unavailable. Auto-fell back to ${getModelInfo(usedModel).name}`, 'info')
+        }
         const { cleanText, newFacts } = extractMemoryTags(replyText)
         if (newFacts.length > 0) {
           setProjectMemory((prev) => {
@@ -1049,6 +1175,10 @@ export default function AiAgentPanel({
           content: '',
           isStreaming: true,
           thoughtTime: elapsed,
+          model: usedModel,
+          usedModel: usedModel,
+          provider: response.data.provider || selectedProvider,
+          fallbackOccurred: fallbackOccurred,
           timestamp: Date.now()
         }
         setMessages((prev) => [...prev, agentMsg])
@@ -1341,14 +1471,25 @@ export default function AiAgentPanel({
       {/* Optional API Key Configuration Card */}
       {showKeyConfig && (
         <div className="ai-settings-banner">
-          <div style={{ fontWeight: 600, marginBottom: 4 }}>Gemini API Key (Optional Override)</div>
+          <div style={{ fontWeight: 600, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14, color: AI_PROVIDERS[selectedProvider]?.color || '#818cf8' }}>
+              {AI_PROVIDERS[selectedProvider]?.icon || 'key'}
+            </span>
+            <span>{AI_PROVIDERS[selectedProvider]?.name || 'Gemini'} Key / URL</span>
+          </div>
           <p style={{ margin: '0 0 6px 0', fontSize: '10px', color: '#fef3c7' }}>
-            Keys stored here override the backend environment key for this browser session.
+            Keys stored here are kept in local storage and power your active AI model selection.
           </p>
-          <form onSubmit={handleSaveHeaderKey} style={{ display: 'flex', gap: 6 }}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              handleSaveProviderKey(selectedProvider, headerKeyInput)
+            }}
+            style={{ display: 'flex', gap: 6 }}
+          >
             <input
-              type="password"
-              placeholder="Paste AI Studio Key..."
+              type={selectedProvider === 'ollama' ? 'text' : 'password'}
+              placeholder={AI_PROVIDERS[selectedProvider]?.keyPlaceholder || 'Paste API Key...'}
               value={headerKeyInput}
               onChange={(e) => setHeaderKeyInput(e.target.value)}
               style={{
@@ -1475,7 +1616,14 @@ export default function AiAgentPanel({
                       <span className="material-symbols-outlined" style={{ fontSize: 13, color: '#fff' }}>auto_awesome</span>
                     </div>
                     <span className="ai-msg-name">VMarks</span>
-                    <span className="ai-msg-model-pill">Gemini 2.0 Flash</span>
+                    <span className="ai-msg-model-pill" title={`Response from ${msg.usedModel || msg.model || getModelInfo(selectedModel).name}`}>
+                      {getModelInfo(msg.usedModel || msg.model || selectedModel).name}
+                      {msg.fallbackOccurred && (
+                        <span className="ai-msg-fallback-tag" title="Auto-fell back because the primary model failed">
+                          Fallback
+                        </span>
+                      )}
+                    </span>
                     {msg.thoughtTime && (
                       <span className="ai-msg-thought-tag" title="Response generation latency">
                         ⚡ {msg.thoughtTime}
@@ -1836,54 +1984,110 @@ export default function AiAgentPanel({
           </div>
         )}
 
-        {/* New User Gemini Key Onboarding Card */}
-        {!geminiKey && (
+        {/* Multi-Provider Key Onboarding Card (Shown if no provider configured) */}
+        {!hasAnyProviderConfigured() && (
           <div className="ai-key-onboarding-card">
             <div className="ai-key-onboarding-header">
-              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>key</span>
-              <span>Connect Google Gemini API Key</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>bolt</span>
+              <span>Connect an AI Provider to Start Copilot</span>
             </div>
             <div className="ai-key-onboarding-text">
-              VMarks uses Gemini to analyze your local workspace files, generate live in-editor diffs, and create Shields.io badges.
-              Get a free API key with 1 click from Google AI Studio:
+              VMarks Copilot supports multiple AI engines. Connect <strong>at least one</strong> provider below to architect documents, generate live diffs, and synthesize tech badges:
             </div>
-            <div className="ai-key-onboarding-actions">
-              <a
-                href="https://aistudio.google.com/app/apikey"
-                target="_blank"
-                rel="noreferrer"
-                className="ai-key-link-btn"
-                onClick={(e) => {
-                  if (window.electronAPI?.openExternal) {
-                    e.preventDefault()
-                    window.electronAPI.openExternal('https://aistudio.google.com/app/apikey')
-                  }
-                }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>open_in_new</span>
-                <span>Get free Gemini API Key at Google AI Studio ↗</span>
-              </a>
-              <form onSubmit={handleSaveOnboardingKey} className="ai-key-input-row">
-                <input
-                  type="password"
-                  className="ai-key-input"
-                  placeholder="Paste AI Studio Key (AIzaSy...)"
-                  value={onboardingKeyInput}
-                  onChange={(e) => setOnboardingKeyInput(e.target.value)}
-                  autoFocus
-                />
+
+            {/* Provider Tabs */}
+            <div className="ai-onboarding-tabs">
+              {Object.values(AI_PROVIDERS).map((p) => (
                 <button
-                  type="submit"
-                  className="ai-key-save-btn"
-                  disabled={!onboardingKeyInput.trim()}
+                  key={p.id}
+                  type="button"
+                  className={`ai-onboarding-tab-btn ${onboardingActiveProvider === p.id ? 'active' : ''}`}
+                  onClick={() => setOnboardingActiveProvider(p.id)}
                 >
-                  Save & Connect
+                  <span className="material-symbols-outlined" style={{ fontSize: 13, color: p.color }}>{p.icon}</span>
+                  <span>{p.shortName}</span>
                 </button>
-              </form>
-              <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: 2 }}>
-                💡 You can also manage or update this key anytime in <strong>Settings (⚙️) ➔ Integrations</strong>.
-              </div>
+              ))}
             </div>
+
+            {/* Active Provider Card */}
+            {(() => {
+              const p = AI_PROVIDERS[onboardingActiveProvider] || AI_PROVIDERS.gemini
+              if (p.isLocal) {
+                return (
+                  <div className="ai-key-onboarding-actions">
+                    <div style={{ fontSize: 11, color: '#cbd5e1' }}>
+                      Run models 100% locally on your machine with Ollama. Zero network requests or telemetry.
+                    </div>
+                    <div className="ai-key-input-row">
+                      <input
+                        type="text"
+                        className="ai-key-input"
+                        value={onboardingKeyInputs.ollama || 'http://localhost:11434'}
+                        onChange={(e) => setOnboardingKeyInputs((prev) => ({ ...prev, ollama: e.target.value }))}
+                        placeholder="http://localhost:11434"
+                      />
+                      <button
+                        type="button"
+                        className="ai-key-save-btn"
+                        onClick={() => handleSaveProviderKey('ollama')}
+                      >
+                        Enable Ollama
+                      </button>
+                    </div>
+                  </div>
+                )
+              }
+
+              return (
+                <div className="ai-key-onboarding-actions">
+                  <a
+                    href={p.keyLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ai-key-link-btn"
+                    onClick={(e) => {
+                      if (window.electronAPI?.openExternal) {
+                        e.preventDefault()
+                        window.electronAPI.openExternal(p.keyLink)
+                      }
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>open_in_new</span>
+                    <span>{p.keyHelp} ↗</span>
+                  </a>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      handleSaveProviderKey(p.id)
+                    }}
+                    className="ai-key-input-row"
+                  >
+                    <input
+                      type="password"
+                      className="ai-key-input"
+                      placeholder={p.keyPlaceholder}
+                      value={onboardingKeyInputs[p.id] || ''}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setOnboardingKeyInputs((prev) => ({ ...prev, [p.id]: val }))
+                      }}
+                      autoFocus
+                    />
+                    <button
+                      type="submit"
+                      className="ai-key-save-btn"
+                      disabled={!(onboardingKeyInputs[p.id] || '').trim()}
+                    >
+                      Save & Connect
+                    </button>
+                  </form>
+                  <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: 2 }}>
+                    💡 You can configure additional providers anytime in <strong>Settings (⚙️) ➔ AI Providers & Integrations</strong>.
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         )}
         <div ref={threadEndRef} />
@@ -1993,10 +2197,92 @@ export default function AiAgentPanel({
           />
           <div className="ai-input-bottom-row">
             <div className="ai-input-bottom-left">
-              <div className="ai-model-pill" title="Active Model: Google Gemini 2.0 Flash">
-                <span className="ai-model-status-dot"></span>
-                <span className="material-symbols-outlined" style={{ fontSize: 11, color: '#818cf8' }}>auto_awesome</span>
-                <span>Gemini 2.0 Flash</span>
+              <div style={{ position: 'relative' }} ref={modelSelectorRef}>
+                <button
+                  type="button"
+                  className={`ai-model-pill ai-model-pill-interactive ${isModelSelectorOpen ? 'open' : ''}`}
+                  onClick={() => setIsModelSelectorOpen((prev) => !prev)}
+                  title={`Active Model: ${getModelInfo(selectedModel).name} (${AI_PROVIDERS[selectedProvider]?.name || 'Gemini'}). Click to switch model.`}
+                >
+                  <span className={`ai-model-status-dot ${hasProviderKey(selectedProvider) ? '' : 'warning'}`}></span>
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: 11, color: AI_PROVIDERS[selectedProvider]?.color || '#818cf8' }}
+                  >
+                    {AI_PROVIDERS[selectedProvider]?.icon || 'auto_awesome'}
+                  </span>
+                  <span>{getModelInfo(selectedModel).name}</span>
+                  <span className="material-symbols-outlined ai-model-pill-chevron">expand_more</span>
+                </button>
+
+                {/* Model Selector Popover */}
+                {isModelSelectorOpen && (
+                  <div className="ai-model-selector-popover">
+                    <div className="ai-model-selector-header">
+                      <div className="ai-model-selector-title">
+                        <span>AI Model & Provider</span>
+                        <span style={{ fontSize: 10, color: '#10b981', fontWeight: 600 }}>Auto-Fallback ON</span>
+                      </div>
+                      <div className="ai-model-selector-subtitle">
+                        If your chosen model fails or is unavailable, VMarks automatically switches to a backup model.
+                      </div>
+                    </div>
+
+                    <div className="ai-model-selector-body">
+                      {Object.values(AI_PROVIDERS).map((p) => {
+                        const isConfigured = hasProviderKey(p.id)
+                        return (
+                          <div key={p.id} className="ai-provider-group">
+                            <div className="ai-provider-header">
+                              <div className="ai-provider-header-left">
+                                <span className="material-symbols-outlined" style={{ fontSize: 13, color: p.color }}>
+                                  {p.icon}
+                                </span>
+                                <span>{p.name}</span>
+                              </div>
+                              <span className={`ai-provider-status-badge ${isConfigured ? 'configured' : 'missing'}`}>
+                                {isConfigured ? 'Ready' : p.isLocal ? 'Offline' : 'Needs Key'}
+                              </span>
+                            </div>
+
+                            {p.models.map((m) => {
+                              const isSelected = selectedModel === m.id
+                              return (
+                                <div
+                                  key={m.id}
+                                  className={`ai-model-item ${isSelected ? 'active' : ''}`}
+                                  onClick={() => handleSelectModel(m.id, p.id)}
+                                >
+                                  <span className="material-symbols-outlined ai-model-item-radio">
+                                    {isSelected ? 'radio_button_checked' : 'radio_button_unchecked'}
+                                  </span>
+                                  <div className="ai-model-item-details">
+                                    <div className="ai-model-item-top">
+                                      <span className="ai-model-item-name">{m.name}</span>
+                                      {m.badge && (
+                                        <span
+                                          className="ai-model-badge-tag"
+                                          style={{
+                                            background: `${m.badgeColor || p.color}22`,
+                                            color: m.badgeColor || p.color,
+                                            border: `1px solid ${m.badgeColor || p.color}44`
+                                          }}
+                                        >
+                                          {m.badge}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="ai-model-item-desc">{m.desc}</div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="ai-prompt-quick-chips">
                 <button

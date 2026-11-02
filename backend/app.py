@@ -488,10 +488,11 @@ def root():
 
 
 # ==============================================================================
-# AI Studio Agent (Isolated Experimental Endpoints)
+# AI Studio Agent (Multi-Provider: Gemini, OpenAI, Claude, Groq, Ollama)
 # ==============================================================================
 from ai_agent import (
     get_gemini_api_key,
+    get_provider_api_key,
     fetch_local_workspace_context,
     fetch_repo_context_from_github,
     run_gemini_analysis,
@@ -505,6 +506,10 @@ class AiAgentAnalyzeRequest(BaseModel):
     workspace_path: Optional[str] = None
     query: Optional[str] = None
     gemini_api_key: Optional[str] = None
+    api_key: Optional[str] = None
+    provider: Optional[str] = "gemini"
+    model: Optional[str] = None
+    base_url: Optional[str] = None
     github_token: Optional[str] = None
     mode: Optional[str] = "all"
 
@@ -515,6 +520,10 @@ class AiEditorDiffRequest(BaseModel):
     context_before: Optional[str] = None
     context_after: Optional[str] = None
     gemini_api_key: Optional[str] = None
+    api_key: Optional[str] = None
+    provider: Optional[str] = "gemini"
+    model: Optional[str] = None
+    base_url: Optional[str] = None
     project_memory_text: Optional[str] = None
 
 
@@ -522,6 +531,10 @@ class AiChatRequest(BaseModel):
     prompt: str
     history: Optional[List[dict]] = None
     gemini_api_key: Optional[str] = None
+    api_key: Optional[str] = None
+    provider: Optional[str] = "gemini"
+    model: Optional[str] = None
+    base_url: Optional[str] = None
     active_file: Optional[str] = None
     file_content: Optional[str] = None
     workspace_path: Optional[str] = None
@@ -530,11 +543,13 @@ class AiChatRequest(BaseModel):
 
 @api_router.post("/ai/agent-analyze")
 def ai_agent_analyze_endpoint(req: AiAgentAnalyzeRequest):
-    api_key = get_gemini_api_key(req.gemini_api_key)
-    if not api_key:
+    provider = (req.provider or "gemini").lower()
+    user_key = req.api_key or req.gemini_api_key
+    resolved_key = get_provider_api_key(provider, user_key)
+    if provider != "ollama" and not resolved_key:
         raise HTTPException(
             status_code=400,
-            detail="Gemini API Key is required. Please configure it in settings or set GEMINI_API_KEY in backend/.env"
+            detail=f"API key is required for provider '{provider}'. Please configure it in settings or the prompt."
         )
 
     context = {}
@@ -552,53 +567,83 @@ def ai_agent_analyze_endpoint(req: AiAgentAnalyzeRequest):
         raise HTTPException(status_code=404, detail="Could not retrieve repository or workspace context.")
 
     try:
-        data = run_gemini_analysis(context, api_key=api_key, user_instruction=req.query, mode=req.mode or "all")
+        data = run_gemini_analysis(
+            context,
+            api_key=resolved_key,
+            provider=provider,
+            model=req.model,
+            base_url=req.base_url,
+            user_instruction=req.query,
+            mode=req.mode or "all"
+        )
         return {"success": True, "data": data, "source": context.get("source", "github")}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @api_router.post("/ai/editor-diff")
 def ai_editor_diff_endpoint(req: AiEditorDiffRequest):
-    api_key = get_gemini_api_key(req.gemini_api_key)
-    if not api_key:
+    provider = (req.provider or "gemini").lower()
+    user_key = req.api_key or req.gemini_api_key
+    resolved_key = get_provider_api_key(provider, user_key)
+    if provider != "ollama" and not resolved_key:
         raise HTTPException(
             status_code=400,
-            detail="Gemini API Key is required. Please configure it in settings or set GEMINI_API_KEY in backend/.env"
+            detail=f"API key is required for provider '{provider}'. Please configure it in settings or the prompt."
         )
     try:
         data = run_gemini_editor_diff(
             original_text=req.original_text,
             instruction=req.instruction,
-            api_key=api_key,
+            api_key=resolved_key,
+            provider=provider,
+            model=req.model,
+            base_url=req.base_url,
             context_before=req.context_before,
             context_after=req.context_after,
             project_memory_text=req.project_memory_text
         )
         return {"success": True, "data": data}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @api_router.post("/ai/chat")
 def ai_chat_endpoint(req: AiChatRequest):
-    api_key = get_gemini_api_key(req.gemini_api_key)
-    if not api_key:
+    provider = (req.provider or "gemini").lower()
+    user_key = req.api_key or req.gemini_api_key
+    resolved_key = get_provider_api_key(provider, user_key)
+    if provider != "ollama" and not resolved_key:
         raise HTTPException(
             status_code=400,
-            detail="Gemini API Key is required. Please configure it in settings or set GEMINI_API_KEY in backend/.env"
+            detail=f"API key is required for provider '{provider}'. Please configure it in settings or the prompt."
         )
     try:
-        reply = run_gemini_general_chat(
+        res = run_gemini_general_chat(
             req.prompt,
             req.history or [],
-            api_key=api_key,
+            api_key=resolved_key,
+            provider=provider,
+            model=req.model,
+            base_url=req.base_url,
             active_file=req.active_file,
             file_content=req.file_content,
             workspace_path=req.workspace_path,
             project_memory_text=req.project_memory_text
         )
-        return {"success": True, "reply": reply}
+        return {
+            "success": True,
+            "reply": res.get("text", ""),
+            "used_model": res.get("used_model"),
+            "provider": res.get("provider", provider),
+            "fallback_occurred": res.get("fallback_occurred", False)
+        }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
