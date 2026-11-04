@@ -12,7 +12,7 @@
     "url": "https://github.com/JagaTheGhost/visualmark-studio/issues"
   },
   "private": true,
-  "version": "1.2.1",
+  "version": "1.2.2",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -93,7 +93,7 @@
       "uninstallerIcon": "public/icon.ico",
       "artifactName": "VisualMark-Studio-Setup.${ext}",
       "deleteAppDataOnUninstall": false,
-      "differentialPackage": false,
+      "differentialPackage": true,
       "include": "build/installer.nsh"
     },
     "publish": [

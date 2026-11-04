@@ -28,6 +28,9 @@ export function useAppUpdates({ appVersion, showToast, handleOpenWhatsNewTab }) 
   const autoDownloadUpdatesRef = useRef(autoDownloadUpdates)
   useEffect(() => {
     autoDownloadUpdatesRef.current = autoDownloadUpdates
+    if (typeof window !== 'undefined' && window.electronAPI?.setAutoDownload) {
+      window.electronAPI.setAutoDownload(autoDownloadUpdates)
+    }
   }, [autoDownloadUpdates])
 
   // Startup version check & "What's New" release notes editor tab
@@ -75,7 +78,6 @@ export function useAppUpdates({ appVersion, showToast, handleOpenWhatsNewTab }) 
     setPendingUpdateInfo(null)
     setUpdateProgress({ percent: 0, transferred: 0, total: 0, version: info?.version })
     setUpdateError(null)
-    showToast?.(`Starting download of update v${info?.version || ''}...`, 'info', { source: 'Update', important: true })
     if (typeof window !== 'undefined' && window.electronAPI?.downloadUpdate) {
       try {
         const res = await window.electronAPI.downloadUpdate()
@@ -105,7 +107,13 @@ export function useAppUpdates({ appVersion, showToast, handleOpenWhatsNewTab }) 
         setUpdateError(null)
         if (autoDownloadUpdatesRef.current) {
           setUpdateProgress({ percent: 0, transferred: 0, total: 0, version: info?.version })
-          showToast?.(`Downloading update v${info?.version || ''} in background...`, 'info', { source: 'Update', important: true })
+          // Automatically trigger download in the background
+          if (typeof window !== 'undefined' && window.electronAPI?.downloadUpdate) {
+            window.electronAPI.downloadUpdate().catch((err) => {
+              console.warn('[AutoUpdater] Failed auto-triggering downloadUpdate:', err)
+            })
+          }
+          // The bottom panel circular progress indicator provides clean visual progress without toast clutter
         } else {
           setPendingUpdateInfo(info)
           showToast?.(`Update v${info?.version || ''} is available! Would you like to download it now?`, 'info', {

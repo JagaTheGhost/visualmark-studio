@@ -6,7 +6,7 @@ const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron')
 const { autoUpdater } = require('electron-updater')
 const path = require('path')
 const fs = require('fs')
-const { spawn, execFile, exec } = require('child_process')
+const { spawn, execFile, exec, spawnSync } = require('child_process')
 const http = require('http')
 const net = require('net')
 
@@ -1944,9 +1944,10 @@ ipcMain.handle('workspace-get-default', async (event) => {
 })
 
 // ==================== AUTO UPDATER PIPELINE ====================
-autoUpdater.autoDownload = false
+autoUpdater.autoDownload = true
 autoUpdater.autoInstallOnAppQuit = true
-autoUpdater.disableDifferentialDownload = true
+// Enable differential delta downloads using .blockmap (~5-15MB instead of ~170MB)
+autoUpdater.disableDifferentialDownload = false
 
 ipcMain.handle('app-set-auto-download', (_event, enabled) => {
   autoUpdater.autoDownload = Boolean(enabled)
@@ -2054,7 +2055,11 @@ ipcMain.handle('app-check-for-updates', async () => {
 })
 
 ipcMain.on('app-quit-and-install', () => {
-  autoUpdater.quitAndInstall(false, true)
+  console.log('[AutoUpdater] App update quit-and-install requested. Terminating sidecar and installing...')
+  terminateSidecar()
+  setImmediate(() => {
+    autoUpdater.quitAndInstall(false, true)
+  })
 })
 
 // App Lifecycle
@@ -2096,7 +2101,7 @@ function terminateSidecar() {
     try {
       console.log('[Sidecar] Terminating sidecar child process PID:', sidecarProcess.pid)
       if (process.platform === 'win32') {
-        spawn('taskkill', ['/pid', String(sidecarProcess.pid), '/f', '/t'])
+        spawnSync('taskkill', ['/pid', String(sidecarProcess.pid), '/f', '/t'], { timeout: 2500 })
       } else {
         sidecarProcess.kill('SIGTERM')
       }

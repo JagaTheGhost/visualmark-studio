@@ -13,6 +13,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.2] - 2026-11-04
+
+### Added
+- **Minimalist Status Bar Circular Progress Ring**: Clean SVG circular progress indicator in the bottom status bar displaying the exact percentage inside the circle with smooth arc animation and detailed hover telemetry (transferred MB, total MB, transfer speed).
+- **Differential Delta Packaging**: Re-enabled NSIS blockmap (`.blockmap`) generation and multi-platform manifests (`latest*.yml`) in CI release workflows for efficient delta auto-updates.
+
+### Fixed
+- **Auto-Updater Background Download Initiation**: Fixed a state mismatch between renderer and main processes where detected updates remained at 0% without triggering download transfer.
+- **Windows Sidecar Process Shutdown on Restart**: Replaced asynchronous process termination with synchronous `spawnSync('taskkill')` to ensure `server.exe` releases file locks before the NSIS installer starts file extraction.
+- **CI/CD Artifact Staging**: Updated release workflow to include `*.blockmap` and `latest*.yml` manifests when publishing GitHub Releases.
+
+### Changed
+- **Delta Download Patch Optimization**: Slashing update download size from full ~170MB installer downloads to ~5–15MB delta updates for users upgrading between patch releases.
+- **Pruned Redundant Download Indicators**: Removed distracting floating tabs in the document tab strip, tab header progress badges, linear progress banners, and noisy in-flight download toast notifications.
+
+---
+
 ## [1.2.1] - 2026-11-1
 
 ### Added

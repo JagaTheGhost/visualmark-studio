@@ -84,14 +84,15 @@ jobs:
           cd frontend/release
           echo "Listing generated files in release directory:"
           ls -lh
-          # Collect distribution artifacts (excluding raw unpacked folders and blockmaps)
+          # Collect distribution artifacts including blockmaps for differential updates and all platform manifests
           find . -maxdepth 1 -type f \( \
             -name "*.exe" -o \
+            -name "*.blockmap" -o \
             -name "*.AppImage" -o \
             -name "*.deb" -o \
             -name "*.dmg" -o \
             -name "*.zip" -o \
-            -name "latest.yml" \
+            -name "latest*.yml" \
           \) -exec cp {} ../../dist-artifacts/ \;
           cd ../..
           echo "Staged artifacts ready for consolidation:"

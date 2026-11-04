@@ -364,13 +364,7 @@ export default function TabBar({
         </span>
         <span className="tab-file-title truncate">{config.label}</span>
 
-        {/* Download Progress Indicator Pill on Tab Header */}
-        {isUpdateTab && updateProgress && !updateDownloaded && (
-          <span className="tab-update-progress-pill" title={`Downloading Update: ${Math.round(updateProgress.percent || 0)}%`}>
-            <span className="material-symbols-outlined tab-progress-spinner">sync</span>
-            <span>{Math.round(updateProgress.percent || 0)}%</span>
-          </span>
-        )}
+
 
         {/* Update Ready Indicator on Tab Header */}
         {isUpdateTab && updateDownloaded && (
@@ -379,13 +373,7 @@ export default function TabBar({
           </span>
         )}
 
-        {/* Live animated bottom progress bar on the tab */}
-        {isUpdateTab && updateProgress && !updateDownloaded && (
-          <div
-            className="tab-progress-bottom-bar"
-            style={{ width: `${Math.min(100, Math.max(0, updateProgress.percent || 0))}%` }}
-          />
-        )}
+
 
         <button
           type="button"
@@ -438,32 +426,7 @@ export default function TabBar({
     )
   }
 
-  // Floating quick tab when update is actively downloading and Settings is not open
-  const renderFloatingUpdateTab = () => {
-    if (!updateProgress || updateDownloaded || openStudioTabs.includes('settings') || openStudioTabs.includes('whats-new')) {
-      return null
-    }
-    return (
-      <div
-        key="floating-update-tab"
-        className="editor-tab studio-tool-tab tab-downloading-shortcut"
-        onClick={() => onOpenStudioTab('settings')}
-        title="Update downloading in background. Click to open Settings"
-        style={{ position: 'relative' }}
-      >
-        <span className="material-symbols-outlined spin" style={{ fontSize: '13px', color: '#38bdf8' }}>
-          sync
-        </span>
-        <span className="tab-file-title" style={{ color: '#38bdf8', fontWeight: 600 }}>
-          Updating {Math.round(updateProgress.percent || 0)}%
-        </span>
-        <div
-          className="tab-progress-bottom-bar"
-          style={{ width: `${Math.min(100, Math.max(0, updateProgress.percent || 0))}%` }}
-        />
-      </div>
-    )
-  }
+  // Floating download indicator tab removed: update progress is presented cleanly in the status bar circular indicator
 
   return (
     <div className="tab-strip-bar select-none">
@@ -696,14 +659,12 @@ export default function TabBar({
               </div>
             )}
 
-            {renderFloatingUpdateTab()}
           </>
         ) : (
           <>
             {/* Flat Tabs View (when grouping is disabled or not applicable) */}
             {tabList.map(renderDocTab)}
             {openStudioTabs.map(renderStudioTab)}
-            {renderFloatingUpdateTab()}
             {openPresetTabs.map(renderPresetTab)}
           </>
         )}

@@ -2,15 +2,72 @@
  * VisualMark Studio - Release Notes & Update History Dataset
  * Powers the "What's New" modal dialog, update notifications, and in-IDE release history.
  */
-export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.2.1'
+export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.2.2'
 
 export const RELEASE_HISTORY = [
+  {
+    version: '1.2.2',
+    type: 'patch',
+    title: 'VisualMark Studio 1.2.2 — Delta Differential Updates & Minimalist Circular Download Indicator',
+    date: 'November 2026',
+    isCurrent: true,
+    overview: 'VisualMark Studio **1.2.2** resolves community feedback from Discussion #17 regarding auto-update performance and UI clutter. This release re-enables **NSIS differential delta updates (`.blockmap`)**, shrinking patch downloads from ~170MB down to **~5–15MB** by downloading only changed 64KB code blocks. It resolves background auto-update download triggering, fixes Windows sidecar process locking during restart, and unifies all download indications into an elegant **SVG circular progress ring** in the bottom Status Bar displaying the live percentage inside the ring.',
+    highlights: [
+      'Differential Delta Patching: Enabled NSIS blockmap delta updates, slashing patch download size from ~170MB to ~5–15MB by downloading only modified blocks',
+      'Auto-Updater Pipeline Resolution: Fixed auto-download initiation in background and resolved Windows sidecar process-locking errors on update restarts',
+      'Minimalist Circular Download UI: Integrated a clean SVG circular progress indicator in the bottom Status Bar with percentage displayed inside the circle',
+      'De-Cluttered Download Indicators: Pruned redundant floating tabs, tab header pills, linear banners, and noisy in-flight toast notifications',
+      'CI/CD Delta Artifact Staging: Updated release workflow to bundle and publish *.blockmap and latest*.yml manifests directly to GitHub Releases'
+    ],
+    sections: [
+      {
+        category: 'Auto-Update & Delta Updates',
+        icon: 'system_update',
+        badge: 'Delta Patching',
+        color: '#38bdf8',
+        items: [
+          {
+            title: 'Blockmap Differential Downloads (~5–15MB Patches)',
+            desc: 'Re-enabled NSIS differential blockmap packaging. Existing users updating from v1.2.1 now download only modified code blocks instead of re-downloading the entire ~170MB desktop installer.'
+          },
+          {
+            title: 'Auto-Download Triggering Fix',
+            desc: 'Resolved an issue where auto-updates detected by the renderer failed to trigger download in the main process, eliminating the stuck 0% download state.'
+          },
+          {
+            title: 'Safe Process Shutdown on Restart',
+            desc: 'Hardened update installation lifecycle with synchronous sidecar process termination (spawnSync) to prevent Windows executable file-locking conflicts during update installation.'
+          }
+        ]
+      },
+      {
+        category: 'UI & UX Streamlining',
+        icon: 'donut_large',
+        badge: 'Interface',
+        color: '#10b981',
+        items: [
+          {
+            title: 'Bottom Panel Circular Progress Indicator',
+            desc: 'Replaced linear progress bars and text badges with a sleek, non-intrusive SVG circular progress ring in the bottom status bar showing the live percentage inside the circle.'
+          },
+          {
+            title: 'Detailed Hover Telemetry',
+            desc: 'Hovering the status bar circular indicator reveals transferred MB, total MB, and current transfer speed in a clean tooltip.'
+          },
+          {
+            title: 'Elimination of Notification Clutter',
+            desc: 'Removed distracting floating tabs from the document tab bar, tab header progress badges, and repeated in-flight download toasts.'
+          }
+        ]
+      }
+    ]
+  },
   {
     version: '1.2.1',
     type: 'patch',
     title: 'VisualMark Studio 1.2.1 — Multi-Platform Releases, Security Confinement & Zero-Telemetry Transparency',
     date: 'November 2026',
-    isCurrent: true,
+    isCurrent: false,
     overview: 'VisualMark Studio **1.2.1** expands desktop distribution to **Linux** (`.AppImage`, `.deb`) and **macOS** (`.dmg`, `.zip` for **Apple Silicon** & **Intel**), while streamlining Windows to a dedicated **NSIS Setup installer**. This release hardens **workspace boundary confinement** (`isPathWithinWorkspace`), enforces strict **DOMPurify vector sanitization** for Mermaid and Markdown previews, and solidifies our **local-first, zero-telemetry** architecture with dynamic Python sidecar lifecycle management.',
     highlights: [
       'Multi-Platform Desktop Releases: Official distribution for Linux (.AppImage, .deb) and macOS (.dmg, .zip for Apple Silicon arm64 & Intel x64)',

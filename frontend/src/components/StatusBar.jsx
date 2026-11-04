@@ -140,34 +140,110 @@ export default function StatusBar({
           )}
         </div>
 
-        {/* Live Update Downloading Progress Indicator */}
-        {updateProgress && !updateDownloaded && (
-          <div
-            className="status-item update-progress-badge"
-            data-tooltip={`Downloading update: ${updateProgress.percent || 0}% (${Math.round((updateProgress.transferred || 0) / 1048576)} MB / ${Math.round((updateProgress.total || 0) / 1048576)} MB${updateProgress.bytesPerSecond ? ` • ${(updateProgress.bytesPerSecond / 1048576).toFixed(1)} MB/s` : ''})`}
-            data-tooltip-pos="top"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'rgba(56, 189, 248, 0.15)',
-              border: '1px solid rgba(56, 189, 248, 0.4)',
-              color: '#38bdf8',
-              borderRadius: '4px',
-              padding: '1px 8px',
-              fontSize: '11px',
-              fontWeight: 500
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '13px', animation: 'spin 1.5s linear infinite' }}>sync</span>
-            <span>Downloading {updateProgress.percent || 0}%</span>
-            {updateProgress.total > 0 && (
-              <span style={{ opacity: 0.75, fontSize: '10px' }}>
-                ({Math.round((updateProgress.transferred || 0) / 1048576)}/{Math.round(updateProgress.total / 1048576)}MB)
+        {/* Live Update Downloading Circular Progress Indicator */}
+        {updateProgress && !updateDownloaded && (() => {
+          const rawPercent = updateProgress.percent || 0
+          const percent = Math.min(100, Math.max(0, Math.round(rawPercent)))
+          const radius = 9.5
+          const circumference = 2 * Math.PI * radius
+          const offset = circumference - (percent / 100) * circumference
+          const transferredMb = Math.round((updateProgress.transferred || 0) / 1048576)
+          const totalMb = Math.round((updateProgress.total || 0) / 1048576)
+          const speedMb = updateProgress.bytesPerSecond ? ` • ${(updateProgress.bytesPerSecond / 1048576).toFixed(1)} MB/s` : ''
+
+          return (
+            <div
+              className="status-item update-progress-badge"
+              data-tooltip={`Downloading update: ${percent}% (${transferredMb} MB / ${totalMb} MB${speedMb})`}
+              data-tooltip-pos="top"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'rgba(56, 189, 248, 0.12)',
+                border: '1px solid rgba(56, 189, 248, 0.35)',
+                color: '#38bdf8',
+                borderRadius: '12px',
+                padding: '1px 7px 1px 4px',
+                fontSize: '11px',
+                fontWeight: 500,
+                cursor: 'default',
+                userSelect: 'none'
+              }}
+            >
+              <div
+                style={{
+                  position: 'relative',
+                  width: '20px',
+                  height: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  style={{
+                    transform: 'rotate(-90deg)',
+                    display: 'block'
+                  }}
+                >
+                  {/* Background Track */}
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r={radius}
+                    fill="none"
+                    stroke="rgba(255, 255, 255, 0.15)"
+                    strokeWidth="2.2"
+                  />
+                  {/* Progress Arc */}
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r={radius}
+                    fill="none"
+                    stroke="#38bdf8"
+                    strokeWidth="2.2"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    strokeLinecap="round"
+                    style={{
+                      transition: 'stroke-dashoffset 0.25s ease-out'
+                    }}
+                  />
+                </svg>
+                {/* Percentage Centered Inside Circle */}
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: percent >= 100 ? '6.5px' : '7.5px',
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-mono, monospace)',
+                    color: '#38bdf8',
+                    letterSpacing: '-0.5px',
+                    lineHeight: 1
+                  }}
+                >
+                  {percent}%
+                </span>
+              </div>
+              <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 500 }}>
+                Updating
               </span>
-            )}
-          </div>
-        )}
+            </div>
+          )
+        })()}
 
         {/* Update Download Error Indicator */}
         {updateError && !updateDownloaded && !updateProgress && (

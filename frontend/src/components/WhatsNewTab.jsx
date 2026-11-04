@@ -545,26 +545,7 @@ export default function WhatsNewTab({
         {/* Right Column: Continuous Scroll Document Canvas */}
         <main ref={mainPanelRef} className="whats-new-main-panel custom-scrollbar">
           <div className="notes-preview-canvas">
-            {/* Live Update Downloading Banner */}
-            {updateProgress && !updateDownloaded && (
-              <div className="whats-new-tab-update-banner">
-                <div className="update-banner-left" style={{ flex: 1 }}>
-                  <span className="material-symbols-outlined update-banner-pulse-icon" style={{ color: 'var(--text-secondary)' }}>cloud_download</span>
-                  <div style={{ flex: 1, marginRight: '16px' }}>
-                    <p className="update-banner-title">
-                      Downloading Update: {updateProgress.percent || 0}%
-                      {updateProgress.bytesPerSecond ? ` • ${(updateProgress.bytesPerSecond / 1048576).toFixed(1)} MB/s` : ''}
-                    </p>
-                    <div style={{ background: 'rgba(255,255,255,0.08)', height: '4px', borderRadius: '2px', marginTop: '6px', overflow: 'hidden' }}>
-                      <div style={{ background: '#007acc', height: '100%', width: `${updateProgress.percent || 0}%`, transition: 'width 0.3s ease' }} />
-                    </div>
-                    <p className="update-banner-subtitle" style={{ marginTop: '4px' }}>
-                      {Math.round((updateProgress.transferred || 0) / 1048576)} MB of {Math.round((updateProgress.total || 0) / 1048576)} MB downloaded.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+
 
             {/* Update Downloaded Ready Callout Banner */}
             {updateDownloaded && (
