@@ -629,7 +629,7 @@ export default function TableStudioTab({
         title="Markdown Table Studio"
         subtitle="High-density interactive tabular data designer with Shields.io badges, CSV/TSV paste, and GFM alignment"
         badge="GFM Table Pro"
-        accentColor="#38bdf8"
+        accentColor="#6366f1"
         icon={<span className="material-symbols-outlined" style={{ fontSize: '20px' }}>table_chart</span>}
         markdownCode={markdownTable}
         onInsert={handleInsert}

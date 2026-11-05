@@ -28,6 +28,7 @@ export default function StateVisualBuilder({
   onStatesChange,
   transitions = [],
   onTransitionsChange,
+  onBatchChange,
   selectedStateId: controlledSelectedStateId,
   onSelectStateId
 }) {
@@ -214,11 +215,20 @@ export default function StateVisualBuilder({
   const handleDeleteState = (id) => {
     const targetState = states.find((s) => s.id === id)
     if (!targetState) return
-    onStatesChange(states.filter((s) => s.id !== id))
-    onTransitionsChange(transitions.filter((t) => t.from !== targetState.name && t.to !== targetState.name))
+    const remainingStates = states.filter((s) => s.id !== id)
+    const remainingTransitions = transitions.filter((t) => t.from !== targetState.name && t.to !== targetState.name)
+
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({
+        states: remainingStates,
+        transitions: remainingTransitions
+      })
+    } else {
+      onStatesChange(remainingStates)
+      onTransitionsChange(remainingTransitions)
+    }
     if (selectedStateId === id) {
-      const remaining = states.filter((s) => s.id !== id)
-      setSelectedStateId(remaining[0]?.id || null)
+      setSelectedStateId(remainingStates[0]?.id || null)
     }
   }
 
@@ -268,7 +278,7 @@ export default function StateVisualBuilder({
       <div className="state-outline-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#10b981' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#818cf8' }}>
               motion_photos_on
             </span>
             <span style={{ fontSize: '12px', fontWeight: 700, color: '#f1f5f9', letterSpacing: '0.02em' }}>
@@ -337,8 +347,8 @@ export default function StateVisualBuilder({
               onClick={() => setShowBlueprintMenu(!showBlueprintMenu)}
               style={{ height: '28px', padding: '0 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#10b981' }}>auto_awesome</span>
-              <span>+ Blueprint</span>
+              <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#818cf8' }}>auto_awesome</span>
+              <span>Blueprint</span>
               <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>expand_more</span>
             </button>
 
@@ -415,7 +425,7 @@ export default function StateVisualBuilder({
                     stop_circle
                   </span>
                 ) : (
-                  <span className="material-symbols-outlined" style={{ fontSize: '13px', color: '#38bdf8' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '13px', color: '#818cf8' }}>
                     circle
                   </span>
                 )}
@@ -484,7 +494,7 @@ export default function StateVisualBuilder({
             {/* State Header Banner */}
             <div className="state-header-banner">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#10b981' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#818cf8' }}>
                   motion_photos_on
                 </span>
 
@@ -582,7 +592,7 @@ export default function StateVisualBuilder({
       <div className="state-transitions-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#38bdf8' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#818cf8' }}>
               alt_route
             </span>
             <span style={{ fontSize: '12px', fontWeight: 700, color: '#f1f5f9' }}>
@@ -597,8 +607,8 @@ export default function StateVisualBuilder({
             disabled={states.length === 0}
             style={{ padding: '3px 9px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#38bdf8' }}>add</span>
-            <span>+ Transition</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#818cf8' }}>add</span>
+            <span>Transition</span>
           </button>
         </div>
 
@@ -628,7 +638,7 @@ export default function StateVisualBuilder({
 
                 {/* To State */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1, minWidth: '120px' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: '13px', color: '#38bdf8' }}>motion_photos_on</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: '13px', color: '#818cf8' }}>motion_photos_on</span>
                   <select
                     className="studio-text-input"
                     value={trans.to}
@@ -694,7 +704,7 @@ export default function StateVisualBuilder({
 
           {transitions.length === 0 && (
             <div style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic', padding: '8px', textAlign: 'center' }}>
-              No transitions defined yet. Click "+ Transition" above to connect states.
+              No transitions defined yet. Click "Transition" above to connect states.
             </div>
           )}
         </div>

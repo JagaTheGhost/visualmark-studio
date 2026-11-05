@@ -378,8 +378,8 @@ export default function DirectoryTreeStudioTab({
       title="Directory Tree Studio"
       subtitle="Clean ASCII, Unicode, and Emoji project architecture trees with automated annotations"
       badge="Architecture Spec"
-      accentColor="#10b981"
-      icon={<span className="material-symbols-outlined" style={{ fontSize: '20px' }}>account_tree</span>}
+      accentColor="#6366f1"
+      icon={<span className="material-symbols-outlined" style={{ fontSize: '20px' }}>folder_open</span>}
       modes={TREE_MODES}
       activeMode={activeSource}
       onModeChange={setActiveSource}

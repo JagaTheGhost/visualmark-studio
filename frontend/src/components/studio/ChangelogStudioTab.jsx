@@ -324,8 +324,8 @@ export default function ChangelogStudioTab({
       studioId="changelog.studio"
       title="Changelog & Release Notes Studio"
       subtitle="Assemble clean, standardized release logs compliant with SemVer and Keep-a-Changelog specifications."
-      icon="history_edu"
-      accentColor="#8b5cf6"
+      icon="rocket_launch"
+      accentColor="#6366f1"
       badge={isUnreleased ? 'Unreleased' : `v${version}`}
       modes={CHANGELOG_MODES}
       activeMode={outputFormat}

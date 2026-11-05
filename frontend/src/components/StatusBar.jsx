@@ -1,6 +1,7 @@
 import React from 'react'
 import { APP_CURRENT_VERSION } from '../data/releaseNotes'
 import { useI18n } from '../i18n/I18nContext'
+import { openAboutModal } from '../utils/sponsorGratitude'
 
 export default function StatusBar({
   cursorPosition = { line: 1, col: 1 },
@@ -21,7 +22,8 @@ export default function StatusBar({
   updateError = null,
   onOpenWhatsNew = () => {},
   onRestartToUpdate = () => {},
-  onOpenSettings = () => {}
+  onOpenSettings = () => {},
+  onOpenAbout = null
 }) {
   const { t, currentLanguage } = useI18n()
   const readMinutes = Math.max(1, Math.ceil(wordCount / 200))
@@ -304,6 +306,19 @@ export default function StatusBar({
           <span className="material-symbols-outlined status-icon">chat</span>
           <span className="community-expand-label">Bugs & Feedback</span>
         </a>
+
+        {/* Sponsor / Fuel Project Expandable Heart Icon */}
+        <div
+          className="status-item status-sponsor-expandable"
+          onClick={onOpenAbout || openAboutModal}
+          data-tooltip="💖 Support VisualMark Studio & JagaTheGhost on GitHub Sponsors"
+          data-tooltip-pos="top"
+          role="button"
+          tabIndex={0}
+        >
+          <span className="material-symbols-outlined status-icon">favorite</span>
+          <span className="sponsor-expand-label">Sponsor</span>
+        </div>
 
         {/* Version Pill (Click to open Release Notes tab) */}
         <div

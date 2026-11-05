@@ -13,6 +13,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.3] - 2026-11-05
+
+### Added
+- **Mermaid Studio Architecture & Mindmap Overhaul**:
+  - **3-Section Visual Mindmap Studio**: Complete rebuild of `MindmapVisualBuilder.jsx` featuring a Central Root Concept card with root shapes (`circle`, `rounded`, `square`, `cloud`, `bang`, `hexagon`), a foldable hierarchical tree outline with depth badges (`L1`–`L5`) and child counters, and a focused Branch Inspector with instant promote/indent and reordering controls.
+  - **Resilient Git Graph Compiler**: Hardened `compileGitGraph` with automatic initial commit enforcement on `main`, automatic undeclared branch creation on checkout, duplicate branch elimination, and self-merge guards.
+  - **Empty Subgraph & Cluster Defense**: Safeguarded `compileFlowchart` with bounding placeholder nodes for empty subgraphs to prevent Mermaid layout engine crashes and `(0, 0)` label overlap artifacts.
+  - **Adaptive Canvas Zoom to 500%**: Upgraded `DiagramCanvas.jsx` with non-passive mouse wheel and trackpad pinch zoom supporting smooth scaling up to 500% with adaptive acceleration steps.
+  - **Multi-Level Theme Color Scales**: Extended all 8 diagram themes (`Midnight Obsidian`, `Tokyo Night`, `Cyberpunk Neon`, etc.) with comprehensive `cScale0`–`cScale7` color palettes for vibrant, legible mindmap branches and nodes.
+- **Native About & System Diagnostics Dialog**: Modern 2-tab (`About` and `Credits & Backers`) dialog following VS Code / JetBrains desktop IDE standards, featuring 1-click diagnostic clipboard copying (`[ 📋 Copy System Info ]`), live version tag, `● Up to date` status dot, and foundational credits.
+- **GitHub Sponsorship Integration Suite**: Added repository funding manifest (`.github/FUNDING.yml`), subtle expandable hover pill (`💖 Sponsor`) in the status bar, top menu items (`💖 Support Development...`), and Command Palette shortcuts (`Help: Support VisualMark Studio (GitHub Sponsors)`).
+- **Export Milestone Gratitude Toasts**: Non-intrusive, rate-limited gratitude toasts triggered on major diagram, markdown, and hero banner exports to celebrate project usage and introduce sponsorship options.
+- **Multi-Platform Desktop Identity**: Universal `Downloads Available on Windows | macOS | Linux` release badge directing users to desktop packages across all supported OS environments.
+- **Interactive Screenshot Showcase**: High-resolution UI screenshots embedded directly in the repository README demonstrating split-pane Monaco editing, Mermaid Git graphs, mindmaps, and Shields badge creation.
+
+### Changed
+- **Documentation Single Source of Truth**: Consolidated all technical documentation, architectural specs, and QA procedures into the GitHub Wiki (`.wiki_staging`), eliminating redundant `docs/` files to prevent documentation drift.
+- **Optimized Download Conversion Funnel**: Repositioned the download section immediately after the visual screenshot gallery, preceded by a targeted value proposition callout to maximize user conversion without requiring back-scrolling.
+- **Streamlined Top Menu Dropdown**: Fixed dropdown flex spacing in TopMenuBar items to preserve standard menu alignment and typography.
+
+### Removed
+- **Redundant Docs Directory**: Pruned the legacy `docs/` folder in favor of the official GitHub Wiki.
+
+---
+
 ## [1.2.2] - 2026-11-04
 
 ### Added

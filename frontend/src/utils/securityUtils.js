@@ -87,6 +87,7 @@ export function sanitizeSvg(svgCode) {
   try {
     return DOMPurify.sanitize(withViewBox, {
       USE_PROFILES: { svg: true, svgFilters: true, html: true },
+      HTML_INTEGRATION_POINTS: { foreignobject: true, foreignObject: true },
       FORBID_TAGS: [
         'script',
         'iframe',
@@ -124,6 +125,7 @@ export function sanitizeSvg(svgCode) {
       ALLOW_DATA_ATTR: false,
       ADD_TAGS: [
         'foreignObject',
+        'foreignobject',
         'style',
         'text',
         'tspan',
@@ -152,7 +154,27 @@ export function sanitizeSvg(svgCode) {
         'strong',
         'em',
         'code',
-        'pre'
+        'pre',
+        'sub',
+        'sup',
+        'small',
+        'hr',
+        'table',
+        'thead',
+        'tbody',
+        'tr',
+        'td',
+        'th',
+        'ul',
+        'ol',
+        'li',
+        'mark',
+        's',
+        'del',
+        'marker',
+        'pattern',
+        'desc',
+        'title'
       ],
       ADD_ATTR: [
         'target',
@@ -169,6 +191,7 @@ export function sanitizeSvg(svgCode) {
         'style',
         'viewBox',
         'preserveAspectRatio',
+        'transform',
         'x',
         'y',
         'dx',
@@ -194,6 +217,10 @@ export function sanitizeSvg(svgCode) {
         'stroke',
         'stroke-width',
         'stroke-opacity',
+        'stroke-dasharray',
+        'stroke-linejoin',
+        'stroke-linecap',
+        'stroke-miterlimit',
         'opacity',
         'visibility',
         'attributeName',
@@ -205,6 +232,16 @@ export function sanitizeSvg(svgCode) {
         'calcMode',
         'keySplines',
         'restart',
+        'marker-start',
+        'marker-mid',
+        'marker-end',
+        'markerUnits',
+        'markerWidth',
+        'markerHeight',
+        'refX',
+        'refY',
+        'orient',
+        'requiredExtensions',
         'd'
       ]
     })

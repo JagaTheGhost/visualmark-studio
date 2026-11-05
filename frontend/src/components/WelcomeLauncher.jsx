@@ -26,47 +26,47 @@ export default function WelcomeLauncher({
   onOpenQuickSetup = () => {},
   onOpenSettings = () => {}
 }) {
-  const studios = [
-    {
-      id: 'diagrams.studio',
-      title: 'Mermaid Diagrams',
-      badge: 'Visual Flowcharts',
-      icon: 'schema',
-      color: '#818cf8',
-      desc: 'Flowcharts, sequence, class, state, and ER diagrams with live interactive rendering.'
-    },
-    {
-      id: 'badges.studio',
-      title: 'Shields.io Badges',
-      badge: 'Status & Stack',
-      icon: 'shield',
-      color: '#38bdf8',
-      desc: 'Visually generate customizable build status, license, and technology stack badges.'
-    },
-    {
-      id: 'tables.studio',
-      title: 'Table Designer',
-      badge: 'Spreadsheet Grid',
-      icon: 'table_chart',
-      color: '#34d399',
-      desc: 'Visual spreadsheet-style markdown table builder with sorting, alignment, and formatting.'
-    },
-    {
-      id: 'changelog.studio',
-      title: 'Changelog Studio',
-      badge: 'Keep a Changelog',
-      icon: 'history_edu',
-      color: '#fbbf24',
-      desc: 'Draft and manage semantic versioning release notes and structured project changelogs.'
-    },
-    {
-      id: 'contributors.studio',
-      title: 'Contributors Studio',
-      badge: 'Team Showcase',
-      icon: 'group',
-      color: '#38bdf8',
-      desc: 'Generate interactive contributor grids, team avatars, and open-source credit showcases.'
-    }
+  const studios = [
+    {
+      id: 'diagrams.studio',
+      title: 'Mermaid Diagrams',
+      badge: 'Visual Flowcharts',
+      icon: 'schema',
+      color: '#818cf8',
+      desc: 'Flowcharts, sequence, class, state, and ER diagrams with live interactive rendering.'
+    },
+    {
+      id: 'badges.studio',
+      title: 'Shields.io Badges',
+      badge: 'Status & Stack',
+      icon: 'sell',
+      color: '#818cf8',
+      desc: 'Visually generate customizable build status, license, and technology stack badges.'
+    },
+    {
+      id: 'tables.studio',
+      title: 'Table Designer',
+      badge: 'Spreadsheet Grid',
+      icon: 'table_chart',
+      color: '#818cf8',
+      desc: 'Visual spreadsheet-style markdown table builder with sorting, alignment, and formatting.'
+    },
+    {
+      id: 'changelog.studio',
+      title: 'Changelog Studio',
+      badge: 'Keep a Changelog',
+      icon: 'rocket_launch',
+      color: '#818cf8',
+      desc: 'Draft and manage semantic versioning release notes and structured project changelogs.'
+    },
+    {
+      id: 'contributors.studio',
+      title: 'Contributors Studio',
+      badge: 'Team Showcase',
+      icon: 'groups',
+      color: '#818cf8',
+      desc: 'Generate interactive contributor grids, team avatars, and open-source credit showcases.'
+    }
   ]
 
   return (

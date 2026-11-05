@@ -19,7 +19,7 @@ export default function StudioShell({
   subtitle,
   badge = 'Studio',
   icon,
-  accentColor = '#38bdf8',
+  accentColor = '#6366f1',
   modes = [],
   activeMode,
   onModeChange,

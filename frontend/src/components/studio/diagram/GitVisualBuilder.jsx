@@ -24,6 +24,7 @@ const BRANCH_PREFIXES = ['feature/', 'fix/', 'release/', 'hotfix/']
 export default function GitVisualBuilder({
   steps = [],
   onStepsChange,
+  onBatchChange,
   selectedStepId: controlledSelectedStepId,
   onSelectStepId
 }) {
@@ -69,8 +70,9 @@ export default function GitVisualBuilder({
   // Preset Git Workflows
   const PRESET_WORKFLOWS = [
     {
-      label: '🌱 GitFlow Architecture',
-      desc: 'main ➔ develop ➔ feature/auth ➔ PR merge ➔ v1.0.0 release',
+      label: 'GitFlow Architecture',
+      icon: 'account_tree',
+      desc: 'main → develop → feature/auth → PR merge → v1.0.0 release',
       steps: [
         { type: 'commit', idLabel: 'feat: initial repository scaffold', tag: '' },
         { type: 'branch', name: 'develop' },
@@ -87,8 +89,9 @@ export default function GitVisualBuilder({
       ]
     },
     {
-      label: '🚀 GitHub Flow (Feature PR)',
-      desc: 'main ➔ feature/checkout ➔ commits ➔ PR merge into main',
+      label: 'GitHub Flow (Feature PR)',
+      icon: 'merge_type',
+      desc: 'main → feature/checkout → commits → PR merge into main',
       steps: [
         { type: 'commit', idLabel: 'feat: base application setup' },
         { type: 'branch', name: 'feature/stripe-billing' },
@@ -100,8 +103,9 @@ export default function GitVisualBuilder({
       ]
     },
     {
-      label: '🔥 Production Hotfix Release',
-      desc: 'main ➔ hotfix/cve-patch ➔ commit fix ➔ tag v1.0.1',
+      label: 'Production Hotfix Release',
+      icon: 'healing',
+      desc: 'main → hotfix/cve-patch → commit fix → tag v1.0.1',
       steps: [
         { type: 'commit', idLabel: 'feat: initial production launch', tag: 'v1.0.0' },
         { type: 'branch', name: 'hotfix/token-leak' },
@@ -123,7 +127,11 @@ export default function GitVisualBuilder({
       target: s.target || '',
       tag: s.tag || ''
     }))
-    onStepsChange(newSteps)
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({ steps: newSteps })
+    } else {
+      onStepsChange(newSteps)
+    }
     if (newSteps[0]) setSelectedStepId(newSteps[0].id)
     setShowBlueprints(false)
   }
@@ -139,20 +147,34 @@ export default function GitVisualBuilder({
       target: type === 'merge' ? (detectedBranches[1] || detectedBranches[0] || 'develop') : '',
       tag: ''
     }
-    onStepsChange([...steps, newStep])
+    const nextSteps = [...steps, newStep]
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({ steps: nextSteps })
+    } else {
+      onStepsChange(nextSteps)
+    }
     setSelectedStepId(newStep.id)
   }
 
   // Update Step
   const handleUpdateStep = (id, updates) => {
-    onStepsChange(steps.map((s) => (s.id === id ? { ...s, ...updates } : s)))
+    const nextSteps = steps.map((s) => (s.id === id ? { ...s, ...updates } : s))
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({ steps: nextSteps })
+    } else {
+      onStepsChange(nextSteps)
+    }
   }
 
   // Delete Step
   const handleDeleteStep = (id) => {
-    onStepsChange(steps.filter((s) => s.id !== id))
+    const remaining = steps.filter((s) => s.id !== id)
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({ steps: remaining })
+    } else {
+      onStepsChange(remaining)
+    }
     if (selectedStepId === id) {
-      const remaining = steps.filter((s) => s.id !== id)
       setSelectedStepId(remaining[0]?.id || null)
     }
   }
@@ -165,7 +187,11 @@ export default function GitVisualBuilder({
     const temp = updated[index]
     updated[index] = updated[target]
     updated[target] = temp
-    onStepsChange(updated)
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({ steps: updated })
+    } else {
+      onStepsChange(updated)
+    }
   }
 
   // Apply Prefix to Commit Message
@@ -201,7 +227,7 @@ export default function GitVisualBuilder({
       <div className="git-outline-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#a855f7' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#818cf8' }}>
               call_split
             </span>
             <span style={{ fontSize: '12px', fontWeight: 700, color: '#f1f5f9', letterSpacing: '0.02em' }}>
@@ -270,8 +296,8 @@ export default function GitVisualBuilder({
               onClick={() => setShowBlueprints(!showBlueprints)}
               style={{ height: '28px', padding: '0 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#a855f7' }}>account_tree</span>
-              <span>+ Workflow</span>
+              <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#818cf8' }}>account_tree</span>
+              <span>Workflow</span>
               <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>expand_more</span>
             </button>
 
@@ -332,7 +358,7 @@ export default function GitVisualBuilder({
           </span>
           {detectedBranches.map((br) => (
             <div key={br} className="git-branch-chip">
-              <span className="material-symbols-outlined" style={{ fontSize: '12px', color: '#a855f7' }}>fork_right</span>
+              <span className="material-symbols-outlined" style={{ fontSize: '12px', color: '#818cf8' }}>fork_right</span>
               <span>{br}</span>
             </div>
           ))}
@@ -349,7 +375,7 @@ export default function GitVisualBuilder({
               style={{ padding: '5px 10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '5px' }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '14px', color: st.color }}>{st.icon}</span>
-              <span>+ {st.label}</span>
+              <span> {st.label}</span>
             </button>
           ))}
         </div>
@@ -417,7 +443,7 @@ export default function GitVisualBuilder({
                     {/* Tag Badge (if exists) */}
                     {step.tag && (
                       <span style={{ fontSize: '10px', background: 'rgba(245, 158, 11, 0.2)', border: '1px solid #f59e0b', color: '#f59e0b', padding: '1px 6px', borderRadius: '3px', fontWeight: 600 }}>
-                        🏷️ {step.tag}
+                        <span className="material-symbols-outlined" style={{ fontSize: '11px', verticalAlign: 'middle', marginRight: '3px' }}>sell</span>{step.tag}
                       </span>
                     )}
                   </div>
@@ -608,7 +634,7 @@ export default function GitVisualBuilder({
 
           {filteredSteps.length === 0 && (
             <div style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic', padding: '16px', textAlign: 'center' }}>
-              No git actions found. Click "+ Commit" or "+ Workflow" above to begin.
+              No git actions found. Click "+ Commit" or "Workflow" above to begin.
             </div>
           )}
         </div>
@@ -640,7 +666,7 @@ export default function GitVisualBuilder({
                 </span>
                 {step.tag && (
                   <span style={{ fontSize: '9.5px', color: '#f59e0b', background: 'rgba(245, 158, 11, 0.15)', padding: '1px 5px', borderRadius: '3px' }}>
-                    🏷️ {step.tag}
+                    <span className="material-symbols-outlined" style={{ fontSize: '11px', verticalAlign: 'middle', marginRight: '3px' }}>sell</span>{step.tag}
                   </span>
                 )}
               </div>

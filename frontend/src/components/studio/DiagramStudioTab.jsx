@@ -117,9 +117,10 @@ export default function DiagramStudioTab({
   // ---------------- Mindmap Visual State ----------------
   const initialMindmap = useMemo(() => {
     const mmPreset = PRESET_TEMPLATES.find((p) => p.id === 'mindmap-devops-roadmap')
-    return mmPreset ? parseMindmap(mmPreset.code) : { rootTitle: 'Platform Engineering', nodes: [] }
+    return mmPreset ? parseMindmap(mmPreset.code) : { rootTitle: 'Platform Engineering', rootShape: 'circle', nodes: [] }
   }, [])
   const [mindmapRoot, setMindmapRoot] = useState(initialMindmap.rootTitle)
+  const [mindmapRootShape, setMindmapRootShape] = useState(initialMindmap.rootShape || 'circle')
   const [mindmapNodes, setMindmapNodes] = useState(initialMindmap.nodes)
   const [selectedMindmapNodeId, setSelectedMindmapNodeId] = useState(initialMindmap.nodes[0]?.id || null)
 
@@ -410,13 +411,14 @@ export default function DiagramStudioTab({
 
   // Sync Mindmap Visual to Code
   const syncMindmap = useCallback(
-    ({ rootTitle = mindmapRoot, nodes = mindmapNodes }) => {
+    ({ rootTitle = mindmapRoot, rootShape = mindmapRootShape, nodes = mindmapNodes }) => {
       setMindmapRoot(rootTitle)
+      setMindmapRootShape(rootShape)
       setMindmapNodes(nodes)
-      const compiled = compileMindmap({ rootTitle, nodes })
+      const compiled = compileMindmap({ rootTitle, rootShape, nodes })
       setCode(compiled)
     },
-    [mindmapRoot, mindmapNodes]
+    [mindmapRoot, mindmapRootShape, mindmapNodes]
   )
 
   // Sync Git Visual to Code
@@ -466,6 +468,7 @@ export default function DiagramStudioTab({
     } else if (detectedType === 'mindmap') {
       const parsed = parseMindmap(preset.code)
       setMindmapRoot(parsed.rootTitle)
+      setMindmapRootShape(parsed.rootShape || 'circle')
       setMindmapNodes(parsed.nodes)
     } else if (detectedType === 'git') {
       const parsed = parseGitGraph(preset.code)
@@ -518,6 +521,7 @@ export default function DiagramStudioTab({
         const parsed = parseMindmap(code)
         if (parsed.nodes.length > 0) {
           setMindmapRoot(parsed.rootTitle)
+          setMindmapRootShape(parsed.rootShape || 'circle')
           setMindmapNodes(parsed.nodes)
         }
       } else if (detected === 'git') {
@@ -562,7 +566,7 @@ export default function DiagramStudioTab({
         type="button"
         className="studio-shell-btn studio-shell-btn-secondary"
         onClick={() => setIsCatalogOpen(true)}
-        title="Open blueprints catalog with 24+ architecture presets"
+        title="Open blueprints catalog with 28 architecture presets"
         style={{ padding: '4px 10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '5px' }}
       >
         <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#818cf8' }}>library_books</span>
@@ -574,27 +578,7 @@ export default function DiagramStudioTab({
   // Single Clean Canvas Stage Controls Toolbar placed right inside StudioShell's canvas top bar
   const canvasHeaderExtras = (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      <span className="canvas-header-divider" />
 
-      {/* Flowchart Direction Switcher */}
-      {diagramType === 'flowchart' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: 'rgba(0,0,0,0.25)', padding: '2px', borderRadius: '4px' }}>
-          {[
-            { id: 'TD', label: '⬇️ TD' },
-            { id: 'LR', label: '➡️ LR' }
-          ].map((dir) => (
-            <button
-              key={dir.id}
-              type="button"
-              className={`studio-style-btn ${flowDirection === dir.id ? 'active' : ''}`}
-              onClick={() => syncFlowchart({ direction: dir.id })}
-              style={{ padding: '2px 6px', fontSize: '10px' }}
-            >
-              {dir.label}
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Theme Palette Selector */}
       <select
@@ -689,16 +673,7 @@ export default function DiagramStudioTab({
           <span>PNG</span>
         </button>
 
-        <button
-          type="button"
-          className="studio-shell-btn studio-shell-btn-secondary"
-          onClick={() => canvasRef.current?.exportPng(4)}
-          title="Download ultra-high definition 4K PNG"
-          style={{ padding: '2px 7px', fontSize: '10.5px' }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '13px', color: '#a855f7' }}>hd</span>
-          <span>4K</span>
-        </button>
+
       </div>
     </div>
   )
@@ -710,7 +685,7 @@ export default function DiagramStudioTab({
         title="Mermaid Architecture Studio Pro"
         subtitle="Architecture multi-engine workbench & vector export"
         badge="Multi-Engine Pro"
-        accentColor="#818cf8"
+        accentColor="#6366f1"
         icon={<span className="material-symbols-outlined" style={{ fontSize: '20px' }}>schema</span>}
         modes={DIAGRAM_TYPES}
         activeMode={diagramType}
@@ -816,8 +791,11 @@ export default function DiagramStudioTab({
                   <MindmapVisualBuilder
                     rootTitle={mindmapRoot}
                     onRootTitleChange={(root) => syncMindmap({ rootTitle: root })}
+                    rootShape={mindmapRootShape}
+                    onRootShapeChange={(sh) => syncMindmap({ rootShape: sh })}
                     nodes={mindmapNodes}
                     onNodesChange={(nds) => syncMindmap({ nodes: nds })}
+                    onBatchChange={syncMindmap}
                     selectedNodeId={selectedMindmapNodeId}
                     onSelectNodeId={setSelectedMindmapNodeId}
                   />
@@ -827,6 +805,7 @@ export default function DiagramStudioTab({
                   <GitVisualBuilder
                     steps={gitSteps}
                     onStepsChange={(stps) => syncGit({ steps: stps })}
+                    onBatchChange={syncGit}
                     selectedStepId={selectedGitStepId}
                     onSelectStepId={setSelectedGitStepId}
                   />

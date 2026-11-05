@@ -17,6 +17,7 @@ export default function SequenceVisualBuilder({
   onParticipantsChange,
   messages = [],
   onMessagesChange,
+  onBatchChange,
   selectedMessageId,
   onSelectMessageId,
   selectedParticipantId,
@@ -87,7 +88,24 @@ export default function SequenceVisualBuilder({
 
   // Delete Participant
   const handleDeleteParticipant = (id) => {
-    onParticipantsChange(participants.filter((p) => p.id !== id))
+    const targetPart = participants.find((p) => p.id === id)
+    const remainingParts = participants.filter((p) => p.id !== id)
+    if (!targetPart) {
+      onParticipantsChange(remainingParts)
+      return
+    }
+    const partName = targetPart.name || targetPart.alias || ''
+    const remainingMsgs = messages.filter((m) => m.from !== partName && m.to !== partName)
+
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({
+        participants: remainingParts,
+        messages: remainingMsgs
+      })
+    } else {
+      onParticipantsChange(remainingParts)
+      onMessagesChange(remainingMsgs)
+    }
   }
 
   // Move Participant Left/Right (controls diagram column ordering!)
@@ -230,7 +248,7 @@ export default function SequenceVisualBuilder({
       <div className="seq-participants-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#38bdf8' }}>group</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#818cf8' }}>group</span>
             <span style={{ fontSize: '12px', fontWeight: 600, color: '#f8fafc' }}>
               Lifeline Columns & Participants ({participants.length})
             </span>

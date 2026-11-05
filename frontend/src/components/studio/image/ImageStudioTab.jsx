@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { saveAs } from 'file-saver'
 import { getOptimizedImageUrl, requiresAsyncResolution, resolveRedirectImageUrl } from '../../../utils/imageUtils'
 import { parseVideoEmbed } from '../../../utils/mediaUtils'
+import { useToast } from '../../../context/ToastContext'
+import { notifyExportGratitude } from '../../../utils/sponsorGratitude'
 import StudioShell from '../common/StudioShell'
 import {
   STUDIO_MODES,
@@ -23,6 +25,12 @@ export default function ImageStudioTab({
   onInsertImage = () => {},
   onBackToReadme = () => {}
 }) {
+  let toastCtx = null
+  try {
+    toastCtx = useToast()
+  } catch {}
+  const showToast = toastCtx?.showToast
+
   const [activeMode, setActiveMode] = useState('banner')
   const [saveStatusMessage, setSaveStatusMessage] = useState('')
 
@@ -470,19 +478,23 @@ export default function ImageStudioTab({
     const fileName = getActiveVectorFileName()
 
     if (typeof window !== 'undefined' && window.electronAPI?.saveTextExportDialog) {
-      await window.electronAPI.saveTextExportDialog({
+      const res = await window.electronAPI.saveTextExportDialog({
         defaultPath: fileName,
         filters: [{ name: 'SVG Vector Image', extensions: ['svg'] }, { name: 'All Files', extensions: ['*'] }],
         content: svgCode
       })
-      setSaveStatusMessage(`✓ Downloaded ${fileName}!`)
-      setTimeout(() => setSaveStatusMessage(''), 2500)
+      if (!res?.canceled) {
+        setSaveStatusMessage(`✓ Downloaded ${fileName}!`)
+        setTimeout(() => setSaveStatusMessage(''), 2500)
+        notifyExportGratitude(showToast, fileName)
+      }
       return
     }
     const blob = new Blob([svgCode], { type: 'image/svg+xml;charset=utf-8' })
     saveAs(blob, fileName)
     setSaveStatusMessage(`✓ Downloaded ${fileName}!`)
     setTimeout(() => setSaveStatusMessage(''), 2500)
+    notifyExportGratitude(showToast, fileName)
   }
 
   const handleCopySvg = () => {
@@ -902,7 +914,7 @@ export default function ImageStudioTab({
         title="Image & Asset Studio"
         subtitle="Hero banners, CLI terminals, Stitch HUDs, device frames & optimizer"
         badge="Visual Assets Pro"
-        accentColor="#38bdf8"
+        accentColor="#6366f1"
         icon={<span className="material-symbols-outlined" style={{ fontSize: '20px' }}>image</span>}
         modes={STUDIO_MODES}
         activeMode={activeMode}

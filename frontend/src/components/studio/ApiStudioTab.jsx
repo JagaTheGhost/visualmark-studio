@@ -534,7 +534,7 @@ print(response.json())`
       title="API & Endpoint Studio Pro"
       subtitle="Design production REST blueprints, interactive parameter matrices, and multi-language snippets (cURL, Fetch, Python)."
       icon="api"
-      accentColor="#0ea5e9"
+      accentColor="#6366f1"
       badge="REST Blueprint"
       modes={API_MODES}
       activeMode={outputTab}

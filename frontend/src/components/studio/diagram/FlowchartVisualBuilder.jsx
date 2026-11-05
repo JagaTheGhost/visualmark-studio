@@ -10,6 +10,7 @@ export default function FlowchartVisualBuilder({
   onNodesChange,
   edges = [],
   onEdgesChange,
+  onBatchChange,
   selectedNodeId: controlledSelectedNodeId,
   onSelectNodeId
 }) {
@@ -94,17 +95,27 @@ export default function FlowchartVisualBuilder({
     onSubgraphsChange(updatedSgs)
   }
 
-  // Delete node
+  // Delete node / architecture component
   const handleDeleteNode = (id) => {
     const remainingNodes = nodes.filter((n) => n.id !== id)
-    onNodesChange(remainingNodes)
-    onEdgesChange(edges.filter((e) => e.from !== id && e.to !== id))
-    onSubgraphsChange(
-      subgraphs.map((sg) => ({
-        ...sg,
-        nodeIds: (sg.nodeIds || []).filter((nid) => nid !== id)
-      }))
-    )
+    const remainingEdges = edges.filter((e) => e.from !== id && e.to !== id)
+    const remainingSubgraphs = subgraphs.map((sg) => ({
+      ...sg,
+      nodeIds: (sg.nodeIds || []).filter((nid) => nid !== id)
+    }))
+
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({
+        nodes: remainingNodes,
+        edges: remainingEdges,
+        subgraphs: remainingSubgraphs
+      })
+    } else {
+      onNodesChange(remainingNodes)
+      onEdgesChange(remainingEdges)
+      onSubgraphsChange(remainingSubgraphs)
+    }
+
     if (selectedNodeId === id) {
       setSelectedNodeId(remainingNodes[0]?.id || null)
     }
@@ -165,18 +176,19 @@ export default function FlowchartVisualBuilder({
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '3px', background: 'var(--surface-lowest)', padding: '2px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
             {[
-              { id: 'TD', label: '⬇️ Top-Down' },
-              { id: 'LR', label: '➡️ Left-Right' },
-              { id: 'BT', label: '⬆️ Bottom-Up' }
+              { id: 'TD', label: 'Top-Down', icon: 'arrow_downward' },
+              { id: 'LR', label: 'Left-Right', icon: 'arrow_forward' },
+              { id: 'BT', label: 'Bottom-Up', icon: 'arrow_upward' }
             ].map((dir) => (
               <button
                 key={dir.id}
                 type="button"
                 className={`studio-style-btn ${direction === dir.id ? 'active' : ''}`}
                 onClick={() => onDirectionChange(dir.id)}
-                style={{ padding: '3px 7px', fontSize: '10.5px' }}
+                style={{ padding: '3px 8px', fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '4px' }}
               >
-                {dir.label}
+                <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>{dir.icon}</span>
+                <span>{dir.label}</span>
               </button>
             ))}
           </div>
@@ -490,7 +502,7 @@ export default function FlowchartVisualBuilder({
                 >
                   <option value="">(Root Canvas Flow)</option>
                   {subgraphs.map((sg) => (
-                    <option key={sg.id} value={sg.id}>📁 {sg.title}</option>
+                    <option key={sg.id} value={sg.id}>{sg.title}</option>
                   ))}
                 </select>
               </div>
@@ -551,7 +563,7 @@ export default function FlowchartVisualBuilder({
 
               {selectedNodeEdges.map((edge) => (
                 <div key={edge.id} className="diagram-conn-row">
-                  <span className="diagram-conn-arrow-indicator">➔</span>
+                  <span className="diagram-conn-arrow-indicator"><span className="material-symbols-outlined" style={{ fontSize: '13px' }}>arrow_forward</span></span>
 
                   {/* Target Dropdown */}
                   <select

@@ -50,14 +50,40 @@
   filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.45));
 }
 
-/* Ensure Mermaid text labels and foreignObject elements are always visible and styled */
+/* Ensure Mermaid text labels and foreignObject elements are always visible and styled across studio and markdown viewports */
+.mermaid-plain-viewport foreignObject,
+.mermaid-viewport foreignObject {
+  overflow: visible !important;
+}
+
 .mermaid-plain-viewport svg text,
+.mermaid-plain-viewport svg tspan,
 .mermaid-plain-viewport .nodeLabel,
 .mermaid-plain-viewport .label,
 .mermaid-plain-viewport .cluster-label,
 .mermaid-plain-viewport .edgeLabel,
+.mermaid-plain-viewport foreignObject,
 .mermaid-plain-viewport foreignObject div,
-.mermaid-plain-viewport foreignObject span {
+.mermaid-plain-viewport foreignObject span,
+.mermaid-plain-viewport foreignObject p,
+.mermaid-plain-viewport foreignObject b,
+.mermaid-plain-viewport foreignObject strong,
+.mermaid-plain-viewport foreignObject em,
+.mermaid-plain-viewport foreignObject code,
+.mermaid-viewport svg text,
+.mermaid-viewport svg tspan,
+.mermaid-viewport .nodeLabel,
+.mermaid-viewport .label,
+.mermaid-viewport .cluster-label,
+.mermaid-viewport .edgeLabel,
+.mermaid-viewport foreignObject,
+.mermaid-viewport foreignObject div,
+.mermaid-viewport foreignObject span,
+.mermaid-viewport foreignObject p,
+.mermaid-viewport foreignObject b,
+.mermaid-viewport foreignObject strong,
+.mermaid-viewport foreignObject em,
+.mermaid-viewport foreignObject code {
   color: #f8fafc !important;
   fill: #f8fafc !important;
   font-family: var(--font-sans, 'Inter', -apple-system, sans-serif) !important;
@@ -66,12 +92,33 @@
 }
 
 .stage-bg-light .mermaid-plain-viewport svg text,
+.stage-bg-light .mermaid-plain-viewport svg tspan,
 .stage-bg-light .mermaid-plain-viewport .nodeLabel,
 .stage-bg-light .mermaid-plain-viewport .label,
 .stage-bg-light .mermaid-plain-viewport .cluster-label,
 .stage-bg-light .mermaid-plain-viewport .edgeLabel,
+.stage-bg-light .mermaid-plain-viewport foreignObject,
 .stage-bg-light .mermaid-plain-viewport foreignObject div,
-.stage-bg-light .mermaid-plain-viewport foreignObject span {
+.stage-bg-light .mermaid-plain-viewport foreignObject span,
+.stage-bg-light .mermaid-plain-viewport foreignObject p,
+.stage-bg-light .mermaid-plain-viewport foreignObject b,
+.stage-bg-light .mermaid-plain-viewport foreignObject strong,
+.stage-bg-light .mermaid-plain-viewport foreignObject em,
+.stage-bg-light .mermaid-plain-viewport foreignObject code,
+.stage-bg-light .mermaid-viewport svg text,
+.stage-bg-light .mermaid-viewport svg tspan,
+.stage-bg-light .mermaid-viewport .nodeLabel,
+.stage-bg-light .mermaid-viewport .label,
+.stage-bg-light .mermaid-viewport .cluster-label,
+.stage-bg-light .mermaid-viewport .edgeLabel,
+.stage-bg-light .mermaid-viewport foreignObject,
+.stage-bg-light .mermaid-viewport foreignObject div,
+.stage-bg-light .mermaid-viewport foreignObject span,
+.stage-bg-light .mermaid-viewport foreignObject p,
+.stage-bg-light .mermaid-viewport foreignObject b,
+.stage-bg-light .mermaid-viewport foreignObject strong,
+.stage-bg-light .mermaid-viewport foreignObject em,
+.stage-bg-light .mermaid-viewport foreignObject code {
   color: #1e293b !important;
   fill: #1e293b !important;
 }
@@ -200,7 +247,7 @@
   font-family: var(--font-mono);
   font-size: 10px;
   color: var(--secondary, #38bdf8);
-  background-color: rgba(56, 189, 248, 0.12);
+  background-color: rgba(99, 102, 241, 0.12);
   border: 1px solid rgba(56, 189, 248, 0.25);
   border-radius: 9999px;
   padding: 1px 8px;
@@ -1270,14 +1317,14 @@
 }
 
 .seq-participant-chip.is-actor {
-  background-color: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.4);
+  background-color: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(129, 140, 248, 0.35);
   color: #e0f2fe;
 }
 
 .seq-participant-chip.is-actor:hover {
   background-color: rgba(56, 189, 248, 0.2);
-  border-color: #38bdf8;
+  border-color: #818cf8;
 }
 
 .seq-participant-chip.is-service {
@@ -1292,8 +1339,8 @@
 }
 
 .seq-participant-chip.is-selected {
-  border-color: #a855f7 !important;
-  box-shadow: 0 0 10px rgba(168, 85, 247, 0.35);
+  border-color: #818cf8 !important;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.35);
 }
 
 .seq-icon-mini-btn {
@@ -1649,21 +1696,21 @@
   font-size: 11px;
   color: #f8fafc;
   cursor: pointer;
-  background-color: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background-color: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(129, 140, 248, 0.3);
   transition: all 0.15s ease;
   user-select: none;
 }
 
 .er-table-chip:hover {
-  background-color: rgba(16, 185, 129, 0.18);
-  border-color: #10b981;
+  background-color: rgba(99, 102, 241, 0.15);
+  border-color: #818cf8;
 }
 
 .er-table-chip.is-selected {
-  border-color: #10b981 !important;
-  background-color: rgba(16, 185, 129, 0.2) !important;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
+  border-color: #818cf8 !important;
+  background-color: rgba(99, 102, 241, 0.2) !important;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.35);
 }
 
 .er-col-count-badge {
@@ -1693,7 +1740,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: linear-gradient(90deg, rgba(16, 185, 129, 0.12), rgba(6, 78, 59, 0.15));
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), rgba(79, 70, 229, 0.2));
   border-bottom: 1px solid var(--border-color, #30363d);
 }
 
@@ -1759,14 +1806,14 @@
 }
 
 .er-col-name-input:focus {
-  border-color: #10b981;
+  border-color: #818cf8;
 }
 
 .er-type-select {
-  background-color: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  background-color: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.35);
   border-radius: 4px;
-  color: #6ee7b7;
+  color: #c7d2fe;
   font-size: 11px;
   font-family: monospace;
   font-weight: 600;
@@ -1777,7 +1824,7 @@
 }
 
 .er-type-select:focus {
-  border-color: #10b981;
+  border-color: #818cf8;
 }
 
 .er-col-comment-input {
@@ -1824,10 +1871,10 @@
 }
 
 .er-cardinality-select {
-  background-color: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.4);
+  background-color: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(129, 140, 248, 0.35);
   border-radius: 5px;
-  color: #bae6fd;
+  color: #c7d2fe;
   font-size: 10.5px;
   font-weight: 600;
   font-family: monospace;
@@ -1837,8 +1884,8 @@
 }
 
 .er-cardinality-select:focus {
-  border-color: #38bdf8;
-  box-shadow: 0 0 6px rgba(56, 189, 248, 0.35);
+  border-color: #818cf8;
+  box-shadow: 0 0 6px rgba(99, 102, 241, 0.35);
 }
 
 /* ==========================================================================
@@ -2031,10 +2078,10 @@
 }
 
 .cls-rel-type-select {
-  background-color: rgba(168, 85, 247, 0.12);
-  border: 1px solid rgba(168, 85, 247, 0.4);
+  background-color: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(129, 140, 248, 0.35);
   border-radius: 5px;
-  color: #e9d5ff;
+  color: #c7d2fe;
   font-size: 10.5px;
   font-weight: 600;
   font-family: monospace;
@@ -2044,8 +2091,8 @@
 }
 
 .cls-rel-type-select:focus {
-  border-color: #a855f7;
-  box-shadow: 0 0 6px rgba(168, 85, 247, 0.35);
+  border-color: #818cf8;
+  box-shadow: 0 0 6px rgba(99, 102, 241, 0.35);
 }
 
 /* ==========================================================================
@@ -2069,28 +2116,28 @@
   font-size: 11px;
   color: #f8fafc;
   cursor: pointer;
-  background-color: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background-color: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(129, 140, 248, 0.3);
   transition: all 0.15s ease;
   user-select: none;
 }
 
 .state-table-chip:hover {
-  background-color: rgba(16, 185, 129, 0.18);
-  border-color: #10b981;
+  background-color: rgba(99, 102, 241, 0.15);
+  border-color: #818cf8;
 }
 
 .state-table-chip.is-selected {
-  border-color: #10b981 !important;
-  background-color: rgba(16, 185, 129, 0.22) !important;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
+  border-color: #818cf8 !important;
+  background-color: rgba(99, 102, 241, 0.22) !important;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.35);
 }
 
 .state-badge-start {
   font-size: 9px;
   font-weight: 700;
   color: #10b981;
-  background-color: rgba(16, 185, 129, 0.2);
+  background-color: rgba(99, 102, 241, 0.2);
   border: 1px solid rgba(16, 185, 129, 0.4);
   padding: 0 4px;
   border-radius: 3px;
@@ -2198,8 +2245,8 @@
   font-size: 10.5px;
   font-family: monospace;
   font-weight: 600;
-  background-color: rgba(168, 85, 247, 0.12);
-  border: 1px solid rgba(168, 85, 247, 0.35);
+  background-color: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.35);
   color: #d8b4fe;
 }
 
@@ -2221,7 +2268,7 @@
 }
 
 .git-step-card.is-selected {
-  border-color: #a855f7 !important;
+  border-color: #818cf8 !important;
   box-shadow: 0 0 10px rgba(168, 85, 247, 0.25);
   background-color: rgba(168, 85, 247, 0.06);
 }
@@ -2267,21 +2314,22 @@
 }
 
 .mm-node-card {
-  background-color: var(--surface-base, #10141a);
+  background-color: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-color, #30363d);
-  border-radius: 5px;
-  padding: 6px 8px;
+  border-radius: 6px;
+  padding: 8px 10px;
   transition: all 0.15s ease;
+  position: relative;
 }
 
 .mm-node-card:hover {
   border-color: #475569;
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: rgba(255, 255, 255, 0.04);
 }
 
 .mm-node-card.is-selected {
-  border-color: #38bdf8 !important;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+  border-color: #818cf8 !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
   background-color: rgba(56, 189, 248, 0.06);
 }
 

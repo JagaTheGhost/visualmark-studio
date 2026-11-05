@@ -241,3 +241,54 @@
   opacity: 1;
   margin-left: 4px;
 }
+
+/* Status Bar Sponsor Expandable Heart Icon */
+.status-sponsor-expandable {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 11px;
+  cursor: pointer;
+  line-height: 18px;
+  overflow: hidden;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.status-sponsor-expandable .status-icon {
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: color 0.15s ease, transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.status-sponsor-expandable .sponsor-expand-label {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, margin-left 0.2s ease;
+  margin-left: 0;
+  color: #fb7185;
+  font-weight: 500;
+}
+
+.status-sponsor-expandable:hover {
+  background-color: rgba(244, 63, 94, 0.12);
+  border-color: rgba(244, 63, 94, 0.35);
+}
+
+.status-sponsor-expandable:hover .status-icon {
+  color: #f43f5e;
+  transform: scale(1.15);
+}
+
+.status-sponsor-expandable:hover .sponsor-expand-label {
+  max-width: 80px;
+  opacity: 1;
+  margin-left: 4px;
+}

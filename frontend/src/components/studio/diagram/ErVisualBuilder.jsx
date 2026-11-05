@@ -39,6 +39,7 @@ export default function ErVisualBuilder({
   onEntitiesChange,
   relationships = [],
   onRelationshipsChange,
+  onBatchChange,
   selectedEntityId,
   onSelectEntityId
 }) {
@@ -139,13 +140,13 @@ export default function ErVisualBuilder({
       name: finalName,
       attributes: preset?.attributes
         ? preset.attributes.map((a) => ({
-            ...a,
-            id: `attr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`
-          }))
+          ...a,
+          id: `attr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`
+        }))
         : [
-            { id: `attr_1`, type: 'uuid', name: 'id', key: 'PK', comment: 'Primary key' },
-            { id: `attr_2`, type: 'timestamp', name: 'created_at', key: '', comment: 'Created time' }
-          ]
+          { id: `attr_1`, type: 'uuid', name: 'id', key: 'PK', comment: 'Primary key' },
+          { id: `attr_2`, type: 'timestamp', name: 'created_at', key: '', comment: 'Created time' }
+        ]
     }
 
     onEntitiesChange([...entities, newEnt])
@@ -180,11 +181,20 @@ export default function ErVisualBuilder({
   const handleDeleteTable = (entId) => {
     const ent = entities.find((e) => e.id === entId)
     const remaining = entities.filter((e) => e.id !== entId)
-    onEntitiesChange(remaining)
-    if (ent) {
-      onRelationshipsChange(
-        relationships.filter((r) => r.entity1 !== ent.name && r.entity2 !== ent.name)
-      )
+    const remainingRels = ent
+      ? relationships.filter((r) => r.entity1 !== ent.name && r.entity2 !== ent.name)
+      : relationships
+
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({
+        entities: remaining,
+        relationships: remainingRels
+      })
+    } else {
+      onEntitiesChange(remaining)
+      if (ent) {
+        onRelationshipsChange(remainingRels)
+      }
     }
     if (selectedEntityId === entId && remaining.length > 0) {
       if (onSelectEntityId) onSelectEntityId(remaining[0].id)
@@ -293,7 +303,7 @@ export default function ErVisualBuilder({
       <div className="er-tables-outline-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#10b981' }}>schema</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#818cf8' }}>schema</span>
             <span style={{ fontSize: '12px', fontWeight: 600, color: '#f8fafc' }}>
               Database Tables ({entities.length})
             </span>
@@ -335,7 +345,7 @@ export default function ErVisualBuilder({
                 className={`er-table-chip ${isSelected ? 'is-selected' : ''}`}
                 onClick={() => onSelectEntityId && onSelectEntityId(ent.id)}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: '15px', color: '#10b981' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '15px', color: '#818cf8' }}>
                   table_chart
                 </span>
 
@@ -444,7 +454,7 @@ export default function ErVisualBuilder({
           {/* Table Header Banner */}
           <div className="er-table-header-banner">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#10b981' }}>table_chart</span>
+              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#818cf8' }}>table_chart</span>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: '9.5px', color: '#64748b', textTransform: 'uppercase', fontWeight: 700 }}>
                   Active Table Name
@@ -466,8 +476,8 @@ export default function ErVisualBuilder({
                 onClick={() => handleAddColumn(activeSelectedEntity.id)}
                 style={{ padding: '3px 8px', fontSize: '11px' }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#10b981' }}>add</span>
-                <span>+ Column</span>
+                <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#818cf8' }}>add</span>
+                <span>Column</span>
               </button>
 
               <button
@@ -617,7 +627,7 @@ export default function ErVisualBuilder({
 
             {activeSelectedEntity.attributes.length === 0 && (
               <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '11.5px' }}>
-                No columns in this table yet. Click <strong>"+ Column"</strong> or pick a quick preset above!
+                No columns in this table yet. Click <strong>"Column"</strong> or pick a quick preset above!
               </div>
             )}
           </div>
@@ -631,7 +641,7 @@ export default function ErVisualBuilder({
             <div key={ent.id} id={`er-table-${ent.id}`} className="er-focused-table-card">
               <div className="er-table-header-banner">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#10b981' }}>table_chart</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#818cf8' }}>table_chart</span>
                   <span style={{ fontWeight: 700, fontSize: '12px', color: '#f8fafc' }}>{ent.name}</span>
                   <span style={{ fontSize: '10px', color: '#64748b' }}>({ent.attributes.length} fields)</span>
                 </div>
@@ -643,7 +653,7 @@ export default function ErVisualBuilder({
                     onClick={() => handleAddColumn(ent.id)}
                     style={{ padding: '2px 6px', fontSize: '10.5px' }}
                   >
-                    + Column
+                    Column
                   </button>
                   <button
                     type="button"
@@ -713,7 +723,7 @@ export default function ErVisualBuilder({
       <div className="er-relationships-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#38bdf8' }}>linear_scale</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#818cf8' }}>linear_scale</span>
             <span style={{ fontSize: '12px', fontWeight: 600, color: '#f8fafc' }}>
               Foreign Key Cardinalities ({relationships.length})
             </span>
@@ -725,8 +735,8 @@ export default function ErVisualBuilder({
             onClick={handleAddRelationship}
             style={{ padding: '3px 8px', fontSize: '11px' }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#38bdf8' }}>add</span>
-            <span>+ Relationship</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#818cf8' }}>add</span>
+            <span>Relationship</span>
           </button>
         </div>
 
@@ -816,7 +826,7 @@ export default function ErVisualBuilder({
 
           {relationships.length === 0 && (
             <div style={{ padding: '16px', textAlign: 'center', color: '#64748b', fontSize: '11.5px', fontStyle: 'italic' }}>
-              No relationships defined yet. Click <strong>"+ Relationship"</strong> above to link tables!
+              No relationships defined yet. Click <strong>"Relationship"</strong> above to link tables!
             </div>
           )}
         </div>

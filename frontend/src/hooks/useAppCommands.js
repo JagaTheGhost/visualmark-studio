@@ -1,5 +1,6 @@
 import { useMemo, useCallback } from 'react'
 import { THEMES } from '../themes/themeRegistry'
+import { openAboutModal, openSponsorUrl } from '../utils/sponsorGratitude'
 
 /**
  * Custom hook providing searchable commands for VisualMark Studio Command Palette.
@@ -452,6 +453,24 @@ export function useAppCommands({
       category: 'Help',
       shortcut: getBindingKey('help.quickSetup', ''),
       action: handleOpenQuickSetup
+    },
+    {
+      id: 'help.about',
+      title: 'Help: About VisualMark Studio',
+      description: 'View architecture specs, live ecosystem diagram, and project information',
+      icon: 'info',
+      category: 'Help',
+      shortcut: getBindingKey('help.about', ''),
+      action: openAboutModal
+    },
+    {
+      id: 'help.sponsor',
+      title: 'Help: Sponsor @JagaTheGhost on GitHub',
+      description: 'Support independent, local-first development of VisualMark Studio on GitHub Sponsors',
+      icon: 'favorite',
+      category: 'Help',
+      shortcut: getBindingKey('help.sponsor', ''),
+      action: openSponsorUrl
     }
   ], [
     activeFile,

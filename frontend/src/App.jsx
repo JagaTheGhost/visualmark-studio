@@ -214,6 +214,7 @@ Distributed under the MIT License.
 
   // Modals & Studio tabs state
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+  const [isAboutOpen, setIsAboutOpen] = useState(false)
   const [findReplaceOpen, setFindReplaceOpen] = useState(false)
   const [findReplaceMode, setFindReplaceMode] = useState('find') // 'find' | 'replace'
   const [openStudioTabs, setOpenStudioTabs] = useState([]) // ['badges.studio', 'diagrams.studio', 'settings', 'shortcuts']
@@ -1448,8 +1449,13 @@ Use the **Table Designer Studio** to visually craft, sort, and format tables wit
   // Listen for Monaco / global open-command-palette events
   useEffect(() => {
     const handleOpenPalette = () => setCommandPaletteOpen(true)
+    const handleOpenAbout = () => setIsAboutOpen(true)
     window.addEventListener('open-command-palette', handleOpenPalette)
-    return () => window.removeEventListener('open-command-palette', handleOpenPalette)
+    window.addEventListener('open-about-modal', handleOpenAbout)
+    return () => {
+      window.removeEventListener('open-command-palette', handleOpenPalette)
+      window.removeEventListener('open-about-modal', handleOpenAbout)
+    }
   }, [])
 
 
@@ -2047,6 +2053,7 @@ Use the **Table Designer Studio** to visually craft, sort, and format tables wit
           onCloseWorkspace={handleCloseWorkspace}
           onOpenWelcome={handleOpenWelcomeTab}
           onOpenQuickSetup={() => setIsFirstTimeSetupOpen(true)}
+          onOpenAbout={() => setIsAboutOpen(true)}
           appVersion={appVersion}
         />
       )}
@@ -2335,6 +2342,7 @@ Use the **Table Designer Studio** to visually craft, sort, and format tables wit
             onOpenWhatsNew={handleOpenWhatsNewTab}
             onRestartToUpdate={handleRestartToUpdate}
             onOpenSettings={handleOpenSettingsTab}
+            onOpenAbout={() => setIsAboutOpen(true)}
           />
 
           {/* Global IDE Tooltip System (Antigravity IDE / VS Code Style) */}
@@ -2376,6 +2384,9 @@ Use the **Table Designer Studio** to visually craft, sort, and format tables wit
             setViewMode={setViewMode}
             showWelcomeOnStartup={showWelcomeOnStartup}
             handleToggleShowWelcomeOnStartup={handleToggleShowWelcomeOnStartup}
+            isAboutOpen={isAboutOpen}
+            setIsAboutOpen={setIsAboutOpen}
+            onOpenWhatsNew={handleOpenWhatsNewTab}
           />
         </div>
   )

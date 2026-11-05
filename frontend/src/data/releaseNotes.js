@@ -2,15 +2,102 @@
  * VisualMark Studio - Release Notes & Update History Dataset
  * Powers the "What's New" modal dialog, update notifications, and in-IDE release history.
  */
-export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.2.2'
+export const APP_CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.2.3'
 
 export const RELEASE_HISTORY = [
+  {
+    version: '1.2.3',
+    type: 'patch',
+    title: 'VisualMark Studio 1.2.3 — Visual Studio Architecture Optimizations, Native About Dialog & GitHub Sponsors',
+    date: 'November 2026',
+    isCurrent: true,
+    overview: 'VisualMark Studio **1.2.3** delivers a comprehensive architecture overhaul to **Mermaid Diagram Studio** (featuring a completely redesigned 3-section Mindmap Studio, resilient syntax compilers for Git graphs and Flowcharts, smooth canvas zoom up to 500%, and multi-level theme color scales). It also introduces an industry-standard **Native About Dialog** with one-click diagnostic copying, the complete **GitHub Sponsorship Suite**, multi-platform release identity, and an optimized download conversion funnel.',
+    highlights: [
+      'Mindmap Studio Architecture Overhaul: 3-section visual studio featuring root concept shapes, a collapsible tree hierarchy with L1–L5 depth badges, and a dedicated branch inspector',
+      'Resilient Diagram Compilers: Crash guards for Git graphs (mandatory main commit, auto-branch declaration) and Flowcharts (empty subgraph bounding placeholders)',
+      'Adaptive Canvas Zoom to 500%: Smooth non-passive mouse wheel and trackpad pinch scaling with adaptive acceleration steps up to 500%',
+      'Multi-Level Theme Color Scales: Extended all 8 diagram themes with 8-step color palettes (cScale0–cScale7) and custom root nodes for rich mindmap visualizations',
+      'Native About & Diagnostics Dialog: Completely rebuilt 2-tab About modal featuring 1-click diagnostic system info copying, open-source foundation credits, and live version status',
+      'GitHub Sponsorship Integration: Introduced FUNDING.yml, status bar sponsor pill, Help menu integration, command palette actions, and subtle export gratitude toasts',
+      'Single-Source-of-Truth Wiki: Consolidated documentation into the GitHub Wiki repository (.wiki_staging) and added rich in-repo screenshots to README'
+    ],
+    sections: [
+      {
+        category: 'Visual Studio & Diagram Architecture',
+        icon: 'schema',
+        badge: 'Studio Engine',
+        color: '#818cf8',
+        items: [
+          {
+            title: '3-Section Visual Mindmap Studio',
+            desc: 'Redesigned MindmapVisualBuilder with a Central Root Concept card, foldable tree outline with depth badges and child counters, and a focused Branch Inspector with instant promote/indent and reordering.'
+          },
+          {
+            title: 'Resilient Git Graph & Flowchart Compilers',
+            desc: 'Hardened compilers with automatic initial commit guards, auto-branch declaration on checkout, self-merge prevention, and empty subgraph placeholder nodes to eliminate layout crashes.'
+          },
+          {
+            title: '500% Canvas Zoom & Theme Palettes',
+            desc: 'Upgraded DiagramCanvas with non-passive mouse wheel zoom up to 500% and extended all 8 themes with comprehensive cScale0–cScale7 branch color palettes.'
+          }
+        ]
+      },
+      {
+        category: 'Dialogs & Developer Diagnostics',
+        icon: 'info',
+        badge: 'System Diagnostics',
+        color: '#6366f1',
+        items: [
+          {
+            title: 'Native 2-Tab About Dialog',
+            desc: 'Streamlined, compact 450px native IDE dialog with About and Credits & Backers tabs, displaying platform info, MIT licensing, and community foundations.'
+          },
+          {
+            title: '1-Click System Info Copying',
+            desc: 'Quickly copies OS, architecture, Electron, Node, and app versions to clipboard for frictionless bug reports and diagnostics.'
+          }
+        ]
+      },
+      {
+        category: 'Open Source & Sponsorship',
+        icon: 'favorite',
+        badge: 'Funding',
+        color: '#ec4899',
+        items: [
+          {
+            title: 'GitHub Sponsorship Integration',
+            desc: 'Added official FUNDING.yml metadata, status bar expandable sponsor pill, top Help menu items, and non-intrusive export milestone gratitude toasts.'
+          },
+          {
+            title: 'Multi-Platform Desktop Distribution',
+            desc: 'Refactored hero badges and documentation to highlight universal Windows (.exe), macOS (.dmg), and Linux (.AppImage, .deb) availability.'
+          }
+        ]
+      },
+      {
+        category: 'Documentation & Architecture',
+        icon: 'menu_book',
+        badge: 'Wiki First',
+        color: '#10b981',
+        items: [
+          {
+            title: 'Consolidated Wiki Architecture',
+            desc: 'Standardized all technical manuals, testing checklists, and developer guides on the official GitHub Wiki (.wiki_staging) to avoid documentation duplication.'
+          },
+          {
+            title: 'Visual Proof & Optimized Funnel',
+            desc: 'Showcases authentic IDE screenshots upfront with a targeted pitch callout directly before the download matrix.'
+          }
+        ]
+      }
+    ]
+  },
   {
     version: '1.2.2',
     type: 'patch',
     title: 'VisualMark Studio 1.2.2 — Delta Differential Updates & Minimalist Circular Download Indicator',
     date: 'November 2026',
-    isCurrent: true,
+    isCurrent: false,
     overview: 'VisualMark Studio **1.2.2** resolves community feedback from Discussion #17 regarding auto-update performance and UI clutter. This release re-enables **NSIS differential delta updates (`.blockmap`)**, shrinking patch downloads from ~170MB down to **~5–15MB** by downloading only changed 64KB code blocks. It resolves background auto-update download triggering, fixes Windows sidecar process locking during restart, and unifies all download indications into an elegant **SVG circular progress ring** in the bottom Status Bar displaying the live percentage inside the ring.',
     highlights: [
       'Differential Delta Patching: Enabled NSIS blockmap delta updates, slashing patch download size from ~170MB to ~5–15MB by downloading only modified blocks',

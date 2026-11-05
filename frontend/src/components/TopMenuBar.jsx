@@ -5,6 +5,7 @@ import appLogo from '../assets/logo.png'
 import { useToast } from '../context/ToastContext'
 import { useI18n } from '../i18n/I18nContext'
 import { THEMES, getThemeById } from '../themes/themeRegistry'
+import AboutModal from './modals/AboutModal'
 
 export default function TopMenuBar({
   activeFile,
@@ -38,17 +39,18 @@ export default function TopMenuBar({
   onReplace,
   onToggleBottomPanel,
   editorEngine = 'monaco',
-  setEditorEngine = () => {},
-  onOpenWhatsNew = () => {},
-  onCheckForUpdates = () => {},
+  setEditorEngine = () => { },
+  onOpenWhatsNew = () => { },
+  onCheckForUpdates = () => { },
   recentWorkspaces = [],
-  onOpenRecentWorkspace = () => {},
-  onClearRecentWorkspaces = () => {},
-  onCloseTab = () => {},
-  onCloneRepo = () => {},
-  onCloseWorkspace = () => {},
-  onOpenWelcome = () => {},
-  onOpenQuickSetup = () => {},
+  onOpenRecentWorkspace = () => { },
+  onClearRecentWorkspaces = () => { },
+  onCloseTab = () => { },
+  onCloneRepo = () => { },
+  onCloseWorkspace = () => { },
+  onOpenWelcome = () => { },
+  onOpenQuickSetup = () => { },
+  onOpenAbout = null,
   appVersion = APP_CURRENT_VERSION
 }) {
   const [activeMenu, setActiveMenu] = useState(null)
@@ -77,20 +79,20 @@ export default function TopMenuBar({
   let toastCtx = null
   try {
     toastCtx = useToast()
-  } catch {}
+  } catch { }
   const unreadCount = toastCtx?.unreadCount || 0
-  const toggleHistory = toastCtx?.toggleHistory || (() => {})
+  const toggleHistory = toastCtx?.toggleHistory || (() => { })
   const isHistoryOpen = toastCtx?.isHistoryOpen || false
 
   // Detect Electron environment and listen to window state
   useEffect(() => {
     if (typeof window !== 'undefined' && window.electronAPI?.isElectron) {
       setIsElectron(true)
-      window.electronAPI.isWindowMaximized().then((max) => setIsMaximized(max)).catch(() => {})
+      window.electronAPI.isWindowMaximized().then((max) => setIsMaximized(max)).catch(() => { })
       if (window.electronAPI.getIsDev) {
         window.electronAPI.getIsDev().then((res) => {
           if (typeof res === 'boolean') setIsDevMode(res)
-        }).catch(() => {})
+        }).catch(() => { })
       }
       const cleanup = window.electronAPI.onMaximizedChange((max) => {
         setIsMaximized(max)
@@ -617,7 +619,7 @@ export default function TopMenuBar({
                   type="button"
                   className="dropdown-item"
                   onClick={() => handleItemClick(() => {
-                    const url = 'https://github.com/JagaTheGhost/visualmark-studio'
+                    const url = 'https://github.com/JagaTheGhost/visualmark-studio/wiki'
                     if (window.electronAPI?.openExternalUrl) {
                       window.electronAPI.openExternalUrl(url)
                     } else {
@@ -625,12 +627,32 @@ export default function TopMenuBar({
                     }
                   })}
                 >
-                  <span>VisualMark Studio Documentation</span>
+                  <span>Documentation</span>
                 </button>
                 <button
                   type="button"
                   className="dropdown-item"
-                  onClick={() => handleItemClick(() => setAboutOpen(true))}
+                  onClick={() => handleItemClick(() => {
+                    const url = 'https://github.com/sponsors/JagaTheGhost'
+                    if (window.electronAPI?.openExternalUrl) {
+                      window.electronAPI.openExternalUrl(url)
+                    } else {
+                      window.open(url, '_blank', 'noopener,noreferrer')
+                    }
+                  })}
+                >
+                  <span>Support Development...</span>
+                </button>
+                <button
+                  type="button"
+                  className="dropdown-item"
+                  onClick={() => handleItemClick(() => {
+                    if (onOpenAbout) {
+                      onOpenAbout()
+                    } else {
+                      setAboutOpen(true)
+                    }
+                  })}
                 >
                   <span>About VisualMark Studio</span>
                 </button>
@@ -670,7 +692,7 @@ export default function TopMenuBar({
             title={sidebarCollapsed ? "Show Primary Sidebar (Ctrl+B)" : "Hide Primary Sidebar (Ctrl+B)"}
           >
             <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M2 3h12v10H2V3zm1 1v8h3V4H3zm4 0v8h6V4H7z"/>
+              <path d="M2 3h12v10H2V3zm1 1v8h3V4H3zm4 0v8h6V4H7z" />
             </svg>
           </button>
 
@@ -682,7 +704,7 @@ export default function TopMenuBar({
             title="Toggle Split View / Editor Layout"
           >
             <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M2 3h12v10H2V3zm1 1v8h4.5V4H3zm5.5 0v8H13V4H8.5z"/>
+              <path d="M2 3h12v10H2V3zm1 1v8h4.5V4H3zm5.5 0v8H13V4H8.5z" />
             </svg>
           </button>
 
@@ -694,7 +716,7 @@ export default function TopMenuBar({
             title="Toggle Zen Mode (F11)"
           >
             <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M1 1v5h2V3h3V1H1zm9 0v2h3v3h2V1h-5zm3 9v3h-3v2h5v-5h-2zM3 10H1v5h5v-2H3v-3z"/>
+              <path d="M1 1v5h2V3h3V1H1zm9 0v2h3v3h2V1h-5zm3 9v3h-3v2h5v-5h-2zM3 10H1v5h5v-2H3v-3z" />
             </svg>
           </button>
 
@@ -706,7 +728,7 @@ export default function TopMenuBar({
             title="Search files & commands (Ctrl+K)"
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+              <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
             </svg>
           </button>
         </div>
@@ -721,7 +743,7 @@ export default function TopMenuBar({
           title="Settings (Ctrl+,)"
         >
           <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M9.1 1.2a1 1 0 0 0-2.2 0l-.3 1a6.002 6.002 0 0 0-1.4.8l-1-.4a1 1 0 0 0-1.6 1.6l.4 1a6.002 6.002 0 0 0-.8 1.4l-1 .3a1 1 0 0 0 0 2.2l1 .3a6.002 6.002 0 0 0 .8 1.4l-.4 1a1 1 0 0 0 1.6 1.6l1-.4a6.002 6.002 0 0 0 1.4.8l.3 1a1 1 0 0 0 2.2 0l.3-1a6.002 6.002 0 0 0 1.4-.8l1 .4a1 1 0 0 0 1.6-1.6l-.4-1a6.002 6.002 0 0 0 .8-1.4l1-.3a1 1 0 0 0 0-2.2l-1-.3a6.002 6.002 0 0 0-.8-1.4l.4-1a1 1 0 0 0-1.6-1.6l-1 .4a6.002 6.002 0 0 0-1.4-.8l-.3-1zM8 10.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+            <path d="M9.1 1.2a1 1 0 0 0-2.2 0l-.3 1a6.002 6.002 0 0 0-1.4.8l-1-.4a1 1 0 0 0-1.6 1.6l.4 1a6.002 6.002 0 0 0-.8 1.4l-1 .3a1 1 0 0 0 0 2.2l1 .3a6.002 6.002 0 0 0 .8 1.4l-.4 1a1 1 0 0 0 1.6 1.6l1-.4a6.002 6.002 0 0 0 1.4.8l.3 1a1 1 0 0 0 2.2 0l.3-1a6.002 6.002 0 0 0 1.4-.8l1 .4a1 1 0 0 0 1.6-1.6l-.4-1a6.002 6.002 0 0 0 .8-1.4l1-.3a1 1 0 0 0 0-2.2l-1-.3a6.002 6.002 0 0 0-.8-1.4l.4-1a1 1 0 0 0-1.6-1.6l-1 .4a6.002 6.002 0 0 0-1.4-.8l-.3-1zM8 10.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z" />
           </svg>
         </button>
 
@@ -843,7 +865,7 @@ export default function TopMenuBar({
           onClick={() => window.electronAPI?.minimizeWindow?.()}
           title="Minimize Window"
         >
-          <svg width="11" height="1" viewBox="0 0 11 1"><rect width="11" height="1" fill="currentColor"/></svg>
+          <svg width="11" height="1" viewBox="0 0 11 1"><rect width="11" height="1" fill="currentColor" /></svg>
         </button>
         <button
           type="button"
@@ -853,11 +875,11 @@ export default function TopMenuBar({
         >
           {isMaximized ? (
             <svg width="10" height="10" viewBox="0 0 10 10">
-              <path d="M2 0v2H0v8h8V8h2V0H2zm5 9H1V3h6v6zm2-2h-1V2H3V1h6v6z" fill="currentColor"/>
+              <path d="M2 0v2H0v8h8V8h2V0H2zm5 9H1V3h6v6zm2-2h-1V2H3V1h6v6z" fill="currentColor" />
             </svg>
           ) : (
             <svg width="10" height="10" viewBox="0 0 10 10">
-              <path d="M0 0v10h10V0H0zm9 9H1V1h8v8z" fill="currentColor"/>
+              <path d="M0 0v10h10V0H0zm9 9H1V1h8v8z" fill="currentColor" />
             </svg>
           )}
         </button>
@@ -868,58 +890,19 @@ export default function TopMenuBar({
           title="Close Window"
         >
           <svg width="10" height="10" viewBox="0 0 10 10">
-            <path d="M1 0L0 1l4 4-4 4 1 1 4-4 4 4 1-1-4-4 4-4-1-1-4 4-4-4z" fill="currentColor"/>
+            <path d="M1 0L0 1l4 4-4 4 1 1 4-4 4 4 1-1-4-4 4-4-1-1-4 4-4-4z" fill="currentColor" />
           </svg>
         </button>
       </div>
 
       {/* 5. Native About Dialog Modal (Portaled to document.body to prevent top-bar overflow) */}
       {aboutOpen && typeof document !== 'undefined' && createPortal(
-        <div className="ide-confirm-backdrop" onClick={() => setAboutOpen(false)}>
-          <div className="ide-confirm-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px', width: '90%' }}>
-            <div className="ide-confirm-header" style={{ alignItems: 'center' }}>
-              <div className="ide-app-icon" style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <img
-                  src={appLogo}
-                  alt="VisualMark Studio"
-                  style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'contain' }}
-                />
-              </div>
-              <div className="ide-confirm-content">
-                <h4 className="ide-confirm-title" style={{ fontSize: '16px', fontWeight: '600', margin: 0, color: '#ffffff' }}>
-                  VisualMark Studio
-                </h4>
-                <p className="ide-confirm-message" style={{ margin: '3px 0 0 0', fontSize: '12px', color: 'var(--text-muted, #94a3b8)' }}>
-                  Version {appVersion || APP_CURRENT_VERSION} (Code + Visual Markdown IDE)
-                </p>
-              </div>
-            </div>
-
-            <div style={{ padding: '14px 18px', fontSize: '12px', lineHeight: '1.6', color: 'var(--text-secondary, #cbd5e1)', borderTop: '1px solid var(--border-subtle, rgba(255,255,255,0.08))', borderBottom: '1px solid var(--border-subtle, rgba(255,255,255,0.08))' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '8px', fontSize: '12px' }}>
-                <span style={{ color: 'var(--text-muted, #64748b)' }}>Runtime:</span>
-                <span style={{ color: '#38bdf8', fontFamily: 'monospace' }}>Electron v44 (Native Desktop)</span>
-                <span style={{ color: 'var(--text-muted, #64748b)' }}>Engine:</span>
-                <span style={{ color: '#4ade80', fontFamily: 'monospace' }}>FastAPI Local Sidecar</span>
-                <span style={{ color: 'var(--text-muted, #64748b)' }}>Architecture:</span>
-                <span style={{ color: '#f59e0b', fontFamily: 'monospace' }}>100% Local-First / Zero Cloud</span>
-                <span style={{ color: 'var(--text-muted, #64748b)' }}>Platform:</span>
-                <span style={{ fontFamily: 'monospace', color: '#cbd5e1' }}>{typeof navigator !== 'undefined' ? navigator.platform : 'win32'}</span>
-              </div>
-            </div>
-
-            <div className="ide-confirm-actions" style={{ justifyContent: 'flex-end', padding: '12px 18px', margin: 0 }}>
-              <button
-                type="button"
-                className="btn-studio-secondary"
-                onClick={() => setAboutOpen(false)}
-                autoFocus
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>,
+        <AboutModal
+          isOpen={aboutOpen}
+          onClose={() => setAboutOpen(false)}
+          appVersion={appVersion || APP_CURRENT_VERSION}
+          onOpenWhatsNew={onOpenWhatsNew}
+        />,
         document.body
       )}
     </header>

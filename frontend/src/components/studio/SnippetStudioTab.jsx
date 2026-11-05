@@ -394,7 +394,7 @@ export default function SnippetStudioTab({
       title="Code & Callouts Studio"
       subtitle="High-density GFM markdown components: GitHub alerts, multi-package managers, terminal mockups, and FAQ accordions"
       badge="GFM Components Pro"
-      accentColor="#f59e0b"
+      accentColor="#6366f1"
       icon={<span className="material-symbols-outlined" style={{ fontSize: '20px' }}>code_blocks</span>}
       markdownCode={generatedSnippet}
       codeLanguage="markdown"

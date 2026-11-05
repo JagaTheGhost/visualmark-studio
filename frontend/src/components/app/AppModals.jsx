@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react'
 import CloneRepoModal from '../modals/CloneRepoModal'
 import FirstTimeSetupModal from '../modals/FirstTimeSetupModal'
+import AboutModal from '../modals/AboutModal'
 
 const CommandPalette = lazy(() => import('../modals/CommandPalette'))
 const InsertTargetModal = lazy(() => import('../modals/InsertTargetModal'))
@@ -42,7 +43,10 @@ export default function AppModals({
   viewMode,
   setViewMode,
   showWelcomeOnStartup,
-  handleToggleShowWelcomeOnStartup
+  handleToggleShowWelcomeOnStartup,
+  isAboutOpen = false,
+  setIsAboutOpen = () => {},
+  onOpenWhatsNew = null
 }) {
   return (
     <>
@@ -238,6 +242,13 @@ export default function AppModals({
         showWelcomeOnStartup={showWelcomeOnStartup}
         onToggleShowWelcomeOnStartup={handleToggleShowWelcomeOnStartup}
         showToast={showToast}
+      />
+
+      {/* About VisualMark Studio & Sponsor Modal */}
+      <AboutModal
+        isOpen={isAboutOpen}
+        onClose={() => setIsAboutOpen(false)}
+        onOpenWhatsNew={onOpenWhatsNew}
       />
     </>
   )

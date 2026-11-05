@@ -1,5 +1,6 @@
 import { saveAs } from 'file-saver'
 import { unfoldDataUris } from './dataUriFold'
+import { notifyExportGratitude } from './sponsorGratitude'
 
 export function copyDocumentToClipboard(content, filename, showToast) {
   if (!content) return
@@ -15,13 +16,13 @@ export async function downloadActiveFile(content, filename = 'README.md', showTo
   if (typeof window !== 'undefined' && window.electronAPI?.saveFileDialog) {
     const res = await window.electronAPI.saveFileDialog(unfolded, filename || 'README.md')
     if (!res.canceled && showToast) {
-      showToast(`✓ Saved ${res.fileName}`, 'success')
+      notifyExportGratitude(showToast, `document (${res.fileName})`)
     }
   } else {
     const file = new Blob([unfolded], { type: 'text/markdown;charset=utf-8' })
     saveAs(file, filename)
     if (showToast) {
-      showToast(`Saved ${filename}!`, 'success')
+      notifyExportGratitude(showToast, `document (${filename})`)
     }
   }
 }

@@ -1,17 +1,18 @@
 import React, { useState, useMemo, useEffect } from 'react'
 
-const MINDMAP_SHAPES = [
-  { id: 'default', label: 'Plain (Text)', icon: 'title', preview: 'Text' },
-  { id: 'rounded', label: 'Rounded ()', icon: 'crop_square', preview: '(Round)' },
-  { id: 'circle', label: 'Circle (())', icon: 'circle', preview: '((Circle))' },
-  { id: 'square', label: 'Box []', icon: 'check_box_outline_blank', preview: '[Box]' },
-  { id: 'cloud', label: 'Cloud )(', icon: 'cloud_queue', preview: ')Cloud(' },
-  { id: 'bang', label: 'Bang }}{{', icon: 'offline_bolt', preview: '}}Bang{{' }
+export const MINDMAP_SHAPES = [
+  { id: 'default', label: 'Plain', icon: 'format_size', preview: 'Text', syntax: 'text' },
+  { id: 'rounded', label: 'Rounded', icon: 'rectangle', preview: '(Round)', syntax: '(text)' },
+  { id: 'circle', label: 'Circle', icon: 'radio_button_unchecked', preview: '((Circle))', syntax: '((text))' },
+  { id: 'square', label: 'Box', icon: 'check_box_outline_blank', preview: '[Box]', syntax: '[text]' },
+  { id: 'cloud', label: 'Cloud', icon: 'cloud', preview: ')Cloud(', syntax: ')text(' },
+  { id: 'bang', label: 'Bang', icon: 'bolt', preview: '))Bang((', syntax: '))text((' },
+  { id: 'hexagon', label: 'Hexagon', icon: 'hexagon', preview: '{{Hex}}', syntax: '{{text}}' }
 ]
 
-const DEPTH_COLORS = [
+const DEPTH_CONFIGS = [
   { depth: 1, label: 'L1 Primary', color: '#818cf8', bg: 'rgba(129, 140, 248, 0.15)' },
-  { depth: 2, label: 'L2 Category', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)' },
+  { depth: 2, label: 'L2 Subtopic', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)' },
   { depth: 3, label: 'L3 Component', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' },
   { depth: 4, label: 'L4 Detail', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },
   { depth: 5, label: 'L5 Leaf', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.15)' },
@@ -19,21 +20,19 @@ const DEPTH_COLORS = [
 ]
 
 /**
- * High-Fidelity Mindmap & Concept Tree Visual Builder
- * - Prominent Root Central Concept Card
- * - 1-Click Concept Tree Blueprints (Cloud Native Stack, 2026 Roadmap, AppSec Defense)
- * - Color-coded depth hierarchy ribbons (L1 Indigo -> L2 Sky -> L3 Emerald -> L4 Amber -> L5 Purple)
- * - Visual branch guide lines & full-width text inputs
- * - Visual Shape Selectors (Plain, Rounded, Circle, Box, Cloud, Bang)
- * - Hierarchy actions (◀ Promote, ▶ Sub-branch, + Child, ▲ Move Up, ▼ Move Down)
- * - Live Search Filter across tree branches
- * - Two-Way Canvas Node Click Synchronization & Auto-scroll
+ * Professional Mindmap & Concept Tree Visual Studio
+ * - Section 1: Central Root Concept card with shape chips & blueprints
+ * - Section 2: Compact Hierarchical Tree Outline (foldable branches, depth badges, child counters, search)
+ * - Section 3: Focused Branch Inspector (dedicated shape chips, rename, promote/indent, reorder, add sibling/child)
  */
 export default function MindmapVisualBuilder({
   rootTitle = 'Central Concept',
   onRootTitleChange,
+  rootShape = 'circle',
+  onRootShapeChange,
   nodes = [],
   onNodesChange,
+  onBatchChange,
   selectedNodeId: controlledSelectedNodeId,
   onSelectNodeId
 }) {
@@ -53,22 +52,26 @@ export default function MindmapVisualBuilder({
   const [searchQuery, setSearchQuery] = useState('')
   const [newTopicText, setNewTopicText] = useState('')
   const [showBlueprints, setShowBlueprints] = useState(false)
+  const [collapsedIds, setCollapsedIds] = useState(new Set())
 
-  // Auto-scroll selected node into view
+  // Keep selected node synced if current node gets deleted or list updates
   useEffect(() => {
-    if (selectedNodeId) {
-      const el = document.getElementById(`mm-node-${selectedNodeId}`)
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    if (nodes.length > 0) {
+      if (!selectedNodeId || !nodes.some((n) => n.id === selectedNodeId)) {
+        setSelectedNodeId(nodes[0].id)
       }
+    } else {
+      setSelectedNodeId(null)
     }
-  }, [selectedNodeId])
+  }, [nodes, selectedNodeId])
 
-  // Preset Concept Tree Blueprints
+  // Preset Architecture Blueprints (Clean Material Icons, No Emojis)
   const PRESET_BLUEPRINTS = [
     {
-      label: '☁️ Cloud Architecture',
+      label: 'Cloud Architecture',
+      icon: 'cloud',
       root: 'Cloud Native Platform',
+      rootShape: 'circle',
       nodes: [
         { text: 'Frontend Layer', depth: 1, shape: 'square' },
         { text: 'Single Page App (React)', depth: 2, shape: 'rounded' },
@@ -89,8 +92,10 @@ export default function MindmapVisualBuilder({
       ]
     },
     {
-      label: '🚀 2026 Tech Roadmap',
+      label: 'Tech Roadmap 2026',
+      icon: 'rocket_launch',
       root: 'Engineering Vision 2026',
+      rootShape: 'hexagon',
       nodes: [
         { text: 'Q1: Foundation & Reliability', depth: 1, shape: 'rounded' },
         { text: 'Zero-Downtime Deployments', depth: 2, shape: 'default' },
@@ -107,8 +112,10 @@ export default function MindmapVisualBuilder({
       ]
     },
     {
-      label: '🛡️ Zero Trust AppSec',
+      label: 'Zero Trust AppSec',
+      icon: 'security',
       root: 'Zero Trust Security Model',
+      rootShape: 'bang',
       nodes: [
         { text: 'Identity Verification', depth: 1, shape: 'bang' },
         { text: 'MFA & WebAuthn', depth: 2, shape: 'default' },
@@ -125,19 +132,48 @@ export default function MindmapVisualBuilder({
 
   // Apply Blueprint
   const handleApplyBlueprint = (bp) => {
-    onRootTitleChange(bp.root)
     const newNodes = bp.nodes.map((n, idx) => ({
       id: `mm_${Date.now()}_${idx}`,
       text: n.text,
       depth: n.depth || 1,
       shape: n.shape || 'default'
     }))
-    onNodesChange(newNodes)
+
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({
+        rootTitle: bp.root,
+        rootShape: bp.rootShape || 'circle',
+        nodes: newNodes
+      })
+    } else {
+      if (typeof onRootTitleChange === 'function') onRootTitleChange(bp.root)
+      if (typeof onRootShapeChange === 'function') onRootShapeChange(bp.rootShape || 'circle')
+      onNodesChange(newNodes)
+    }
+
     if (newNodes[0]) setSelectedNodeId(newNodes[0].id)
     setShowBlueprints(false)
+    setCollapsedIds(new Set())
   }
 
-  // Add Branch Node (Root Level)
+  // Update Root Concept
+  const handleRootTitleUpdate = (newTitle) => {
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({ rootTitle: newTitle, rootShape, nodes })
+    } else if (typeof onRootTitleChange === 'function') {
+      onRootTitleChange(newTitle)
+    }
+  }
+
+  const handleRootShapeUpdate = (newShape) => {
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({ rootTitle, rootShape: newShape, nodes })
+    } else if (typeof onRootShapeChange === 'function') {
+      onRootShapeChange(newShape)
+    }
+  }
+
+  // Add Root Branch (Level 1)
   const handleAddRootBranch = () => {
     if (!newTopicText.trim()) return
     const newNode = {
@@ -146,7 +182,14 @@ export default function MindmapVisualBuilder({
       depth: 1,
       shape: 'default'
     }
-    onNodesChange([...nodes, newNode])
+    const nextNodes = [...nodes, newNode]
+
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({ rootTitle, rootShape, nodes: nextNodes })
+    } else {
+      onNodesChange(nextNodes)
+    }
+
     setSelectedNodeId(newNode.id)
     setNewTopicText('')
   }
@@ -160,34 +203,80 @@ export default function MindmapVisualBuilder({
       depth: Math.min(6, (parentNode?.depth || 1) + 1),
       shape: 'default'
     }
-    const updated = [...nodes]
-    updated.splice(index + 1, 0, newNode)
-    onNodesChange(updated)
+    const nextNodes = [...nodes]
+    nextNodes.splice(index + 1, 0, newNode)
+
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({ rootTitle, rootShape, nodes: nextNodes })
+    } else {
+      onNodesChange(nextNodes)
+    }
+
+    // Ensure parent is expanded so new child is visible
+    if (parentNode) {
+      setCollapsedIds((prev) => {
+        const next = new Set(prev)
+        next.delete(parentNode.id)
+        return next
+      })
+    }
+
+    setSelectedNodeId(newNode.id)
+  }
+
+  // Add Sibling directly below a specific node
+  const handleAddSibling = (index) => {
+    const currentNode = nodes[index]
+    const newNode = {
+      id: `mm_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      text: 'New Topic',
+      depth: currentNode?.depth || 1,
+      shape: 'default'
+    }
+    const nextNodes = [...nodes]
+    nextNodes.splice(index + 1, 0, newNode)
+
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({ rootTitle, rootShape, nodes: nextNodes })
+    } else {
+      onNodesChange(nextNodes)
+    }
+
     setSelectedNodeId(newNode.id)
   }
 
   // Update Node
   const handleUpdateNode = (id, updates) => {
-    onNodesChange(nodes.map((n) => (n.id === id ? { ...n, ...updates } : n)))
+    const nextNodes = nodes.map((n) => (n.id === id ? { ...n, ...updates } : n))
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({ rootTitle, rootShape, nodes: nextNodes })
+    } else {
+      onNodesChange(nextNodes)
+    }
   }
 
   // Delete Node
   const handleDeleteNode = (id) => {
-    onNodesChange(nodes.filter((n) => n.id !== id))
+    const remaining = nodes.filter((n) => n.id !== id)
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({ rootTitle, rootShape, nodes: remaining })
+    } else {
+      onNodesChange(remaining)
+    }
+
     if (selectedNodeId === id) {
-      const remaining = nodes.filter((n) => n.id !== id)
       setSelectedNodeId(remaining[0]?.id || null)
     }
   }
 
-  // Indent (increase depth)
+  // Indent (increase depth -> subtopic)
   const handleIndent = (index) => {
     const node = nodes[index]
     if (!node || node.depth >= 6) return
     handleUpdateNode(node.id, { depth: node.depth + 1 })
   }
 
-  // Outdent (decrease depth)
+  // Outdent (decrease depth -> promote)
   const handleOutdent = (index) => {
     const node = nodes[index]
     if (!node || node.depth <= 1) return
@@ -198,35 +287,126 @@ export default function MindmapVisualBuilder({
   const handleMove = (index, dir) => {
     const target = index + dir
     if (target < 0 || target >= nodes.length) return
-    const updated = [...nodes]
-    const temp = updated[index]
-    updated[index] = updated[target]
-    updated[target] = temp
-    onNodesChange(updated)
+    const nextNodes = [...nodes]
+    const temp = nextNodes[index]
+    nextNodes[index] = nextNodes[target]
+    nextNodes[target] = temp
+
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({ rootTitle, rootShape, nodes: nextNodes })
+    } else {
+      onNodesChange(nextNodes)
+    }
   }
 
-  // Filtered nodes
-  const filteredNodes = useMemo(() => {
-    if (!searchQuery.trim()) return nodes
-    const q = searchQuery.toLowerCase()
-    return nodes.filter((n) => n.text.toLowerCase().includes(q))
-  }, [nodes, searchQuery])
+  // Toggle Collapse / Expand
+  const toggleCollapse = (id) => {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  // Collapse / Expand All
+  const handleExpandAll = () => setCollapsedIds(new Set())
+  const handleCollapseAll = () => {
+    const parentIds = new Set()
+    for (let i = 0; i < nodes.length - 1; i++) {
+      if (nodes[i + 1].depth > nodes[i].depth) {
+        parentIds.add(nodes[i].id)
+      }
+    }
+    setCollapsedIds(parentIds)
+  }
+
+  // Calculate child count for each node in flat list
+  const nodeChildCounts = useMemo(() => {
+    const map = new Map()
+    for (let i = 0; i < nodes.length; i++) {
+      const currentDepth = nodes[i].depth || 1
+      let count = 0
+      for (let j = i + 1; j < nodes.length; j++) {
+        if (nodes[j].depth <= currentDepth) break
+        count++
+      }
+      map.set(nodes[i].id, count)
+    }
+    return map
+  }, [nodes])
+
+  // Filtered and Folded Tree Nodes
+  const visibleNodes = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    const result = []
+    let hiddenUnderDepth = null
+
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i]
+      const depth = node.depth || 1
+
+      // Search filter bypasses folding for visibility
+      if (query) {
+        if ((node.text || '').toLowerCase().includes(query)) {
+          result.push({ node, index: i, hasChildren: (nodeChildCounts.get(node.id) || 0) > 0 })
+        }
+        continue
+      }
+
+      // Check if node is inside a collapsed ancestor
+      if (hiddenUnderDepth !== null) {
+        if (depth > hiddenUnderDepth) {
+          continue // Skip collapsed descendant
+        } else {
+          hiddenUnderDepth = null // Exited collapsed subtree
+        }
+      }
+
+      const hasChildren = (nodeChildCounts.get(node.id) || 0) > 0
+      result.push({ node, index: i, hasChildren })
+
+      if (hasChildren && collapsedIds.has(node.id)) {
+        hiddenUnderDepth = depth
+      }
+    }
+
+    return result
+  }, [nodes, searchQuery, collapsedIds, nodeChildCounts])
+
+  // Active Selected Node & Index
+  const selectedIndex = nodes.findIndex((n) => n.id === selectedNodeId)
+  const selectedNode = selectedIndex !== -1 ? nodes[selectedIndex] : null
+  const selectedDepthConfig = selectedNode ? (DEPTH_CONFIGS[(selectedNode.depth || 1) - 1] || DEPTH_CONFIGS[0]) : null
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* 1. CENTRAL ROOT TOPIC CARD */}
-      <div className="mm-root-card">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#818cf8' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* =========================================================================
+          1. CENTRAL ROOT CONCEPT CARD
+         ========================================================================= */}
+      <div
+        style={{
+          background: 'var(--surface-base)',
+          border: '1px solid #818cf8',
+          borderRadius: '8px',
+          padding: '12px',
+          boxShadow: '0 0 16px rgba(129, 140, 248, 0.15)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#818cf8' }}>
               adjust
             </span>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Root Central Concept
             </span>
           </div>
 
-          {/* 1-Click Blueprints */}
+          {/* Blueprints Menu */}
           <div style={{ position: 'relative' }}>
             <button
               type="button"
@@ -234,8 +414,8 @@ export default function MindmapVisualBuilder({
               onClick={() => setShowBlueprints(!showBlueprints)}
               style={{ padding: '3px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#818cf8' }}>psychology</span>
-              <span>+ Blueprint</span>
+              <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#818cf8' }}>library_books</span>
+              <span>Blueprints</span>
               <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>expand_more</span>
             </button>
 
@@ -244,13 +424,13 @@ export default function MindmapVisualBuilder({
                 style={{
                   position: 'absolute',
                   right: 0,
-                  top: '32px',
-                  zIndex: 20,
+                  top: '30px',
+                  zIndex: 40,
                   background: '#161b22',
                   border: '1px solid #30363d',
                   borderRadius: '6px',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-                  minWidth: '220px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.65)',
+                  minWidth: '230px',
                   padding: '4px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -258,7 +438,7 @@ export default function MindmapVisualBuilder({
                 }}
               >
                 <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#94a3b8', padding: '4px 8px', textTransform: 'uppercase' }}>
-                  Mindmap Tree Blueprints
+                  Architecture Blueprints
                 </div>
                 {PRESET_BLUEPRINTS.map((bp) => (
                   <button
@@ -267,9 +447,9 @@ export default function MindmapVisualBuilder({
                     onClick={() => handleApplyBlueprint(bp)}
                     style={{
                       display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-start',
-                      padding: '6px 8px',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '7px 8px',
                       background: 'transparent',
                       border: 'none',
                       borderRadius: '4px',
@@ -280,8 +460,11 @@ export default function MindmapVisualBuilder({
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(99, 102, 241, 0.2)')}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
-                    <span style={{ fontSize: '11px', fontWeight: 600 }}>{bp.label}</span>
-                    <span style={{ fontSize: '9.5px', color: '#94a3b8' }}>Root: {bp.root}</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#818cf8' }}>{bp.icon}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '11.5px', fontWeight: 600 }}>{bp.label}</span>
+                      <span style={{ fontSize: '9.5px', color: '#94a3b8' }}>Root: {bp.root}</span>
+                    </div>
                   </button>
                 ))}
               </div>
@@ -289,51 +472,121 @@ export default function MindmapVisualBuilder({
           </div>
         </div>
 
+        {/* Root Title Input */}
         <input
           type="text"
-          className="studio-text-input mm-root-input"
+          className="studio-text-input"
           value={rootTitle}
-          onChange={(e) => onRootTitleChange(e.target.value)}
-          placeholder="Mindmap Root (e.g. Architecture Vision 2026)"
+          onChange={(e) => handleRootTitleUpdate(e.target.value)}
+          placeholder="Mindmap Root (e.g. Platform Engineering, Cloud System)"
+          style={{
+            fontSize: '13px',
+            fontWeight: 700,
+            padding: '7px 10px',
+            background: 'rgba(0, 0, 0, 0.4)',
+            borderColor: 'rgba(129, 140, 248, 0.4)',
+            color: '#ffffff'
+          }}
         />
+
+        {/* Root Node Shape Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>ROOT SHAPE</span>
+          <div className="diagram-shape-chips">
+            {MINDMAP_SHAPES.filter((s) => s.id !== 'default').map((sh) => {
+              const isActive = (rootShape || 'circle') === sh.id
+              return (
+                <button
+                  key={sh.id}
+                  type="button"
+                  className={`diagram-shape-chip-btn ${isActive ? 'active' : ''}`}
+                  onClick={() => handleRootShapeUpdate(sh.id)}
+                  title={sh.syntax}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>{sh.icon}</span>
+                  <span>{sh.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* 2. HIERARCHICAL BRANCH OUTLINE & CONTROLS */}
-      <div className="mm-outline-card">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#38bdf8' }}>
+      {/* =========================================================================
+          2. HIERARCHICAL MIND TREE OUTLINE
+         ========================================================================= */}
+      <div
+        style={{
+          background: 'var(--surface-base)',
+          border: '1px solid var(--border-color)',
+          borderRadius: '8px',
+          padding: '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }}
+      >
+        {/* Outline Header & Quick Add */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '17px', color: '#818cf8' }}>
               account_tree
             </span>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: '#f1f5f9' }}>
-              Concept Tree & Branches ({nodes.length})
+            <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#f1f5f9' }}>
+              Concept Tree Outline ({nodes.length})
             </span>
           </div>
 
-          {/* Quick Add Main Branch */}
-          <div style={{ display: 'flex', gap: '4px' }}>
-            <input
-              type="text"
-              className="studio-text-input"
-              value={newTopicText}
-              onChange={(e) => setNewTopicText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddRootBranch()}
-              placeholder="+ Main Branch..."
-              style={{ width: '140px', fontSize: '11px', padding: '3px 8px' }}
-            />
+          {/* Quick Collapse / Expand All */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
             <button
               type="button"
-              className="studio-shell-btn studio-shell-btn-primary"
-              onClick={handleAddRootBranch}
-              style={{ padding: '3px 10px', fontSize: '11px' }}
+              className="studio-shell-btn studio-shell-btn-secondary"
+              onClick={collapsedIds.size > 0 ? handleExpandAll : handleCollapseAll}
+              style={{ padding: '2px 6px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '3px' }}
+              title={collapsedIds.size > 0 ? 'Expand all folded branches' : 'Collapse all subtopic branches'}
             >
-              Add
+              <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>
+                {collapsedIds.size > 0 ? 'unfold_more' : 'unfold_less'}
+              </span>
+              <span>{collapsedIds.size > 0 ? 'Expand All' : 'Collapse All'}</span>
             </button>
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div style={{ position: 'relative', marginBottom: '10px' }}>
+        {/* Quick Add Main Branch Input */}
+        <div style={{ display: 'flex', gap: '4px' }}>
+          <input
+            type="text"
+            className="studio-text-input"
+            value={newTopicText}
+            onChange={(e) => setNewTopicText(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddRootBranch()}
+            placeholder="+ Add main branch (e.g. Infrastructure, Security)..."
+            style={{ flex: 1, fontSize: '11px', padding: '4px 8px' }}
+          />
+          <button
+            type="button"
+            className="studio-shell-btn studio-shell-btn-primary"
+            onClick={handleAddRootBranch}
+            style={{
+              padding: '4px 12px',
+              fontSize: '11px',
+              fontWeight: 600,
+              backgroundColor: '#6366f1',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#ffffff' }}>add</span>
+            <span>Add Branch</span>
+          </button>
+        </div>
+
+        {/* Tree Search Bar */}
+        <div style={{ position: 'relative' }}>
           <span
             className="material-symbols-outlined"
             style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: '#64748b' }}
@@ -344,7 +597,7 @@ export default function MindmapVisualBuilder({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search branches across tree..."
+            placeholder="Filter tree branches..."
             className="studio-text-input"
             style={{ width: '100%', paddingLeft: '28px', fontSize: '11px', height: '28px' }}
           />
@@ -354,169 +607,379 @@ export default function MindmapVisualBuilder({
               onClick={() => setSearchQuery('')}
               style={{ position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
             >
-              ✕
+              <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>close</span>
             </button>
           )}
         </div>
 
-        {/* Tree Branch Rows */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {filteredNodes.map((node) => {
-            const index = nodes.findIndex((n) => n.id === node.id)
+        {/* Compact Tree Rows Container */}
+        <div
+          style={{
+            maxHeight: '340px',
+            overflowY: 'auto',
+            border: '1px solid rgba(255, 255, 255, 0.06)',
+            borderRadius: '6px',
+            background: 'rgba(0, 0, 0, 0.25)',
+            padding: '4px'
+          }}
+        >
+          {visibleNodes.map(({ node, index, hasChildren }) => {
             const isSelected = selectedNodeId === node.id
-            const depthConfig = DEPTH_COLORS[(node.depth || 1) - 1] || DEPTH_COLORS[0]
-            const indentPx = Math.max(0, (node.depth - 1) * 22)
+            const depth = node.depth || 1
+            const depthConfig = DEPTH_CONFIGS[depth - 1] || DEPTH_CONFIGS[0]
+            const isCollapsed = collapsedIds.has(node.id)
+            const childCount = nodeChildCounts.get(node.id) || 0
+            const shapeObj = MINDMAP_SHAPES.find((s) => s.id === (node.shape || 'default')) || MINDMAP_SHAPES[0]
+
+            const indentPx = (depth - 1) * 16
 
             return (
               <div
                 key={node.id}
-                id={`mm-node-${node.id}`}
                 onClick={() => setSelectedNodeId(node.id)}
-                className={`mm-node-card ${isSelected ? 'is-selected' : ''}`}
                 style={{
-                  marginLeft: `${indentPx}px`,
-                  borderLeft: `3px solid ${depthConfig.color}`
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '4px 6px',
+                  paddingLeft: `${indentPx + 6}px`,
+                  borderRadius: '4px',
+                  marginBottom: '2px',
+                  cursor: 'pointer',
+                  background: isSelected ? 'rgba(56, 189, 248, 0.16)' : 'transparent',
+                  border: isSelected ? '1px solid #38bdf8' : '1px solid transparent',
+                  borderLeft: `3px solid ${depthConfig.color}`,
+                  transition: 'all 0.12s ease'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)'
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent'
                 }}
               >
-                {/* Visual Branch Depth Guide */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                    <span style={{ color: depthConfig.color, fontSize: '12px', fontWeight: 700 }}>
-                      {node.depth > 1 ? '└─' : '●'}
+                {/* Left: Fold toggle / Tree Guide + Depth Badge + Shape + Text */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', minWidth: 0, flex: 1 }}>
+                  {/* Fold toggle if has children, otherwise tree branch connector */}
+                  {hasChildren ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleCollapse(node.id)
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#94a3b8',
+                        padding: 0,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        width: '16px',
+                        height: '16px'
+                      }}
+                      title={isCollapsed ? 'Expand subtopics' : 'Collapse subtopics'}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
+                        {isCollapsed ? 'chevron_right' : 'expand_more'}
+                      </span>
+                    </button>
+                  ) : (
+                    <span style={{ width: '16px', textAlign: 'center', fontSize: '10px', color: '#64748b' }}>
+                      {depth > 1 ? '└' : '•'}
                     </span>
+                  )}
+
+                  {/* Depth Pill */}
+                  <span
+                    style={{
+                      fontSize: '9px',
+                      fontWeight: 700,
+                      color: depthConfig.color,
+                      background: depthConfig.bg,
+                      padding: '1px 4px',
+                      borderRadius: '3px',
+                      flexShrink: 0
+                    }}
+                  >
+                    L{depth}
+                  </span>
+
+                  {/* Shape Mini Icon */}
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: '13px', color: depthConfig.color, flexShrink: 0 }}
+                    title={`Shape: ${shapeObj.label}`}
+                  >
+                    {shapeObj.icon}
+                  </span>
+
+                  {/* Branch Title Text */}
+                  <span
+                    style={{
+                      fontSize: depth === 1 ? '11.5px' : '11px',
+                      fontWeight: isSelected ? 600 : (depth === 1 ? 500 : 400),
+                      color: isSelected ? '#ffffff' : '#e2e8f0',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    {node.text || 'Untitled Topic'}
+                  </span>
+
+                  {/* Children counter */}
+                  {hasChildren && (
                     <span
                       style={{
-                        fontSize: '9.5px',
-                        fontWeight: 700,
-                        color: depthConfig.color,
-                        background: depthConfig.bg,
+                        fontSize: '9px',
+                        color: '#94a3b8',
+                        background: 'rgba(255, 255, 255, 0.06)',
                         padding: '1px 5px',
-                        borderRadius: '3px'
+                        borderRadius: '10px',
+                        flexShrink: 0
                       }}
                     >
-                      {depthConfig.label}
+                      {childCount}
                     </span>
-                  </div>
+                  )}
+                </div>
 
-                  {/* Text Input */}
-                  <input
-                    type="text"
-                    className="studio-text-input"
-                    value={node.text}
-                    onChange={(e) => handleUpdateNode(node.id, { text: e.target.value })}
-                    placeholder="Topic / Concept"
-                    style={{
-                      flex: 1,
-                      fontSize: node.depth === 1 ? '12px' : '11.5px',
-                      fontWeight: node.depth === 1 ? 600 : 400,
-                      padding: '4px 8px',
-                      color: '#f8fafc'
+                {/* Right: Quick actions (+ Child, Delete) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0, marginLeft: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleAddChild(index)
                     }}
-                  />
-
-                  {/* Shape Selector */}
-                  <select
-                    className="cls-visibility-select"
-                    value={node.shape || 'default'}
-                    onChange={(e) => handleUpdateNode(node.id, { shape: e.target.value })}
-                    style={{ width: '85px', fontSize: '10.5px', padding: '3px 4px', textAlign: 'left' }}
-                    title="Node Shape"
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#38bdf8',
+                      cursor: 'pointer',
+                      padding: '2px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                    title="Add child subtopic directly inside this branch"
                   >
-                    {MINDMAP_SHAPES.map((s) => (
-                      <option key={s.id} value={s.id}>{s.preview}</option>
-                    ))}
-                  </select>
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>add</span>
+                  </button>
 
-                  {/* Hierarchy Navigation: Promote, Indent, +Child */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
-                    <button
-                      type="button"
-                      className="seq-icon-action-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleOutdent(index)
-                      }}
-                      disabled={node.depth <= 1}
-                      title="Promote level (Outdent ◀)"
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>chevron_left</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="seq-icon-action-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleIndent(index)
-                      }}
-                      disabled={node.depth >= 6}
-                      title="Sub-branch (Indent ▶)"
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>chevron_right</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="studio-shell-btn studio-shell-btn-secondary"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleAddChild(index)
-                      }}
-                      style={{ padding: '2px 6px', fontSize: '10px', color: '#38bdf8' }}
-                      title="Add child branch directly below"
-                    >
-                      +child
-                    </button>
-
-                    {/* Move Up/Down */}
-                    <button
-                      type="button"
-                      className="seq-icon-action-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleMove(index, -1)
-                      }}
-                      disabled={index === 0}
-                      title="Move Up"
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>arrow_upward</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="seq-icon-action-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleMove(index, 1)
-                      }}
-                      disabled={index === nodes.length - 1}
-                      title="Move Down"
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>arrow_downward</span>
-                    </button>
-
-                    {/* Delete */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteNode(node.id)
-                      }}
-                      className="seq-icon-action-btn delete"
-                      title="Delete branch"
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>close</span>
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeleteNode(node.id)
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#64748b',
+                      cursor: 'pointer',
+                      padding: '2px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                    title="Delete branch"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>close</span>
+                  </button>
                 </div>
               </div>
             )
           })}
 
-          {filteredNodes.length === 0 && (
+          {visibleNodes.length === 0 && (
             <div style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic', padding: '16px', textAlign: 'center' }}>
               No branches found. Add a branch above or select a blueprint preset.
             </div>
           )}
         </div>
       </div>
+
+      {/* =========================================================================
+          3. FOCUSED BRANCH INSPECTOR (Dedicated, Clean Control Center)
+         ========================================================================= */}
+      {selectedNode ? (
+        <div
+          style={{
+            background: 'var(--surface-base)',
+            border: `1px solid ${selectedDepthConfig?.color || '#38bdf8'}`,
+            borderRadius: '8px',
+            padding: '12px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            boxShadow: `0 4px 16px rgba(0, 0, 0, 0.35)`
+          }}
+        >
+          {/* Inspector Header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '16px', color: selectedDepthConfig?.color || '#38bdf8' }}>
+                tune
+              </span>
+              <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Branch Inspector
+              </span>
+              <span
+                style={{
+                  fontSize: '9.5px',
+                  fontWeight: 700,
+                  color: selectedDepthConfig?.color,
+                  background: selectedDepthConfig?.bg,
+                  padding: '1px 6px',
+                  borderRadius: '3px'
+                }}
+              >
+                {selectedDepthConfig?.label}
+              </span>
+            </div>
+
+            {/* Quick Action Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <button
+                type="button"
+                onClick={() => handleAddChild(selectedIndex)}
+                className="studio-shell-btn studio-shell-btn-secondary"
+                style={{ padding: '3px 8px', fontSize: '10.5px', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '3px' }}
+                title="Add a child nested subtopic"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>add</span>
+                <span>Subtopic</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDeleteNode(selectedNode.id)}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#f87171',
+                  borderRadius: '4px',
+                  padding: '3px 7px',
+                  fontSize: '10.5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                  cursor: 'pointer'
+                }}
+                title="Delete this branch and its children"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>delete</span>
+                <span>Delete</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Branch Title Input */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>TOPIC / BRANCH LABEL</label>
+            <input
+              type="text"
+              className="studio-text-input"
+              value={selectedNode.text}
+              onChange={(e) => handleUpdateNode(selectedNode.id, { text: e.target.value })}
+              placeholder="e.g. Infrastructure as Code, Authentication"
+              style={{ fontSize: '12px', padding: '6px 8px', fontWeight: 600 }}
+            />
+          </div>
+
+          {/* Branch Shape Chips (1-Click Change) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>BRANCH NODE SHAPE</label>
+            <div className="diagram-shape-chips">
+              {MINDMAP_SHAPES.map((sh) => {
+                const isActive = (selectedNode.shape || 'default') === sh.id
+                return (
+                  <button
+                    key={sh.id}
+                    type="button"
+                    className={`diagram-shape-chip-btn ${isActive ? 'active' : ''}`}
+                    onClick={() => handleUpdateNode(selectedNode.id, { shape: sh.id })}
+                    title={`Format as: ${sh.syntax}`}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>{sh.icon}</span>
+                    <span>{sh.preview}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Hierarchy & Reorder Controls */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '6px', borderTop: '1px solid var(--border-color)' }}>
+            <label style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>HIERARCHY & POSITION</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="studio-shell-btn studio-shell-btn-secondary"
+                onClick={() => handleOutdent(selectedIndex)}
+                disabled={selectedNode.depth <= 1}
+                style={{ padding: '3px 8px', fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                title="Promote topic to higher level (Outdent ◀)"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>chevron_left</span>
+                <span>Promote (◀)</span>
+              </button>
+
+              <button
+                type="button"
+                className="studio-shell-btn studio-shell-btn-secondary"
+                onClick={() => handleIndent(selectedIndex)}
+                disabled={selectedNode.depth >= 6}
+                style={{ padding: '3px 8px', fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                title="Nest as subtopic of branch above (Indent ▶)"
+              >
+                <span>Indent (▶)</span>
+                <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>chevron_right</span>
+              </button>
+
+              <button
+                type="button"
+                className="studio-shell-btn studio-shell-btn-secondary"
+                onClick={() => handleMove(selectedIndex, -1)}
+                disabled={selectedIndex === 0}
+                style={{ padding: '3px 7px', fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '3px' }}
+                title="Move branch up"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>arrow_upward</span>
+                <span>Up</span>
+              </button>
+
+              <button
+                type="button"
+                className="studio-shell-btn studio-shell-btn-secondary"
+                onClick={() => handleMove(selectedIndex, 1)}
+                disabled={selectedIndex === nodes.length - 1}
+                style={{ padding: '3px 7px', fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '3px' }}
+                title="Move branch down"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>arrow_downward</span>
+                <span>Down</span>
+              </button>
+
+              <button
+                type="button"
+                className="studio-shell-btn studio-shell-btn-secondary"
+                onClick={() => handleAddSibling(selectedIndex)}
+                style={{ padding: '3px 8px', fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '3px', marginLeft: 'auto' }}
+                title="Add a sibling branch at the same level"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>playlist_add</span>
+                <span>+ Sibling</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: '20px', textAlign: 'center', background: 'var(--surface-base)', borderRadius: '6px', color: 'var(--text-muted)', fontSize: '11.5px', border: '1px dashed var(--border-color)' }}>
+          No branch selected. Click a topic in the tree outline above to inspect or edit.
+        </div>
+      )}
     </div>
   )
 }

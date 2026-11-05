@@ -2,7 +2,7 @@
  * Diagram Compilers and Parsers
  * High-fidelity, bi-directional compilers for Flowcharts with Subgraphs, Sequence Diagrams, and ER Schemas.
  */
-import { DIAGRAM_THEMES } from './diagramConstants'
+import { DIAGRAM_THEMES } from './diagramConstants.js'
 
 /**
  * Detect diagram type from Mermaid raw code
@@ -85,15 +85,23 @@ export function compileFlowchart({ direction = 'TD', subgraphs = [], nodes = [],
 
   // Render Subgraphs first
   subgraphs.forEach((sg) => {
-    const cleanSgId = (sg.title || 'Cluster').replace(/[^a-zA-Z0-9]/g, '_')
+    const cleanSgId = (sg.id || sg.title || 'Cluster').replace(/[^a-zA-Z0-9]/g, '_')
     lines.push(`  subgraph ${cleanSgId} ["${sg.title}"]`)
     if (sg.direction) {
       lines.push(`    direction ${sg.direction}`)
     }
     const memberNodes = nodes.filter((n) => (sg.nodeIds || []).includes(n.id))
-    memberNodes.forEach((n) => {
-      lines.push(`    ${formatNodeShape(n)}`)
-    })
+    if (memberNodes.length === 0) {
+      // Empty clusters collapse to (0, 0) in Mermaid causing overlapping label artifacts.
+      // Emitting a subtle dashed placeholder node gives the cluster real bounds.
+      const emptyNodeId = `${cleanSgId}_empty`
+      lines.push(`    ${emptyNodeId}["(Empty Cluster: Add or assign nodes)"]`)
+      lines.push(`    style ${emptyNodeId} fill:transparent,stroke-dasharray: 4 4,stroke:rgba(255,255,255,0.18),color:rgba(255,255,255,0.45),font-style:italic,font-size:11px`)
+    } else {
+      memberNodes.forEach((n) => {
+        lines.push(`    ${formatNodeShape(n)}`)
+      })
+    }
     lines.push('  end')
     lines.push('')
   })
@@ -104,6 +112,10 @@ export function compileFlowchart({ direction = 'TD', subgraphs = [], nodes = [],
     rootNodes.forEach((n) => {
       lines.push(`  ${formatNodeShape(n)}`)
     })
+    lines.push('')
+  } else if (nodes.length === 0 && subgraphs.length === 0) {
+    lines.push('  empty_flowchart["(Empty Architecture Flowchart: Add Services)"]')
+    lines.push('  style empty_flowchart fill:transparent,stroke-dasharray: 4 4,stroke:rgba(255,255,255,0.2),color:rgba(255,255,255,0.4),font-style:italic,font-size:12px')
     lines.push('')
   }
 
@@ -704,24 +716,43 @@ export function parseClassDiagram(code = '') {
 // MINDMAP COMPILER & PARSER
 // =============================================================================
 
-export function compileMindmap({ rootTitle = 'Central Concept', nodes = [] }) {
+export function compileMindmap({ rootTitle = 'Central Concept', rootShape = 'circle', nodes = [] }) {
   const lines = ['mindmap']
-  lines.push(`  root((${rootTitle.replace(/[()]/g, '')}))`)
 
   const formatShape = (text, shape) => {
-    const clean = text.replace(/[[\](){}><]/g, '')
+    const clean = (text || 'Topic').replace(/[[\\](){}><]/g, '').trim() || 'Topic'
     switch (shape) {
       case 'circle': return `((${clean}))`
       case 'rounded': return `(${clean})`
       case 'square': return `[${clean}]`
       case 'cloud': return `)${clean}(`
-      case 'bang': return `}}${clean}{{`
+      case 'bang': return `))${clean}((` // Mermaid official bang syntax is ))text((
+      case 'hexagon': return `{{${clean}}}`
       default: return clean
     }
   }
 
-  nodes.forEach((n) => {
-    const indent = '  '.repeat(Math.max(1, (n.depth || 1) + 1))
+  const cleanRoot = (rootTitle || 'Central Concept').replace(/[[\\](){}><]/g, '').trim() || 'Central Concept'
+  lines.push(`  root${formatShape(cleanRoot, rootShape)}`)
+
+  if (!nodes || nodes.length === 0) {
+    lines.push('    Overview')
+    return lines.join('\n')
+  }
+
+  // Normalize depth hierarchy so that node 0 is always level 1 (child of root)
+  // and no subsequent node jumps more than 1 level deeper than its predecessor.
+  // This guarantees Mermaid never crashes when user deletes top nodes or re-arranges branches.
+  let prevDepth = 0
+  nodes.forEach((n, idx) => {
+    let d = typeof n.depth === 'number' ? n.depth : 1
+    if (idx === 0) {
+      d = 1
+    } else {
+      d = Math.max(1, Math.min(d, prevDepth + 1))
+    }
+    prevDepth = d
+    const indent = '  '.repeat(d + 1)
     lines.push(`${indent}${formatShape(n.text || 'Topic', n.shape || 'default')}`)
   })
 
@@ -732,11 +763,18 @@ export function parseMindmap(code = '') {
   const cleanCode = stripThemeDirective(code)
   const lines = cleanCode.split('\n')
   let rootTitle = 'Central Concept'
+  let rootShape = 'circle'
   const nodes = []
 
   const parseNodeTextAndShape = (raw) => {
     const s = raw.trim()
-    let m = s.match(/^\(\((.*?)\)\)$/)
+    let m = s.match(/^\)\)(.*?)\(\($/)
+    if (m) return { text: m[1], shape: 'bang' }
+    m = s.match(/^}}(.*?){{$/) // Legacy bang fallback
+    if (m) return { text: m[1], shape: 'bang' }
+    m = s.match(/^\{\{(.*?)\}\}/)
+    if (m) return { text: m[1], shape: 'hexagon' }
+    m = s.match(/^\(\((.*?)\)\)$/)
     if (m) return { text: m[1], shape: 'circle' }
     m = s.match(/^\((.*?)\)$/)
     if (m) return { text: m[1], shape: 'rounded' }
@@ -744,8 +782,6 @@ export function parseMindmap(code = '') {
     if (m) return { text: m[1], shape: 'square' }
     m = s.match(/^\)(.*?)\($/)
     if (m) return { text: m[1], shape: 'cloud' }
-    m = s.match(/^}}(.*?){{$/)
-    if (m) return { text: m[1], shape: 'bang' }
     return { text: s, shape: 'default' }
   }
 
@@ -753,9 +789,16 @@ export function parseMindmap(code = '') {
     if (!rawLine.trim() || rawLine.trim().startsWith('%%') || rawLine.trim() === 'mindmap') continue
 
     // Root detection
-    const rootMatch = rawLine.match(/^\s*root\s*(?:\(\((.*?)\)\)|\((.*?)\)|\[(.*?)\]|(.*))$/)
+    const rootMatch = rawLine.match(/^\s*root(?:\s+)?(?:\[(.*?)\]|\)\)(.*?)\(\(|\{\{(.*?)\}\}|\(\((.*?)\)\)|\((.*?)\)|\)(.*?)\(|(.*))$/)
     if (rootMatch) {
-      rootTitle = (rootMatch[1] || rootMatch[2] || rootMatch[3] || rootMatch[4] || 'Central Concept').trim()
+      if (rootMatch[1]) { rootTitle = rootMatch[1]; rootShape = 'square'; }
+      else if (rootMatch[2]) { rootTitle = rootMatch[2]; rootShape = 'bang'; }
+      else if (rootMatch[3]) { rootTitle = rootMatch[3]; rootShape = 'hexagon'; }
+      else if (rootMatch[4]) { rootTitle = rootMatch[4]; rootShape = 'circle'; }
+      else if (rootMatch[5]) { rootTitle = rootMatch[5]; rootShape = 'rounded'; }
+      else if (rootMatch[6]) { rootTitle = rootMatch[6]; rootShape = 'cloud'; }
+      else if (rootMatch[7]) { rootTitle = rootMatch[7]; rootShape = 'default'; }
+      rootTitle = (rootTitle || 'Central Concept').trim()
       continue
     }
 
@@ -774,7 +817,7 @@ export function parseMindmap(code = '') {
     }
   }
 
-  return { rootTitle, nodes }
+  return { rootTitle, rootShape, nodes }
 }
 
 // =============================================================================
@@ -784,22 +827,71 @@ export function parseMindmap(code = '') {
 export function compileGitGraph({ steps = [] }) {
   const lines = ['gitGraph']
 
+  if (!steps || steps.length === 0) {
+    lines.push('  commit id: "Initial Commit"')
+    return lines.join('\n')
+  }
+
+  const definedBranches = new Set(['main'])
+  let hasInitialCommit = false
+  let currentBranch = 'main'
+
+  // Mermaid gitGraph strictly requires an initial commit on 'main' before any branching or checkout.
+  // If the user deletes the first commit, or starts with branch/checkout, inject the initial commit automatically.
+  const firstStep = steps[0]
+  if (firstStep && firstStep.type !== 'commit') {
+    lines.push('  commit id: "Initial Commit"')
+    hasInitialCommit = true
+  }
+
   steps.forEach((s) => {
     switch (s.type) {
-      case 'branch':
-        lines.push(`  branch ${s.name}`)
+      case 'branch': {
+        if (!hasInitialCommit) {
+          lines.push('  commit id: "Initial Commit"')
+          hasInitialCommit = true
+        }
+        const bName = (s.name || 'feature').replace(/[^a-zA-Z0-9_\-./]/g, '')
+        if (bName && !definedBranches.has(bName)) {
+          definedBranches.add(bName)
+          lines.push(`  branch ${bName}`)
+          currentBranch = bName
+        }
         break
-      case 'checkout':
-        lines.push(`  checkout ${s.name}`)
+      }
+      case 'checkout': {
+        if (!hasInitialCommit) {
+          lines.push('  commit id: "Initial Commit"')
+          hasInitialCommit = true
+        }
+        const bName = (s.name || 'main').replace(/[^a-zA-Z0-9_\-./]/g, '')
+        if (bName) {
+          // If checking out a branch not yet created, auto-declare it first to keep diagram valid
+          if (!definedBranches.has(bName)) {
+            definedBranches.add(bName)
+            lines.push(`  branch ${bName}`)
+          }
+          lines.push(`  checkout ${bName}`)
+          currentBranch = bName
+        }
         break
+      }
       case 'merge': {
-        const idPart = s.idLabel ? ` id: "${s.idLabel.replace(/"/g, "'")}"` : ''
-        const tagPart = s.tag ? ` tag: "${s.tag.replace(/"/g, "'")}"` : ''
-        lines.push(`  merge ${s.target}${idPart}${tagPart}`)
+        if (!hasInitialCommit) {
+          lines.push('  commit id: "Initial Commit"')
+          hasInitialCommit = true
+        }
+        const targetName = (s.target || '').replace(/[^a-zA-Z0-9_\-./]/g, '')
+        if (targetName && definedBranches.has(targetName) && targetName !== currentBranch) {
+          const idPart = s.idLabel ? ` id: "${s.idLabel.replace(/"/g, "'")}"` : ''
+          const tagPart = s.tag ? ` tag: "${s.tag.replace(/"/g, "'")}"` : ''
+          lines.push(`  merge ${targetName}${idPart}${tagPart}`)
+        }
         break
       }
       case 'commit':
       default: {
+        hasInitialCommit = true
         const idPart = s.idLabel ? ` id: "${s.idLabel.replace(/"/g, "'")}"` : ''
         const tagPart = s.tag ? ` tag: "${s.tag.replace(/"/g, "'")}"` : ''
         lines.push(`  commit${idPart}${tagPart}`)

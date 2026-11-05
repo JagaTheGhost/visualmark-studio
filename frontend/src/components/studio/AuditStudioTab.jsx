@@ -874,8 +874,8 @@ export default function AuditStudioTab({
       studioId="audit.studio"
       title="Documentation Auditor Pro"
       subtitle="Evaluate structure, completeness, readability metrics, and standard profiles across workspace documentation."
-      icon="verified_user"
-      accentColor="#10b981"
+      icon="fact_check"
+      accentColor="#6366f1"
       badge={`Grade ${auditReport.grade} (${auditReport.scorePct}%)`}
       modes={AUDIT_MODES}
       activeMode={selectedStandard}

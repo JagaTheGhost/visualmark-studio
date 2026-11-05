@@ -46,6 +46,7 @@ export default function ClassVisualBuilder({
   onClassesChange,
   relationships = [],
   onRelationshipsChange,
+  onBatchChange,
   selectedClassId: controlledSelectedClassId,
   onSelectClassId
 }) {
@@ -209,11 +210,21 @@ export default function ClassVisualBuilder({
   const handleDeleteClass = (id) => {
     const cls = classes.find((c) => c.id === id)
     if (!cls) return
-    onClassesChange(classes.filter((c) => c.id !== id))
-    onRelationshipsChange(relationships.filter((r) => r.from !== cls.name && r.to !== cls.name))
+    const remainingClasses = classes.filter((c) => c.id !== id)
+    const remainingRelationships = relationships.filter((r) => r.from !== cls.name && r.to !== cls.name)
+
+    if (typeof onBatchChange === 'function') {
+      onBatchChange({
+        classes: remainingClasses,
+        relationships: remainingRelationships
+      })
+    } else {
+      onClassesChange(remainingClasses)
+      onRelationshipsChange(remainingRelationships)
+    }
+
     if (selectedClassId === id) {
-      const remaining = classes.filter((c) => c.id !== id)
-      setSelectedClassId(remaining[0]?.id || null)
+      setSelectedClassId(remainingClasses[0]?.id || null)
     }
   }
 
@@ -408,7 +419,7 @@ export default function ClassVisualBuilder({
               style={{ height: '28px', padding: '0 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#818cf8' }}>add_circle</span>
-              <span>+ Blueprint</span>
+              <span>Blueprint</span>
               <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>expand_more</span>
             </button>
 
@@ -802,7 +813,7 @@ export default function ClassVisualBuilder({
       <div className="cls-relationships-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#a855f7' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#818cf8' }}>
               hub
             </span>
             <span style={{ fontSize: '12px', fontWeight: 700, color: '#f1f5f9' }}>
@@ -817,7 +828,7 @@ export default function ClassVisualBuilder({
             disabled={classes.length === 0}
             style={{ padding: '3px 9px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#a855f7' }}>add</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#818cf8' }}>add</span>
             <span>+ Relationship</span>
           </button>
         </div>

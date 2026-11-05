@@ -358,8 +358,8 @@ export default function IconEmojiStudioTab({
       studioId="icons.studio"
       title="Icons & Emoji Studio Pro"
       subtitle="Customize color and insert crisp GitHub-compatible vector icons via <img /> or universal Unicode developer emojis."
-      icon={studioMode === 'vector' ? 'palette' : 'sentiment_satisfied'}
-      accentColor="#f59e0b"
+      icon="palette"
+      accentColor="#6366f1"
       badge={studioMode === 'vector' ? 'Material Symbols SVG' : 'Universal Emojis'}
       modes={ICON_MODES}
       activeMode={studioMode}

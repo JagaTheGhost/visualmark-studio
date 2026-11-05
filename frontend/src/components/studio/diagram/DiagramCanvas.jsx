@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useCallback, useImperativeHandle, f
 import { saveAs } from 'file-saver'
 import MermaidRenderer from '../../MermaidRenderer'
 import { DIAGRAM_THEMES } from './diagramConstants'
+import { useToast } from '../../../context/ToastContext'
+import { notifyExportGratitude } from '../../../utils/sponsorGratitude'
 
 const DiagramCanvas = forwardRef(function DiagramCanvas(
   {
@@ -23,8 +25,14 @@ const DiagramCanvas = forwardRef(function DiagramCanvas(
   const containerRef = useRef(null)
   const stageRef = useRef(null)
 
+  let toastCtx = null
+  try {
+    toastCtx = useToast()
+  } catch {}
+  const showToast = toastCtx?.showToast
+
   const updateZoom = useCallback((newZoom) => {
-    const clamped = Math.min(250, Math.max(25, newZoom))
+    const clamped = Math.min(500, Math.max(20, Math.round(newZoom)))
     setZoomLevel(clamped)
     if (typeof onZoomChange === 'function') {
       onZoomChange(clamped)
@@ -51,7 +59,7 @@ const DiagramCanvas = forwardRef(function DiagramCanvas(
         const padding = 64
         const scaleX = (containerRect.width - padding) / (naturalWidth || 800)
         const scaleY = (containerRect.height - padding) / (naturalHeight || 600)
-        const idealScale = Math.min(Math.max(Math.floor(Math.min(scaleX, scaleY) * 100), 25), 160)
+        const idealScale = Math.min(Math.max(Math.floor(Math.min(scaleX, scaleY) * 100), 25), 500)
         updateZoom(idealScale)
       } else {
         updateZoom(100)
@@ -102,14 +110,22 @@ const DiagramCanvas = forwardRef(function DiagramCanvas(
     }
   }, [selectedNodeSymbol, selectedNodeText, chart])
 
-  // Mouse wheel zoom
-  const handleWheel = (e) => {
-    if (e.ctrlKey || e.metaKey || e.altKey) {
+  // Native non-passive scroll wheel zoom (supports direct scroll wheel & pinch gestures up to 500%)
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const handleWheelNative = (e) => {
       e.preventDefault()
-      const delta = e.deltaY < 0 ? 10 : -10
-      updateZoom(zoomLevel + delta)
+      e.stopPropagation()
+      const isZoomIn = e.deltaY < 0
+      const step = zoomLevel >= 300 ? 35 : (zoomLevel >= 180 ? 25 : (zoomLevel >= 100 ? 15 : 10))
+      updateZoom(zoomLevel + (isZoomIn ? step : -step))
     }
-  }
+
+    container.addEventListener('wheel', handleWheelNative, { passive: false })
+    return () => container.removeEventListener('wheel', handleWheelNative)
+  }, [zoomLevel, updateZoom])
 
   const startClientPosRef = useRef({ x: 0, y: 0 })
 
@@ -189,19 +205,23 @@ const DiagramCanvas = forwardRef(function DiagramCanvas(
     try {
       const svgXml = new XMLSerializer().serializeToString(svgEl)
       if (typeof window !== 'undefined' && window.electronAPI?.saveTextExportDialog) {
-        await window.electronAPI.saveTextExportDialog({
+        const res = await window.electronAPI.saveTextExportDialog({
           defaultPath: 'architecture-diagram.svg',
           filters: [{ name: 'SVG Vector Image', extensions: ['svg'] }, { name: 'All Files', extensions: ['*'] }],
           content: svgXml
         })
+        if (!res?.canceled) {
+          notifyExportGratitude(showToast, 'SVG vector diagram')
+        }
         return
       }
       const blob = new Blob([svgXml], { type: 'image/svg+xml;charset=utf-8' })
       saveAs(blob, 'architecture-diagram.svg')
+      notifyExportGratitude(showToast, 'SVG vector diagram')
     } catch (err) {
       console.error('Failed to export SVG:', err)
     }
-  }, [])
+  }, [showToast])
 
   // Export Raster PNG (2x or 4x Retina)
   const handleExportPng = useCallback((scale = 2) => {
@@ -237,12 +257,17 @@ const DiagramCanvas = forwardRef(function DiagramCanvas(
             defaultPath: scale >= 4 ? 'architecture-diagram-4k.png' : 'architecture-diagram.png',
             filters: [{ name: 'PNG Image', extensions: ['png'] }, { name: 'All Files', extensions: ['*'] }],
             base64Data
-          })
+          }).then((res) => {
+            if (!res?.canceled) {
+              notifyExportGratitude(showToast, scale >= 4 ? '4K Retina diagram PNG' : 'diagram PNG')
+            }
+          }).catch(() => {})
           URL.revokeObjectURL(blobURL)
         } else {
           canvas.toBlob((blob) => {
             if (blob) {
               saveAs(blob, scale >= 4 ? 'architecture-diagram-4k.png' : 'architecture-diagram.png')
+              notifyExportGratitude(showToast, scale >= 4 ? '4K Retina diagram PNG' : 'diagram PNG')
             }
             URL.revokeObjectURL(blobURL)
           }, 'image/png')
@@ -258,23 +283,36 @@ const DiagramCanvas = forwardRef(function DiagramCanvas(
     } catch (err) {
       console.error('Failed to export PNG:', err)
     }
-  }, [themeKey])
+  }, [themeKey, showToast])
 
   // Expose imperative API for parent StudioShell toolbar
-  useImperativeHandle(ref, () => ({
-    zoomIn: () => updateZoom(zoomLevel + 10),
-    zoomOut: () => updateZoom(zoomLevel - 10),
-    reset: handleReset,
-    fit: handleFit,
-    exportSvg: handleExportSvg,
-    exportPng: (scale = 2) => handleExportPng(scale),
-    getZoom: () => zoomLevel
-  }), [updateZoom, zoomLevel, handleReset, handleFit, handleExportSvg, handleExportPng])
+  useImperativeHandle(ref, () => {
+    const getSmartStep = (zoom, isZoomIn) => {
+      if (isZoomIn) {
+        if (zoom < 100) return 10
+        if (zoom < 200) return 25
+        return 50
+      } else {
+        if (zoom > 300) return 50
+        if (zoom > 150) return 25
+        return 10
+      }
+    }
+    return {
+      zoomIn: () => updateZoom(zoomLevel + getSmartStep(zoomLevel, true)),
+      zoomOut: () => updateZoom(zoomLevel - getSmartStep(zoomLevel, false)),
+      reset: handleReset,
+      fit: handleFit,
+      exportSvg: handleExportSvg,
+      exportPng: (scale = 2) => handleExportPng(scale),
+      getZoom: () => zoomLevel
+    }
+  }, [updateZoom, zoomLevel, handleReset, handleFit, handleExportSvg, handleExportPng])
 
   return (
     <div
       ref={containerRef}
-      onWheel={handleWheel}
+      
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -325,7 +363,7 @@ const DiagramCanvas = forwardRef(function DiagramCanvas(
           border: '1px solid rgba(255, 255, 255, 0.05)'
         }}
       >
-        Drag background to Pan • Ctrl + Scroll to Zoom
+        Drag background to Pan • Scroll wheel to Zoom (Max 500%)
       </div>
     </div>
   )

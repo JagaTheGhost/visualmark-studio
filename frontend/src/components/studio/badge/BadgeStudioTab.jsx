@@ -465,7 +465,7 @@ export default function BadgeStudioTab({
       title="Shields.io Badge Studio"
       subtitle="Vector shields, developer tech racks, and real-time repository metrics"
       badge="Shields.io"
-      accentColor="#38bdf8"
+      accentColor="#6366f1"
       icon={
         <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
           <path d="M8 0c-.3 0-.6.1-.8.3L2.4 3.7c-.3.2-.4.6-.4.9v5.2c0 3.8 2.6 7.1 6 8.2 3.4-1.1 6-4.4 6-8.2V4.6c0-.3-.1-.7-.4-.9L8.8.3C8.6.1 8.3 0 8 0zm0 1.5l4.5 2.5v4.8c0 3-2 5.7-4.5 6.6-2.5-.9-4.5-3.6-4.5-6.6V4L8 1.5z"/>

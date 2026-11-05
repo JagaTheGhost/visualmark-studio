@@ -281,7 +281,7 @@ export default function ContributorStudioTab({
       title="Contributor & Team Hall of Fame"
       subtitle="Assemble beautiful contributor avatar matrices, team recognition grids, and sponsor acknowledgements."
       icon="groups"
-      accentColor="#ec4899"
+      accentColor="#6366f1"
       badge="All-Contributors Standard"
       modes={CONTRIBUTOR_MODES}
       activeMode={layoutStyle}

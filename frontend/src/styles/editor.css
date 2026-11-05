@@ -94,6 +94,16 @@
   color: #858585;
 }
 
+.tab-file-icon .material-symbols-outlined {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .tab-file-title {
   max-width: 160px;
   font-size: 12px;
