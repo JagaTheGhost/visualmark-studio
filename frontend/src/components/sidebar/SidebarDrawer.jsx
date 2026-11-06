@@ -32,8 +32,10 @@ export default function SidebarDrawer({
   onClosePresetTab = () => {},
   openStudioTabs = [],
   onOpenStudioTab = () => {},
+  onOpenSettings = () => {},
   onCloseStudioTab = () => {},
   onInsertInstantSyntax = () => {},
+  onInsertSnippet = null,
   // Git / Source Control props
   gitInfo = null,
   onRefreshGit = () => {},
@@ -267,7 +269,8 @@ export default function SidebarDrawer({
             activeContent={markdown}
             workspaceDirectory={workspaceDirectory}
             onOpenStudioTab={onOpenStudioTab}
-            onInsertSnippet={onInsertInstantSyntax}
+            onOpenSettings={onOpenSettings}
+            onInsertSnippet={onInsertSnippet || onInsertInstantSyntax}
             showToast={showToast}
           />
         )}

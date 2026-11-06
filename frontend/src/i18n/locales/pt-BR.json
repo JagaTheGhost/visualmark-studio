@@ -88,7 +88,7 @@
       "files": "Files & Export",
       "notifications": "Notifications & Toasts",
       "updates": "App Updates",
-      "github": "GitHub & Integrations"
+      "github": "Provedores de IA e integrações"
     },
     "appearance": {
       "title": "Appearance & Window",
@@ -185,7 +185,7 @@
       "viewWhatsNew": "View What's New"
     },
     "github": {
-      "title": "GitHub & Version Control Integrations",
+      "title": "Provedores de IA e integrações",
       "token": "GitHub: Personal Access Token (PAT)",
       "tokenDesc": "Increases GitHub API rate limits from 60 to 5,000 requests/hour and enables scanning of private repositories. Stored only on your local device.",
       "showToken": "Show token",

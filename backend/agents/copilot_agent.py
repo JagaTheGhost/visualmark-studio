@@ -222,6 +222,7 @@ MANIFEST SAMPLES:
     result["used_model"] = res.get("used_model")
     result["provider"] = res.get("provider")
     result["fallback_occurred"] = res.get("fallback_occurred", False)
+    result["usage"] = res.get("usage")
 
     # Ensure consistent keys between badge_studio and badges_studio
     if "badges_studio" in result and "badge_studio" not in result:
@@ -317,4 +318,5 @@ Generate a single JSON object with:
     result["used_model"] = res.get("used_model")
     result["provider"] = res.get("provider")
     result["fallback_occurred"] = res.get("fallback_occurred", False)
+    result["usage"] = res.get("usage")
     return result

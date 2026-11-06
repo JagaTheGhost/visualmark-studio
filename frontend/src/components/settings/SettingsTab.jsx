@@ -22,7 +22,7 @@ const CATEGORIES = [
   { id: 'appearance', label: 'Appearance' },
   { id: 'notifications', label: 'Notifications & Toasts' },
   { id: 'updates', label: 'App Updates' },
-  { id: 'github', label: 'GitHub & Integrations' }
+  { id: 'github', label: 'AI Providers & Integrations' }
 ]
 
 export default function SettingsTab({
@@ -215,7 +215,7 @@ export default function SettingsTab({
             { id: 'appearance', label: t('settings.categories.appearance', 'Appearance') },
             { id: 'notifications', label: t('settings.categories.notifications', 'Notifications & Toasts') },
             { id: 'updates', label: t('settings.categories.updates', 'App Updates') },
-            { id: 'github', label: t('settings.categories.github', 'GitHub & Integrations') }
+            { id: 'github', label: t('settings.categories.github', 'AI Providers & Integrations') }
           ].map((cat) => (
             <button
               key={cat.id}

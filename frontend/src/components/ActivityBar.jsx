@@ -1,4 +1,5 @@
 import React from 'react'
+import { VMarksAgentIcon } from './ai/AiAgentPanel'
 
 export default function ActivityBar({
   activeTab,
@@ -50,7 +51,7 @@ export default function ActivityBar({
       id: 'ai-agent',
       label: 'VMarks Studio Copilot (Beta)',
       icon: 'auto_awesome',
-      badge: 'VM'
+      badge: null
     }
   ]
 
@@ -78,12 +79,20 @@ export default function ActivityBar({
               onClick={() => handleTabClick(tab.id)}
               title={tab.label}
             >
-              <span
-                className="material-symbols-outlined activity-icon"
-                style={tab.id === 'generator' && isActive ? { fontVariationSettings: "'FILL' 1" } : {}}
-              >
-                {tab.icon}
-              </span>
+              {tab.id === 'ai-agent' ? (
+                <VMarksAgentIcon
+                  size={20}
+                  color="currentColor"
+                  className="activity-icon"
+                />
+              ) : (
+                <span
+                  className="material-symbols-outlined activity-icon"
+                  style={tab.id === 'generator' && isActive ? { fontVariationSettings: "'FILL' 1" } : {}}
+                >
+                  {tab.icon}
+                </span>
+              )}
               {tab.badge !== null && tab.badge !== undefined && (
                 <span className="activity-tab-badge">{tab.badge}</span>
               )}

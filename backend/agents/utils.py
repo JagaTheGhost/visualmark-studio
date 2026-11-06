@@ -308,12 +308,29 @@ def call_llm_with_fallback(
                     res = client.post(url, json=payload)
                     if res.status_code == 200:
                         data = res.json()
-                        text = data["candidates"][0]["content"]["parts"][0]["text"]
+                        candidates = data.get("candidates", [])
+                        parts = candidates[0].get("content", {}).get("parts", []) if candidates else []
+                        thought_parts = [p.get("text", "") for p in parts if p.get("thought")]
+                        content_parts = [p.get("text", "") for p in parts if not p.get("thought")]
+                        thought_text = "\n".join(thought_parts).strip() if thought_parts else None
+                        text = "".join(content_parts).strip() if content_parts else ("".join(thought_parts).strip() if thought_parts else "")
+                        
+                        usage_meta = data.get("usageMetadata", {})
+                        usage = {
+                            "prompt_tokens": usage_meta.get("promptTokenCount", 0),
+                            "completion_tokens": usage_meta.get("candidatesTokenCount", 0),
+                            "total_tokens": usage_meta.get("totalTokenCount", 0),
+                            "ratelimit_remaining_requests": res.headers.get("x-ratelimit-remaining-requests"),
+                            "ratelimit_remaining_tokens": res.headers.get("x-ratelimit-remaining-tokens"),
+                            "ratelimit_reset": res.headers.get("x-ratelimit-reset-requests")
+                        }
                         return {
                             "text": text,
+                            "thought": thought_text,
                             "used_model": m,
                             "provider": "gemini",
                             "fallback_occurred": (m != requested_model),
+                            "usage": usage,
                             "raw": data
                         }
 
@@ -368,12 +385,38 @@ def call_llm_with_fallback(
                     res = client.post(target_url, json=body, headers=headers)
                     if res.status_code == 200:
                         data = res.json()
-                        text = data["choices"][0]["message"]["content"]
+                        choice = data["choices"][0]
+                        message_obj = choice.get("message", {})
+                        text = message_obj.get("content", "") or ""
+                        reasoning = message_obj.get("reasoning_content") or message_obj.get("reasoning")
+                        thought_text = reasoning.strip() if reasoning else None
+                        
+                        # Check for DeepSeek R1 <think> tags in content
+                        if "<think>" in text:
+                            if "</think>" in text:
+                                parts = text.split("</think>", 1)
+                                thought_text = parts[0].replace("<think>", "").strip()
+                                text = parts[1].strip()
+                            else:
+                                thought_text = text.replace("<think>", "").strip()
+                                text = ""
+
+                        raw_usage = data.get("usage") or {}
+                        usage = {
+                            "prompt_tokens": raw_usage.get("prompt_tokens", 0),
+                            "completion_tokens": raw_usage.get("completion_tokens", 0),
+                            "total_tokens": raw_usage.get("total_tokens", 0),
+                            "ratelimit_remaining_requests": res.headers.get("x-ratelimit-remaining-requests"),
+                            "ratelimit_remaining_tokens": res.headers.get("x-ratelimit-remaining-tokens"),
+                            "ratelimit_reset": res.headers.get("x-ratelimit-reset-requests")
+                        }
                         return {
                             "text": text,
+                            "thought": thought_text,
                             "used_model": m,
                             "provider": p,
                             "fallback_occurred": (m != requested_model),
+                            "usage": usage,
                             "raw": data
                         }
 
@@ -416,12 +459,33 @@ def call_llm_with_fallback(
                     res = client.post(url, json=body, headers=headers)
                     if res.status_code == 200:
                         data = res.json()
-                        text = data["content"][0]["text"]
+                        thought_parts = []
+                        content_parts = []
+                        for block in data.get("content", []):
+                            if block.get("type") == "thinking":
+                                thought_parts.append(block.get("thinking", ""))
+                            elif block.get("type") == "text":
+                                content_parts.append(block.get("text", ""))
+                        thought_text = "\n".join(thought_parts).strip() if thought_parts else None
+                        text = "".join(content_parts).strip()
+                        raw_usage = data.get("usage") or {}
+                        in_tok = raw_usage.get("input_tokens", 0)
+                        out_tok = raw_usage.get("output_tokens", 0)
+                        usage = {
+                            "prompt_tokens": in_tok,
+                            "completion_tokens": out_tok,
+                            "total_tokens": in_tok + out_tok,
+                            "ratelimit_remaining_requests": res.headers.get("anthropic-ratelimit-requests-remaining"),
+                            "ratelimit_remaining_tokens": res.headers.get("anthropic-ratelimit-tokens-remaining"),
+                            "ratelimit_reset": res.headers.get("anthropic-ratelimit-requests-reset")
+                        }
                         return {
                             "text": text,
+                            "thought": thought_text,
                             "used_model": m,
                             "provider": "anthropic",
                             "fallback_occurred": (m != requested_model),
+                            "usage": usage,
                             "raw": data
                         }
 

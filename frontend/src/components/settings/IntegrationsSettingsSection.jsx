@@ -49,7 +49,7 @@ export default function IntegrationsSettingsSection({
   return (
     <section className="settings-group-section">
       <div className="settings-group-header">
-        <span className="material-symbols-outlined">hub</span>
+        <span className="material-symbols-outlined" style={{ color: 'var(--text-secondary)' }}>hub</span>
         <h3>{t('settings.github.title', 'AI Providers & Integrations')}</h3>
       </div>
 
@@ -61,10 +61,8 @@ export default function IntegrationsSettingsSection({
       {matchesSearch('gemini google ai copilot api key vmarks studio llm') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#818cf8' }}>auto_awesome</span>
+            <div className="settings-card-label">
               <span>Google Gemini API Key</span>
-              <span style={{ fontSize: 10, background: '#10b98122', color: '#10b981', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>Free Tier</span>
             </div>
             <div className="settings-card-sublabel">
               Powers Gemini 3.5 Flash & Flash Lite with live workspace analysis, diff reviews, and Badge Studio automation.
@@ -73,7 +71,7 @@ export default function IntegrationsSettingsSection({
                 href="https://aistudio.google.com/app/apikey"
                 target="_blank"
                 rel="noreferrer"
-                style={{ color: '#818cf8', textDecoration: 'underline' }}
+                style={{ color: 'var(--text-primary)', textDecoration: 'underline' }}
               >
                 aistudio.google.com/app/apikey ↗
               </a>.
@@ -114,8 +112,7 @@ export default function IntegrationsSettingsSection({
       {matchesSearch('openai chatgpt gpt-4o gpt-4o-mini copilot api key') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#10a37f' }}>psychology</span>
+            <div className="settings-card-label">
               <span>OpenAI API Key (GPT-4o & GPT-4o Mini)</span>
             </div>
             <div className="settings-card-sublabel">
@@ -125,7 +122,7 @@ export default function IntegrationsSettingsSection({
                 href="https://platform.openai.com/api-keys"
                 target="_blank"
                 rel="noreferrer"
-                style={{ color: '#10a37f', textDecoration: 'underline' }}
+                style={{ color: 'var(--text-primary)', textDecoration: 'underline' }}
               >
                 platform.openai.com/api-keys ↗
               </a>.
@@ -166,8 +163,7 @@ export default function IntegrationsSettingsSection({
       {matchesSearch('anthropic claude sonnet haiku copilot api key') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#d97706' }}>neurology</span>
+            <div className="settings-card-label">
               <span>Anthropic Claude API Key (Claude 3.5 Sonnet & Haiku)</span>
             </div>
             <div className="settings-card-sublabel">
@@ -177,7 +173,7 @@ export default function IntegrationsSettingsSection({
                 href="https://console.anthropic.com/settings/keys"
                 target="_blank"
                 rel="noreferrer"
-                style={{ color: '#d97706', textDecoration: 'underline' }}
+                style={{ color: 'var(--text-primary)', textDecoration: 'underline' }}
               >
                 console.anthropic.com ↗
               </a>.
@@ -218,10 +214,8 @@ export default function IntegrationsSettingsSection({
       {matchesSearch('groq llama deepseek lpu ultra fast free api key') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#f97316' }}>bolt</span>
+            <div className="settings-card-label">
               <span>Groq Cloud API Key (Llama 3.3 70B & DeepSeek R1)</span>
-              <span style={{ fontSize: 10, background: '#f9731622', color: '#f97316', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>300+ tok/s</span>
             </div>
             <div className="settings-card-sublabel">
               Ultra-fast open weights inference powered by Groq LPU chips. Free tier available at{' '}
@@ -229,7 +223,7 @@ export default function IntegrationsSettingsSection({
                 href="https://console.groq.com/keys"
                 target="_blank"
                 rel="noreferrer"
-                style={{ color: '#f97316', textDecoration: 'underline' }}
+                style={{ color: 'var(--text-primary)', textDecoration: 'underline' }}
               >
                 console.groq.com/keys ↗
               </a>.
@@ -270,10 +264,8 @@ export default function IntegrationsSettingsSection({
       {matchesSearch('ollama local offline private llama3 qwen mistral url') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#06b6d4' }}>dns</span>
+            <div className="settings-card-label">
               <span>Ollama (Local Offline LLM)</span>
-              <span style={{ fontSize: 10, background: '#06b6d422', color: '#06b6d4', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>100% Offline</span>
             </div>
             <div className="settings-card-sublabel">
               Run models like Llama 3.2, Qwen 2.5, or Mistral completely locally on your machine with zero telemetry.
@@ -282,7 +274,7 @@ export default function IntegrationsSettingsSection({
                 href="https://ollama.com"
                 target="_blank"
                 rel="noreferrer"
-                style={{ color: '#06b6d4', textDecoration: 'underline' }}
+                style={{ color: 'var(--text-primary)', textDecoration: 'underline' }}
               >
                 Ollama ↗
               </a>{' '}
@@ -331,8 +323,7 @@ export default function IntegrationsSettingsSection({
       {matchesSearch('github token pat rate limit authorization api private repo') && (
         <div className="settings-card">
           <div className="settings-card-info">
-            <div className="settings-card-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>token</span>
+            <div className="settings-card-label">
               <span>{t('settings.github.token', 'GitHub: Personal Access Token (PAT)')}</span>
             </div>
             <div className="settings-card-sublabel">

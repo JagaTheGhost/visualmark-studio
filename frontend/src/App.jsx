@@ -1297,7 +1297,20 @@ Distributed under the MIT License.
     }
   }, [activeFile, handleSelectFile])
 
+  const handleOpenSettingsTab = useCallback((category = 'all') => {
+    const raw = typeof category === 'string' ? category.trim() : 'all'
+    const targetCat = raw === 'language' ? 'appearance' : (raw || 'all')
+    setSettingsCategory(targetCat)
+    setOpenDocTabs((prev) => prev.filter((f) => !isStudioTabId(f)))
+    setOpenStudioTabs((prev) => (prev.includes('settings') ? prev : [...prev, 'settings']))
+    setActiveFile('settings')
+  }, [])
+
   const handleOpenStudioTab = useCallback((tabId) => {
+    if (tabId === 'settings') {
+      handleOpenSettingsTab('github')
+      return
+    }
     const editorArea = document.querySelector('.editor-scroll-area')
     const previewArea = document.querySelector('.preview-pane')
     if (activeFile && !isStudioTabId(activeFile) && !isPresetTabId(activeFile)) {
@@ -1325,7 +1338,7 @@ Distributed under the MIT License.
     setOpenDocTabs((prev) => prev.filter((f) => !isStudioTabId(f)))
     setOpenStudioTabs((prev) => (prev.includes(tabId) ? prev : [...prev, tabId]))
     setActiveFile(tabId)
-  }, [activeFile, currentContent])
+  }, [activeFile, currentContent, handleOpenSettingsTab])
 
   const handleCloseStudioTab = useCallback((tabId) => {
     setOpenStudioTabs((prev) => prev.filter((t) => t !== tabId))
@@ -1354,14 +1367,15 @@ Distributed under the MIT License.
     return () => window.removeEventListener('visualmark:open-studio-tab', handleOpenStudio)
   }, [handleOpenStudioTab])
 
-  const handleOpenSettingsTab = useCallback((category = 'all') => {
-    const raw = typeof category === 'string' ? category.trim() : 'all'
-    const targetCat = raw === 'language' ? 'appearance' : (raw || 'all')
-    setSettingsCategory(targetCat)
-    setOpenDocTabs((prev) => prev.filter((f) => !isStudioTabId(f)))
-    setOpenStudioTabs((prev) => (prev.includes('settings') ? prev : [...prev, 'settings']))
-    setActiveFile('settings')
-  }, [])
+  // Global listener for visualmark:open-settings
+  useEffect(() => {
+    const handleOpenSettingsEvent = (e) => {
+      const cat = e.detail?.category || e.detail || 'github'
+      handleOpenSettingsTab(cat)
+    }
+    window.addEventListener('visualmark:open-settings', handleOpenSettingsEvent)
+    return () => window.removeEventListener('visualmark:open-settings', handleOpenSettingsEvent)
+  }, [handleOpenSettingsTab])
 
   const handleOpenShortcutsTab = useCallback((initialQuery = '', editId = null) => {
     const queryStr = typeof initialQuery === 'string' ? initialQuery : ''
@@ -1490,9 +1504,28 @@ Use the **Table Designer Studio** to visually craft, sort, and format tables wit
       ? markdown
       : (additionalFiles[targetFile] || '')
 
-    const cursor = fileCursorPositions.current[targetFile] || { line: 1, col: 1, index: 0 }
-    const targetLine = Math.max(1, cursor.line || 1)
+    // Check live cursor position and selection from Monaco if active
+    let liveCursor = fileCursorPositions.current[targetFile] || { line: 1, col: 1, index: 0 }
+    let monacoSelection = null
 
+    if (window.activeMonacoEditor && activeFile === targetFile) {
+      try {
+        const monacoPos = window.activeMonacoEditor.getPosition()
+        if (monacoPos && monacoPos.lineNumber) {
+          liveCursor = {
+            line: monacoPos.lineNumber,
+            col: monacoPos.column || 1,
+            index: 0
+          }
+        }
+        const sel = window.activeMonacoEditor.getSelection()
+        if (sel && !sel.isEmpty()) {
+          monacoSelection = sel
+        }
+      } catch {}
+    }
+
+    const targetLine = Math.max(1, liveCursor.line || 1)
     const foldedSnippet = foldDataUris(snippet).trim()
     const lines = originalContent.split('\n')
     const lineIdx = Math.min(Math.max(0, targetLine - 1), lines.length)
@@ -1501,14 +1534,20 @@ Use the **Table Designer Studio** to visually craft, sort, and format tables wit
     let newLines = [...lines]
     let insertedAtLine = targetLine
 
-    if (lines.length === 0 || (lines.length === 1 && lines[0] === '')) {
+    if (monacoSelection) {
+      // Replace highlighted range (e.g. Snippet Lines 1-16)
+      const startLineIdx = Math.max(0, monacoSelection.startLineNumber - 1)
+      const deleteCount = Math.max(1, monacoSelection.endLineNumber - monacoSelection.startLineNumber + 1)
+      newLines.splice(startLineIdx, deleteCount, foldedSnippet)
+      insertedAtLine = monacoSelection.startLineNumber
+    } else if (lines.length === 0 || (lines.length === 1 && lines[0] === '')) {
       newLines = [foldedSnippet]
       insertedAtLine = 1
     } else if (currentLineText.trim() === '') {
       newLines.splice(lineIdx, 1, foldedSnippet)
       insertedAtLine = targetLine
     } else {
-      if (cursor.col === 1) {
+      if (liveCursor.col === 1) {
         newLines.splice(lineIdx, 0, foldedSnippet)
         insertedAtLine = targetLine
       } else {
@@ -1541,6 +1580,18 @@ Use the **Table Designer Studio** to visually craft, sort, and format tables wit
     showToast(`✓ Inserted ${snippetType} into ${targetFile} at line ${insertedAtLine}!`, 'success')
 
     const scrollToInsertedLine = () => {
+      // 1. Monaco Editor (Primary)
+      if (window.activeMonacoEditor) {
+        try {
+          window.activeMonacoEditor.revealLineInCenter(insertedAtLine)
+          window.activeMonacoEditor.setPosition({ lineNumber: nextCursorLine, column: 1 })
+          window.activeMonacoEditor.focus()
+        } catch (err) {
+          console.warn('Monaco focus/reveal failed', err)
+        }
+      }
+
+      // 2. Simple textarea editor fallback
       const editorArea = document.querySelector('.editor-scroll-area')
       if (editorArea) {
         const lineAnchor = editorArea.querySelector(`.editor-line-anchor[data-line="${insertedAtLine}"]`)
@@ -1557,9 +1608,21 @@ Use the **Table Designer Studio** to visually craft, sort, and format tables wit
       }
     }
 
-    setTimeout(scrollToInsertedLine, 60)
-    setTimeout(scrollToInsertedLine, 180)
-  }, [markdown, additionalFiles, showToast])
+    setTimeout(scrollToInsertedLine, 50)
+    setTimeout(scrollToInsertedLine, 150)
+    setTimeout(scrollToInsertedLine, 300)
+  }, [markdown, additionalFiles, activeFile, showToast])
+
+  // Insert snippet directly at cursor in active document (or last active doc)
+  const handleInsertSnippetAtCursor = useCallback((snippet, snippetType = 'Snippet') => {
+    const targetDoc = (activeFile && !isStudioTabId(activeFile) && !isPresetTabId(activeFile))
+      ? activeFile
+      : (lastActiveDocRef.current && !isStudioTabId(lastActiveDocRef.current) && !isPresetTabId(lastActiveDocRef.current))
+        ? lastActiveDocRef.current
+        : 'README.md'
+
+    handleExecuteInsertSnippet(targetDoc, snippet, snippetType)
+  }, [activeFile, handleExecuteInsertSnippet])
 
   // Create a new document tab and insert snippet at line 1
   const handleInsertIntoNewDoc = useCallback((snippet, snippetType = 'Snippet') => {
@@ -2104,35 +2167,11 @@ Use the **Table Designer Studio** to visually craft, sort, and format tables wit
                 onLoadTemplate={handleLoadTemplate}
                 openStudioTabs={openStudioTabs}
                 onOpenStudioTab={handleOpenStudioTab}
+                onOpenSettings={handleOpenSettingsTab}
                 onCloseStudioTab={handleCloseStudioTab}
+                onInsertSnippet={handleInsertSnippetAtCursor}
                 onInsertInstantSyntax={(syntax) => {
-                  if (activeFile && !isStudioTabId(activeFile)) {
-                    const editorArea = document.querySelector('.editor-scroll-area')
-                    const previewArea = document.querySelector('.preview-pane')
-                    const savedScrollTop = editorArea ? editorArea.scrollTop : 0
-                    const savedPreviewTop = previewArea ? previewArea.scrollTop : 0
-
-                    const updated = currentContent + (currentContent.endsWith('\n\n') ? '' : '\n\n') + syntax + '\n'
-                    handleContentChange(updated)
-                    showToast(`Inserted template into ${activeFile}`, 'success')
-
-                    // Maintain current scroll position without jumping down across multiple frames
-                    const restoreScroll = () => {
-                      const ed = document.querySelector('.editor-scroll-area')
-                      const pr = document.querySelector('.preview-pane')
-                      const gt = document.querySelector('.editor-gutter')
-                      if (ed) ed.scrollTop = savedScrollTop
-                      if (pr) pr.scrollTop = savedPreviewTop
-                      if (gt) gt.scrollTop = savedScrollTop
-                    }
-                    restoreScroll()
-                    window.requestAnimationFrame(restoreScroll)
-                    setTimeout(restoreScroll, 50)
-                    setTimeout(restoreScroll, 150)
-                    setTimeout(restoreScroll, 300)
-                  } else {
-                    showToast('Switch to a document tab (e.g. README.md) to insert template', 'info')
-                  }
+                  handleInsertSnippetAtCursor(syntax, 'Template')
                 }}
                 onGenerate={handleGenerate}
                 loading={loading}
@@ -2192,6 +2231,7 @@ Use the **Table Designer Studio** to visually craft, sort, and format tables wit
                 onDropExternalFile={handleDropExternalFile}
                 openStudioTabs={openStudioTabs}
                 onOpenStudioTab={handleOpenStudioTab}
+                onOpenSettings={handleOpenSettingsTab}
                 onCloseStudioTab={handleCloseStudioTab}
                 onOpenToolsDrawer={() => {
                   setActiveActivityTab('tools')

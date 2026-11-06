@@ -576,7 +576,12 @@ def ai_agent_analyze_endpoint(req: AiAgentAnalyzeRequest):
             user_instruction=req.query,
             mode=req.mode or "all"
         )
-        return {"success": True, "data": data, "source": context.get("source", "github")}
+        return {
+            "success": True,
+            "data": data,
+            "source": context.get("source", "github"),
+            "usage": data.get("usage")
+        }
     except HTTPException:
         raise
     except Exception as e:
@@ -605,7 +610,7 @@ def ai_editor_diff_endpoint(req: AiEditorDiffRequest):
             context_after=req.context_after,
             project_memory_text=req.project_memory_text
         )
-        return {"success": True, "data": data}
+        return {"success": True, "data": data, "usage": data.get("usage")}
     except HTTPException:
         raise
     except Exception as e:
@@ -638,14 +643,28 @@ def ai_chat_endpoint(req: AiChatRequest):
         return {
             "success": True,
             "reply": res.get("text", ""),
+            "thought": res.get("thought"),
             "used_model": res.get("used_model"),
             "provider": res.get("provider", provider),
-            "fallback_occurred": res.get("fallback_occurred", False)
+            "fallback_occurred": res.get("fallback_occurred", False),
+            "usage": res.get("usage")
         }
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/ai/providers-status")
+def ai_providers_status_endpoint():
+    """Return backend status for available providers based on configured environment variables."""
+    return {
+        "gemini": bool(get_provider_api_key("gemini")),
+        "openai": bool(get_provider_api_key("openai")),
+        "anthropic": bool(get_provider_api_key("anthropic")),
+        "groq": bool(get_provider_api_key("groq")),
+        "ollama": True
+    }
 
 
 # Mount the router both with and without /api prefix for maximum deployment flexibility
